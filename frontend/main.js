@@ -13,8 +13,9 @@
 import { save, load, del, setToken, getToken, setUser, getUser, logout } from "./src/auth.js";
 import { api, GET, POST, DEL } from "./src/api.js";
 import { pad2, dmy, ymd, timeHM, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isoWeekNum, startOfQuarter, endOfQuarter, startOfSemester, endOfSemester, startOfYear, endOfYear, startOfIsoWeek, weekBoundsOf, nextWeekBounds, prevWeekBounds, nextMonthBounds, prevMonthBounds, nextQuarterBounds, prevQuarterBounds, nextSemesterBounds, prevSemesterBounds, nextYearBounds, prevYearBounds, formatPeriodLabel } from "./src/dateUtils.js";
-import { injectMobileDrawerCSS, injectMobileLightModeCSS, injectLightBadgesCSS } from "./src/mobileStyles.js";
-import { toast, celebrate, htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./src/helpers.js";
+import { toast, celebrate } from "./modules/notifications.js";
+import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
+import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
 import { $1, $all, getQuery } from "./src/query.js";
 ;(function () {
   'use strict';
@@ -48,125 +49,6 @@ function userGrade(){
   var u = getUser();
   return (u && (u.grade==='senior' || u.grade==='junior')) ? u.grade : 'junior';
 }
-
-// ===== Topbar =====
-function topbarHTML(){
-  var u = getUser();
-  if(!u) return '';
-  var isAdmin = (u.role==='admin');
-  var xpBadge = '<span class="badge">Lvl '+level()+' · XP '+getXP()+'</span>';
-
-  var drawer =
-    '<div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Menu">'+
-      '<div class="row">'+
-        '<button class="ghost" onclick="viewHome();toggleDrawer(false)">Dashboard</button>'+
-        '<button class="ghost" onclick="viewCalendar();toggleDrawer(false)">Calendario</button>'+
-        '<button class="ghost" onclick="viewPeriods();toggleDrawer(false)">BP</button>'+
-        '<button class="ghost" onclick="viewAppointments();toggleDrawer(false)">Appuntamenti</button>'+
-        '<button class="ghost" onclick="viewLeaderboard();toggleDrawer(false)">Classifiche</button>'+
-        '<button class="ghost" onclick="viewCommissions();toggleDrawer(false)">Provvigioni</button>'+
-        '<button class="ghost" onclick="viewGI();toggleDrawer(false)">GI &amp; Scadenzario</button>'+
-        '<button class="ghost" onclick="viewReport();toggleDrawer(false)">Report</button>'+
-        '<button class="ghost" onclick="viewClients();toggleDrawer(false)">Clienti</button>'+
-        '<button class="ghost" onclick="viewTeam();toggleDrawer(false)">Squadra</button>'+
-        (isAdmin? '<button class="ghost" onclick="viewUsers();toggleDrawer(false)">Utenti</button>' : '')+
-        '<button onclick="logout()">Logout</button>'+
-      '</div>'+
-    '</div>';
-
-  return ''+
-    '<div class="topbar">'+
-      '<div class="brand">'+
-        '<button class="hamb" id="hamb" aria-label="Apri menu" aria-controls="drawer" aria-expanded="false"><span></span><span></span><span></span></button>'+
-        '<div class="logo">BATTLE PLAN</div>'+
-      '</div>'+
-     '<div class="nav right">'+ xpBadge +
-  '<button class="ghost" onclick="viewHome()">Dashboard</button>'+
-  '<button class="ghost" onclick="viewCalendar()">Calendario</button>'+
-  '<button class="ghost" onclick="viewPeriods()">BP</button>'+
-  '<button class="ghost" onclick="viewAppointments()">Appuntamenti</button>'+
-  '<button class="ghost" onclick="viewLeaderboard()">Classifiche</button>'+
-  '<button class="ghost" onclick="viewCommissions()">Provvigioni</button>'+
-  '<button class="ghost" onclick="viewGI()">GI &amp; Scadenzario</button>'+  // <-- aggiunto
-  '<button class="ghost" onclick="viewReport()">Report</button>'+
-  '<button class="ghost" onclick="viewClients()">Clienti</button>'+
-  '<button class="ghost" onclick="viewTeam()">Squadra</button>'+
-  (isAdmin? '<button class="ghost" onclick="viewUsers()">Utenti</button>':'' )+
-  '<button onclick="logout()">Logout</button>'+
-'</div>'+
-
-    '</div>'+drawer;
-}
-
-function renderTopbar(){
-  if(!getUser()) return;
-
-
-  // CSS: più contrasto ai bottoni topbar SOLO su desktop; mobile lasciato com'è
-  if(!document.getElementById('bp_nav_contrast_css')){
-    var css = `
-      @media (min-width: 1024px){
-        .topbar .nav .ghost{
-          background: rgba(255,255,255,.06);
-          border: 1px solid rgba(255,255,255,.18);
-        }
-        .topbar .nav .ghost:hover{
-          background: rgba(255,255,255,.12);
-        }
-      }
-    `;
-    var st=document.createElement('style'); st.id='bp_nav_contrast_css'; st.textContent=css;
-    document.head.appendChild(st);
-  }
-
-  var tb = document.querySelector('.topbar');
-  var html = topbarHTML();
-  if(tb){ tb.outerHTML = html; } else { appEl.insertAdjacentHTML('afterbegin', html); }
-
-  // Fix visivi mobile/light/badge (idempotenti)
-  try{ injectMobileDrawerCSS(); }catch(_){}
-  try{ injectMobileLightModeCSS(); }catch(_){}
-  try{ injectLightBadgesCSS(); }catch(_){}
-
-  // Wiring interazioni
-  var hamb = document.getElementById('hamb');
-  if(hamb){
-    hamb.onclick = function(){ toggleDrawer(); };
-  }
-  var drawer = document.getElementById('drawer');
-  if(drawer){
-    // Chiudi se clicchi sul background del drawer (non sui bottoni)
-    drawer.addEventListener('click', function(e){
-      if(e.target.id === 'drawer') toggleDrawer(false);
-    });
-  }
-
-  // Chiudi con ESC
-  document.removeEventListener('keydown', onEscCloseDrawer, false);
-  document.addEventListener('keydown', onEscCloseDrawer, false);
-}
-
-// NB: RINOMINATO (prima _onEscCloseDrawer) per evitare collisioni/duplicati
-function onEscCloseDrawer(e){
-  if(e && e.key === 'Escape'){
-    var d=document.getElementById('drawer');
-    if(d && d.classList.contains('open')) toggleDrawer(false);
-  }
-}
-
-function toggleDrawer(force){
-  var d=document.getElementById('drawer'); if(!d) return;
-  var willOpen = (typeof force==='boolean') ? force : !d.classList.contains('open');
-  d.classList.toggle('open', willOpen);
-
-  // Aggiorna stato accessibilità e scroll background
-  var hamb=document.getElementById('hamb');
-  if(hamb){ hamb.setAttribute('aria-expanded', String(willOpen)); }
-  document.body.classList.toggle('no-scroll', willOpen);
-}
-
-var _tbTimer=null;
-function rerenderTopbarSoon(){ clearTimeout(_tbTimer); _tbTimer=setTimeout(renderTopbar,60); }
 
 // ===== LOGIN =====
 function viewLogin(){
@@ -4134,6 +4016,7 @@ window.viewReport       = viewReport;
 window.viewUsers        = viewUsers;
 window.toggleDrawer     = toggleDrawer;
 window.logout           = logout;
+window.rerenderTopbarSoon = rerenderTopbarSoon;
 
 // boot
 document.addEventListener('DOMContentLoaded', function () {
