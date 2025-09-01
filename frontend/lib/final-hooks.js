@@ -12,6 +12,8 @@ import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
 // - Squadra: select consulente, grafico coerente coi buckets
 // - Utenti: modali admin/self
 // - Undo: snackbar 5s lato UI su elimina
+
+const hapticImpact = (window.BP && BP.Haptics && BP.Haptics.impact) ? BP.Haptics.impact : () => {};
 (function(){
   'use strict';
 /* ===== FETCH SHIMS + TOKEN (fallback) ===== */
@@ -128,7 +130,6 @@ if (!window.POST) {
   const GET  = (window.BPFinal && BPFinal.GET)  || window.GET;
   const POST = (window.BPFinal && BPFinal.POST) || window.POST;
   const toast = window.toast || (m=>alert(m));
-  const haptics = (window.haptics && window.haptics.try) ? window.haptics : { try: ()=>{} };
 
   function htmlEscape(s){ return String(s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 
@@ -191,7 +192,7 @@ if (!window.POST) {
       try{
         const v = Math.max(0, Number(d.querySelector('#vss_val').value||0));
         await POST('/api/appointments', { id: appt.id, vss: v });
-        haptics.try('medium'); toast('Appuntamento aggiornato');
+        hapticImpact('medium'); toast('Appuntamento aggiornato');
         close();
 
         // se VSS > 0 → crea/aggiorna GI e apri Builder
@@ -693,7 +694,7 @@ function esc(s){
     try{
       if (appt.nncf) { await updateClientStatus(appt.client, 'lead non chiuso'); }
       await saveApptVSS(appt.id, 0);
-      if (typeof haptics!=='undefined') haptics.try('light');
+      hapticImpact('light');
       toast('Segnato VSS 0');
     }catch(e){ console.error(e); }
   };
@@ -1036,10 +1037,10 @@ function esc(s){
             var user = users.find(function(u){ return String(u.id)===String(payload.consultantId||''); });
             consLine.innerHTML = 'Consulente: <b>'+(user? (user.name||('User '+user.id)) : '—')+'</b>';
           }
-          if (window.haptics) haptics.try('success');
+          hapticImpact('medium');
         }catch(err){
           console.error(err);
-          if (window.haptics) haptics.try('error');
+          hapticImpact('heavy');
         }
       };
     });
@@ -1100,14 +1101,6 @@ function __readMode(scope){
   const todayKey = ()=>{ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
   const isAdmin = ()=>{ try{ const u=parseJSON(localStorage.getItem('user')||'{}',{}); return u && u.role==='admin'; }catch(_){ return false; } };
 
-  // Haptics (dolce, media, tosta)
-  function haptic(kind){
-    try{
-      if (!('vibrate' in navigator)) return;
-      const map={ light:10, medium:[15,10,15], heavy:[30,20,30] };
-      navigator.vibrate(map[kind]||10);
-    }catch(_){}
-  }
   function toast(msg){
     try{ (window.showToast?window.showToast:alert)(msg); }catch(_){ alert(msg); }
   }
@@ -1430,12 +1423,12 @@ function recomputeTeamAggChart(){
 
 function wireMiniChartTriggers(){
   // Dashboard – accetta entrambe le id (legacy + nuove)
-  on($1('#dash_mode'),'change', ()=>{ haptic('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
-  on($1('#d_mode'),   'change', ()=>{ haptic('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
+  on($1('#dash_mode'),'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
+  on($1('#d_mode'),   'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
 
   // Provvigioni – accetta entrambe
-  on($1('#comm_mode'),'change', ()=>{ haptic('light'); if (window.recomputeCommsMini) recomputeCommsMini(); });
-  on($1('#cm_mode'),  'change', ()=>{ haptic('light'); if (window.recomputeCommsMini) recomputeCommsMini(); });
+  on($1('#comm_mode'),'change', ()=>{ hapticImpact('light'); if (window.recomputeCommsMini) recomputeCommsMini(); });
+  on($1('#cm_mode'),  'change', ()=>{ hapticImpact('light'); if (window.recomputeCommsMini) recomputeCommsMini(); });
 
   // Squadra (non-admin): popola la select utenti se vuota
   const sel = $1('#tg_user');
@@ -1452,7 +1445,7 @@ function wireMiniChartTriggers(){
 
   // Squadra: trigger su modalità e range unificato "t" → ricarica entrambi i grafici se presenti
   const fireTeam = ()=>{ if (window.recomputeTeamChart) recomputeTeamChart(); if (window.recomputeTeamAggChart) recomputeTeamAggChart(); };
-  on($1('#t_mode'),'change', ()=>{ haptic('light'); fireTeam(); });
+  on($1('#t_mode'),'change', ()=>{ hapticImpact('light'); fireTeam(); });
 
   // Filtri unificati "t" (anno, mese, trimestre, date libere)
   ['#t_y','#t_m','#t_q','#t_from','#t_to'].forEach(id=>{
@@ -1460,11 +1453,11 @@ function wireMiniChartTriggers(){
   });
 
   // Cambio utente nel grafico non-admin
-  if (sel) on(sel,'change', ()=>{ haptic('light'); if (window.recomputeTeamChart) recomputeTeamChart(); });
+  if (sel) on(sel,'change', ()=>{ hapticImpact('light'); if (window.recomputeTeamChart) recomputeTeamChart(); });
 
   // Indicatore del grafico aggregato admin
   const ind = $1('#t_ind');
-  if (ind) on(ind,'change', ()=>{ haptic('light'); if (window.recomputeTeamAggChart) recomputeTeamAggChart(); });
+  if (ind) on(ind,'change', ()=>{ hapticImpact('light'); if (window.recomputeTeamAggChart) recomputeTeamAggChart(); });
 
   // Primo render (se i canvas esistono)
   if ($1('#tg_chart') && window.recomputeTeamChart)      recomputeTeamChart();
@@ -1550,7 +1543,7 @@ function wireICSInsideDayBox(){
         var obj = { client: tt, start: st, end: en, type: 'manuale', vss: 0, vsdPersonal: 0, nncf: false };
         try{
           window.downloadICS('bp_'+(tt||'app')+'_'+(st||'').slice(0,10), window.icsFromAppt(obj));
-          if(typeof window.haptic==='function') window.haptic('medium');
+          hapticImpact('medium');
         }catch(_){}
       });
 
@@ -2122,50 +2115,6 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
 // -------- Undo + Haptics globali --------
 (function(){
-  // === HAPTICS SHIM robusto ===
-  // - Se esiste window.haptic lo lascia in pace
-  // - Espone anche window.haptics {enabled,setEnabled,try} con gating e throttle
-  (function(){
-    var last = 0;
-    var enabled = true;
-    try {
-      var mem = localStorage.getItem('bp_haptics_enabled');
-      if (mem !== null) enabled = (mem === 'true');
-    } catch(_){}
-
-    // funzione grezza: usa Vibrate API
-    if (typeof window.haptic !== 'function'){
-      window.haptic = function(kind){
-        try{
-          var pat = { light: 12, medium: [12,28,12], heavy: [24,24,24], success: [10,18,10,18,10], error: [60,20,60] };
-          if (navigator.vibrate) navigator.vibrate(pat[kind] || 12);
-        }catch(_){}
-      };
-    }
-
-    // wrapper con gating + throttle
-    window.haptics = window.haptics || {};
-    window.haptics.enabled = enabled;
-    window.haptics.setEnabled = function(v){
-      enabled = !!v;
-      window.haptics.enabled = enabled;
-      try{ localStorage.setItem('bp_haptics_enabled', String(enabled)); }catch(_){}
-    };
-    window.haptics.try = function(kind){
-      if(!enabled) return;
-      var now = Date.now();
-      if (now - last < 60) return; // throttle
-      last = now;
-      try { window.haptic(kind); } catch(_){}
-    };
-
-    // "warm up" su primo tap per iOS (sblocco permessi vibrazione)
-    var warmed = false;
-    document.addEventListener('click', function(){
-      if (!warmed){ warmed = true; try{ if(navigator.vibrate) navigator.vibrate(1); }catch(_) {}; }
-    }, { once:true, capture:true });
-  })();
-
   // === Snackbar Undo riutilizzabile ===
   window.showUndo = window.showUndo || function(label, onUndo, ttl){
     try{
@@ -2195,11 +2144,11 @@ BPFinal.ensureClientSection = function ensureClientSection(){
         try{ bar.remove(); }catch(e){}
         if (typeof onUndo === 'function'){
           Promise.resolve(onUndo())
-            .then(function(){ haptics.try('success'); })
-            .catch(function(){ haptics.try('error'); });
+            .then(function(){ hapticImpact('medium'); })
+            .catch(function(){ hapticImpact('heavy'); });
         }
       };
-      haptics.try('light');
+      hapticImpact('light');
     }catch(e){ console.error(e); }
   };
 
@@ -2211,11 +2160,11 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   // === Coach + Undo su delete ===
   window.wireCoachUndoHaptics = function(){
-document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   haptics.try('heavy');  });
-    document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); haptics.try('medium'); });
-    document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    haptics.try('light');  });
-    document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); haptics.try('medium'); });
-    document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   haptics.try('heavy');  });
+document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+    document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+    document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
+    document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+    document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
 
     var root = document.getElementById('app') || document.body;
     if (root && !root.__undoWired){
@@ -2254,7 +2203,7 @@ document.addEventListener('bp:saved',         function(){ if(window.coachSay) co
       var kind = 'light';
       if (btn.classList.contains('danger') || btn.getAttribute('data-danger')==='1') kind='heavy';
       else if (btn.classList.contains('primary') || btn.getAttribute('data-primary')==='1') kind='medium';
-      haptics.try(kind);
+      hapticImpact(kind);
     }, true);
 
     // Change su input/select
@@ -2262,7 +2211,7 @@ document.addEventListener('bp:saved',         function(){ if(window.coachSay) co
       var el = e.target;
       if (!el) return;
       if (el.matches('select, input[type="checkbox"], input[type="radio"], input[type="range"]')){
-        haptics.try('light');
+        hapticImpact('light');
       }
     }, true);
 
@@ -2270,7 +2219,7 @@ document.addEventListener('bp:saved',         function(){ if(window.coachSay) co
     var menuToggle = document.querySelector('[data-drawer-toggle], #menuToggle, .menu-toggle');
     if (menuToggle && !menuToggle.__hW){
       menuToggle.__hW = true;
-      menuToggle.addEventListener('click', function(){ haptics.try('light'); }, true);
+      menuToggle.addEventListener('click', function(){ hapticImpact('light'); }, true);
     }
   };
 })();
