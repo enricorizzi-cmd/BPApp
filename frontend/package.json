@@ -1,0 +1,13 @@
+{
+  "name": "bp-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "^5.4.3",
+    "vite": "^5.4.19"
+  }
+}

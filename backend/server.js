@@ -1040,12 +1040,10 @@ app.post("/api/client_error", async (req,res)=>{
   }catch(e){ res.status(500).json({ ok:false }); }
 });
 
-// ---------- Static + SPA (serve dist se esiste) ----------
-const FRONT_ROOT = (() => {
-  const dist = path.join(__dirname, "..", "frontend", "dist");
-  const root = path.join(__dirname, "..", "frontend");
-  return fs.existsSync(path.join(dist, "index.html")) ? dist : root;
-})();
+// ---------- Static + SPA ----------
+const FRONT_ROOT = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, "..", "frontend", "dist")
+  : path.join(__dirname, "..", "frontend");
 
 app.use(express.static(FRONT_ROOT));
 app.get("/", (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
