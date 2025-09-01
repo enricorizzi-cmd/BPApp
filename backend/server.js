@@ -26,6 +26,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
+let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
 dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
@@ -76,6 +77,24 @@ function fromLocalInputValue(s){ // "YYYY-MM-DDTHH:MM" -> Date (locale)
   const [Y,M,D] = date.split('-').map(Number);
   const [h,m]   = time.split(':').map(Number);
   return new Date(Y, M-1, D, h, m, 0, 0);
+}
+
+async function sendEmail(to, subject, text){
+  try{
+    if(nodemailer && process.env.SMTP_URL){
+      const transport = nodemailer.createTransport(process.env.SMTP_URL);
+      await transport.sendMail({
+        to,
+        from: process.env.SMTP_FROM || "no-reply@example.com",
+        subject,
+        text
+      });
+    }else{
+      console.log(`[email] to:${to} subject:${subject} text:${text}`);
+    }
+  }catch(e){
+    console.error("sendEmail error", e);
+  }
 }
 function computeEndLocal(startLocalStr, type, minutes){
   const start = fromLocalInputValue(startLocalStr);
@@ -216,7 +235,9 @@ async function ensureFiles(){
 }
 
 // ---------- Auth ----------
-function signToken(u){ return jwt.sign({ id:u.id, role:u.role, name:u.name }, JWT_SECRET, { expiresIn:"30d" }); }
+function signToken(u){
+  return jwt.sign({ id:u.id, role:u.role, name:u.name, permissions:u.permissions||[] }, JWT_SECRET, { expiresIn:"30d" });
+}
 function auth(req,res,next){
   const h = req.headers.authorization || "";
   const tok = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -224,10 +245,15 @@ function auth(req,res,next){
   try{ req.user = jwt.verify(tok, JWT_SECRET); return next(); }
   catch(e){ return res.status(401).json({ error:"invalid token" }); }
 }
-function requireAdmin(req,res,next){
-  if(!req.user || req.user.role!=="admin") return res.status(403).json({ error:"admin only" });
-  next();
+function requirePermission(perm){
+  return (req,res,next)=>{
+    if(req.user && req.user.role==="admin") return next();
+    const perms = (req.user&&req.user.permissions)||[];
+    if(perms.includes(perm)) return next();
+    return res.status(403).json({ error:"forbidden" });
+  };
 }
+const requireAdmin = requirePermission("admin");
 
 // ---------- Health ----------
 app.get("/api/health", (req,res)=> res.json({ ok:true, v:"13.7" }));
@@ -248,6 +274,7 @@ app.post("/api/register", async (req,res)=>{
     pass: hash,
     role: first ? "admin" : "consultant",
     grade: "junior",
+    permissions: [],
     createdAt: todayISO()
   };
   db.users.push(user);
@@ -263,15 +290,29 @@ app.post("/api/login", async (req,res)=>{
   const ok = await bcrypt.compare(password||"", u.pass||"");
   if(!ok) return res.status(401).json({ error:"bad creds" });
   const token = signToken(u);
-  const user  = { id:u.id, name:u.name, email:u.email, role:u.role, grade:u.grade };
+  const user  = { id:u.id, name:u.name, email:u.email, role:u.role, grade:u.grade, permissions:u.permissions||[] };
   res.json({ token, user });
 });
 
+app.post("/api/reset-password", async (req,res)=>{
+  const { email } = req.body || {};
+  if(!email) return res.status(400).json({ error:"missing email" });
+  const db = await readJSON("users.json");
+  const u = (db.users||[]).find(x => x.email.toLowerCase() === String(email).toLowerCase());
+  if(!u) return res.status(404).json({ error:"user not found" });
+  const token = genId();
+  u.resetToken = await bcrypt.hash(token, 10);
+  u.resetTokenExp = Date.now() + 1000*60*60; // 1h
+  await writeJSON("users.json", db);
+  await sendEmail(u.email, "Reset Password", `Your reset token is ${token}`);
+  res.json({ ok:true });
+});
+
 // ---------- Users ----------
-app.get("/api/users", auth, requireAdmin, async (req,res)=>{
+app.get("/api/users", auth, requirePermission("users:read"), async (req,res)=>{
   const db = await readJSON("users.json");
   const users = (db.users||[]).map(u => ({
-    id:u.id, name:u.name, email:u.email, role:u.role, grade:u.grade, createdAt:u.createdAt
+    id:u.id, name:u.name, email:u.email, role:u.role, grade:u.grade, permissions:u.permissions||[], createdAt:u.createdAt
   }));
   res.json({ users });
 });
@@ -286,8 +327,8 @@ app.get("/api/users_emails", auth, async (req,res)=>{
 });
 
 // admin create user
-app.post("/api/users/create", auth, requireAdmin, async (req,res)=>{
-  const { name, email, password, role, grade } = req.body || {};
+app.post("/api/users/create", auth, requirePermission("users:write"), async (req,res)=>{
+  const { name, email, password, role, grade, permissions } = req.body || {};
   if(!name || !email || !password) return res.status(400).json({ error:"missing fields" });
   const db = await readJSON("users.json");
   if((db.users||[]).some(u => u.email.toLowerCase() === String(email).toLowerCase()))
@@ -300,6 +341,7 @@ app.post("/api/users/create", auth, requireAdmin, async (req,res)=>{
     pass: hash,
     role: (role==="admin"?"admin":"consultant"),
     grade: (grade==="senior"?"senior":"junior"),
+    permissions: Array.isArray(permissions)?permissions:[],
     createdAt: todayISO()
   };
   db.users.push(user);
@@ -307,15 +349,16 @@ app.post("/api/users/create", auth, requireAdmin, async (req,res)=>{
   res.json({ ok:true, id:user.id });
 });
 
-// update role/grade/name
-app.post("/api/users", auth, requireAdmin, async (req,res)=>{
-  const { id, role, grade, name, email, password } = req.body || {};
+// update role/grade/name/permissions
+app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>{
+  const { id, role, grade, name, email, password, permissions } = req.body || {};
   const db = await readJSON("users.json");
   const u = (db.users||[]).find(x => x.id === id);
   if(!u) return res.status(404).json({ error:"user not found" });
   if(name) u.name = String(name);
   if(role) u.role = (role==="admin" ? "admin" : "consultant");
   if(grade) u.grade = (grade==="senior" ? "senior" : "junior");
+  if(Array.isArray(permissions)) u.permissions = permissions;
   if(email){
     const exists = (db.users||[]).some(x => x.email.toLowerCase() === String(email).toLowerCase() && x.id !== u.id);
     if(exists) return res.status(409).json({ error:"email exists" });
