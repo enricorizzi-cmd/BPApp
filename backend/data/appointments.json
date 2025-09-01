@@ -65,7 +65,7 @@
       "start": "2025-08-30T23:51:00.000Z",
       "end": "2025-08-31T00:51",
       "durationMinutes": 0,
-      "vss": 1000,
+      "vss": 0,
       "vsdPersonal": 1000,
       "nncf": false,
       "notes": ""
@@ -74,7 +74,7 @@
       "id": "ex5lzg7jzskbhtcp",
       "userId": "2e64a0dc2dbd0cdc197a35a4",
       "client": "bbb",
-      "clientId": "d091nues53j469zb",
+      "clientId": "9nqvvn3knluieej1",
       "type": "vendita",
       "start": "2025-08-31T23:54:00.000Z",
       "end": "2025-09-01T01:24",
@@ -306,6 +306,20 @@
       "vss": 0,
       "vsdPersonal": 0,
       "nncf": false,
+      "notes": ""
+    },
+    {
+      "id": "zooonn9qz1q7edbk",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "client": "Ciotti",
+      "clientId": "9setlgs2pn0r9atf",
+      "type": "vendita",
+      "start": "2025-09-02T12:00:00.000Z",
+      "end": "2025-09-02T13:30",
+      "durationMinutes": 0,
+      "vss": 700,
+      "vsdPersonal": 0,
+      "nncf": true,
       "notes": ""
     }
   ]

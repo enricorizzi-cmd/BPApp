@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "2e64a0dc2dbd0cdc197a35a4",
-      "name": "Enrico",
+      "name": "Enrico Rizzi",
       "email": "enricorizzi1991@gmail.com",
       "pass": "$2a$10$0GhfFQqL4gk55xp82EkgM.69wyjPtlWI3eoR.dUrCYokhqbm/Xpde",
       "role": "admin",
@@ -10,31 +10,58 @@
       "createdAt": "2025-08-17T21:09:48.565Z"
     },
     {
-      "id": "412bdf11b94f40fd620af5f6",
-      "name": "Tizio",
-      "email": "a@it",
-      "pass": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
+      "id": "xjt4l9c7ca0b7wwx",
+      "name": "Thomas Federici",
+      "email": "federici.tms@gmail.com",
+      "pass": "$2a$10$nUrEOL0V.5pABpkLeVkyIONwdNe6j2bCYQsPkNiP9yGznQQr5L8dq",
       "role": "consultant",
       "grade": "junior",
-      "createdAt": "2025-08-17T23:41:47.335Z"
+      "createdAt": "2025-09-01T08:04:15.113Z"
     },
     {
-      "id": "jj03kzrkjkku368n",
-      "name": "Caio",
-      "email": "a@ab.it",
-      "pass": "$2a$10$Wb4LJy0tE4/gbbR8xB8eWe/URLUI.AUuAUHA5B33MKPZU5useKxa2",
+      "id": "dv8gw84v4ycstdpm",
+      "name": "Giada Trovò",
+      "email": "trovogiada@gmail.com",
+      "pass": "$2a$10$9KnrrLhJFxvxa5ixIT.8fOyFXGz5beFL9dJLBEG5Pkztr5JGVtvCW",
       "role": "consultant",
       "grade": "junior",
-      "createdAt": "2025-08-21T06:18:28.835Z"
+      "createdAt": "2025-09-01T08:04:19.307Z"
     },
     {
-      "id": "6ilv1dlwvf97z9us",
-      "name": "Sempronio",
-      "email": "fuso@fuso.it",
-      "pass": "$2a$10$4suMDbO/ytsrtvnJx.463.FhTl9YRBmMEjGnPzWsclhJ1YUnMjaui",
+      "id": "iz0j4y3fghs12tqe",
+      "name": "Stefano Cecot",
+      "email": "stefanocecot@hotmail.it",
+      "pass": "$2a$10$rhYPstH4/XlyKXG6OW95kehDBTeo3lA99tE7ensH7vnORsLeEtba.",
       "role": "consultant",
-      "grade": "senior",
-      "createdAt": "2025-08-24T21:58:59.409Z"
+      "grade": "junior",
+      "createdAt": "2025-09-01T08:04:21.438Z"
+    },
+    {
+      "id": "37750jma3rsyl4a1",
+      "name": "Silvia Favaro",
+      "email": "s.favaro@osmpartnervenezia.it",
+      "pass": "$2a$10$oX/5aKCGP.aR6qOzMNcr7.tuG7MAgRht9wGLdaciiwJMueScOSJbu",
+      "role": "consultant",
+      "grade": "junior",
+      "createdAt": "2025-09-01T08:04:46.205Z"
+    },
+    {
+      "id": "iezxl5c6qes21d6d",
+      "name": "Giuseppe Cinel",
+      "email": "g.cinel@osmpartnervenezia.it",
+      "pass": "$2a$10$VTUETPm130ZSMkg5MpN2YuTDaoJCB1Q1KS3C7oti1iHvp0C6PFrAu",
+      "role": "consultant",
+      "grade": "junior",
+      "createdAt": "2025-09-01T08:05:18.214Z"
+    },
+    {
+      "id": "9pt2wmk1rb3atzc0",
+      "name": "Stefano Ciotti",
+      "email": "stefanociotti1968@gmail.com",
+      "pass": "$2a$10$w9YHnULXMO2ueMtUvR.Z9e6VTqe2xeEzkZu/jCRu1NPlm2KpjKdRC",
+      "role": "consultant",
+      "grade": "junior",
+      "createdAt": "2025-09-01T08:05:18.568Z"
     }
   ]
 }

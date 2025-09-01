@@ -182,17 +182,33 @@
       ],
       "createdAt": "2025-08-31T22:52:39.561Z"
     },
-     {
+    {
       "id": "z69bmg7knaay12hr",
       "appointmentId": null,
-      "clientId": "",
+      "clientId": "d508b86aabd97d820291a6c5",
       "clientName": "Alca food",
-      "date": "2025-08-30T22:51:00.000Z",
+      "date": "2025-08-31T00:00:00.000Z",
       "consultantId": "2e64a0dc2dbd0cdc197a35a4",
       "consultantName": "Enrico",
       "services": "",
       "vssTotal": 1000,
-      "schedule": [],
+      "schedule": [
+        {
+          "dueDate": "2025-08-31T00:00:00.000Z",
+          "amount": 500,
+          "note": "Acconto"
+        },
+        {
+          "dueDate": "2025-08-31T00:00:00.000Z",
+          "amount": 250,
+          "note": "Rata 1/2"
+        },
+        {
+          "dueDate": "2025-10-01T00:00:00.000Z",
+          "amount": 250,
+          "note": "Rata 2/2"
+        }
+      ],
       "createdAt": "2025-09-01T00:00:03.092Z"
     }
   ]

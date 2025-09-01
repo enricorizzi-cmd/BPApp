@@ -654,6 +654,34 @@
         "MBS": 0,
         "NNCF": 0
       }
+    },
+    {
+      "id": "mewac941kb1n1m4h",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-09-08T00:00:00.000Z",
+      "endDate": "2025-09-14T00:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 200,
+        "VSDPersonale": 4000,
+        "VSDIndiretto": 0,
+        "GI": 0,
+        "Telefonate": 0,
+        "AppFissati": 0,
+        "AppFatti": 0,
+        "CorsiLeadership": 0,
+        "iProfile": 0,
+        "MBS": 0,
+        "NNCF": 0,
+        "ProvvGI": 0,
+        "ProvvVSD": 1000,
+        "TotProvvigioni": 1000
+      },
+      "indicatorsCons": {
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
     }
   ]
 }
