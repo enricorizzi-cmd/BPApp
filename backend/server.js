@@ -36,8 +36,9 @@ try { webpush = require("web-push"); } catch(_){ /* opzionale */ }
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 16);
 
 // ---------- Config ----------
-const HOST = process.argv[2] || "0.0.0.0";
-const PORT = parseInt(process.argv[3] || "3001", 10);
+const HOST = process.env.HOST || "0.0.0.0";
+const PORT = parseInt(process.env.PORT || process.argv[3] || "3001", 10);
+
 const DATA_DIR = path.join(__dirname, "data");
 const JWT_SECRET = process.env.BP_JWT_SECRET || "bp_v13_demo_secret";
 
@@ -1050,11 +1051,17 @@ app.post("/api/client_error", async (req,res)=>{
   }catch(e){ res.status(500).json({ ok:false }); }
 });
 
-// ---------- Static + SPA ----------
-const FRONT_ROOT = path.join(__dirname, "..", "frontend");
+// ---------- Static + SPA (serve dist se esiste) ----------
+const FRONT_ROOT = (() => {
+  const dist = path.join(__dirname, "..", "frontend", "dist");
+  const root = path.join(__dirname, "..", "frontend");
+  return fs.existsSync(path.join(dist, "index.html")) ? dist : root;
+})();
+
 app.use(express.static(FRONT_ROOT));
-app.get("/", (req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
-app.get(/^(?!\/api\/).+/, (req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
+app.get("/", (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
+app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
+
 
 // ---------- Start ----------
 ensureFiles().then(()=>{

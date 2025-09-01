@@ -4,8 +4,9 @@
   "private": true,
   "main": "server.js",
   "scripts": {
-    "start": "node server.js 0.0.0.0 3001"
-  },
+  "start": "node server.js"
+}
+,
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
