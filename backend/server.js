@@ -26,7 +26,11 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
+<<<<<<< ours
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
+=======
+const { saveSubscription, deleteSubscription, getSubscriptions } = require("./lib/subscriptions-db");
+>>>>>>> theirs
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
 dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
@@ -130,10 +134,28 @@ function endOfWeek(d){
 async function ensureFiles(){
   await fs.ensureDir(DATA_DIR);
 
+<<<<<<< ours
   const ensure = async (name, def) => {
     try{ await readJSON(name); }
     catch{ await writeJSON(name, def); }
   };
+=======
+  if(!(await fs.pathExists(file("users.json"))))
+    await writeJSON("users.json", { users: [] });
+
+  if(!(await fs.pathExists(file("appointments.json"))))
+    await writeJSON("appointments.json", { appointments: [] });
+
+  if(!(await fs.pathExists(file("clients.json"))))
+    await writeJSON("clients.json", { clients: [] });
+
+  if(!(await fs.pathExists(file("periods.json"))))
+    await writeJSON("periods.json", { periods: [] });
+
+  // NUOVO: archivio per GI & Scadenzario
+  if(!(await fs.pathExists(file("gi.json"))))
+    await writeJSON("gi.json", { sales: [] });
+>>>>>>> theirs
 
   await ensure("users.json", { users: [] });
   await ensure("appointments.json", { appointments: [] });
@@ -1020,54 +1042,40 @@ app.get("/api/push/publicKey", (req,res)=>{
 });
 
 app.post("/api/push/subscribe", auth, async (req,res)=>{
-  const sub = req.body && req.body.subscription;
-  if(!sub || !sub.endpoint) return res.status(400).json({ error:"bad subscription" });
-
-  const db = await readJSON("push_subscriptions.json");
-  db.subs = db.subs || [];
-
-  // dedup per endpoint
-  const idx = db.subs.findIndex(s => s.endpoint === sub.endpoint);
-  const row = {
-    userId: req.user.id,
-    endpoint: sub.endpoint,
-    keys: sub.keys || {},
-    createdAt: todayISO(),
-    lastSeen: todayISO()
-  };
-  if(idx>=0) db.subs[idx] = { ...db.subs[idx], ...row };
-  else db.subs.push(row);
-
-  await writeJSON("push_subscriptions.json", db);
-  res.json({ ok:true });
+  try{
+    await saveSubscription(req.user.id, req.body && (req.body.subscription || req.body));
+    res.json({ ok:true });
+  }catch(e){
+    res.status(400).json({ error:"invalid_subscription" });
+  }
 });
 
 // compat vecchie route push_subscribe/unsubscribe
 app.post("/api/push_subscribe", auth, async (req,res)=>{
   try{
-    const fsN = require('fs'), pN = require('path');
-    const f = pN.join(__dirname, "data", "push_subscriptions.json");
-    const db = fsN.existsSync(f) ? JSON.parse(fsN.readFileSync(f,'utf8')) : { subscriptions: [] };
-    const entry = { userId: req.user.id, subscription: req.body && req.body.subscription };
-    if(!entry.subscription) return res.status(400).json({ error:"missing subscription" });
-    const ep = entry.subscription && entry.subscription.endpoint;
-    const filtered = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
-    filtered.push(entry);
-    db.subscriptions = filtered;
-    fsN.writeFileSync(f + ".tmp", JSON.stringify(db,null,2)); fsN.renameSync(f+".tmp", f);
+    const sub = req.body && req.body.subscription;
+    if(!sub) return res.status(400).json({ error:"missing subscription" });
+    await saveSubscription(req.user.id, sub);
     res.json({ ok:true });
   }catch(e){ res.status(500).json({ error:"fail" }); }
 });
 app.post("/api/push_unsubscribe", auth, async (req,res)=>{
   try{
-    const fsN = require('fs'), pN = require('path');
-    const f = pN.join(__dirname, "data", "push_subscriptions.json");
-    const db = fsN.existsSync(f) ? JSON.parse(fsN.readFileSync(f,'utf8')) : { subscriptions: [] };
     const ep = req.body && req.body.endpoint;
     if(!ep) return res.status(400).json({ error:"missing endpoint" });
-    db.subscriptions = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
-    fsN.writeFileSync(f + ".tmp", JSON.stringify(db,null,2)); fsN.renameSync(f+".tmp", f);
+    await deleteSubscription(ep);
     res.json({ ok:true });
+  }catch(e){ res.status(500).json({ error:"fail" }); }
+});
+
+// test push notification to current user
+app.post("/api/push/test", auth, async (req,res)=>{
+  try{
+    if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return res.status(500).json({ error:"not_configured" });
+    const subs = await getSubscriptions(req.user.id);
+    const payload = (req.body && req.body.payload) || { title:"BP Test", body:"Notifica di prova", url:"/" };
+    await Promise.all(subs.map(s=> webpush.sendNotification(s, JSON.stringify(payload)).catch(()=>{})));
+    res.json({ ok:true, sent: subs.length });
   }catch(e){ res.status(500).json({ error:"fail" }); }
 });
 
@@ -1126,11 +1134,10 @@ ensureFiles().then(()=>{
 
     async function sendPushToUser(userId, payload){
       if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
-      const db = await readJSON("push_subscriptions.json");
-      const subs = (db.subs||[]).filter(s => s.userId === userId);
+      const subs = await getSubscriptions(userId);
       await Promise.all(subs.map(async s=>{
         try{
-          await webpush.sendNotification({ endpoint:s.endpoint, keys:s.keys }, JSON.stringify(payload));
+          await webpush.sendNotification(s, JSON.stringify(payload));
         }catch(e){ /* ignora endpoint morti */ }
       }));
     }

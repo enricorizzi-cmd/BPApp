@@ -531,6 +531,7 @@ function viewLogin(){
       setToken(r.token, remember); setUser(r.user);
       toast('Bentornato '+r.user.name+'!'); addXP(10);
       viewHome(); renderTopbar();
+      if(window.BPPush) window.BPPush.subscribe();
     }).catch(function(err){
       toast('Credenziali errate'); console.error(err);
     }).finally(function(){ btn.disabled = false; });

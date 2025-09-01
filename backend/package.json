@@ -5,8 +5,12 @@
   "main": "server.js",
   "scripts": {
 <<<<<<< ours
+<<<<<<< ours
     "start": "node server.js",
     "migrate": "node migrate.js"
+=======
+    "start": "node server.js"
+>>>>>>> theirs
 =======
     "start": "node server.js"
 >>>>>>> theirs
@@ -21,7 +25,11 @@
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.1.5",
     "node-cron": "^4.2.1",
+<<<<<<< ours
     "nodemailer": "^6.10.1",
+=======
+    "sqlite3": "^5.1.7",
+>>>>>>> theirs
     "web-push": "^3.6.7"
   }
 }
