@@ -21,6 +21,7 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs-extra");
 const path = require("path");
+const { init: initStore, readJSON, writeJSON } = require("./lib/storage");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
@@ -56,10 +57,8 @@ app.use(timing(500));
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-// ---------- FS helpers ----------
-const file = (name) => path.join(DATA_DIR, name);
-async function readJSON(name){ return fs.readJSON(file(name)); }
-async function writeJSON(name, data){ return fs.writeJSON(file(name), data, { spaces: 2 }); }
+// ---------- Storage ----------
+initStore(DATA_DIR);
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
@@ -112,33 +111,23 @@ function endOfWeek(d){
 async function ensureFiles(){
   await fs.ensureDir(DATA_DIR);
 
-  if(!(await fs.pathExists(file("users.json"))))
-    await writeJSON("users.json", { users: [] });
+  const ensure = async (name, def) => {
+    try{ await readJSON(name); }
+    catch{ await writeJSON(name, def); }
+  };
 
-  if(!(await fs.pathExists(file("appointments.json"))))
-    await writeJSON("appointments.json", { appointments: [] });
-
-  if(!(await fs.pathExists(file("clients.json"))))
-    await writeJSON("clients.json", { clients: [] });
-
-  if(!(await fs.pathExists(file("periods.json"))))
-    await writeJSON("periods.json", { periods: [] });
-
-  if(!(await fs.pathExists(file("push_subscriptions.json"))))
-    await writeJSON("push_subscriptions.json", { subs: [] });
-
-  // NUOVO: archivio per GI & Scadenzario
-  if(!(await fs.pathExists(file("gi.json"))))
-    await writeJSON("gi.json", { sales: [] });
-
-  if(!(await fs.pathExists(file("settings.json")))) {
-    await writeJSON("settings.json", {
-      indicators: ["VSS","VSDPersonale","VSDIndiretto","GI","Telefonate","AppFissati","AppFatti","CorsiLeadership","iProfile","MBS","NNCF"],
-      weights: { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 },
-      commissions: { gi:0.15, vsdJunior:0.20, vsdSenior:0.25 },
-      version: 13
-    });
-  }
+  await ensure("users.json", { users: [] });
+  await ensure("appointments.json", { appointments: [] });
+  await ensure("clients.json", { clients: [] });
+  await ensure("periods.json", { periods: [] });
+  await ensure("push_subscriptions.json", { subs: [] });
+  await ensure("gi.json", { sales: [] });
+  await ensure("settings.json", {
+    indicators: ["VSS","VSDPersonale","VSDIndiretto","GI","Telefonate","AppFissati","AppFatti","CorsiLeadership","iProfile","MBS","NNCF"],
+    weights: { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 },
+    commissions: { gi:0.15, vsdJunior:0.20, vsdSenior:0.25 },
+    version: 13
+  });
 
   // ---- Legacy migration db.json -> split files (only if targets are empty) ----
   const legacyPaths = [

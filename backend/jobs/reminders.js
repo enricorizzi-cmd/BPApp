@@ -1,21 +1,21 @@
-const fs = require('fs');
 const path = require('path');
 const { sendPush, setup, configured } = require('../lib/push');
 const { pickActivePeriodType, findCurrentPeriod, findLastClosedPeriod } = require('../lib/periods');
+const { init, readJSON, writeJSON } = require('../lib/storage');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
-const SUBS_FILE = path.join(DATA_DIR, 'push_subscriptions.json');
-const PERIODS_FILE = path.join(DATA_DIR, 'periods.json');
-const STATE_FILE = path.join(DATA_DIR, 'reminder_state.json');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
+init(DATA_DIR);
 
-function readJSONSafe(p){
-  try{ return JSON.parse(fs.readFileSync(p,'utf8')); }catch(e){ return {}; }
+const SUBS_FILE = 'push_subscriptions.json';
+const PERIODS_FILE = 'periods.json';
+const STATE_FILE = 'reminder_state.json';
+const USERS_FILE = 'users.json';
+
+function readJSONSafe(name){
+  try{ return readJSON(name); }catch(e){ return {}; }
 }
-function writeJSONSafe(p, data){
-  fs.mkdirSync(path.dirname(p), { recursive:true });
-  fs.writeFileSync(p + '.tmp', JSON.stringify(data, null, 2));
-  fs.renameSync(p + '.tmp', p);
+function writeJSONSafe(name, data){
+  writeJSON(name, data);
 }
 
 function romeNow(){
