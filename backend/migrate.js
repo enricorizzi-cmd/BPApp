@@ -3,6 +3,7 @@
 const fs = require("fs-extra");
 const path = require("path");
 const { init, writeJSON } = require("./lib/storage");
+const logger = require("./lib/logger");
 
 const DATA_DIR = path.join(__dirname, "data");
 init(DATA_DIR);
@@ -25,8 +26,8 @@ async function migrate(){
       writeJSON(name, data);
     }
   }
-  console.log("Migration completed");
+  logger.info("Migration completed");
 }
 
-migrate().catch(e=>{ console.error(e); process.exit(1); });
+migrate().catch(e=>{ logger.error(e); process.exit(1); });
 

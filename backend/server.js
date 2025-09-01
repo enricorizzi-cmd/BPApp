@@ -27,6 +27,7 @@ const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
 const { saveSubscription, deleteSubscription, getSubscriptions } = require("./lib/subscriptions-db");
+const logger = require("./lib/logger");
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
@@ -91,10 +92,10 @@ async function sendEmail(to, subject, text){
         text
       });
     }else{
-      console.log(`[email] to:${to} subject:${subject} text:${text}`);
+      logger.info(`[email] to:${to} subject:${subject} text:${text}`);
     }
   }catch(e){
-    console.error("sendEmail error", e);
+    logger.error("sendEmail error", e);
   }
 }
 function computeEndLocal(startLocalStr, type, minutes){
@@ -183,7 +184,7 @@ async function ensureFiles(){
       createdAt: u.createdAt || todayISO()
     }));
     await writeJSON("users.json", usersDb);
-    console.log("[MIGRATE] users imported from db.json");
+    logger.info("[MIGRATE] users imported from db.json");
   }
   if(emptyApps && Array.isArray(legacy.appointments)){
     appsDb.appointments = legacy.appointments.map(a => ({
@@ -202,7 +203,7 @@ async function ensureFiles(){
       notes: a.notes || ""
     }));
     await writeJSON("appointments.json", appsDb);
-    console.log("[MIGRATE] appointments imported from db.json");
+    logger.info("[MIGRATE] appointments imported from db.json");
   }
   if(emptyClients && Array.isArray(legacy.clients)){
     clientsDb.clients = legacy.clients.map(c => ({
@@ -214,7 +215,7 @@ async function ensureFiles(){
       createdAt: c.createdAt || todayISO()
     }));
     await writeJSON("clients.json", clientsDb);
-    console.log("[MIGRATE] clients imported from db.json");
+    logger.info("[MIGRATE] clients imported from db.json");
   }
   if(emptyPeriods && Array.isArray(legacy.periods)){
     periodsDb.periods = legacy.periods.map(p => ({
@@ -227,11 +228,11 @@ async function ensureFiles(){
       indicatorsCons: p.indicatorsCons || {}
     }));
     await writeJSON("periods.json", periodsDb);
-    console.log("[MIGRATE] periods imported from db.json");
+    logger.info("[MIGRATE] periods imported from db.json");
   }
   if(legacy.settings && typeof legacy.settings==="object"){
     await writeJSON("settings.json", { ...settings, ...legacy.settings, version: 13 });
-    console.log("[MIGRATE] settings merged from db.json");
+    logger.info("[MIGRATE] settings merged from db.json");
   }
 }
 
@@ -984,7 +985,7 @@ async function setupStatic(){
 // ---------- Start ----------
 ensureFiles().then(async ()=>{
   await setupStatic();
-  app.listen(PORT, HOST, ()=> console.log(`BP backend listening on http://${HOST}:${PORT}`));
+  app.listen(PORT, HOST, ()=> logger.info(`BP backend listening on http://${HOST}:${PORT}`));
 
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"

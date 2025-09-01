@@ -1,3 +1,5 @@
+const logger = require("../lib/logger");
+
 module.exports = function timing(thresholdMs){
   const th = typeof thresholdMs==='number' ? thresholdMs : 400;
   return async function(req,res,next){
@@ -6,7 +8,7 @@ module.exports = function timing(thresholdMs){
     res.end = function(chunk, encoding){
       const dt = Date.now() - t0;
       if (dt > th){
-        try{ console.log("[slow]", req.method, req.url, dt+"ms"); }catch(e){}
+        try{ logger.warn("[slow]", req.method, req.url, dt+"ms"); }catch(e){}
       }
       end.apply(this, arguments);
     };
