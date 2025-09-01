@@ -4,7 +4,14 @@ import sonarjs from "eslint-plugin-sonarjs";
 
 export default [
   {
-    ignores: ["eslint.config.mjs"],
+    ignores: [
+      "eslint.config.mjs",
+      "lib/**",
+      "push-sw.js",
+      "vite.config.js",
+      "src/postSaleBanners.js",
+      "main.js",
+    ],
   },
   js.configs.recommended,
   {

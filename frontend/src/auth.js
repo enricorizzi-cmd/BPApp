@@ -7,7 +7,7 @@ export function load(k, def) {
   if (s == null) return def;
   try {
     return JSON.parse(s);
-  } catch (e) {
+  } catch {
     return s;
   }
 }

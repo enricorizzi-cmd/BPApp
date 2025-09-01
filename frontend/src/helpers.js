@@ -3,7 +3,7 @@ export function toast(msg){
   t.className = 'toast';
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(function(){ try{ t.remove(); }catch(e){} }, 2200);
+  setTimeout(function(){ try{ t.remove(); }catch{ /* ignore */ } }, 2200);
 }
 
 export function celebrate(){
@@ -31,7 +31,7 @@ export function celebrate(){
       }, delay);
     })(s, i*35);
   }
-  setTimeout(function(){ try{ c.remove(); }catch(e){} }, 2500);
+  setTimeout(function(){ try{ c.remove(); }catch{ /* ignore */ } }, 2500);
 }
 
 export function htmlEscape(s){
