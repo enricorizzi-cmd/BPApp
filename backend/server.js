@@ -21,30 +21,17 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs-extra");
 const path = require("path");
-<<<<<<< ours
 const { init: initStore, readJSON, writeJSON } = require("./lib/storage");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
-<<<<<<< ours
-<<<<<<< ours
-let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
-=======
 const { saveSubscription, deleteSubscription, getSubscriptions } = require("./lib/subscriptions-db");
->>>>>>> theirs
-=======
-const bcrypt = require("bcryptjs");
-const { customAlphabet } = require("nanoid");
-const dotenv = require("dotenv");
-const { signToken, auth, requireAdmin } = require("./services/auth");
->>>>>>> theirs
-=======
-const db = require("./lib/db");
->>>>>>> theirs
+let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
 dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
+const JWT_SECRET = process.env.BP_JWT_SECRET || "bp_v13_demo_secret";
 
 // web-push (opzionale)
 let webpush = null;
@@ -72,29 +59,8 @@ app.use(timing(500));
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
-<<<<<<< ours
 // ---------- Storage ----------
 initStore(DATA_DIR);
-=======
-// ---------- FS helpers ----------
-const file = (name) => path.join(DATA_DIR, name);
-async function readJSON(name){
-  if(name === "users.json") return { users: db.loadUsers() };
-  if(name === "appointments.json") return { appointments: db.loadAppointments() };
-  return fs.readJSON(file(name));
-}
-async function writeJSON(name, data){
-  if(name === "users.json"){
-    db.saveUsers(data.users || []);
-    return fs.writeJSON(file(name), data, { spaces: 2 });
-  }
-  if(name === "appointments.json"){
-    db.saveAppointments(data.appointments || []);
-    return fs.writeJSON(file(name), data, { spaces: 2 });
-  }
-  return fs.writeJSON(file(name), data, { spaces: 2 });
-}
->>>>>>> theirs
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
@@ -164,30 +130,11 @@ function endOfWeek(d){
 // ---------- Ensure Data Files ----------
 async function ensureFiles(){
   await fs.ensureDir(DATA_DIR);
-  db.init();
 
-<<<<<<< ours
   const ensure = async (name, def) => {
     try{ await readJSON(name); }
     catch{ await writeJSON(name, def); }
   };
-=======
-  if(!(await fs.pathExists(file("users.json"))))
-    await writeJSON("users.json", { users: [] });
-
-  if(!(await fs.pathExists(file("appointments.json"))))
-    await writeJSON("appointments.json", { appointments: [] });
-
-  if(!(await fs.pathExists(file("clients.json"))))
-    await writeJSON("clients.json", { clients: [] });
-
-  if(!(await fs.pathExists(file("periods.json"))))
-    await writeJSON("periods.json", { periods: [] });
-
-  // NUOVO: archivio per GI & Scadenzario
-  if(!(await fs.pathExists(file("gi.json"))))
-    await writeJSON("gi.json", { sales: [] });
->>>>>>> theirs
 
   await ensure("users.json", { users: [] });
   await ensure("appointments.json", { appointments: [] });
@@ -288,7 +235,6 @@ async function ensureFiles(){
   }
 }
 
-<<<<<<< ours
 // ---------- Auth ----------
 function signToken(u){
   return jwt.sign({ id:u.id, role:u.role, name:u.name, permissions:u.permissions||[] }, JWT_SECRET, { expiresIn:"30d" });
@@ -309,13 +255,10 @@ function requirePermission(perm){
   };
 }
 const requireAdmin = requirePermission("admin");
-=======
->>>>>>> theirs
 
 // ---------- Health ----------
 app.get("/api/health", (req,res)=> res.json({ ok:true, v:"13.7" }));
 
-<<<<<<< ours
 // ---------- Register / Login ----------
 app.post("/api/register", async (req,res)=>{
   const { name, email, password } = req.body || {};
@@ -365,9 +308,6 @@ app.post("/api/reset-password", async (req,res)=>{
   await sendEmail(u.email, "Reset Password", `Your reset token is ${token}`);
   res.json({ ok:true });
 });
-
-=======
->>>>>>> theirs
 // ---------- Users ----------
 app.get("/api/users", auth, requirePermission("users:read"), async (req,res)=>{
   const db = await readJSON("users.json");
@@ -972,7 +912,6 @@ app.delete("/api/gi", auth, async (req,res)=>{
 // ---------- end GI & Scadenzario ----------
 
 
-<<<<<<< ours
 // ---------- Web Push: publicKey + subscribe (compat + versione nuova) ----------
 app.get("/api/push/publicKey", (req,res)=>{
   res.json({ publicKey: VAPID_PUBLIC_KEY || "" });
@@ -990,59 +929,20 @@ app.post("/api/push/subscribe", auth, async (req,res)=>{
 // compat vecchie route push_subscribe/unsubscribe
 app.post("/api/push_subscribe", auth, async (req,res)=>{
   try{
-<<<<<<< ours
-    const sub = req.body && req.body.subscription;
-    if(!sub) return res.status(400).json({ error:"missing subscription" });
-    await saveSubscription(req.user.id, sub);
-=======
-    const fsN = require('fs').promises, pN = require('path');
-    const f = pN.join(__dirname, "data", "push_subscriptions.json");
-    let db;
-    try {
-      await fsN.access(f);
-      db = JSON.parse(await fsN.readFile(f,'utf8'));
-    } catch(_) {
-      db = { subscriptions: [] };
-    }
-    const entry = { userId: req.user.id, subscription: req.body && req.body.subscription };
-    if(!entry.subscription) return res.status(400).json({ error:"missing subscription" });
-    const ep = entry.subscription && entry.subscription.endpoint;
-    const filtered = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
-    filtered.push(entry);
-    db.subscriptions = filtered;
-    await fsN.writeFile(f + ".tmp", JSON.stringify(db,null,2));
-    await fsN.rename(f+".tmp", f);
->>>>>>> theirs
-    res.json({ ok:true });
-  }catch(e){ res.status(500).json({ error:"fail" }); }
+      const sub = req.body && req.body.subscription;
+      if(!sub) return res.status(400).json({ error:"missing subscription" });
+      await saveSubscription(req.user.id, sub);
+      res.json({ ok:true });
+    }catch(e){ res.status(500).json({ error:"fail" }); }
 });
 app.post("/api/push_unsubscribe", auth, async (req,res)=>{
   try{
-<<<<<<< ours
-    const ep = req.body && req.body.endpoint;
-    if(!ep) return res.status(400).json({ error:"missing endpoint" });
-    await deleteSubscription(ep);
-=======
-    const fsN = require('fs').promises, pN = require('path');
-    const f = pN.join(__dirname, "data", "push_subscriptions.json");
-    let db;
-    try {
-      await fsN.access(f);
-      db = JSON.parse(await fsN.readFile(f,'utf8'));
-    } catch(_) {
-      db = { subscriptions: [] };
-    }
-    const ep = req.body && req.body.endpoint;
-    if(!ep) return res.status(400).json({ error:"missing endpoint" });
-    db.subscriptions = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
-    await fsN.writeFile(f + ".tmp", JSON.stringify(db,null,2));
-    await fsN.rename(f+".tmp", f);
->>>>>>> theirs
-    res.json({ ok:true });
-  }catch(e){ res.status(500).json({ error:"fail" }); }
+      const ep = req.body && req.body.endpoint;
+      if(!ep) return res.status(400).json({ error:"missing endpoint" });
+      await deleteSubscription(ep);
+      res.json({ ok:true });
+    }catch(e){ res.status(500).json({ error:"fail" }); }
 });
-=======
->>>>>>> theirs
 
 // test push notification to current user
 app.post("/api/push/test", auth, async (req,res)=>{
@@ -1065,18 +965,8 @@ app.post("/api/client_error", async (req,res)=>{
     }
     res.json({ ok:true });
   }catch(e){ res.status(500).json({ ok:false }); }
-});
+  });
 
-<<<<<<< ours
-// ---------- Static + SPA ----------
-const FRONT_ROOT = process.env.NODE_ENV === 'production'
-  ? path.join(__dirname, "..", "frontend", "dist")
-  : path.join(__dirname, "..", "frontend");
-
-app.use(express.static(FRONT_ROOT));
-app.get("/", (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
-app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
-=======
 // ---------- Static + SPA (serve dist se esiste) ----------
 async function setupStatic(){
   const dist = path.join(__dirname, "..", "frontend", "dist");
@@ -1084,12 +974,11 @@ async function setupStatic(){
   let frontRoot = root;
   try {
     if(await fs.pathExists(path.join(dist, "index.html"))) frontRoot = dist;
-  } catch(_){}
+  } catch(_){ }
   app.use(express.static(frontRoot));
   app.get("/", (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
   app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
 }
->>>>>>> theirs
 
 
 // ---------- Start ----------

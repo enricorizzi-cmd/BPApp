@@ -4,42 +4,22 @@
   "private": true,
   "main": "server.js",
   "scripts": {
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
     "start": "node server.js",
-    "migrate": "node migrate.js"
-=======
-    "start": "node server.js"
->>>>>>> theirs
-=======
-    "start": "node server.js"
->>>>>>> theirs
-=======
-    "start": "node server.js",
+    "migrate": "node migrate.js",
     "test": "node --test"
->>>>>>> theirs
-=======
-    "start": "node server.js"
->>>>>>> theirs
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^8.6.0",
+    "better-sqlite3": "^9.4.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
     "fs-extra": "^11.3.1",
-    "better-sqlite3": "^9.4.0",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.1.5",
     "node-cron": "^4.2.1",
-<<<<<<< ours
     "nodemailer": "^6.10.1",
-=======
-    "sqlite3": "^5.1.7",
->>>>>>> theirs
     "web-push": "^3.6.7"
   }
 }
+

@@ -1,7 +1,3 @@
-<<<<<<< ours
-=======
-const fs = require('fs').promises;
->>>>>>> theirs
 const path = require('path');
 const { sendPush, setup, configured } = require('../lib/push');
 const { pickActivePeriodType, findCurrentPeriod, findLastClosedPeriod } = require('../lib/periods');
@@ -10,7 +6,6 @@ const { init, readJSON, writeJSON } = require('../lib/storage');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 init(DATA_DIR);
 
-<<<<<<< ours
 const SUBS_FILE = 'push_subscriptions.json';
 const PERIODS_FILE = 'periods.json';
 const STATE_FILE = 'reminder_state.json';
@@ -21,17 +16,6 @@ function readJSONSafe(name){
 }
 function writeJSONSafe(name, data){
   writeJSON(name, data);
-=======
-async function readJSONSafe(p){
-  try{ return JSON.parse(await fs.readFile(p,'utf8')); }catch(e){ return {}; }
-}
-async function writeJSONSafe(p, data){
-  try{
-    await fs.mkdir(path.dirname(p), { recursive:true });
-    await fs.writeFile(p + '.tmp', JSON.stringify(data, null, 2));
-    await fs.rename(p + '.tmp', p);
-  }catch(_){/* ignore */}
->>>>>>> theirs
 }
 
 function romeNow(){
