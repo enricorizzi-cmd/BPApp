@@ -2,13 +2,18 @@
  * Simple in-memory rate limiter per IP+route.
  * Usage: app.post("/api/login", rateLimit({ windowMs:60000, max:5 }), handler)
  */
+function getClientIp(req){
+  return (req.headers['x-forwarded-for'] || req.ip || (req.socket && req.socket.remoteAddress) || '')
+    .split(',')[0].trim() || 'local';
+}
+
 module.exports = function rateLimit(opts){
   const windowMs = (opts && opts.windowMs) || 60000;
   const max = (opts && opts.max) || 10;
   const bucket = new Map(); // key -> { count, reset }
   return function(req,res,next){
     try{
-      const ip = (req.headers['x-forwarded-for']||req.connection.remoteAddress||'').split(',')[0].trim() || 'local';
+      const ip = getClientIp(req);
       const key = ip + '|' + (req.path||'');
       const now = Date.now();
       let b = bucket.get(key);
@@ -22,3 +27,4 @@ module.exports = function rateLimit(opts){
     }catch(e){ return next(); }
   }
 };
+module.exports.getClientIp = getClientIp;
