@@ -7,6 +7,7 @@
 <<<<<<< ours
 <<<<<<< ours
 <<<<<<< ours
+<<<<<<< ours
     "start": "node server.js",
     "migrate": "node migrate.js"
 =======
@@ -18,6 +19,9 @@
 =======
     "start": "node server.js",
     "test": "node --test"
+>>>>>>> theirs
+=======
+    "start": "node server.js"
 >>>>>>> theirs
   },
   "dependencies": {
