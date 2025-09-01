@@ -1,5 +1,8 @@
 /* BPApp – push-client.js
    Gestisce la sottoscrizione Web Push e l'invio al backend */
+import './logger.js';
+
+/* global logger */
 (function(){
   'use strict';
   if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
@@ -33,7 +36,7 @@
         },
         body: JSON.stringify(sub)
       });
-    }catch(e){ console.warn('[BP] push subscribe error', e); }
+    }catch(e){ logger.warn('[BP] push subscribe error', e); }
   }
 
   async function subscribe(){
@@ -51,7 +54,7 @@
         });
       }
       await sendSubscription(sub.toJSON());
-    }catch(e){ console.warn('[BP] push subscribe fail', e); }
+    }catch(e){ logger.warn('[BP] push subscribe fail', e); }
   }
 
   async function init(){

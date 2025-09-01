@@ -4,13 +4,16 @@
    Non genera nulla; logga un warning.
    In futuro, si può eventualmente delegare a BP.ICS.downloadIcsForAppointment.
 */
+import './logger.js';
+
+/* global logger */
 (function () {
   const NS = (window.BP = window.BP || {});
   const ICS = (NS.ICS = NS.ICS || {});
 
   function warn(name) {
     try {
-      console.warn("[BP ICS bulk disabled] chiamata a:", name);
+      logger.warn("[BP ICS bulk disabled] chiamata a:", name);
     } catch (_) {}
   }
 

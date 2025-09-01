@@ -7,6 +7,9 @@
      { id, client, start, end, type, notes, vss, vsdPersonal }
      start/end: "YYYY-MM-DDTHH:MM" (locale)
 */
+import './logger.js';
+
+/* global logger */
 (function () {
   const NS = (window.BP = window.BP || {});
   const ICS = (NS.ICS = NS.ICS || {});
@@ -122,6 +125,6 @@
       a.download = name;
       document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 50);
-    }catch(e){ console.error(e); }
+    }catch(e){ logger.error(e); }
   };
 })();
