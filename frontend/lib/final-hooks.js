@@ -1,5 +1,7 @@
 import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
 
+/* global logger */
+
 // final-hooks.js — Pacchetto finale unico (integra main-plus e bp-hooks)
 // - Mini-chart dashboard/provvigioni/squadra (canvas puro) + patch drawFullLine (Chart.js safe)
 // - Filtro mode (previsionale/consuntivo) ovunque lato client
@@ -204,10 +206,10 @@ if (!window.POST) {
               const id = sale.id || sale._id;
               document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
             }
-          }catch(e){ console.error(e); }
+          }catch(e){ logger.error(e); }
         }
         if (opts && typeof opts.onSaved==='function') opts.onSaved(v);
-      }catch(e){ console.error(e); toast('Errore salvataggio VSS'); }
+      }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
     };
   }
 
@@ -469,10 +471,10 @@ async function openPaymentBuilderById(id){
       try{
         await POST('/api/gi', { id: it.id, vssTotal: vss, schedule: sched });
         toast('Piano pagamenti salvato'); closeCentered();
-      }catch(e){ console.error(e); toast('Errore salvataggio'); }
+      }catch(e){ logger.error(e); toast('Errore salvataggio'); }
     };
     $('pb_x').onclick=closeCentered;
-  }catch(e){ console.error(e); }
+  }catch(e){ logger.error(e); }
 }
 
 // —— Modale centrale per inserire/forzare VSS
@@ -503,7 +505,7 @@ function openVSSModal(appt){
       toast('VSS salvato');
       if (saleId) { openPaymentBuilderById(saleId); }
       document.dispatchEvent(new Event('bp:saved')); // trigger coach/haptics
-    }catch(e){ console.error(e); toast('Errore salvataggio VSS'); }
+    }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
   };
 }
 
@@ -524,7 +526,7 @@ async function pipelineYes(appt){
     }
     // poi chiedi VSS (modale centrale) e, se >0, crea GI e apri builder
     openVSSModal(appt);
-  }catch(e){ console.error(e); }
+  }catch(e){ logger.error(e); }
 }
 
 async function pipelineNo(appt){
@@ -541,7 +543,7 @@ async function pipelineNo(appt){
     // forza VSS = 0 (no GI)
     await POST('/api/appointments', { id: appt.id, vss: 0 });
     toast('Ok, segnato come non venduto');
-  }catch(e){ console.error(e); toast('Errore aggiornamento'); }
+  }catch(e){ logger.error(e); toast('Errore aggiornamento'); }
 }
 
 // Rendi disponibili globalmente (il banner già li usa)
@@ -660,7 +662,7 @@ window.pipelineNo  = pipelineNo;
         close();
         if (typeof window.coachSay==='function') coachSay('medium');
         gotoGIAndOpenBuilder(gid);
-      }catch(e){ console.error(e); toast('Errore salvataggio VSS'); }
+      }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
     };
   }
 
@@ -688,7 +690,7 @@ function esc(s){
     try{
       if (appt.nncf) { await updateClientStatus(appt.client, 'cliente'); }
       openQuickVSSModal(appt);
-    }catch(e){ console.error(e); }
+    }catch(e){ logger.error(e); }
   };
   window.pipelineNo = async function(appt){
     try{
@@ -696,7 +698,7 @@ function esc(s){
       await saveApptVSS(appt.id, 0);
       hapticImpact('light');
       toast('Segnato VSS 0');
-    }catch(e){ console.error(e); }
+    }catch(e){ logger.error(e); }
   };
 })();
 
@@ -806,7 +808,7 @@ function esc(s){
   function attachICSInDays(root){
     // Se esiste già un helper globale, usalo (copre la maggior parte dei casi)
     if (typeof window.attachICSButtons === 'function'){
-      try { window.attachICSButtons(root); } catch(e){ console.error(e); }
+      try { window.attachICSButtons(root); } catch(e){ logger.error(e); }
       return;
     }
     // Fallback minimale: cerca elementi appuntamento con dataset (data-start/data-end/data-title)
@@ -848,7 +850,7 @@ function esc(s){
           document.body.appendChild(dl);
           dl.click();
           setTimeout(function(){ URL.revokeObjectURL(url); try{dl.remove();}catch(_){ } }, 0);
-        }catch(err){ console.error(err); }
+        }catch(err){ logger.error(err); }
       };
       // la mettiamo in coda al contenuto dell’elemento appuntamento
       it.appendChild(a);
@@ -929,7 +931,7 @@ function esc(s){
         if (!last[key] || t>last[key]) last[key]=t;
       }
       return last;
-    }catch(err){ console.error(err); return {}; }
+    }catch(err){ logger.error(err); return {}; }
   }
 
   // Applica la data “ultimo appuntamento” alle card in #cl_list
@@ -1039,7 +1041,7 @@ function esc(s){
           }
           hapticImpact('medium');
         }catch(err){
-          console.error(err);
+          logger.error(err);
           hapticImpact('heavy');
         }
       };
@@ -1091,7 +1093,7 @@ function __readMode(scope){
   window.__BP_FINAL_READY__ = true;
 
   // ----------------- Utils -----------------
-  const log = (...a)=>console.log('[BP/final]', ...a);
+  const log = (...a)=>logger.info('[BP/final]', ...a);
   const $1 = (s,r)=> (r||document).querySelector(s);
   const $all = (s,r)=> Array.from((r||document).querySelectorAll(s));
   const on = (el,ev,cb)=> el && el.addEventListener(ev,cb,false);
@@ -1389,7 +1391,7 @@ function recomputeTeamAggChart(){
 
     drawLineGeneric('t_chart', labels, data);
   }).catch(function(err){
-    console.error(err);
+    logger.error(err);
   });
 }
 // ---------- /Team: grafico aggregato (admin) ----------
@@ -1440,7 +1442,7 @@ function wireMiniChartTriggers(){
         opt.textContent = (u.name || ('User '+u.id)) + (u.grade?(' – '+u.grade):'');
         sel.appendChild(opt);
       });
-    }).catch(console.error);
+    }).catch(err => logger.error(err));
   }
 
   // Squadra: trigger su modalità e range unificato "t" → ricarica entrambi i grafici se presenti
@@ -1820,7 +1822,7 @@ BPFinal.enableClientsInlineAdmin = function enableClientsInlineAdmin(){
             card.setAttribute('data-status', payload.status);
             actions.remove();
           }).catch(function(err){
-            console.error(err); toast('Errore aggiornamento cliente');
+            logger.error(err); toast('Errore aggiornamento cliente');
           });
         });
       });
@@ -2149,7 +2151,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
         }
       };
       hapticImpact('light');
-    }catch(e){ console.error(e); }
+    }catch(e){ logger.error(e); }
   };
 
   window.pushUndo = window.pushUndo || function(action){
@@ -2184,7 +2186,7 @@ document.addEventListener('bp:saved',         function(){ if(window.coachSay) co
                 await POST('/api/restore', { id:id });
               }
               location.reload();
-            }catch(err){ console.error(err); }
+            }catch(err){ logger.error(err); }
           });
         }
       }, true);

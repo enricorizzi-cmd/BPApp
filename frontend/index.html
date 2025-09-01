@@ -222,6 +222,10 @@
 <script src="./lib/auth-fetch-shim.js?v=1"></script>
 <script src="./lib/bp-hooks-core.js?v=1"></script>
 
+<!-- Logging library -->
+<script src="https://cdn.jsdelivr.net/npm/pino@8.17.0/pino.min.js"></script>
+<script src="./lib/logger.js?v=1"></script>
+
 <script>window.BP_USE_SERIES_API = true;</script>
 
 <!-- App core (render UI) -->
@@ -253,8 +257,8 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function(){
           navigator.serviceWorker.register('/push-sw.js')
-            .then(function(reg){ console.log('[BP] SW registrato', reg.scope); })
-            .catch(function(err){ console.warn('[BP] SW errore', err); });
+            .then(function(reg){ logger.info('[BP] SW registrato', reg.scope); })
+            .catch(function(err){ logger.warn('[BP] SW errore', err); });
         });
       }
     })();

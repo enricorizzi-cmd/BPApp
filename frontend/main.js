@@ -9,6 +9,7 @@
    - Utenti (Admin): aggiunto selettore Grade
    Compatibilità: conserva namespace, funzioni e v=13. 
 */
+/* global logger */
 ;(function () {
   'use strict';
 
@@ -533,7 +534,7 @@ function viewLogin(){
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();
     }).catch(function(err){
-      toast('Credenziali errate'); console.error(err);
+      toast('Credenziali errate'); logger.error(err);
     }).finally(function(){ btn.disabled = false; });
   });
 
@@ -546,7 +547,7 @@ function viewLogin(){
     POST('/api/register',{name:name,email:email,password:password}).then(function(){
       toast('Registrazione ok. Ora accedi'); celebrate(); addXP(20); window.scrollTo({top:0,behavior:'smooth'});
     }).catch(function(err){
-      toast('Email già registrata?'); console.error(err);
+      toast('Email già registrata?'); logger.error(err);
     }).finally(function(){ btn.disabled = false; });
   });
 }
@@ -610,7 +611,7 @@ function unifiedFiltersHTML(prefix){
     if(typeof cb==='function') listeners.push(cb);
   };
   window.emitUnifiedRangeChange=function(scope){
-    for(const cb of listeners){ try{ cb(scope); }catch(e){ console.error(e);} }
+    for(const cb of listeners){ try{ cb(scope); }catch(e){ logger.error(e);} }
   };
 })();
 
@@ -1141,7 +1142,7 @@ function recomputeKPI(){
       render(arr[4], 'd_mini_nncf');
       render(arr[5], 'd_mini_provv');
     }).catch(function(err){
-      console.error(err);
+      logger.error(err);
     });
   }
 
@@ -1339,7 +1340,7 @@ function cardAppt(x){
       });
     })();
 
-  }).catch(function(err){ console.error(err); });
+  }).catch(function(err){ logger.error(err); });
 }
 
   // ===== bind identici a Squadra
@@ -1695,7 +1696,7 @@ function viewCalendar(){
         if (window.hookCalendar) window.hookCalendar();
         else { if (window.markToday) window.markToday(); if (window.clampSlotCounters) window.clampSlotCounters(); }
       }catch(_){}
-    }).catch(function(err){ console.error(err); toast('Errore calendario'); });
+    }).catch(function(err){ logger.error(err); toast('Errore calendario'); });
   }
 
   function doRender(){
@@ -1940,7 +1941,7 @@ function viewPeriods(){
       function(){return tryJSON('DELETE','/api/periods?id='+urlId,null);}
     ];
     var p=Promise.reject(new Error('start')); for(var i=0;i<attempts.length;i++){ (function(fn){ p=p.catch(fn); })(attempts[i]); }
-    return p.catch(function(err){ console.warn('Delete fallback: tutte le route fallite',err); throw err; });
+    return p.catch(function(err){ logger.warn('Delete fallback: tutte le route fallite',err); throw err; });
   }
 
   function buildUpdatePayloadFromCurrent(newCons){
@@ -2843,7 +2844,7 @@ function viewClients(){
       document.getElementById('cl_name').value='';
       listClients();
       celebrate(); addXP(5);
-    }).catch(function(err){ console.error(err); toast('Errore creazione cliente'); });
+    }).catch(function(err){ logger.error(err); toast('Errore creazione cliente'); });
   }
 
   function fillConsultants(){
@@ -2862,7 +2863,7 @@ function viewClients(){
           return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
         }).join('');
       }
-    }).catch(function(err){ console.error(err); });
+    }).catch(function(err){ logger.error(err); });
   }
 
   function listClients(){
@@ -2905,7 +2906,7 @@ function viewClients(){
           fetch('/api/clients?id='+encodeURIComponent(id), { method:'DELETE', headers:{ 'Authorization': 'Bearer '+getToken() } })
             .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
             .then(function(){ toast('Cliente rimosso'); listClients(); })
-            .catch(function(err){ console.error(err); toast('Errore rimozione'); });
+            .catch(function(err){ logger.error(err); toast('Errore rimozione'); });
         });
       });
 
@@ -3209,7 +3210,7 @@ function viewTeam(){
       // grafico
       loadChart();
     }).catch(function(err){
-      console.error(err);
+      logger.error(err);
       toast('Errore caricamento squadra');
     });
   }
@@ -3314,7 +3315,7 @@ function viewTeam(){
     p.then(function(points){
       drawChart(points, type);
     }).catch(function(e){
-      console.error(e);
+      logger.error(e);
       // fallback a serie vuota
       drawChart([], type);
     });
@@ -3546,7 +3547,7 @@ function renderProvvPie(provvGI, provvVSD, giBase){
 
 renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
     }).catch(function(err){
-      console.error(err); toast('Errore nel caricamento dati');
+      logger.error(err); toast('Errore nel caricamento dati');
     });
   }
 
@@ -3682,7 +3683,7 @@ appEl.innerHTML = topbarHTML() + `
       $('gi_rows').innerHTML = rows.length ? rows.map(rowHTML).join('') :
         '<tr><td colspan="7" class="muted">Nessuna vendita</td></tr>';
       bindRowActions();
-    }).catch(e=>{ console.error(e); toast('Errore caricamento GI'); });
+    }).catch(e=>{ logger.error(e); toast('Errore caricamento GI'); });
   }
 
   // ========= MODALE (nuovo / modifica) =========
@@ -3959,7 +3960,7 @@ appEl.innerHTML = topbarHTML() + `
       };
       Promise.resolve(POST('/api/gi', payload)).then(()=>{
         close(); haptic('light'); load();
-      }).catch(e=>{ console.error(e); toast('Errore salvataggio'); });
+      }).catch(e=>{ logger.error(e); toast('Errore salvataggio'); });
     };
 
     if (it.id){
@@ -3970,7 +3971,7 @@ appEl.innerHTML = topbarHTML() + `
           try{
             await POST('/api/gi/delete', { id: it.id }).catch(()=> POST('/api/gi', { id: it.id, _delete:1 }));
             close(); toast('Vendita eliminata'); load();
-          }catch(e){ console.error(e); toast('Errore eliminazione'); }
+          }catch(e){ logger.error(e); toast('Errore eliminazione'); }
         };
       }
     }
@@ -4348,7 +4349,7 @@ function viewUsers(){
       POST('/api/users', payload).then(function(){
         toast('Profilo aggiornato'); addXP(3);
         var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
-      }).catch(function(err){ console.error(err); toast('Errore aggiornamento'); });
+      }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
     };
     return;
   }
@@ -4411,7 +4412,7 @@ function viewUsers(){
           POST('/api/users', payload).then(function(){
             toast('Aggiornato'); addXP(5);
             if(pwdEl) pwdEl.value='';
-          }).catch(function(err){ console.error(err); toast('Errore aggiornamento'); });
+          }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
         });
       });
     });
