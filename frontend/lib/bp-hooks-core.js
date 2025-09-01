@@ -1,3 +1,5 @@
+import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
+
 // bp-hooks-core.js — core helpers unificati (users preload, period types, buckets, labels)
 (function(){
   // ----------------------------- Auth token & preload users
@@ -38,29 +40,7 @@
     }catch(_){ setTimeout(preloadUsers, 1200); }
   })();
 
-  // ----------------------------- Period type helpers
-  if (typeof window.effectivePeriodType !== 'function'){
-    window.effectivePeriodType = function(gran){
-      var g = String(gran||'mensile').toLowerCase();
-      if (g==='ytd' || g==='ltm') return 'mensile';
-      if (g.startsWith('sett')) return 'settimanale';
-      if (g.startsWith('mes'))  return 'mensile';
-      if (g.startsWith('tri'))  return 'trimestrale';
-      if (g.startsWith('sem'))  return 'semestrale';
-      if (g.startsWith('ann'))  return 'annuale';
-      return 'mensile';
-    };
-  }
-  if (typeof window.isoWeekNum !== 'function'){
-    window.isoWeekNum = function(d){
-      const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-      const dayNum = (date.getUTCDay() + 6) % 7;
-      date.setUTCDate(date.getUTCDate() - dayNum + 3);
-      const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
-      const diff = date - firstThursday;
-      return 1 + Math.round(diff / (7*24*3600*1000));
-    };
-  }
+  // ----------------------------- Period type helpers (provided by globals-polyfills.js)
 
   // ----------------------------- Buckets (rolling windows, coerenti con Dashboard & Squadra)
   function toUTC(y,m,d){ return new Date(Date.UTC(y,m,d)); }
@@ -70,7 +50,7 @@
   if (typeof window.buildBuckets !== 'function'){
     window.buildBuckets = function(type, ref){
       var raw = String(type||'mensile').toLowerCase();
-      var t   = window.effectivePeriodType(raw);
+      var t   = effectivePeriodType(raw);
       var now = ref ? new Date(ref) : new Date();
       var y   = now.getUTCFullYear();
       var buckets = [];
@@ -129,11 +109,11 @@
   }
 
   if (typeof window.labelsForBuckets !== 'function'){
-    window.labelsForBuckets = function(type, buckets){
-      var t = window.effectivePeriodType(type||'mensile');
+      window.labelsForBuckets = function(type, buckets){
+        var t = effectivePeriodType(type||'mensile');
       return (buckets||[]).map(function(B){
         var d = new Date(B.s);
-        if (t==='settimanale')  return 'W'+window.isoWeekNum(d);
+        if (t==='settimanale')  return 'W'+isoWeekNum(d);
         if (t==='mensile')      return String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
         if (t==='trimestrale')  return 'Q'+(Math.floor(d.getUTCMonth()/3)+1)+' '+d.getUTCFullYear();
         if (t==='semestrale')   return (d.getUTCMonth()<6?'S1 ':'S2 ')+d.getUTCFullYear();

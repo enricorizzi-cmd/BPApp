@@ -1,3 +1,4 @@
+import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
 
 // final-hooks.js — Pacchetto finale unico (integra main-plus)
 // - Mini-chart dashboard/provvigioni/squadra (canvas puro) + patch drawFullLine (Chart.js safe)
@@ -713,7 +714,7 @@ function esc(s){
     const dt = new Date();
     const m = String(dt.getMonth()+1).padStart(2,'0');
     const y = dt.getFullYear();
-    if (t==='settimanale') return 'Settimana ISO '+(window.isoWeekNum? window.isoWeekNum(dt) : 'corrente')+' '+y;
+      if (t==='settimanale') return 'Settimana ISO '+(isoWeekNum ? isoWeekNum(dt) : 'corrente')+' '+y;
     if (t==='trimestrale') return 'Q'+(Math.floor(dt.getMonth()/3)+1)+' '+y;
     if (t==='semestrale')  return 'Semestre '+(dt.getMonth()<6?'1°':'2°')+' '+y;
     if (t==='annuale')     return 'Anno '+y;
@@ -1197,13 +1198,6 @@ function __readMode(scope){
   })();
 
   // -------- Buckets helpers (usa bp-hooks-core.js globali) --------
-  const effectiveType = window.effectivePeriodType || (g=>String(g||'mensile').toLowerCase());
-  const isoWeekNum = window.isoWeekNum || (d=>{
-    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    const dayNum = date.getUTCDay()||7; date.setUTCDate(date.getUTCDate()+4-dayNum);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
-    return Math.ceil((((date-yearStart)/86400000)+1)/7);
-  });
   function labelsFor(type, buckets){
     return (buckets||[]).map(B=>{
       const d=new Date(B.s);
@@ -1231,9 +1225,6 @@ function drawLineGeneric(canvasId, labels, data){
   _drawLineCanvas(canvasId, labels, data);
 }
 
-function __effectiveType(t){
-  return (t==='ytd' || t==='ltm') ? 'mensile' : t;  // YTD/LTM lavorano su base mensile
-}
 
 async function recomputeDashboardMini(){
   // NB: scope 'dash' (non 'd')
@@ -1249,7 +1240,7 @@ async function recomputeDashboardMini(){
     const data = buckets.map(B=>{
       let s = 0;
       periods.forEach(p=>{
-        if (p.type !== __effectiveType(type)) return;
+        if (p.type !== effectivePeriodType(type)) return;
         const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
         if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, k);
       });
@@ -1274,7 +1265,7 @@ async function recomputeCommsMini(){
   const data = buckets.map(B=>{
     let s = 0;
     periods.forEach(p=>{
-      if (p.type !== __effectiveType(type)) return;
+      if (p.type !== effectivePeriodType(type)) return;
       const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
       if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, 'VSDPersonale');
     });
@@ -1376,7 +1367,7 @@ function recomputeTeamAggChart(){
 
     // Riempie i bucket con i periodi pertinenti
     periods.forEach(function(p){
-      if (p.type !== __effectiveType(type)) return;
+      if (p.type !== effectivePeriodType(type)) return;
       var ps = new Date(p.startDate).getTime();
       var pe = new Date(p.endDate).getTime();
       for (var i=0;i<B.length;i++){
@@ -1426,7 +1417,7 @@ function recomputeTeamAggChart(){
   const data = buckets.map(B=>{
     let s = 0;
     periods.forEach(p=>{
-      if (p.type !== __effectiveType(type)) return;
+      if (p.type !== effectivePeriodType(type)) return;
       if (userId && String(p.userId)!==String(userId)) return;
       const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
       if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, ind);
