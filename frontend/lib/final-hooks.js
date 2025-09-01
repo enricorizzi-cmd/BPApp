@@ -1,6 +1,6 @@
 import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
 
-// final-hooks.js — Pacchetto finale unico (integra main-plus)
+// final-hooks.js — Pacchetto finale unico (integra main-plus e bp-hooks)
 // - Mini-chart dashboard/provvigioni/squadra (canvas puro) + patch drawFullLine (Chart.js safe)
 // - Filtro mode (previsionale/consuntivo) ovunque lato client
 // - Calendario: evidenzia oggi + clamp slot liberi a ≥ oggi

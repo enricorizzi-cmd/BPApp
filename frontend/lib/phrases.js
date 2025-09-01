@@ -1,4 +1,4 @@
-// Libreria frasi motivazionali – 3 bucket + alias per main-plus
+// Libreria frasi motivazionali – 3 bucket + alias per final-hooks
 // ATTENZIONE: file JS puro (niente <script>, niente <!-- -->)
 
 window.BP_PHRASES = (function(){
@@ -44,7 +44,7 @@ window.BP_PHRASES = (function(){
   // Costruiamo l’oggetto libreria
   const lib = { lite, mid, mega };
 
-  // Alias per il wiring già usato in main-plus.js:
+  // Alias per il wiring già usato in final-hooks.js:
   // standard -> lite, rilevante -> mid, grande -> mega
   lib.standard  = lite;
   lib.rilevante = mid;
