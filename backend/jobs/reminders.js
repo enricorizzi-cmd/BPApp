@@ -1,3 +1,7 @@
+<<<<<<< ours
+=======
+const fs = require('fs').promises;
+>>>>>>> theirs
 const path = require('path');
 const { sendPush, setup, configured } = require('../lib/push');
 const { pickActivePeriodType, findCurrentPeriod, findLastClosedPeriod } = require('../lib/periods');
@@ -6,6 +10,7 @@ const { init, readJSON, writeJSON } = require('../lib/storage');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 init(DATA_DIR);
 
+<<<<<<< ours
 const SUBS_FILE = 'push_subscriptions.json';
 const PERIODS_FILE = 'periods.json';
 const STATE_FILE = 'reminder_state.json';
@@ -16,6 +21,17 @@ function readJSONSafe(name){
 }
 function writeJSONSafe(name, data){
   writeJSON(name, data);
+=======
+async function readJSONSafe(p){
+  try{ return JSON.parse(await fs.readFile(p,'utf8')); }catch(e){ return {}; }
+}
+async function writeJSONSafe(p, data){
+  try{
+    await fs.mkdir(path.dirname(p), { recursive:true });
+    await fs.writeFile(p + '.tmp', JSON.stringify(data, null, 2));
+    await fs.rename(p + '.tmp', p);
+  }catch(_){/* ignore */}
+>>>>>>> theirs
 }
 
 function romeNow(){
@@ -44,10 +60,10 @@ function computeNextRun(){
   return next;
 }
 
-function userNeedsReminders(userId){
-  const periodsDb = readJSONSafe(PERIODS_FILE);
-  const subsDb = readJSONSafe(SUBS_FILE);
-  const stateDb = readJSONSafe(STATE_FILE);
+async function userNeedsReminders(userId){
+  const periodsDb = await readJSONSafe(PERIODS_FILE);
+  const subsDb = await readJSONSafe(SUBS_FILE);
+  const stateDb = await readJSONSafe(STATE_FILE);
   const today = ymd(romeNow());
   const nowTs = Date.now();
 
@@ -80,9 +96,9 @@ function userNeedsReminders(userId){
 
 async function runOnce(){
   if(!configured()){ setup(); }
-  const subsDb = readJSONSafe(SUBS_FILE);
-  const usersDb = readJSONSafe(USERS_FILE);
-  const stateDb = readJSONSafe(STATE_FILE);
+  const subsDb = await readJSONSafe(SUBS_FILE);
+  const usersDb = await readJSONSafe(USERS_FILE);
+  const stateDb = await readJSONSafe(STATE_FILE);
   const today = ymd(romeNow());
 
   const byUser = {};
@@ -96,7 +112,7 @@ async function runOnce(){
     const userId = u.id;
     if(!byUser[userId] || !byUser[userId].length) continue;
 
-    const { needPrev, needCons, type } = userNeedsReminders(userId);
+    const { needPrev, needCons, type } = await userNeedsReminders(userId);
     const sends = [];
     if(needPrev) sends.push({ kind:'prev', title:'Promemoria BP', body:`Compila il Previsionale (${type})`, tag:'bp-prev' });
     if(needCons) sends.push({ kind:'cons', title:'Promemoria BP', body:`Chiudi il Consuntivo (${type})`, tag:'bp-cons' });
@@ -109,7 +125,7 @@ async function runOnce(){
     }
   }
 
-  writeJSONSafe(STATE_FILE, stateDb);
+  await writeJSONSafe(STATE_FILE, stateDb);
 }
 
 let _timer = null;

@@ -1053,17 +1053,54 @@ app.post("/api/push/subscribe", auth, async (req,res)=>{
 // compat vecchie route push_subscribe/unsubscribe
 app.post("/api/push_subscribe", auth, async (req,res)=>{
   try{
+<<<<<<< ours
     const sub = req.body && req.body.subscription;
     if(!sub) return res.status(400).json({ error:"missing subscription" });
     await saveSubscription(req.user.id, sub);
+=======
+    const fsN = require('fs').promises, pN = require('path');
+    const f = pN.join(__dirname, "data", "push_subscriptions.json");
+    let db;
+    try {
+      await fsN.access(f);
+      db = JSON.parse(await fsN.readFile(f,'utf8'));
+    } catch(_) {
+      db = { subscriptions: [] };
+    }
+    const entry = { userId: req.user.id, subscription: req.body && req.body.subscription };
+    if(!entry.subscription) return res.status(400).json({ error:"missing subscription" });
+    const ep = entry.subscription && entry.subscription.endpoint;
+    const filtered = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
+    filtered.push(entry);
+    db.subscriptions = filtered;
+    await fsN.writeFile(f + ".tmp", JSON.stringify(db,null,2));
+    await fsN.rename(f+".tmp", f);
+>>>>>>> theirs
     res.json({ ok:true });
   }catch(e){ res.status(500).json({ error:"fail" }); }
 });
 app.post("/api/push_unsubscribe", auth, async (req,res)=>{
   try{
+<<<<<<< ours
     const ep = req.body && req.body.endpoint;
     if(!ep) return res.status(400).json({ error:"missing endpoint" });
     await deleteSubscription(ep);
+=======
+    const fsN = require('fs').promises, pN = require('path');
+    const f = pN.join(__dirname, "data", "push_subscriptions.json");
+    let db;
+    try {
+      await fsN.access(f);
+      db = JSON.parse(await fsN.readFile(f,'utf8'));
+    } catch(_) {
+      db = { subscriptions: [] };
+    }
+    const ep = req.body && req.body.endpoint;
+    if(!ep) return res.status(400).json({ error:"missing endpoint" });
+    db.subscriptions = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
+    await fsN.writeFile(f + ".tmp", JSON.stringify(db,null,2));
+    await fsN.rename(f+".tmp", f);
+>>>>>>> theirs
     res.json({ ok:true });
   }catch(e){ res.status(500).json({ error:"fail" }); }
 });
@@ -1091,6 +1128,7 @@ app.post("/api/client_error", async (req,res)=>{
   }catch(e){ res.status(500).json({ ok:false }); }
 });
 
+<<<<<<< ours
 // ---------- Static + SPA ----------
 const FRONT_ROOT = process.env.NODE_ENV === 'production'
   ? path.join(__dirname, "..", "frontend", "dist")
@@ -1099,10 +1137,25 @@ const FRONT_ROOT = process.env.NODE_ENV === 'production'
 app.use(express.static(FRONT_ROOT));
 app.get("/", (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
 app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(FRONT_ROOT, "index.html")));
+=======
+// ---------- Static + SPA (serve dist se esiste) ----------
+async function setupStatic(){
+  const dist = path.join(__dirname, "..", "frontend", "dist");
+  const root = path.join(__dirname, "..", "frontend");
+  let frontRoot = root;
+  try {
+    if(await fs.pathExists(path.join(dist, "index.html"))) frontRoot = dist;
+  } catch(_){}
+  app.use(express.static(frontRoot));
+  app.get("/", (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
+  app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
+}
+>>>>>>> theirs
 
 
 // ---------- Start ----------
-ensureFiles().then(()=>{
+ensureFiles().then(async ()=>{
+  await setupStatic();
   app.listen(PORT, HOST, ()=> console.log(`BP backend listening on http://${HOST}:${PORT}`));
 
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
