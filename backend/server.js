@@ -28,6 +28,7 @@ const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
 <<<<<<< ours
+<<<<<<< ours
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 =======
 const { saveSubscription, deleteSubscription, getSubscriptions } = require("./lib/subscriptions-db");
@@ -37,6 +38,9 @@ const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
 const { signToken, auth, requireAdmin } = require("./services/auth");
+>>>>>>> theirs
+=======
+const db = require("./lib/db");
 >>>>>>> theirs
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
@@ -68,8 +72,29 @@ app.use(timing(500));
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
+<<<<<<< ours
 // ---------- Storage ----------
 initStore(DATA_DIR);
+=======
+// ---------- FS helpers ----------
+const file = (name) => path.join(DATA_DIR, name);
+async function readJSON(name){
+  if(name === "users.json") return { users: db.loadUsers() };
+  if(name === "appointments.json") return { appointments: db.loadAppointments() };
+  return fs.readJSON(file(name));
+}
+async function writeJSON(name, data){
+  if(name === "users.json"){
+    db.saveUsers(data.users || []);
+    return fs.writeJSON(file(name), data, { spaces: 2 });
+  }
+  if(name === "appointments.json"){
+    db.saveAppointments(data.appointments || []);
+    return fs.writeJSON(file(name), data, { spaces: 2 });
+  }
+  return fs.writeJSON(file(name), data, { spaces: 2 });
+}
+>>>>>>> theirs
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
@@ -139,6 +164,7 @@ function endOfWeek(d){
 // ---------- Ensure Data Files ----------
 async function ensureFiles(){
   await fs.ensureDir(DATA_DIR);
+  db.init();
 
 <<<<<<< ours
   const ensure = async (name, def) => {
