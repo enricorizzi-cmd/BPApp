@@ -6,6 +6,7 @@
   "scripts": {
 <<<<<<< ours
 <<<<<<< ours
+<<<<<<< ours
     "start": "node server.js",
     "migrate": "node migrate.js"
 =======
@@ -13,6 +14,10 @@
 >>>>>>> theirs
 =======
     "start": "node server.js"
+>>>>>>> theirs
+=======
+    "start": "node server.js",
+    "test": "node --test"
 >>>>>>> theirs
   },
   "dependencies": {
