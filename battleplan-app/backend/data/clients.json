@@ -1,0 +1,82 @@
+{
+  "clients": [
+    {
+      "id": "d508b86aabd97d820291a6c5",
+      "name": "Alca food",
+      "createdAt": "2025-08-17T22:58:43.386Z",
+      "status": "attivo",
+      "lastAppointmentAt": "2025-08-21T11:00:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "unknown"
+    },
+    {
+      "id": "rt9nld4idz01tqck",
+      "name": "Monetti Group",
+      "createdAt": "2025-08-19T22:25:38.451Z",
+      "status": "attivo",
+      "lastAppointmentAt": "2025-08-23T13:03:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "unknown"
+    },
+    {
+      "id": "hkz65nlhrscp2xfd",
+      "name": "Centro Filtri Veneto",
+      "createdAt": "2025-08-19T23:00:40.942Z",
+      "status": "attivo",
+      "lastAppointmentAt": "2025-08-12T12:00:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "unknown"
+    },
+    {
+      "id": "bvxyu4mgoe6ira19",
+      "name": "Fin Technologies",
+      "status": "lead non chiuso",
+      "createdAt": "2025-08-21T20:43:16.008Z",
+      "lastAppointmentAt": "2025-08-21T15:43:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "unknown"
+    },
+    {
+      "id": "ewztnoznzj2pmwnf",
+      "name": "Hotel Mercurio",
+      "status": "attivo",
+      "createdAt": "2025-08-22T12:12:14.454Z",
+      "lastAppointmentAt": "2025-08-22T07:12:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico"
+    },
+    {
+      "id": "zhmtyoxwdig8ng1x",
+      "name": "Vi&Effe",
+      "status": "lead non chiuso",
+      "lastAppointmentAt": "2025-08-21T12:29:00.000Z",
+      "createdAt": "2025-08-22T12:29:41.263Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico"
+    },
+    {
+      "id": "nag399bcuyepzqhb",
+      "name": "ferioli anna",
+      "status": "lead non chiuso",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "createdAt": "2025-08-31T21:10:25.814Z"
+    },
+    {
+      "id": "s4w7l1qxsp8zou8p",
+      "name": "MBS",
+      "status": "attivo",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "createdAt": "2025-08-31T21:30:39.030Z"
+    },
+    {
+      "id": "ij3im7v9tjqzjfhl",
+      "name": "ACADEMY",
+      "status": "attivo",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "createdAt": "2025-09-01T05:21:02.269Z"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "users": [
+    {
+      "id": "2e64a0dc2dbd0cdc197a35a4",
+      "name": "Enrico",
+      "email": "enricorizzi1991@gmail.com",
+      "pass": "$2a$10$0GhfFQqL4gk55xp82EkgM.69wyjPtlWI3eoR.dUrCYokhqbm/Xpde",
+      "role": "admin",
+      "grade": "senior",
+      "createdAt": "2025-08-17T21:09:48.565Z"
+    },
+    {
+      "id": "412bdf11b94f40fd620af5f6",
+      "name": "Tizio",
+      "email": "a@it",
+      "pass": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
+      "role": "consultant",
+      "grade": "junior",
+      "createdAt": "2025-08-17T23:41:47.335Z"
+    },
+    {
+      "id": "jj03kzrkjkku368n",
+      "name": "Caio",
+      "email": "a@ab.it",
+      "pass": "$2a$10$Wb4LJy0tE4/gbbR8xB8eWe/URLUI.AUuAUHA5B33MKPZU5useKxa2",
+      "role": "consultant",
+      "grade": "junior",
+      "createdAt": "2025-08-21T06:18:28.835Z"
+    },
+    {
+      "id": "6ilv1dlwvf97z9us",
+      "name": "Sempronio",
+      "email": "fuso@fuso.it",
+      "pass": "$2a$10$4suMDbO/ytsrtvnJx.463.FhTl9YRBmMEjGnPzWsclhJ1YUnMjaui",
+      "role": "consultant",
+      "grade": "senior",
+      "createdAt": "2025-08-24T21:58:59.409Z"
+    }
+  ]
+}

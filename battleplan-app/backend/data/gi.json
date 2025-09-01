@@ -1,0 +1,199 @@
+{
+  "sales": [
+    {
+      "id": "tgjt755dtj2quett",
+      "appointmentId": null,
+      "clientId": "",
+      "clientName": "alca",
+      "date": "2025-08-31T00:00:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "services": "",
+      "vssTotal": 1000,
+      "schedule": [
+        {
+          "dueDate": "2025-08-31T00:00:00.000Z",
+          "amount": 200,
+          "note": "Acconto 20%"
+        },
+        {
+          "dueDate": "2025-10-01T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 1/12"
+        },
+        {
+          "dueDate": "2025-10-31T01:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 2/12"
+        },
+        {
+          "dueDate": "2025-12-01T01:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 3/12"
+        },
+        {
+          "dueDate": "2025-12-31T01:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 4/12"
+        },
+        {
+          "dueDate": "2026-01-31T01:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 5/12"
+        },
+        {
+          "dueDate": "2026-03-03T01:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 6/12"
+        },
+        {
+          "dueDate": "2026-03-31T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 7/12"
+        },
+        {
+          "dueDate": "2026-05-01T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 8/12"
+        },
+        {
+          "dueDate": "2026-05-31T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 9/12"
+        },
+        {
+          "dueDate": "2026-07-01T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 10/12"
+        },
+        {
+          "dueDate": "2026-07-31T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 11/12"
+        },
+        {
+          "dueDate": "2026-08-31T00:00:00.000Z",
+          "amount": 67,
+          "note": "Rata 12/12"
+        }
+      ],
+      "createdAt": "2025-08-31T20:30:52.325Z"
+    },
+    {
+      "id": "pstfsy86up03zj8h",
+      "appointmentId": null,
+      "clientId": "ewztnoznzj2pmwnf",
+      "clientName": "Cliente",
+      "date": "2025-08-31T00:00:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "services": "",
+      "vssTotal": 10000,
+      "schedule": [
+        {
+          "dueDate": "2025-08-31T00:00:00.000Z",
+          "amount": 834,
+          "note": "Rata 1/12"
+        },
+        {
+          "dueDate": "2025-10-01T00:00:00.000Z",
+          "amount": 834,
+          "note": "Rata 2/12"
+        },
+        {
+          "dueDate": "2025-10-31T01:00:00.000Z",
+          "amount": 834,
+          "note": "Rata 3/12"
+        },
+        {
+          "dueDate": "2025-12-01T01:00:00.000Z",
+          "amount": 834,
+          "note": "Rata 4/12"
+        },
+        {
+          "dueDate": "2025-12-31T01:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 5/12"
+        },
+        {
+          "dueDate": "2026-01-31T01:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 6/12"
+        },
+        {
+          "dueDate": "2026-03-03T01:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 7/12"
+        },
+        {
+          "dueDate": "2026-03-31T00:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 8/12"
+        },
+        {
+          "dueDate": "2026-05-01T00:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 9/12"
+        },
+        {
+          "dueDate": "2026-05-31T00:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 10/12"
+        },
+        {
+          "dueDate": "2026-07-01T00:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 11/12"
+        },
+        {
+          "dueDate": "2026-07-31T00:00:00.000Z",
+          "amount": 833,
+          "note": "Rata 12/12"
+        }
+      ],
+      "createdAt": "2025-08-31T22:40:23.422Z"
+    },
+    {
+      "id": "ayjuxd02cr7gsf8j",
+      "appointmentId": null,
+      "clientId": "ewztnoznzj2pmwnf",
+      "clientName": "Hotel Mercurio",
+      "date": "2025-09-01T00:00:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "services": "",
+      "vssTotal": 6000,
+      "schedule": [
+        {
+          "dueDate": "2025-09-01T00:00:00.000Z",
+          "amount": 3000,
+          "note": "Acconto"
+        },
+        {
+          "dueDate": "2025-09-01T00:00:00.000Z",
+          "amount": 2000,
+          "note": ""
+        },
+        {
+          "dueDate": "2025-09-01T00:00:00.000Z",
+          "amount": 1000,
+          "note": ""
+        }
+      ],
+      "createdAt": "2025-08-31T22:52:39.561Z"
+    },
+     {
+      "id": "z69bmg7knaay12hr",
+      "appointmentId": null,
+      "clientId": "",
+      "clientName": "Alca food",
+      "date": "2025-08-30T22:51:00.000Z",
+      "consultantId": "2e64a0dc2dbd0cdc197a35a4",
+      "consultantName": "Enrico",
+      "services": "",
+      "vssTotal": 1000,
+      "schedule": [],
+      "createdAt": "2025-09-01T00:00:03.092Z"
+    }
+  ]
+}
