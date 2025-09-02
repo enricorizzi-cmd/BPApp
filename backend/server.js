@@ -72,7 +72,34 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(timing(500));
-app.use(helmet());
+// Helmet with relaxed CSP suitable for this SPA (allows inline + jsDelivr)
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      "default-src": ["'self'"],
+      // Allow inline scripts (Vite runtime snippets) and jsDelivr CDN assets used by the app
+      "script-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      // Permit inline event handlers if present
+      "script-src-attr": ["'unsafe-inline'"],
+      // Inline <style> blocks and styles are used in the HTML and injected dynamically
+      "style-src": ["'self'", "'unsafe-inline'"],
+      // Allow images and icons embedded as data URIs
+      "img-src": ["'self'", "data:", "blob:"],
+      // API calls are same-origin
+      "connect-src": ["'self'"],
+      // Fonts from self (and allow data: for inlined fonts if any)
+      "font-src": ["'self'", "data:"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"],
+      "frame-ancestors": ["'self'"],
+      // Service worker / workers
+      "worker-src": ["'self'", "blob:"],
+    },
+  },
+  // Disable COEP to avoid issues loading CDN assets without cross-origin isolation
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(compression());
 // CORS: consentire origine configurabile, default aperto (dev)
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
