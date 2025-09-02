@@ -11,6 +11,7 @@ export default [
       "vite.config.js",
       "src/postSaleBanners.js",
       "main.js",
+      "dist/**",
     ],
   },
   js.configs.recommended,

@@ -21,6 +21,9 @@ export default [
     },
     rules: {
       complexity: ["warn", 10],
+      "no-unused-vars": "off",
+      "no-empty": "off",
+      "no-prototype-builtins": "off",
     },
   },
 ];
