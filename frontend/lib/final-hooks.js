@@ -1948,10 +1948,29 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   // === Coach + Undo su delete ===
   window.wireCoachUndoHaptics = function(){
 document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
-    document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-    document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
-    document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-    document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
+document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+
+// Global delegate: trigger coach on generic close buttons (low intensity)
+// Matches: [data-close], ids/classes containing "close", aria-label "Chiudi"/"Close", or text content 'Chiudi'/'Close'.
+document.addEventListener('click', function(ev){
+  try{
+    var el = ev.target;
+    // climb up a few levels to catch icons inside buttons
+    for(var i=0;i<3 && el; i++){
+      if(el.matches && (el.matches('[data-close], [aria-label*="Chiudi" i], [aria-label*="Close" i]') ||
+         (el.id||'').toLowerCase().includes('close') ||
+         (el.className||'').toLowerCase().includes('close') ||
+         (/^\s*(chiudi|close)\s*$/i).test(el.textContent||''))){
+        if(window.coachSay) coachSay('low'); hapticImpact('light');
+        break;
+      }
+      el = el.parentElement;
+    }
+  }catch(_){ }
+}, true);
 
     var root = document.getElementById('app') || document.body;
     if (root && !root.__undoWired){

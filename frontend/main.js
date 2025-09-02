@@ -67,6 +67,45 @@ if (typeof window.haptic !== 'function'){
     }
     ctx.stroke();
   }
+  // Decide how to render X-axis labels: compressed or rotated
+  function computeTickOptions(labels, width){
+    try{
+      const n = Array.isArray(labels) ? labels.length : 0;
+      if(!n) return { autoSkip:true, maxRotation:0, minRotation:0 };
+      const maxLen = Math.max(0, ...labels.map(s => String(s||'').length));
+      // rough estimate of needed width per label (px)
+      const estPer = Math.max(28, Math.min(90, Math.round(maxLen * 7)));
+      const need = n * estPer;
+      // If labels overflow chart width, prefer vertical labels
+      if(need > (width||320)*1.2){
+        return {
+          autoSkip:false,
+          maxRotation:90,
+          minRotation:90,
+          callback: function(v){ return String(v||''); }
+        };
+      }
+      // Otherwise compress a bit: show every other if very dense
+      if(n > 12){
+        return {
+          autoSkip:false,
+          maxRotation:0,
+          minRotation:0,
+          callback: function(v, idx){ return (idx % 2 === 0) ? String(v||'') : ''; }
+        };
+      }
+      // Default: compact labels (trim long ones)
+      return {
+        autoSkip:true,
+        maxRotation:0,
+        minRotation:0,
+        callback: function(v){ const s=String(v||''); return s.length>10 ? (s.slice(0,9)+'…') : s; }
+      };
+    }catch(_){
+      return { autoSkip:true, maxRotation:0, minRotation:0 };
+    }
+  }
+
   window.drawFullLine = function(canvasId, labels, data){
     const el = document.getElementById(canvasId);
     if(!el) return;
@@ -78,6 +117,7 @@ if (typeof window.haptic !== 'function'){
       return;
     }
     const key = String(canvasId);
+    const tickOpts = computeTickOptions(labels, el.width||320);
     if(!registry[key]){
       const ctx = el.getContext('2d');
       registry[key] = new Chart(ctx, {
@@ -100,7 +140,7 @@ if (typeof window.haptic !== 'function'){
           animations: false,
           plugins: { legend: { display:false } },
           scales: {
-            x: { grid: { display:false }, ticks: { autoSkip:true, maxRotation:0, minRotation:0 } },
+            x: { grid: { display:false }, ticks: tickOpts },
             y: { beginAtZero:true }
           }
         }
@@ -109,6 +149,7 @@ if (typeof window.haptic !== 'function'){
       const ch = registry[key];
       ch.data.labels = labels;
       ch.data.datasets[0].data = data;
+      ch.options.scales.x.ticks = computeTickOptions(labels, el.width||320);
       ch.update();
     }
   };
@@ -1677,6 +1718,7 @@ function viewPeriods(){
 
     POST('/api/periods',payload).then(function(resp){
       toast('BP salvato'); if(CONS_MODE) window.addXP(20); else window.addXP(10); celebrate();
+      try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
       listPeriods();
       if(!EDIT_PID && resp && resp.id){ EDIT_PID=resp.id; }
       if(EDIT_PID && CURRENT_P){
@@ -2175,7 +2217,7 @@ function deleteA(){
     const when = dmy(s)+' '+('0'+s.getHours()).slice(-2)+':'+('0'+s.getMinutes()).slice(-2)+'–'+('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
     const line2 = 'VSS '+fmtEuro(a.vss||0)+' · VSD '+fmtEuro(a.vsdPersonal||0)+' · NNCF '+(a.nncf?'✅':'—');
     return ''+
-      '<div class="card" data-aid="'+htmlEscape(String(a.id||''))+'" style="flex:1 1 320px">'+
+      '<div class="card" data-aid="'+htmlEscape(String(a.id||''))+'" style="flex:1 1 320px;cursor:pointer">'+
         '<div class="small muted">'+htmlEscape(when)+' · '+htmlEscape(a.type||'vendita')+'</div>'+
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
           '<div><b>'+htmlEscape(a.client||'')+'</b></div>'+
@@ -2243,6 +2285,14 @@ function deleteA(){
         bt.addEventListener('click', ev=>{
           ev.stopPropagation();
           const id=bt.getAttribute('data-edit');
+          const a=allShown.find(z=> String(z.id)===String(id));
+          if(a){ fillForm(a); window.scrollTo({top:0, behavior:'smooth'}); }
+        });
+      });
+      // Click on the whole card opens it in edit
+      host.querySelectorAll('.card[data-aid]').forEach(card=>{
+        card.addEventListener('click', ()=>{
+          const id=card.getAttribute('data-aid');
           const a=allShown.find(z=> String(z.id)===String(id));
           if(a){ fillForm(a); window.scrollTo({top:0, behavior:'smooth'}); }
         });
@@ -4061,7 +4111,10 @@ function viewUsers(){
               '<option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option>'+
             '</select>'+
           '</div>'+
-          '<div class="right" style="align-self:flex-end"><button class="ghost" data-save="'+u.id+'">Aggiorna</button></div>'+
+          '<div class="right" style="align-self:flex-end">'+
+            '<button class="ghost" data-save="'+u.id+'">Aggiorna</button> '+
+            '<button class="danger" data-del="'+u.id+'" title="Elimina utente">Elimina</button>'+
+          '</div>'+
         '</div>'+
       '</div>';
   }
@@ -4085,6 +4138,16 @@ function viewUsers(){
             toast('Aggiornato'); window.addXP(5);
             if(pwdEl) pwdEl.value='';
           }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
+        });
+      });
+      $all('[data-del]').forEach(function(bt){
+        bt.addEventListener('click', function(){
+          var id = bt.getAttribute('data-del');
+          if(!confirm('Eliminare definitivamente questo utente?')) return;
+          fetch('/api/users?id='+encodeURIComponent(id), { method:'DELETE', headers:{ 'Authorization':'Bearer '+getToken() } })
+            .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+            .then(function(){ toast('Utente eliminato'); loadUsers(); })
+            .catch(function(err){ logger.error(err); toast('Errore eliminazione'); });
         });
       });
     });

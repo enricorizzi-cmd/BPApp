@@ -515,6 +515,28 @@ app.post("/api/users/credentials", auth, async (req,res)=>{
   res.json({ ok:true });
 });
 
+// delete user (admin), with safety: do not delete the last admin
+app.delete("/api/users", auth, requirePermission("users:write"), async (req,res)=>{
+  const id = String(req.query.id||"");
+  if(!id) return res.status(400).json({ error:"missing id" });
+  const db = await readJSON("users.json");
+  const users = db.users || [];
+  const idx = users.findIndex(u => u.id === id);
+  if(idx === -1) return res.status(404).json({ error:"user not found" });
+
+  // safety: prevent deleting the last admin
+  const admins = users.filter(u => u.role === 'admin');
+  const target = users[idx];
+  if(target.role === 'admin' && admins.length <= 1){
+    return res.status(409).json({ error:"cannot delete last admin" });
+  }
+
+  users.splice(idx, 1);
+  db.users = users;
+  await writeJSON("users.json", db);
+  res.json({ ok:true });
+});
+
 // helper nomi (id->name + grade)
 app.get("/api/usernames", auth, async (req,res)=>{
   const db = await readJSON("users.json");
