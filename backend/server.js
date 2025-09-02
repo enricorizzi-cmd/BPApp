@@ -82,7 +82,8 @@ if (CORS_ORIGIN && CORS_ORIGIN !== '*') {
 app.use(express.json({ limit: "2mb" }));
 
 // ---------- Storage ----------
-initStore(DATA_DIR);
+const _initStoreRet = initStore(DATA_DIR);
+let _initStorePromise = (_initStoreRet && typeof _initStoreRet.then === 'function') ? _initStoreRet : Promise.resolve();
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
@@ -1051,7 +1052,7 @@ async function setupStatic(){
 
 
 // ---------- Start ----------
-ensureFiles().then(async ()=>{
+_initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   await setupStatic();
   app.listen(PORT, HOST, ()=> logger.info(`BP backend listening on http://${HOST}:${PORT}`));
 
