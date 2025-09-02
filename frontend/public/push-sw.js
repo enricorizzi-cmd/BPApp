@@ -1,6 +1,7 @@
 /* BPApp – push-sw.js (Service Worker per Web Push)
    Copia in /public per essere inclusa automaticamente in dist/ da Vite.
 */
+/* eslint-disable no-unused-vars, no-undef */
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });

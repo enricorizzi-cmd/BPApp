@@ -1523,8 +1523,8 @@ BPFinal.enableClientsInlineAdmin = function enableClientsInlineAdmin(){
 
     card.style.position='relative';
     const btn=document.createElement('button');
-    btn.className='ghost';
-    btn.textContent='✏️';
+    btn.className='ghost small';
+    btn.textContent='Modifica';
     btn.title='Modifica cliente';
     btn.setAttribute('data-edit-client','1');
     btn.style.position='absolute';
@@ -2103,6 +2103,7 @@ const mo = new MutationObserver(()=>{
   if (typeof ensureTeamUserSelect==='function')  ensureTeamUserSelect();
   if (typeof wireUsersEdit==='function')         wireUsersEdit();
   if (typeof filterPastAppointments==='function') filterPastAppointments(document.body);
+  if (typeof markToday==='function')             markToday();
 });
 
 onceReady(async ()=>{

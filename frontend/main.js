@@ -876,7 +876,7 @@ function refreshLists(){
   })();
 
   function grid3(inner){
-    return '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">'+inner+'</div>';
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'+inner+'</div>';
   }
 function defDurByType(t){
   t = String(t||'').toLowerCase();
@@ -1006,7 +1006,6 @@ function cardAppt(x){
 
       var htmlP = pFiltered.map(function(p){
         var lab  = formatPeriodLabel(p.type, p.startDate);
-        var user = (p.userName || p.userId || '');
         var prev = p.indicatorsPrev||{};
         var consBag = p.indicatorsCons||{};
         var isCons = hasCons(consBag);
@@ -1025,7 +1024,6 @@ function cardAppt(x){
               '<div><b>'+htmlEscape(lab)+'</b></div>'+
               '<span class="chip small">'+(isCons?'Consuntivo':'Previsionale')+'</span>'+
             '</div>'+
-            '<div class="small muted">'+htmlEscape(user)+'</div>'+
             '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap">'+
               '<span class="chip small">VSS <b>'+fmtEuro(vss)+'</b></span>'+
               '<span class="chip small">VSD <b>'+fmtEuro(vsdT)+'</b> <span class="muted">(P '+fmtEuro(vsdP)+' · I '+fmtEuro(vsdI)+')</span></span>'+
@@ -1035,9 +1033,9 @@ function cardAppt(x){
           '</div>';
       }).join('');
 
-      // layout a 3 colonne
+      // layout responsive
       lastBPsEl.innerHTML = htmlP
-        ? '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">'+htmlP+'</div>'
+        ? grid3(htmlP)
         : '<div class="muted">Nessun BP</div>';
 
       lastBPsEl.querySelectorAll('.lastBP[data-pid]').forEach(function(card){
@@ -2416,11 +2414,10 @@ function viewLeaderboard(){
   function rowCard(name, line1, score){
     var barW = Math.min(100, Math.max(0, Math.round(score)));
     return ''+
-      '<div class="card" style="flex:1 1 280px">'+
-        '<div><b>'+htmlEscape(name)+'</b></div>'+
+      '<div class="card lb-card" style="flex:1 1 280px">'+
+        '<div class="big">'+htmlEscape(name)+'</div>'+
         '<div class="small muted">'+htmlEscape(line1)+'</div>'+
-        '<div style="height:10px;background:rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;margin-top:6px">'+
-          '<div style="height:10px;width:'+barW+'%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div></div>'+
+        '<div class="lb-bar"><div style="width:'+barW+'%"></div></div>'+
       '</div>';
   }
 
@@ -2647,6 +2644,7 @@ function viewClients(){
 
   fillConsultants();
   listClients();
+  if (typeof kickFinal === 'function') kickFinal('clients');
 }
 
 // ===== SQUADRA =====

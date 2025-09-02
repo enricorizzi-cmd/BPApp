@@ -1186,7 +1186,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   }
   async function _sendPushToUser(userId, payload){
     if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
-    const subs = await getSubscriptions(userId);
+    const subs = await getSubscriptions(userId); // eslint-disable-line no-undef
     await Promise.all(subs.map(async s=>{
       try{ await webpush.sendNotification(s, JSON.stringify(payload)); }
       catch(e){ /* ignora endpoint morti */ }

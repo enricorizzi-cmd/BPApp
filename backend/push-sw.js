@@ -1,6 +1,7 @@
 /* BPApp – push-sw.js (Service Worker per Web Push)
    Copia locale nel backend come fallback in deploy monorepo con root=backend.
 */
+/* eslint-disable no-unused-vars, no-undef */
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
