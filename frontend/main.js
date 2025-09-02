@@ -121,7 +121,7 @@ function viewLogin(){
     POST('/api/login',{email:email,password:password}).then(function(r){
       if(typeof r==='string'){ try{ r=JSON.parse(r);}catch(e){} }
       setToken(r.token, remember); setUser(r.user);
-      toast('Bentornato '+r.user.name+'!'); addXP(10);
+      toast('Bentornato '+r.user.name+'!'); window.addXP(10);
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();
     }, function(err){
@@ -138,7 +138,7 @@ function viewLogin(){
     var email= document.getElementById('re_email').value.trim().toLowerCase();
     var password = document.getElementById('re_password').value;
     POST('/api/register',{name:name,email:email,password:password}).then(function(){
-      toast('Registrazione ok. Ora accedi'); celebrate(); addXP(20); window.scrollTo({top:0,behavior:'smooth'});
+      toast('Registrazione ok. Ora accedi'); celebrate(); window.addXP(20); window.scrollTo({top:0,behavior:'smooth'});
     }).catch(function(err){
       toast('Email già registrata?'); logger.error(err);
     }).finally(function(){ btn.disabled = false; });
@@ -1502,7 +1502,7 @@ function viewPeriods(){
       for(var i=0;i<list.length;i++){ var a=list[i], d=new Date(a.start);
         if(d>=sD && d<=eD){ agg.VSS+=Number(a.vss||0); agg.VSDPersonale+=Number(a.vsdPersonal||0); if(a.nncf) agg.NNCF+=1; }
       }
-      fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); addXP(10);
+      fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); window.addXP(10);
     }).catch(function(){ toast('Errore import agenda'); });
   }
 
@@ -1602,7 +1602,7 @@ function viewPeriods(){
     if(EDIT_PID) payload.id=EDIT_PID;
 
     POST('/api/periods',payload).then(function(resp){
-      toast('BP salvato'); if(CONS_MODE) addXP(20); else addXP(10); celebrate();
+      toast('BP salvato'); if(CONS_MODE) window.addXP(20); else window.addXP(10); celebrate();
       listPeriods();
       if(!EDIT_PID && resp && resp.id){ EDIT_PID=resp.id; }
       if(EDIT_PID && CURRENT_P){
@@ -2436,7 +2436,7 @@ function viewClients(){
     POST('/api/clients', payload).then(function(){
       document.getElementById('cl_name').value='';
       listClients();
-      celebrate(); addXP(5);
+      celebrate(); window.addXP(5);
     }).catch(function(err){ logger.error(err); toast('Errore creazione cliente'); });
   }
 
@@ -3940,7 +3940,7 @@ function viewUsers(){
       var payload={ id: me.id, name:name, email:email };
       if(pwd) payload.password=pwd;
       POST('/api/users', payload).then(function(){
-        toast('Profilo aggiornato'); addXP(3);
+        toast('Profilo aggiornato'); window.addXP(3);
         var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
       }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
     };
@@ -4003,7 +4003,7 @@ function viewUsers(){
           var payload={ id:id, name:name, email:email, grade:grade, role:role };
           if(pwd) payload.password=pwd;
           POST('/api/users', payload).then(function(){
-            toast('Aggiornato'); addXP(5);
+            toast('Aggiornato'); window.addXP(5);
             if(pwdEl) pwdEl.value='';
           }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
         });
