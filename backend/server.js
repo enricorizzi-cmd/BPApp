@@ -1073,6 +1073,19 @@ async function setupStatic(){
       app.use('/assets', express.static(assetsDir, { maxAge: '1y', immutable: true }));
     }
   }catch(_){ }
+  // Ensure source helper libs and styles are served when using dist/
+  try{
+    const libDir = path.join(root, 'lib');
+    if(await fs.pathExists(libDir)){
+      app.use('/lib', express.static(libDir, { maxAge: '1h' }));
+    }
+  }catch(_){ }
+  try{
+    const cssDir = path.join(root, 'css');
+    if(await fs.pathExists(cssDir)){
+      app.use('/css', express.static(cssDir, { maxAge: '1h' }));
+    }
+  }catch(_){ }
   // serve esplicitamente il Service Worker dalla root del frontend anche quando si usa dist/
   try{
     const swFromFrontRoot = path.join(frontRoot, 'push-sw.js');
