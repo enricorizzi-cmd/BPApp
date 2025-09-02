@@ -1,31 +1,48 @@
 "use strict";
 
 const { Pool } = require("pg");
-const dns = require("dns");
+const dns = require("dns").promises;
 
 let pool = null;
 
-function init(){
-  const connectionString = process.env.PG_URL || process.env.DATABASE_URL;
-  if(!connectionString) throw new Error("Missing PG_URL for Postgres storage");
+async function init(){
+  const urlStr = process.env.PG_URL || process.env.DATABASE_URL;
+  if(!urlStr) throw new Error("Missing PG_URL for Postgres storage");
 
-  const forceIPv4 = process.env.PG_FORCE_IPV4 !== '0'; // default: force IPv4 to avoid ENETUNREACH on v6-only
-  const lookup = (hostname, options, cb) => dns.lookup(hostname, { family: 4, hints: dns.ADDRCONFIG }, cb);
+  const u = new URL(urlStr);
+  const host = u.hostname;
+  const port = Number(u.port || 5432);
+  const database = decodeURIComponent(u.pathname.replace(/^\//, '') || 'postgres');
+  const user = decodeURIComponent(u.username || '');
+  const password = decodeURIComponent(u.password || '');
   const sslReject = process.env.PG_SSL_REJECT_UNAUTHORIZED !== 'false';
+  const forceIPv4 = process.env.PG_FORCE_IPV4 !== '0';
+
+  let hostToUse = host;
+  if(forceIPv4){
+    try{
+      const res = await dns.lookup(host, { family: 4 });
+      if(res && res.address) hostToUse = res.address;
+    }catch(_){ /* fallback to original host */ }
+  }
 
   const cfg = {
-    connectionString,
+    host: hostToUse,
+    port,
+    database,
+    user,
+    password,
     max: 5,
     idleTimeoutMillis: 30000,
-    ssl: { rejectUnauthorized: sslReject },
+    ssl: { rejectUnauthorized: sslReject }
   };
-  if (forceIPv4) cfg.lookup = lookup;
 
   pool = new Pool(cfg);
-  return pool.query(`CREATE TABLE IF NOT EXISTS kv (
+  await pool.query(`CREATE TABLE IF NOT EXISTS kv (
     name TEXT PRIMARY KEY,
     data TEXT NOT NULL
   )`);
+  return pool;
 }
 
 function requirePool(){
