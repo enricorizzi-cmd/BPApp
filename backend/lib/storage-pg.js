@@ -18,7 +18,8 @@ async function init(){
   const sslReject = process.env.PG_SSL_REJECT_UNAUTHORIZED !== 'false';
   const forceIPv4 = process.env.PG_FORCE_IPV4 !== '0';
 
-  let hostToUse = host;
+  // Allow explicit IPv4 override via env (e.g., set PG_HOST_IPV4 to an A record)
+  let hostToUse = process.env.PG_HOST_IPV4 || host;
   if(forceIPv4){
     try{
       const addrs = await dns.resolve4(host);
