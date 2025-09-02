@@ -223,6 +223,12 @@
 <script src="./lib/bp-hooks-core.js?v=1"></script>
 
 <!-- Logging library -->
+<script>
+  window.logger = window.logger || ['debug','info','log','warn','error'].reduce((acc, lvl) => {
+    acc[lvl] = (console[lvl] || console.log).bind(console);
+    return acc;
+  }, {});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/pino@8.17.0/pino.min.js"></script>
 <script src="./lib/logger.js?v=1"></script>
 
