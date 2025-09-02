@@ -19,6 +19,8 @@
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
 const fs = require("fs-extra");
 const path = require("path");
 const { init: initStore, readJSON, writeJSON } = require("./lib/storage");
@@ -31,8 +33,16 @@ const logger = require("./lib/logger");
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
+const rateLimit = require("./mw/rateLimit");
 dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
-const JWT_SECRET = process.env.BP_JWT_SECRET || "bp_v13_demo_secret";
+const DEFAULT_JWT_SECRET = "bp_v13_demo_secret";
+const JWT_SECRET = process.env.BP_JWT_SECRET || DEFAULT_JWT_SECRET;
+
+// fail-fast in produzione se secret non configurato
+if (process.env.NODE_ENV === 'production' && JWT_SECRET === DEFAULT_JWT_SECRET) {
+  logger.error("BP_JWT_SECRET mancante o di default in produzione. Impostare una variabile d'ambiente sicura.");
+  process.exit(1);
+}
 
 // web-push (opzionale)
 let webpush = null;
@@ -56,8 +66,18 @@ if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 
 // ---------- App ----------
 const app = express();
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
 app.use(timing(500));
-app.use(cors());
+app.use(helmet());
+app.use(compression());
+// CORS: consentire origine configurabile, default aperto (dev)
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+if (CORS_ORIGIN && CORS_ORIGIN !== '*') {
+  app.use(cors({ origin: CORS_ORIGIN }));
+} else {
+  app.use(cors());
+}
 app.use(express.json({ limit: "2mb" }));
 
 // ---------- Storage ----------
@@ -321,7 +341,7 @@ app.post("/api/register", async (req,res)=>{
   res.json({ ok:true });
 });
 
-app.post("/api/login", async (req,res)=>{
+app.post("/api/login", rateLimit({ windowMs: 2*60*1000, max: 5 }), async (req,res)=>{
   const { email, password } = req.body || {};
   const db = await readJSON("users.json");
   const u = (db.users||[]).find(x => x.email.toLowerCase() === String(email||"").toLowerCase());
@@ -333,7 +353,7 @@ app.post("/api/login", async (req,res)=>{
   res.json({ token, user });
 });
 
-app.post("/api/reset-password", async (req,res)=>{
+app.post("/api/reset-password", rateLimit({ windowMs: 2*60*1000, max: 5 }), async (req,res)=>{
   const { email } = req.body || {};
   if(!email) return res.status(400).json({ error:"missing email" });
   const db = await readJSON("users.json");
@@ -562,10 +582,8 @@ async function findOrCreateClientByName(name, nncf, user){
   return c;
 }
 
-const authRoutes = require("./routes/auth")({ readJSON, writeJSON, bcrypt, genId, todayISO, signToken });
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, computeEndLocal, findOrCreateClientByName, genId });
-const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KEY });
-app.use('/api', authRoutes);
+const pushRoutes = require("./routes/push")({ auth, VAPID_PUBLIC_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
 
@@ -968,36 +986,7 @@ app.delete("/api/gi", auth, async (req,res)=>{
 
 
 // ---------- Web Push: publicKey + subscribe (compat + versione nuova) ----------
-app.get("/api/push/publicKey", (req,res)=>{
-  res.json({ publicKey: VAPID_PUBLIC_KEY || "" });
-});
-
-app.post("/api/push/subscribe", auth, async (req,res)=>{
-  try{
-    await saveSubscription(req.user.id, req.body && (req.body.subscription || req.body));
-    res.json({ ok:true });
-  }catch(e){
-    res.status(400).json({ error:"invalid_subscription" });
-  }
-});
-
-// compat vecchie route push_subscribe/unsubscribe
-app.post("/api/push_subscribe", auth, async (req,res)=>{
-  try{
-      const sub = req.body && req.body.subscription;
-      if(!sub) return res.status(400).json({ error:"missing subscription" });
-      await saveSubscription(req.user.id, sub);
-      res.json({ ok:true });
-    }catch(e){ res.status(500).json({ error:"fail" }); }
-});
-app.post("/api/push_unsubscribe", auth, async (req,res)=>{
-  try{
-      const ep = req.body && req.body.endpoint;
-      if(!ep) return res.status(400).json({ error:"missing endpoint" });
-      await deleteSubscription(ep);
-      res.json({ ok:true });
-    }catch(e){ res.status(500).json({ error:"fail" }); }
-});
+// push publicKey/subscribe gestite nel router /api/push/*
 
 // test push notification to current user
 app.post("/api/push/test", auth, async (req,res)=>{
@@ -1030,9 +1019,17 @@ async function setupStatic(){
   try {
     if(await fs.pathExists(path.join(dist, "index.html"))) frontRoot = dist;
   } catch(_){ }
+  // cache lunga per asset fingerprintati se esiste assets/
+  try{
+    const assetsDir = path.join(frontRoot, 'assets');
+    if(await fs.pathExists(assetsDir)){
+      app.use('/assets', express.static(assetsDir, { maxAge: '1y', immutable: true }));
+    }
+  }catch(_){ }
+  // static di base (no speciale caching per index)
   app.use(express.static(frontRoot));
-  app.get("/", (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
-  app.get(/^\/(?!api\/).*/, (_req,res)=> res.sendFile(path.join(frontRoot, "index.html")));
+  app.get("/", (_req,res)=> { res.set('Cache-Control','no-store'); res.sendFile(path.join(frontRoot, "index.html")); });
+  app.get(/^\/(?!api\/).*/, (_req,res)=> { res.set('Cache-Control','no-store'); res.sendFile(path.join(frontRoot, "index.html")); });
 }
 
 

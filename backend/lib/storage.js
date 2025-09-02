@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs-extra");
 const Database = require("better-sqlite3");
 
 let db = null;
@@ -12,7 +13,15 @@ let db = null;
  */
 function init(dataDir){
   const dbPath = path.join(dataDir, "data.sqlite");
+  // ensure data directory exists
+  fs.ensureDirSync(dataDir);
   db = new Database(dbPath);
+  // improve concurrency and resilience
+  try {
+    db.pragma('journal_mode = WAL');
+    db.pragma('synchronous = NORMAL');
+    db.pragma('busy_timeout = 2000');
+  } catch(_) { /* optional on older sqlite */ }
   db.exec("CREATE TABLE IF NOT EXISTS kv (name TEXT PRIMARY KEY, data TEXT)");
   return db;
 }
