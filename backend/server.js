@@ -316,6 +316,16 @@ const requireAdmin = requirePermission("admin");
 
 // ---------- Health ----------
 app.get("/api/health", (req,res)=> res.json({ ok:true, v:"13.7" }));
+// ---------- Readiness ----------
+app.get("/api/ready", async (_req,res)=>{
+  try {
+    // touch a known key to ensure storage is available
+    await readJSON("settings.json");
+    return res.json({ ok:true });
+  } catch(e){
+    return res.status(503).json({ ok:false });
+  }
+});
 
 // ---------- Register / Login ----------
 app.post("/api/register", async (req,res)=>{
