@@ -40,7 +40,7 @@ async function init(){
     password,
     max: 5,
     idleTimeoutMillis: 30000,
-    ssl: { rejectUnauthorized: sslReject }
+    ssl: { rejectUnauthorized: sslReject, servername: host }
   };
 
   pool = new Pool(cfg);
