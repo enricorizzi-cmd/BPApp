@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Battle Plan v13</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M10 55h80v10H10zM20 35h60v10H20zM35 15h30v10H35z'/%3E%3C/svg%3E">
+  <style>
+    :root{
+      --bg: #0e1116;
+      --bg-soft: #121722;
+      --card: #151b26;
+      --card-soft: #141a24;
+      --text: #e9eef5;
+      --muted: #9fb0c3;
+      --hair: rgba(255,255,255,.08);
+      --hair2: rgba(255,255,255,.16);
+      --accent: #5dd3ff;
+      --accent2:#8d7bff;
+      --ok: #2ecc71;
+      --warn:#ffb454;
+      --danger:#ff5c5c;
+      --shadow: 0 6px 22px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f6f7fb; --bg-soft:#f0f3f8;
+        --card:#ffffff; --card-soft:#ffffff;
+        --text:#152236; --muted:#6e7f93;
+        --hair: rgba(0,0,0,.06); --hair2: rgba(0,0,0,.12);
+        --shadow: 0 6px 22px rgba(10,20,30,.08);
+      }
+    }
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0; font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(93,211,255,.10), transparent 60%),
+                  radial-gradient(900px 500px at 110% 10%, rgba(141,123,255,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    a{ color:var(--accent); text-decoration:none; }
+    .wrap{ max-width: 1180px; margin: 80px auto 40px; padding: 0 16px; }
+    .grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+    .right{ margin-left:auto; }
+    .small{ font-size:12px; }
+    .big{ font-size:20px; font-weight:800; }
+    .muted{ color:var(--muted); }
+    .neon{ color: var(--accent); text-shadow: 0 0 22px rgba(93,211,255,.35); }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+      border:1px solid var(--hair);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    .card.kpi, .card[data-kpi]{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid var(--hair2);
+      box-shadow: 0 10px 24px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+    input, select{
+      background: var(--bg-soft);
+      color: var(--text);
+      border:1px solid var(--hair2);
+      border-radius: 12px;
+      padding:10px 12px;
+      min-width: 140px;
+      outline: none;
+      transition: border .15s ease;
+    }
+    input:focus, select:focus{ border-color: var(--accent); }
+
+    button{
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color:#fff; border:0; border-radius: 999px;
+      padding:10px 14px; font-weight:700; cursor:pointer;
+      box-shadow: 0 6px 14px rgba(93,211,255,.25);
+      transition: transform .05s ease, box-shadow .2s ease, opacity .2s ease;
+      white-space:nowrap;
+    }
+    button:hover{ transform: translateY(-1px); }
+    button.ghost{
+      background: transparent;
+      color: var(--text);
+      border:1px solid var(--hair2);
+      box-shadow: none;
+    }
+    button.ghost:hover{ border-color: var(--accent); }
+
+    .badge{
+      display:inline-block; padding:4px 8px; border-radius:999px;
+      background: rgba(141,123,255,.18); color:#fff;
+      border:1px solid var(--hair2); font-size:12px;
+    }
+
+    .topbar{
+      position:fixed; top:0; left:0; right:0; height:56px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background: rgba(20,24,34,.46);
+      backdrop-filter: saturate(160%) blur(8px);
+      border-bottom:1px solid var(--hair);
+      padding: 0 12px; z-index: 50;
+    }
+    @media (min-width: 981px){
+      .topbar{
+        background: rgba(20,24,34,.72);
+        border-bottom:1px solid var(--hair2);
+      }
+      .topbar .nav.right button.ghost{ color: rgba(255,255,255,.92); border-color: rgba(255,255,255,.22); }
+      .topbar .nav.right button.ghost:hover{ border-color: var(--accent); }
+    }
+
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{ font-weight:900; letter-spacing:.6px; }
+    .nav.right{ display:flex; align-items:center; gap:8px; }
+    .hamb{ width:34px; height:26px; display:none; flex-direction:column; justify-content:space-between; cursor:pointer; }
+    .hamb span{ height:3px; background:var(--text); border-radius:2px; }
+
+    .drawer{
+      position:fixed; top:56px; left:0; bottom:0; width:280px; transform: translateX(-100%);
+      background: rgba(20,24,34,.92); backdrop-filter: blur(6px);
+      border-right:1px solid var(--hair);
+      padding:12px; z-index:60; transition: transform .18s ease-in-out;
+    }
+    .drawer.open{ transform: translateX(0); }
+    .drawer .row{ flex-direction:column; align-items:stretch; }
+    .drawer button{ text-align:left; padding:10px 12px; font-weight:600; border-radius:12px; }
+
+    @media (max-width: 980px){
+      .nav.right{ display:none; }
+      .hamb{ display:flex; }
+      .wrap{ margin-top: 76px; }
+      button, input, select{ font-size:14px; padding:9px 12px; }
+    }
+
+    .hero{
+      position:relative; height:180px; display:grid; place-items:center; overflow:hidden;
+      border-bottom:1px solid var(--hair);
+    }
+    .hero .title{ font-size:28px; font-weight:900; letter-spacing:.3px; }
+    .hero .small{ font-size:14px; color:var(--muted); font-weight:600; }
+    .hero .layer.glow{
+      position:absolute; inset:-20%;
+      background: radial-gradient(600px 360px at var(--gx,60%) var(--gy,30%), rgba(93,211,255,.15), transparent 60%),
+                  radial-gradient(600px 360px at calc(100% - var(--gx,40%)) calc(100% - var(--gy,70%)), rgba(141,123,255,.15), transparent 60%);
+      pointer-events:none;
+    }
+    .hero .layer.grid{
+      position:absolute; inset:0; background:
+        linear-gradient(transparent 23px, rgba(255,255,255,.05) 24px) 0 0/26px 26px,
+        linear-gradient(90deg, transparent 23px, rgba(255,255,255,.05) 24px) 0 0/26px 26px;
+      opacity:.3; pointer-events:none;
+    }
+
+    .calendar{
+      display:grid; grid-template-columns: 40px repeat(7, 1fr);
+      gap:8px; align-items:stretch;
+    }
+    .weekLabel{
+      font-size:12px; color:var(--muted); display:flex; align-items:center; justify-content:center;
+      border:1px dashed var(--hair); border-radius:10px; padding:6px 0;
+    }
+    .day{
+      border:1px solid var(--hair2); border-radius:12px; padding:8px;
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      min-height:120px; cursor:pointer;
+      transition: border-color .15s ease, outline-color .15s ease, box-shadow .15s ease;
+    }
+    .day .dnum{ font-weight:900; font-size:16px; }
+    .day.state-empty{ outline: 2px solid rgba(46,204,113,.35); box-shadow: inset 0 0 0 1px rgba(46,204,113,.18); }
+    .day.state-slot{  outline: 2px solid rgba(255,180,84,.50); box-shadow: inset 0 0 0 1px rgba(255,180,84,.22); }
+    .day.state-busy{  outline: 2px solid rgba(170,30,30,.55);  box-shadow: inset 0 0 0 1px rgba(170,30,30,.28); }
+
+    .day.today{
+      outline: 2px solid var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(93,211,255,.25);
+      position: relative;
+    }
+    .day.today::after{
+      content: "Oggi";
+      position: absolute; top:6px; right:8px;
+      font-size:10px; opacity:.8; color: var(--accent);
+    }
+
+    .tag{ display:inline-block; font-size:11px; padding:2px 6px; border-radius:10px; border:1px solid var(--hair2); }
+
+    .toast{
+      position: fixed; left:50%; transform: translateX(-50%);
+      bottom: 24px; background: rgba(20,24,34,.92); color:#fff;
+      border:1px solid var(--hair2); border-radius: 12px;
+      padding:10px 14px; z-index:100; box-shadow: var(--shadow);
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{ from{ transform: translate(-50%, 4px); opacity: .0 } to{ transform: translate(-50%, 0); opacity: 1 } }
+
+    .confetti{ position:fixed; inset:0; pointer-events:none; z-index:90; }
+
+    .last-app:hover, .last-bp:hover{ border-color: var(--accent); box-shadow: 0 6px 18px rgba(93,211,255,.18); }
+
+    .row > div{ min-width: 200px; flex: 1 1 200px; }
+
+    canvas{ image-rendering: -webkit-optimize-contrast; }
+  </style>
+  <script type="module" crossorigin src="/assets/index-Dov_9yGL.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DRwo2f5q.css">
+  <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();window.__vite_is_modern_browser=true</script>
+  <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
+</head>
+<body>
+  <div id="app"><!-- UI injected by main.js --></div>
+
+<!-- Chart.js per mini-chart KPI -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- Polyfill & Core shims (PRIMA di main.js) -->
+<script src="./lib/globals-polyfills.js?v=1"></script>
+<script src="./lib/auth-fetch-shim.js?v=1"></script>
+<script src="./lib/bp-hooks-core.js?v=1"></script>
+
+<!-- Logging library -->
+<script src="https://cdn.jsdelivr.net/npm/pino@8.17.0/pino.min.js"></script>
+<script src="./lib/logger.js?v=1"></script>
+
+<script>window.BP_USE_SERIES_API = true;</script>
+
+<!-- App core (render UI) -->
+
+<!-- (opzionale) inoltro type/mode alle API classifiche -->
+<script src="./lib/leaderboard-hooks.js?v=1"></script>
+
+<!-- Librerie di supporto -->
+<script src="./lib/phrases.js"></script>
+<script src="./lib/haptics.js"></script>
+<script src="./lib/undo.js"></script>
+<script src="./lib/clients-helpers.js"></script>
+<script src="./lib/targets.js"></script>
+<script src="./lib/ics-single.js"></script>
+<script src="./lib/ics.js"></script>
+<script src="./lib/client-status.js"></script>
+<script src="./lib/telemetry.js?v=1"></script>
+<script src="./lib/ics-sanitize.js?v=1"></script>
+
+<!-- === FINAL PACK: includes features from former main-plus.js and bp-hooks.js === -->
+<script src="./lib/final-hooks.js?v=2"></script>
+<script src="./lib/push-client.js?v=1"></script>
+
+  <!-- Service Worker per Push (registrazione semplice) -->
+  <script>
+    (function(){
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function(){
+          navigator.serviceWorker.register('/push-sw.js')
+            .then(function(reg){ logger.info('[BP] SW registrato', reg.scope); })
+            .catch(function(err){ logger.warn('[BP] SW errore', err); });
+        });
+      }
+    })();
+  </script>
+  <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-Dv6r9FsO.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-DFbjbcco.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+</body>
+</html>
