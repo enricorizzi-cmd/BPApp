@@ -2,7 +2,9 @@
 
 const fs = require("fs-extra");
 const path = require("path");
-const { init, writeJSON } = require("./lib/storage");
+const usePgStorage = process.env.BP_STORAGE === 'pg' || !!process.env.PG_URL;
+const storage = usePgStorage ? require("./lib/storage-pg") : require("./lib/storage");
+const { init, writeJSON } = storage;
 const logger = require("./lib/logger");
 
 const DATA_DIR = path.join(__dirname, "data");

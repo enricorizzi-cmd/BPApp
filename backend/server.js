@@ -23,12 +23,13 @@ const helmet = require("helmet");
 const compression = require("compression");
 const fs = require("fs-extra");
 const path = require("path");
-const { init: initStore, readJSON, writeJSON } = require("./lib/storage");
+const usePgStorage = process.env.BP_STORAGE === 'pg' || !!process.env.PG_URL;
+const storage = usePgStorage ? require("./lib/storage-pg") : require("./lib/storage");
+const { init: initStore, readJSON, writeJSON } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
-const { saveSubscription, deleteSubscription, getSubscriptions } = require("./lib/subscriptions-db");
 const logger = require("./lib/logger");
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
@@ -593,7 +594,7 @@ async function findOrCreateClientByName(name, nncf, user){
 }
 
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, computeEndLocal, findOrCreateClientByName, genId });
-const pushRoutes = require("./routes/push")({ auth, VAPID_PUBLIC_KEY });
+const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
 
@@ -1002,7 +1003,13 @@ app.delete("/api/gi", auth, async (req,res)=>{
 app.post("/api/push/test", auth, async (req,res)=>{
   try{
     if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return res.status(500).json({ error:"not_configured" });
-    const subs = await getSubscriptions(req.user.id);
+    // read subscriptions from KV storage (supports SQLite/PG adapters)
+    let subs = [];
+    try{
+      const db = await readJSON("push_subscriptions.json");
+      const list = (db.subs || db.subscriptions || []).filter(s => String(s.userId||'') === String(req.user.id));
+      subs = list.map(s => s.subscription || { endpoint: s.endpoint, keys: (s.keys||{}) }).filter(x => x && x.endpoint);
+    }catch(_){ subs = []; }
     const payload = (req.body && req.body.payload) || { title:"BP Test", body:"Notifica di prova", url:"/" };
     await Promise.all(subs.map(s=> webpush.sendNotification(s, JSON.stringify(payload)).catch(()=>{})));
     res.json({ ok:true, sent: subs.length });
