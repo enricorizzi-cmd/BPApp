@@ -733,6 +733,20 @@ app.get("/api/availability", auth, async (req,res)=>{
   res.json({ slots: out, summary });
 });
 
+// ---- Leaderboard helpers ----
+function _effType(t){ return (t==="ytd"||t==="ltm") ? "mensile" : t; }
+function _isPeriodInRangeAndType(p, type, fs, te){
+  if (type && p.type !== type) return false;
+  const ps = new Date(p.startDate).getTime();
+  const pe = new Date(p.endDate).getTime();
+  return !(pe < fs || ps > te);
+}
+function _bagForMode(p, mode){ return mode==="previsionale" ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{}); }
+function _indicatorValue(indicator, bag){
+  if (indicator === 'VSDTotale') return Number(bag.VSDPersonale||0) + Number(bag.VSDIndiretto||0);
+  return Number(bag[indicator] || 0);
+}
+
 // ---------- Leaderboard (per indicatore) ----------
 app.get("/api/leaderboard", auth, async (req,res)=>{
   const mode = (req.query.mode==="previsionale") ? "previsionale" : "consuntivo";
@@ -741,8 +755,7 @@ app.get("/api/leaderboard", auth, async (req,res)=>{
   const typeQ = req.query.type; // filtro per tipo periodo (settimanale/mensile/…)
   if(!indicator || !fromISO || !toISO) return res.status(400).json({ error:"missing params" });
 
-  const effType = (t)=> (t==="ytd"||t==="ltm") ? "mensile" : t;
-  const type = typeQ ? effType(String(typeQ)) : null;
+  const type = typeQ ? _effType(String(typeQ)) : null;
 
   const usersDb   = await readJSON("users.json");
   const periodsDb = await readJSON("periods.json");
@@ -752,20 +765,9 @@ app.get("/api/leaderboard", auth, async (req,res)=>{
 
   const fs = new Date(fromISO).getTime();
   const te = new Date(toISO).getTime();
-
-  for(const p of (periodsDb.periods||[])){
-    if (type && p.type !== type) continue;
-    const ps = new Date(p.startDate).getTime();
-    const pe = new Date(p.endDate).getTime();
-    if (pe < fs || ps > te) continue;
-
-    const bag = (mode==="previsionale" ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{}));
-    let val = 0;
-    if (indicator === 'VSDTotale'){
-      val = Number(bag.VSDPersonale||0) + Number(bag.VSDIndiretto||0);
-    }else{
-      val = Number(bag[indicator] || 0);
-    }
+  const filtered = (periodsDb.periods||[]).filter(p => _isPeriodInRangeAndType(p, type, fs, te));
+  for(const p of filtered){
+    const val = _indicatorValue(indicator, _bagForMode(p, mode));
     if (acc[p.userId]) acc[p.userId].total += (isFinite(val)?val:0);
   }
 
@@ -780,9 +782,7 @@ app.get("/api/leaderboard_overall", auth, async (req,res)=>{
   const typeQ = req.query.type;
   if(!fromISO || !toISO) return res.status(400).json({ error:"missing params" });
 
-  const effType = (t)=> (t==="ytd"||t==="ltm") ? "mensile" : t;
-  const type = typeQ ? effType(String(typeQ)) : null;
-
+  const type = typeQ ? _effType(String(typeQ)) : null;
   const usersDb   = await readJSON("users.json");
   const periodsDb = await readJSON("periods.json");
   const settings  = await readJSON("settings.json");
@@ -811,23 +811,15 @@ app.get("/api/leaderboard_overall", auth, async (req,res)=>{
     for(const k of KEYS) acc[u.id][k] = 0;
   }
 
-  for(const p of (periodsDb.periods||[])){
-    if (type && p.type !== type) continue;
-    const ps = new Date(p.startDate).getTime();
-    const pe = new Date(p.endDate).getTime();
-    if (pe < fs || ps > te) continue;
-
-    const bag = (mode==="previsionale" ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{}));
+  const filtered = (periodsDb.periods||[]).filter(p => _isPeriodInRangeAndType(p, type, fs, te));
+  for(const p of filtered){
+    const bag = _bagForMode(p, mode);
     const row = acc[p.userId]; if(!row) continue;
-    for(const k of KEYS){
-      row[k] += Number(bag[k]||0);
-    }
+    for(const k of KEYS){ row[k] += Number(bag[k]||0); }
   }
 
   const best = {};
-  for(const k of KEYS){
-    best[k] = Math.max(1, ...Object.values(acc).map(r => Number(r[k]||0)));
-  }
+  for(const k of KEYS){ best[k] = Math.max(1, ...Object.values(acc).map(r => Number(r[k]||0))); }
 
   const ranking = Object.values(acc).map(r=>{
     let score = 0;
@@ -849,9 +841,7 @@ app.get("/api/commissions/summary", auth, async (req,res)=>{
   const typeQ   = req.query.type;
   if(!fromISO || !toISO) return res.status(400).json({ error:"missing params" });
 
-  const effType = (t)=> (t==="ytd"||t==="ltm") ? "mensile" : t;
-  const type = typeQ ? effType(String(typeQ)) : null;
-
+  const type = typeQ ? _effType(String(typeQ)) : null;
   const usersDb   = await readJSON("users.json");
   const periodsDb = await readJSON("periods.json");
 
@@ -863,13 +853,9 @@ app.get("/api/commissions/summary", auth, async (req,res)=>{
     acc[u.id] = { id:u.id, name:u.name, provvGi:0, provvVsd:0, provvTot:0 };
   }
 
-  for(const p of (periodsDb.periods||[])){
-    if (type && p.type !== type) continue;
-    const ps = new Date(p.startDate).getTime();
-    const pe = new Date(p.endDate).getTime();
-    if (pe < fs || ps > te) continue;
-
-    const bag = (mode==="previsionale" ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{}));
+  const filtered = (periodsDb.periods||[]).filter(p => _isPeriodInRangeAndType(p, type, fs, te));
+  for(const p of filtered){
+    const bag = _bagForMode(p, mode);
     const x = acc[p.userId]; if(!x) continue;
     const gi   = Number(bag.ProvvGI||0);
     const vsd  = Number(bag.ProvvVSD||0);
@@ -1057,52 +1043,49 @@ ensureFiles().then(async ()=>{
 
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"
+
+  function _weekBoundariesISO(d){
+    const s = startOfWeek(d), e = endOfWeek(d);
+    return { sISO: s.toISOString(), eISO: e.toISOString() };
+  }
+  function _hasWeekPrevCons(periodsDb, userId, sISO, eISO){
+    const week = (periodsDb.periods||[]).find(p =>
+      p.userId===userId && p.type==='settimanale' &&
+      ymd(p.startDate)===ymd(sISO) && ymd(p.endDate)===ymd(eISO)
+    );
+    const prevOk = !!(week && week.indicatorsPrev && Object.keys(week.indicatorsPrev).some(k=>Number(week.indicatorsPrev[k]||0)>0));
+    const consOk = !!(week && week.indicatorsCons && Object.keys(week.indicatorsCons).some(k=>Number(week.indicatorsCons[k]||0)>0));
+    return { prevOk, consOk };
+  }
+  async function _sendPushToUser(userId, payload){
+    if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+    const subs = await getSubscriptions(userId);
+    await Promise.all(subs.map(async s=>{
+      try{ await webpush.sendNotification(s, JSON.stringify(payload)); }
+      catch(e){ /* ignora endpoint morti */ }
+    }));
+  }
+  function _reminderBody(prevOk, consOk){
+    if(!prevOk && !consOk) return "Completa Previsionale e Consuntivo della settimana.";
+    return !prevOk ? "Completa il BP Previsionale della settimana." : "Completa il BP Consuntivo della settimana.";
+  }
+
   async function runWeekendNoonPushOncePerDay(){
     const now = new Date();
     const day = now.getDay(); // 0 dom, 6 sab
     const hr  = now.getHours();
-    if(![0,6].includes(day)) return;
-    if(hr !== 12) return;
+    if(![0,6].includes(day) || hr !== 12) return;
     const mark = ymd(now);
     if(LAST_PUSH_MARK === mark) return;
 
     const usersDb = await readJSON("users.json");
     const periodsDb= await readJSON("periods.json");
-
-    const s = startOfWeek(now), e = endOfWeek(now);
-    const sISO = s.toISOString(), eISO = e.toISOString();
-
-    function hasWeekPrevCons(userId){
-      const week = (periodsDb.periods||[]).find(p =>
-        p.userId===userId && p.type==='settimanale' &&
-        ymd(p.startDate)===ymd(sISO) && ymd(p.endDate)===ymd(eISO)
-      );
-      const prevOk = !!(week && week.indicatorsPrev && Object.keys(week.indicatorsPrev).some(k=>Number(week.indicatorsPrev[k]||0)>0));
-      const consOk = !!(week && week.indicatorsCons && Object.keys(week.indicatorsCons).some(k=>Number(week.indicatorsCons[k]||0)>0));
-      return { prevOk, consOk };
-    }
-
-    async function sendPushToUser(userId, payload){
-      if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
-      const subs = await getSubscriptions(userId);
-      await Promise.all(subs.map(async s=>{
-        try{
-          await webpush.sendNotification(s, JSON.stringify(payload));
-        }catch(e){ /* ignora endpoint morti */ }
-      }));
-    }
+    const { sISO, eISO } = _weekBoundariesISO(now);
 
     for(const u of (usersDb.users||[])){
-      const { prevOk, consOk } = hasWeekPrevCons(u.id);
+      const { prevOk, consOk } = _hasWeekPrevCons(periodsDb, u.id, sISO, eISO);
       if(prevOk && consOk) continue;
-      await sendPushToUser(u.id, {
-        t: "bp_reminder",
-        title: "Battle Plan",
-        body: !prevOk && !consOk ? "Completa Previsionale e Consuntivo della settimana."
-             : !prevOk ? "Completa il BP Previsionale della settimana."
-             : "Completa il BP Consuntivo della settimana.",
-        url: "/"
-      });
+      await _sendPushToUser(u.id, { t: "bp_reminder", title: "Battle Plan", body: _reminderBody(prevOk, consOk), url: "/" });
     }
     LAST_PUSH_MARK = mark;
   }
