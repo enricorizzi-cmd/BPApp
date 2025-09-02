@@ -1,12 +1,33 @@
+let container;
+function getContainer(){
+  if(!container){
+    container = document.getElementById('toast-container');
+    if(!container){
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.setAttribute('role','status');
+      container.setAttribute('aria-live','polite');
+      document.body.appendChild(container);
+    }
+  }
+  return container;
+}
+
 export function toast(msg){
+  const c = getContainer();
   const t = document.createElement('div');
   t.className = 'toast';
+  t.setAttribute('role','alert');
   t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(function(){ try{ t.remove(); }catch{ /* ignore */ } }, 2200);
+  c.appendChild(t);
+  setTimeout(function(){
+    try{ t.remove(); if(!c.children.length){ c.remove(); container=null; } }
+    catch{ /* ignore */ }
+  }, 2200);
 }
 
 export function celebrate(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const c = document.createElement('div');
   c.className = 'confetti';
   document.body.appendChild(c);

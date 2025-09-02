@@ -30,7 +30,8 @@
     const css = `
       #bp_banner_host{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;display:flex;justify-content:center;pointer-events:none}
       .bp-banner-card{pointer-events:auto;width:100%;max-width:720px;background:var(--card,#fff);color:var(--text,#111);
-        border:1px solid rgba(0,0,0,.12);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);padding:12px;display:flex;gap:12px;align-items:center}
+        border:1px solid rgba(0,0,0,.12);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);padding:12px;display:flex;gap:12px;align-items:center;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s}
+      .bp-banner-card.show{opacity:1;transform:none}
       .bp-banner-card .msg{flex:1}.bp-banner-card .row{display:flex;gap:8px;align-items:center}
       .bp-banner-card .ghost{background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.12)}
       @media (prefers-color-scheme: dark){ .bp-banner-card{background:rgba(15,18,28,.96);color:#fff;border-color:rgba(255,255,255,.16)}
@@ -41,7 +42,11 @@
   function getBannerHost(){ let h=document.getElementById('bp_banner_host'); if(!h){ h=document.createElement('div'); h.id='bp_banner_host'; document.body.appendChild(h);} return h; }
   let _q=[], _showing=false;
   function enqueueBanner(render){ _q.push(render); pump(); }
-  function pump(){ if(_showing) return; const next=_q.shift(); if(!next) return; _showing=true; ensureBannerCSS(); const host=getBannerHost(); host.innerHTML=''; host.appendChild(next(close)); function close(){ host.innerHTML=''; _showing=false; setTimeout(pump,40); } }
+  function pump(){
+    if(_showing) return; const next=_q.shift(); if(!next) return; _showing=true; ensureBannerCSS(); const host=getBannerHost(); host.innerHTML='';
+    const card = next(close); host.appendChild(card); requestAnimationFrame(()=> card.classList.add('show'));
+    function close(){ host.innerHTML=''; _showing=false; setTimeout(pump,40); }
+  }
 
   // --- Client status helpers ---
   async function updateClientStatusByName(name, status){
@@ -117,6 +122,8 @@
     return function(close){
       const card = document.createElement('div');
       card.className = 'bp-banner-card';
+      card.setAttribute('role','alertdialog');
+      card.setAttribute('aria-live','assertive');
       card.innerHTML =
         `<div class="msg"><b>Allora, hai venduto a ${htmlEscape(appt.client||'Cliente')}?</b>
            <div class="small muted">Appuntamento di vendita concluso</div></div>
@@ -144,6 +151,8 @@
     return function(close){
       const card = document.createElement('div');
       card.className = 'bp-banner-card';
+      card.setAttribute('role','alertdialog');
+      card.setAttribute('aria-live','assertive');
       card.innerHTML =
         `<div class="msg"><b>È diventato cliente?</b> ${htmlEscape(appt.client||'')}</div>
          <div class="row">
