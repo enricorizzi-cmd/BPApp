@@ -1073,6 +1073,17 @@ async function setupStatic(){
       app.use('/assets', express.static(assetsDir, { maxAge: '1y', immutable: true }));
     }
   }catch(_){ }
+  // serve esplicitamente il Service Worker dalla root del frontend anche quando si usa dist/
+  try{
+    const swFromFrontRoot = path.join(frontRoot, 'push-sw.js');
+    const swFromSourceRoot = path.join(root, 'push-sw.js');
+    app.get('/push-sw.js', async (_req,res)=>{
+      const file = (await fs.pathExists(swFromFrontRoot)) ? swFromFrontRoot : swFromSourceRoot;
+      res.set('Cache-Control','no-store');
+      res.type('application/javascript');
+      return res.sendFile(file);
+    });
+  }catch(_){ }
   // static di base (no speciale caching per index)
   app.use(express.static(frontRoot));
   app.get("/", (_req,res)=> { res.set('Cache-Control','no-store'); res.sendFile(path.join(frontRoot, "index.html")); });
