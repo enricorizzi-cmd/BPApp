@@ -70,6 +70,9 @@ if (typeof window.haptic !== 'function'){
   window.drawFullLine = function(canvasId, labels, data){
     const el = document.getElementById(canvasId);
     if(!el) return;
+    // dimensionamento esplicito per evitare reflow da resize responsivi
+    el.width  = el.clientWidth  || el.width  || 320;
+    el.height = el.clientHeight || el.height || 80;
     if (typeof Chart === 'undefined'){
       drawFallback(el, labels, data);
       return;
@@ -91,8 +94,10 @@ if (typeof window.haptic !== 'function'){
           fill: false
         }] },
         options: {
-          responsive: true,
+          responsive: false,
           maintainAspectRatio: false,
+          animation: false,
+          animations: false,
           plugins: { legend: { display:false } },
           scales: {
             x: { grid: { display:false }, ticks: { autoSkip:true, maxRotation:0, minRotation:0 } },
@@ -479,7 +484,7 @@ function labelsForBuckets(type, buckets){
   var t = effectivePeriodType(type||'mensile');
   return (buckets||[]).map(function(B){
     var d = new Date(B.s);
-    if (t==='settimanale')  return 'W'+isoWeekNum(d);
+    if (t==='settimanale')  return 'W'+isoWeekNum(d)+' '+d.getUTCFullYear();
     if (t==='mensile')      return String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
     if (t==='trimestrale')  return 'Q'+(Math.floor(d.getUTCMonth()/3)+1)+' '+d.getUTCFullYear();
     if (t==='semestrale')   return (d.getUTCMonth()<6?'S1 ':'S2 ')+d.getUTCFullYear();
@@ -778,10 +783,15 @@ function recomputeKPI(){
     var range= readUnifiedRange('dash');
     var type = String(range.type||'mensile').toLowerCase();
 
+    // Etichette estese in base ai buckets calcolati come in Squadra
+    var bucketsDash = buildBucketsRangeDash(type);
+    var labelsExt = (typeof labelsForBuckets==='function')
+      ? labelsForBuckets(type, bucketsDash)
+      : bucketsDash.map(function(b){ return labelFor(new Date(b.s), type); });
+
     function render(points, canvasId){
-      var labels = points.map(function(p){ return labelFor(p.x, type); });
-      var data   = points.map(function(p){ return p.y; });
-      drawLineGeneric(canvasId, labels, data);
+      var data = points.map(function(p){ return p.y; });
+      drawLineGeneric(canvasId, labelsExt, data);
     }
 
     Promise.all([
@@ -2705,7 +2715,11 @@ function viewTeam(){
   function drawChart(points, type){
     var canvas = document.getElementById('t_chart'); if(!canvas) return;
 
-    var labels = points.map(function(p){ return labelFor(p.x, type); });
+    // Etichette estese basate sui buckets (coerenti con Dashboard)
+    var buckets = buildBucketsRange(type);
+    var labels = (typeof labelsForBuckets==='function')
+      ? labelsForBuckets(type, buckets)
+      : points.map(function(p){ return labelFor(p.x, type); });
     var data   = points.map(function(p){ return p.y; });
 
     if (typeof Chart === 'undefined'){
@@ -2729,12 +2743,13 @@ function viewTeam(){
     if(!tChart){
       tChart = new Chart(ctx, {
         type: 'line',
-        data: { labels: labels, datasets: [{ label: '', data: data, tension: .3, pointRadius: 3 }] },
+        data: { labels: labels, datasets: [{ label: '', data: data, tension: .3, pointRadius: 0 }] },
         options: {
-          responsive:true, maintainAspectRatio:false,
+          responsive:false, maintainAspectRatio:false,
+          animation:false, animations:false,
           plugins:{ legend:{ display:false } },
           scales:{
-            x:{ grid:{ display:false }, ticks:{ autoSkip:false, maxRotation:0, minRotation:0 } },
+            x:{ grid:{ display:false }, ticks:{ autoSkip:true, maxRotation:0, minRotation:0 } },
             y:{ beginAtZero:true }
           }
         }
