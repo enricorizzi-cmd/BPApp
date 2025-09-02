@@ -27,6 +27,15 @@ import { $1, $all, getQuery } from "./src/query.js";
   window.$1 = window.$1 || $1;
   window.$all = window.$all || $all;
 
+  // Graceful fallback for optional globals
+  window.addXP = window.addXP || function(){};
+  if (typeof window.logger !== 'object') {
+    window.logger = ['debug','info','log','warn','error'].reduce((acc, lvl) => {
+      acc[lvl] = (console[lvl] || console.log).bind(console);
+      return acc;
+    }, {});
+  }
+
 
 
 
