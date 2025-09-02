@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: bpapp
+    env: node
+    autoDeploy: true
+    # Build both frontend and backend, then migrate data to SQLite
+    buildCommand: >-
+      npm ci --prefix frontend &&
+      npm run build --prefix frontend &&
+      npm ci --prefix backend &&
+      npm run migrate --prefix backend
+    startCommand: npm run start:prod --prefix backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: TZ
+        value: Europe/Rome
+      - key: BP_JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:admin@example.com
+      - key: SMTP_URL
+        sync: false
+      - key: SMTP_FROM
+        value: no-reply@example.com
+    disk:
+      name: data
+      mountPath: /app/backend/data
+      sizeGB: 1
+

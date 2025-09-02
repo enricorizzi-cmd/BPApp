@@ -3,11 +3,16 @@
   "version": "13.0.0",
   "private": true,
   "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "lint": "eslint .",
     "start": "node server.js",
+    "start:prod": "NODE_ENV=production node server.js",
     "migrate": "node migrate.js",
-    "test": "node --test"
+    "test": "node --test",
+    "vapid:gen": "node -e \"const w=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+w.publicKey+'\\nVAPID_PRIVATE_KEY='+w.privateKey)\""
   },
   "dependencies": {
     "compression": "^1.7.4",

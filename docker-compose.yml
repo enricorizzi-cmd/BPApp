@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  bpapp:
+    build: .
+    container_name: bpapp
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-Europe/Rome}
+      HOST: 0.0.0.0
+      PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      BP_JWT_SECRET: ${BP_JWT_SECRET}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+      SMTP_URL: ${SMTP_URL}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@example.com}
+    ports:
+      - "3001:3001"
+    volumes:
+      - bp-data:/app/backend/data
+volumes:
+  bp-data:
+
