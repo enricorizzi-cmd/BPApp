@@ -45,6 +45,70 @@ if (typeof window.haptic !== 'function'){
   window.haptic = function(){};
 }
 
+/* ---- Line chart helper condiviso (mini grafici = stile Squadra) ---- */
+// Usa Chart.js se presente, altrimenti un semplice fallback canvas 2D.
+// Mantiene un'istanza per canvasId per aggiornamenti fluidi.
+;(function(){
+  const registry = (window.__miniCharts = window.__miniCharts || {});
+  function drawFallback(el, labels, data){
+    const ctx = el.getContext('2d');
+    el.width  = el.clientWidth  || 320;
+    el.height = el.clientHeight || 80;
+    ctx.clearRect(0,0,el.width,el.height);
+    const max = Math.max(1, ...data);
+    const stepX = (data.length>1) ? (el.width-8)/(data.length-1) : 0;
+    ctx.strokeStyle = '#2e6cff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for(let i=0;i<data.length;i++){
+      const x = 4 + i*stepX;
+      const y = el.height-6 - (data[i]/max)*(el.height-12);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  window.drawFullLine = function(canvasId, labels, data){
+    const el = document.getElementById(canvasId);
+    if(!el) return;
+    if (typeof Chart === 'undefined'){
+      drawFallback(el, labels, data);
+      return;
+    }
+    const key = String(canvasId);
+    if(!registry[key]){
+      const ctx = el.getContext('2d');
+      registry[key] = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: [{
+          label: '',
+          data: data,
+          borderColor: '#2e6cff',
+          backgroundColor: 'rgba(46,108,255,0.10)',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 2,
+          fill: false
+        }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display:false } },
+          scales: {
+            x: { grid: { display:false }, ticks: { autoSkip:true, maxRotation:0, minRotation:0 } },
+            y: { beginAtZero:true }
+          }
+        }
+      });
+    } else {
+      const ch = registry[key];
+      ch.data.labels = labels;
+      ch.data.datasets[0].data = data;
+      ch.update();
+    }
+  };
+})();
+
 /* === Commission helpers (client fallback; server endpoint arriverà) === */
 function getRates(settings){
   var c = (settings && settings.commissions) || {};
