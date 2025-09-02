@@ -35,7 +35,9 @@ let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /*
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
 const rateLimit = require("./mw/rateLimit");
-dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config(); // .env: BP_JWT_SECRET, VAPID_*, TZ, etc.
+}
 const DEFAULT_JWT_SECRET = "bp_v13_demo_secret";
 const JWT_SECRET = process.env.BP_JWT_SECRET || DEFAULT_JWT_SECRET;
 

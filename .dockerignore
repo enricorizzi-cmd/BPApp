@@ -1,0 +1,26 @@
+# Prevent secret envs and unnecessary files from being copied into Docker context
+.env
+**/.env*
+backend/.env
+frontend/.env
+
+# Git and builds
+.git
+.gitignore
+node_modules
+**/node_modules
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Build caches
+.cache
+**/.vitepress/cache
+**/.vitepress/dist
+dist
+frontend/dist
+
+# OS/IDE
+.DS_Store
+.vscode
+*.log
