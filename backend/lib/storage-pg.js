@@ -21,9 +21,14 @@ async function init(){
   let hostToUse = host;
   if(forceIPv4){
     try{
-      const res = await dns.lookup(host, { family: 4 });
-      if(res && res.address) hostToUse = res.address;
-    }catch(_){ /* fallback to original host */ }
+      const addrs = await dns.resolve4(host);
+      if(Array.isArray(addrs) && addrs.length) hostToUse = addrs[0];
+    }catch(_){
+      try{
+        const res = await dns.lookup(host, { family: 4 });
+        if(res && res.address) hostToUse = res.address;
+      }catch(__){ /* fallback */ }
+    }
   }
 
   const cfg = {
