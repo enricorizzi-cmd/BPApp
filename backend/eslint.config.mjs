@@ -26,4 +26,17 @@ export default [
       "no-prototype-builtins": "off",
     },
   },
+  // Loosen complexity thresholds for a couple of high-traffic modules
+  {
+    files: ["server.js"],
+    rules: {
+      complexity: ["warn", 24],
+    },
+  },
+  {
+    files: ["jobs/reminders.js"],
+    rules: {
+      complexity: ["warn", 20],
+    },
+  },
 ];

@@ -137,103 +137,140 @@ async function ensureFiles(){
     catch{ await writeJSON(name, def); }
   };
 
-  await ensure("users.json", { users: [] });
-  await ensure("appointments.json", { appointments: [] });
-  await ensure("clients.json", { clients: [] });
-  await ensure("periods.json", { periods: [] });
-  await ensure("push_subscriptions.json", { subs: [] });
-  await ensure("gi.json", { sales: [] });
-  await ensure("settings.json", {
-    indicators: ["VSS","VSDPersonale","VSDIndiretto","GI","Telefonate","AppFissati","AppFatti","CorsiLeadership","iProfile","MBS","NNCF"],
-    weights: { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 },
-    commissions: { gi:0.15, vsdJunior:0.20, vsdSenior:0.25 },
-    version: 13
-  });
-
-  // ---- Legacy migration db.json -> split files (only if targets are empty) ----
-  const legacyPaths = [
-    path.join(DATA_DIR, "db.json"),
-    path.join(__dirname, "db.json"),
-    path.join(process.cwd(), "db.json"),
-  ];
-  let legacy = null;
-  for(const p of legacyPaths){
-    if(await fs.pathExists(p)){ try{ legacy = await fs.readJSON(p); }catch(e){} if(legacy) break; }
+  async function ensureDefaults(){
+    await ensure("users.json", { users: [] });
+    await ensure("appointments.json", { appointments: [] });
+    await ensure("clients.json", { clients: [] });
+    await ensure("periods.json", { periods: [] });
+    await ensure("push_subscriptions.json", { subs: [] });
+    await ensure("gi.json", { sales: [] });
+    await ensure("settings.json", {
+      indicators: ["VSS","VSDPersonale","VSDIndiretto","GI","Telefonate","AppFissati","AppFatti","CorsiLeadership","iProfile","MBS","NNCF"],
+      weights: { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 },
+      commissions: { gi:0.15, vsdJunior:0.20, vsdSenior:0.25 },
+      version: 13
+    });
   }
-  if(!legacy || typeof legacy!=="object") return;
 
-  const usersDb  = await readJSON("users.json");
-  const appsDb   = await readJSON("appointments.json");
-  const clientsDb= await readJSON("clients.json");
-  const periodsDb= await readJSON("periods.json");
-  const settings = await readJSON("settings.json");
-
-  const emptyUsers   = (usersDb.users||[]).length === 0;
-  const emptyApps    = (appsDb.appointments||[]).length === 0;
-  const emptyClients = (clientsDb.clients||[]).length === 0;
-  const emptyPeriods = (periodsDb.periods||[]).length === 0;
-
-  if(emptyUsers && Array.isArray(legacy.users)){
-    usersDb.users = legacy.users.map(u => ({
-      id: u.id || genId(),
-      name: u.name || "User",
-      email: (u.email||"").toLowerCase(),
-      pass: u.pass || (u.passwordHash||""),
-      role: (u.role==="admin" ? "admin" : "consultant"),
-      grade: (u.grade==="senior" ? "senior" : "junior"),
-      createdAt: u.createdAt || todayISO()
-    }));
-    await writeJSON("users.json", usersDb);
-    logger.info("[MIGRATE] users imported from db.json");
+  async function loadLegacyDb(){
+    const legacyPaths = [
+      path.join(DATA_DIR, "db.json"),
+      path.join(__dirname, "db.json"),
+      path.join(process.cwd(), "db.json"),
+    ];
+    for(const p of legacyPaths){
+      if(await fs.pathExists(p)){
+        try{ return await fs.readJSON(p); }catch(e){}
+      }
+    }
+    return null;
   }
-  if(emptyApps && Array.isArray(legacy.appointments)){
-    appsDb.appointments = legacy.appointments.map(a => ({
+
+  function _legacyStartStr(a){
+    return a.start ? toLocalInputValue(a.start) : toLocalInputValue(new Date());
+  }
+  function _legacyEndStr(a){
+    if (a.end) return toLocalInputValue(a.end);
+    const base = toLocalInputValue(a.start||new Date());
+    return computeEndLocal(base, a.type, a.durationMinutes);
+  }
+  function mapLegacyAppointment(a){
+    return {
       id: a.id || genId(),
       userId: a.userId,
       client: a.client,
       clientId: a.clientId || null,
       type: a.type || "manuale",
-      start: a.start ? toLocalInputValue(a.start) : toLocalInputValue(new Date()),
-      end: a.end ? toLocalInputValue(a.end)
-                 : computeEndLocal(toLocalInputValue(a.start||new Date()), a.type, a.durationMinutes),
+      start: _legacyStartStr(a),
+      end: _legacyEndStr(a),
       durationMinutes: Number(a.durationMinutes||0),
       vss: Number(a.vss||0),
       vsdPersonal: Number(a.vsdPersonal||0),
       nncf: !!a.nncf,
       notes: a.notes || ""
-    }));
-    await writeJSON("appointments.json", appsDb);
-    logger.info("[MIGRATE] appointments imported from db.json");
+    };
   }
-  if(emptyClients && Array.isArray(legacy.clients)){
-    clientsDb.clients = legacy.clients.map(c => ({
-      id: c.id || genId(),
-      name: c.name || "Cliente",
-      status: c.status || "attivo",
-      consultantId: c.consultantId || null,
-      consultantName: c.consultantName || null,
-      createdAt: c.createdAt || todayISO()
-    }));
-    await writeJSON("clients.json", clientsDb);
-    logger.info("[MIGRATE] clients imported from db.json");
+
+  async function migrateFromLegacyIfEmpty(legacy){
+    if(!legacy || typeof legacy!=="object") return;
+    const usersDb   = await readJSON("users.json");
+    const appsDb    = await readJSON("appointments.json");
+    const clientsDb = await readJSON("clients.json");
+    const periodsDb = await readJSON("periods.json");
+    const settings  = await readJSON("settings.json");
+
+    const emptyUsers   = (usersDb.users||[]).length === 0;
+    const emptyApps    = (appsDb.appointments||[]).length === 0;
+    const emptyClients = (clientsDb.clients||[]).length === 0;
+    const emptyPeriods = (periodsDb.periods||[]).length === 0;
+
+    async function migrateUsersIfEmpty(){
+      if(!(emptyUsers && Array.isArray(legacy.users))) return;
+      usersDb.users = legacy.users.map(u => ({
+        id: u.id || genId(),
+        name: u.name || "User",
+        email: (u.email||"").toLowerCase(),
+        pass: u.pass || (u.passwordHash||""),
+        role: (u.role==="admin" ? "admin" : "consultant"),
+        grade: (u.grade==="senior" ? "senior" : "junior"),
+        createdAt: u.createdAt || todayISO()
+      }));
+      await writeJSON("users.json", usersDb);
+      logger.info("[MIGRATE] users imported from db.json");
+    }
+
+    async function migrateAppointmentsIfEmpty(){
+      if(!(emptyApps && Array.isArray(legacy.appointments))) return;
+      appsDb.appointments = legacy.appointments.map(mapLegacyAppointment);
+      await writeJSON("appointments.json", appsDb);
+      logger.info("[MIGRATE] appointments imported from db.json");
+    }
+
+    async function migrateClientsIfEmpty(){
+      if(!(emptyClients && Array.isArray(legacy.clients))) return;
+      clientsDb.clients = legacy.clients.map(c => ({
+        id: c.id || genId(),
+        name: c.name || "Cliente",
+        status: c.status || "attivo",
+        consultantId: c.consultantId || null,
+        consultantName: c.consultantName || null,
+        createdAt: c.createdAt || todayISO()
+      }));
+      await writeJSON("clients.json", clientsDb);
+      logger.info("[MIGRATE] clients imported from db.json");
+    }
+
+    async function migratePeriodsIfEmpty(){
+      if(!(emptyPeriods && Array.isArray(legacy.periods))) return;
+      periodsDb.periods = legacy.periods.map(p => ({
+        id: p.id || genId(),
+        userId: p.userId,
+        type: p.type,
+        startDate: new Date(p.startDate).toISOString(),
+        endDate: new Date(p.endDate).toISOString(),
+        indicatorsPrev: p.indicatorsPrev || {},
+        indicatorsCons: p.indicatorsCons || {}
+      }));
+      await writeJSON("periods.json", periodsDb);
+      logger.info("[MIGRATE] periods imported from db.json");
+    }
+
+    async function mergeSettingsIfPresent(){
+      if(!(legacy.settings && typeof legacy.settings==="object")) return;
+      await writeJSON("settings.json", { ...settings, ...legacy.settings, version: 13 });
+      logger.info("[MIGRATE] settings merged from db.json");
+    }
+
+    await migrateUsersIfEmpty();
+    await migrateAppointmentsIfEmpty();
+    await migrateClientsIfEmpty();
+    await migratePeriodsIfEmpty();
+    await mergeSettingsIfPresent();
   }
-  if(emptyPeriods && Array.isArray(legacy.periods)){
-    periodsDb.periods = legacy.periods.map(p => ({
-      id: p.id || genId(),
-      userId: p.userId,
-      type: p.type,
-      startDate: new Date(p.startDate).toISOString(),
-      endDate: new Date(p.endDate).toISOString(),
-      indicatorsPrev: p.indicatorsPrev || {},
-      indicatorsCons: p.indicatorsCons || {}
-    }));
-    await writeJSON("periods.json", periodsDb);
-    logger.info("[MIGRATE] periods imported from db.json");
-  }
-  if(legacy.settings && typeof legacy.settings==="object"){
-    await writeJSON("settings.json", { ...settings, ...legacy.settings, version: 13 });
-    logger.info("[MIGRATE] settings merged from db.json");
-  }
+
+  await ensureDefaults();
+  const legacy = await loadLegacyDb();
+  await migrateFromLegacyIfEmpty(legacy);
 }
 
 // ---------- Auth ----------
@@ -351,28 +388,53 @@ app.post("/api/users/create", auth, requirePermission("users:write"), async (req
 });
 
 // update role/grade/name/permissions
-app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>{
-  const { id, role, grade, name, email, password, permissions } = req.body || {};
-  const db = await readJSON("users.json");
-  const u = (db.users||[]).find(x => x.id === id);
-  if(!u) return res.status(404).json({ error:"user not found" });
-  if(name) u.name = String(name);
-  if(role) u.role = (role==="admin" ? "admin" : "consultant");
-  if(grade) u.grade = (grade==="senior" ? "senior" : "junior");
-  if(Array.isArray(permissions)) u.permissions = permissions;
-  if(email){
-    const exists = (db.users||[]).some(x => x.email.toLowerCase() === String(email).toLowerCase() && x.id !== u.id);
-    if(exists) return res.status(409).json({ error:"email exists" });
-    u.email = String(email).toLowerCase();
+function _applyUserUpdates(db, user, body){
+  if(body.name) user.name = String(body.name);
+  if(body.role) user.role = (body.role==="admin" ? "admin" : "consultant");
+  if(body.grade) user.grade = (body.grade==="senior" ? "senior" : "junior");
+  if(Array.isArray(body.permissions)) user.permissions = body.permissions;
+  if(body.email){
+    const exists = (db.users||[]).some(x => x.email.toLowerCase() === String(body.email).toLowerCase() && x.id !== user.id);
+    if(exists) return { error: { code:409, msg:"email exists" } };
+    user.email = String(body.email).toLowerCase();
   }
-  if(password){
-    u.pass = await bcrypt.hash(String(password), 10);
+  return { ok:true };
+}
+
+app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>{
+  const body = req.body || {};
+  const db = await readJSON("users.json");
+  const u = (db.users||[]).find(x => x.id === body.id);
+  if(!u) return res.status(404).json({ error:"user not found" });
+  const r = _applyUserUpdates(db, u, body);
+  if(r.error) return res.status(r.error.code).json({ error:r.error.msg });
+  if(body.password){
+    u.pass = await bcrypt.hash(String(body.password), 10);
   }
   await writeJSON("users.json", db);
   res.json({ ok:true });
 });
 
 // update credentials (email/password) self/admin
+function _tryUpdateEmail(db, user, email, isSelf, isAdmin){
+  if(!email) return { ok:true };
+  const exists = (db.users||[]).some(x => x.email.toLowerCase() === String(email).toLowerCase() && x.id !== user.id);
+  if(exists) return { error:{ code:409, msg:"email exists" } };
+  if(!isSelf && !isAdmin) return { error:{ code:403, msg:"forbidden" } };
+  user.email = String(email).toLowerCase();
+  return { ok:true };
+}
+async function _tryUpdatePassword(user, isSelf, isAdmin, oldPassword, newPassword){
+  if(!newPassword) return { ok:true };
+  if(!(isAdmin || isSelf)) return { error:{ code:403, msg:"forbidden" } };
+  if(isSelf && !isAdmin){
+    const ok = await bcrypt.compare(String(oldPassword||""), user.pass||"");
+    if(!ok) return { error:{ code:401, msg:"bad current password" } };
+  }
+  user.pass = await bcrypt.hash(String(newPassword), 10);
+  return { ok:true };
+}
+
 app.post("/api/users/credentials", auth, async (req,res)=>{
   const { userId, email, oldPassword, newPassword } = req.body || {};
   const db = await readJSON("users.json");
@@ -383,25 +445,10 @@ app.post("/api/users/credentials", auth, async (req,res)=>{
   const isSelf = (req.user.id === targetId);
   const isAdmin = (req.user.role === "admin");
 
-  // Cambio email
-  if (email){
-    const exists = (db.users||[]).some(x => x.email.toLowerCase() === String(email).toLowerCase() && x.id !== u.id);
-    if(exists) return res.status(409).json({ error:"email exists" });
-    if(!isSelf && !isAdmin) return res.status(403).json({ error:"forbidden" });
-    u.email = String(email).toLowerCase();
-  }
-
-  // Cambio password
-  if (newPassword){
-    if(isSelf && !isAdmin){
-      const ok = await bcrypt.compare(String(oldPassword||""), u.pass||"");
-      if(!ok) return res.status(401).json({ error:"bad current password" });
-    }else if(!isAdmin && !isSelf){
-      return res.status(403).json({ error:"forbidden" });
-    }
-    const hash = await bcrypt.hash(String(newPassword), 10);
-    u.pass = hash;
-  }
+  const r1 = _tryUpdateEmail(db, u, email, isSelf, isAdmin);
+  if(r1.error) return res.status(r1.error.code).json({ error:r1.error.msg });
+  const r2 = await _tryUpdatePassword(u, isSelf, isAdmin, oldPassword, newPassword);
+  if(r2.error) return res.status(r2.error.code).json({ error:r2.error.msg });
 
   await writeJSON("users.json", db);
   res.json({ ok:true });
@@ -431,47 +478,51 @@ app.get("/api/clients", auth, async (req,res)=>{
   res.json({ clients: db.clients||[] });
 });
 
+function _applyClientUpdate(c, body, isAdmin){
+  const { name, status, consultantId, consultantName } = body || {};
+  if (status && status !== c.status){
+    if (status === "attivo" || isAdmin){
+      c.status = String(status);
+    } else {
+      return { error:{ code:403, msg:"admin only for status change" } };
+    }
+  }
+  if(name) c.name = String(name);
+  if(consultantId!=null) c.consultantId = String(consultantId||"");
+  if(consultantName!=null) c.consultantName = String(consultantName||"");
+  return { ok:true };
+}
+
 app.post("/api/clients", auth, async (req,res)=>{
-  const { id, name, status, consultantId, consultantName } = req.body || {};
+  const body = req.body || {};
   const db = await readJSON("clients.json");
   db.clients = db.clients || [];
 
-  if(id){
-    const c = db.clients.find(x => x.id === id);
+  if(body.id){
+    const c = db.clients.find(x => x.id === body.id);
     if(!c) return res.status(404).json({ error:"not found" });
-
-    // Status: admin-only, eccezione "attivo" da conversione (permessa anche a non-admin)
     const isAdmin = (req.user.role === "admin");
-    if (status && status !== c.status){
-      if (status === "attivo" || isAdmin){
-        c.status = String(status);
-      } else {
-        return res.status(403).json({ error:"admin only for status change" });
-      }
-    }
-
-    if(name) c.name = String(name);
-    if(consultantId!=null) c.consultantId = String(consultantId||"");
-    if(consultantName!=null) c.consultantName = String(consultantName||"");
-
+    const r = _applyClientUpdate(c, body, isAdmin);
+    if(r.error) return res.status(r.error.code).json({ error:r.error.msg });
     await writeJSON("clients.json", db);
     return res.json({ ok:true, id:c.id });
-  }else{
-    if(!name || !String(name).trim()) return res.status(400).json({ error:"missing name" });
-    const exists = db.clients.find(x => (x.name||"").toLowerCase() === String(name).toLowerCase());
-    if(!exists){
-      db.clients.push({
-        id: genId(),
-        name: String(name),
-        status: "attivo",
-        consultantId: req.user.id,
-        consultantName: req.user.name || "unknown",
-        createdAt: todayISO()
-      });
-      await writeJSON("clients.json", db);
-    }
-    return res.json({ ok:true });
   }
+
+  const { name } = body;
+  if(!name || !String(name).trim()) return res.status(400).json({ error:"missing name" });
+  const exists = db.clients.find(x => (x.name||"").toLowerCase() === String(name).toLowerCase());
+  if(!exists){
+    db.clients.push({
+      id: genId(),
+      name: String(name),
+      status: "attivo",
+      consultantId: req.user.id,
+      consultantName: req.user.name || "unknown",
+      createdAt: todayISO()
+    });
+    await writeJSON("clients.json", db);
+  }
+  return res.json({ ok:true });
 });
 
 app.delete("/api/clients", auth, async (req,res)=>{
@@ -555,6 +606,17 @@ async function _applyProvvigioni(row){
   _computeProvvigioniForBag(row.indicatorsCons, grade);
 }
 
+function _periodKey(p){
+  return [
+    p.userId, p.type,
+    (new Date(p.startDate)).toISOString().slice(0,10),
+    (new Date(p.endDate)).toISOString().slice(0,10)
+  ].join("|");
+}
+function _mergeIndicators(target, incoming){
+  return { ...(target||{}), ...(incoming||{}) };
+}
+
 app.post("/api/periods", auth, async (req,res)=>{
   const { id, type, startDate, endDate, indicatorsPrev, indicatorsCons } = req.body || {};
   if(!type || !startDate || !endDate) {
@@ -564,57 +626,51 @@ app.post("/api/periods", auth, async (req,res)=>{
   const db = await readJSON("periods.json");
   db.periods = db.periods || [];
 
-  const normStart = new Date(startDate).toISOString();
-  const normEnd   = new Date(endDate).toISOString();
-
   const rowProbe = {
     userId: req.user.id,
     type: String(type),
-    startDate: normStart,
-    endDate: normEnd
+    startDate: new Date(startDate).toISOString(),
+    endDate: new Date(endDate).toISOString()
   };
-  const key = (p)=> [
-    p.userId, p.type,
-    (new Date(p.startDate)).toISOString().slice(0,10),
-    (new Date(p.endDate)).toISOString().slice(0,10)
-  ].join("|");
 
-  // UPDATE by id
-  if (id){
+  async function updateById(){
     const it = db.periods.find(p => p.id === id && (req.user.role==="admin" || p.userId === req.user.id));
     if(!it) return res.status(404).json({ error:"not found" });
-
     it.type = rowProbe.type; it.startDate = rowProbe.startDate; it.endDate = rowProbe.endDate;
-    // sovrascrivo i bag solo se inviati, altrimenti mantengo i precedenti
-    if (indicatorsPrev) it.indicatorsPrev = { ...(it.indicatorsPrev||{}), ...(indicatorsPrev||{}) };
-    if (indicatorsCons) it.indicatorsCons = { ...(it.indicatorsCons||{}), ...(indicatorsCons||{}) };
+    if (indicatorsPrev) it.indicatorsPrev = _mergeIndicators(it.indicatorsPrev, indicatorsPrev);
+    if (indicatorsCons) it.indicatorsCons = _mergeIndicators(it.indicatorsCons, indicatorsCons);
     await _applyProvvigioni(it);
-
     await writeJSON("periods.json", db);
     return res.json({ ok:true, id: it.id, updated:true });
   }
 
-  // UPSERT by composite key
-  const existing = db.periods.find(p => key(p) === key({ ...rowProbe }));
-  if(existing){
-    if (indicatorsPrev) existing.indicatorsPrev = { ...(existing.indicatorsPrev||{}), ...(indicatorsPrev||{}) };
-    if (indicatorsCons) existing.indicatorsCons = { ...(existing.indicatorsCons||{}), ...(indicatorsCons||{}) };
+  async function upsertByKey(){
+    const existing = db.periods.find(p => _periodKey(p) === _periodKey({ ...rowProbe }));
+    if(!existing) return null;
+    if (indicatorsPrev) existing.indicatorsPrev = _mergeIndicators(existing.indicatorsPrev, indicatorsPrev);
+    if (indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, indicatorsCons);
     await _applyProvvigioni(existing);
     await writeJSON("periods.json", db);
     return res.json({ ok:true, id: existing.id, updated:true });
   }
 
-  // INSERT
-  const row = {
-    id: genId(),
-    ...rowProbe,
-    indicatorsPrev: indicatorsPrev || {},
-    indicatorsCons: indicatorsCons || {}
-  };
-  await _applyProvvigioni(row);
-  db.periods.push(row);
-  await writeJSON("periods.json", db);
-  res.json({ ok:true, id: row.id, created:true });
+  async function createNew(){
+    const row = {
+      id: genId(),
+      ...rowProbe,
+      indicatorsPrev: indicatorsPrev || {},
+      indicatorsCons: indicatorsCons || {}
+    };
+    await _applyProvvigioni(row);
+    db.periods.push(row);
+    await writeJSON("periods.json", db);
+    return res.json({ ok:true, id: row.id, created:true });
+  }
+
+  if (id) return updateById();
+  const up = await upsertByKey();
+  if (up) return up;
+  return createNew();
 });
 
 app.delete("/api/periods", auth, async (req,res)=>{
@@ -854,51 +910,63 @@ app.get("/api/gi", auth, async (req,res)=>{
   res.json({ sales: rows });
 });
 
+function _mapSchedule(arr){
+  return Array.isArray(arr) ? arr.map(x => ({
+    dueDate: String(x.dueDate||""), amount: Number(x.amount||0), note: String(x.note||"")
+  })) : [];
+}
+
 app.post("/api/gi", auth, async (req,res)=>{
   const body = req.body || {};
   const db = await readJSON("gi.json");
   db.sales = db.sales || [];
 
-  // update
-  if(body.id){
-    const it = db.sales.find(s => s.id === body.id);
-    if(!it) return res.status(404).json({ error:"not found" });
+  async function applyUpdate(it){
     if(req.user.role!=="admin" && String(it.consultantId||'')!==String(req.user.id))
       return res.status(403).json({ error:"forbidden" });
-
-    // campi aggiornabili
-    if(body.clientId!=null)    it.clientId = String(body.clientId||"");
-    if(body.clientName!=null)  it.clientName = String(body.clientName||"");
-    if(body.date)              it.date = String(body.date);
-    if(body.services!=null)    it.services = String(body.services||"");
-    if(body.vssTotal!=null)    it.vssTotal = Number(body.vssTotal||0);
-    if(Array.isArray(body.schedule)) it.schedule = body.schedule.map(x => ({
-      dueDate: String(x.dueDate||""), amount: Number(x.amount||0), note: String(x.note||"")
-    }));
-
+    const patchers = {
+      clientId: v => String(v||""),
+      clientName: v => String(v||""),
+      date: v => String(v),
+      services: v => String(v||""),
+      vssTotal: v => Number(v||0),
+      schedule: v => _mapSchedule(v),
+    };
+    for(const k of Object.keys(patchers)){
+      if(Object.prototype.hasOwnProperty.call(body, k)){
+        it[k] = patchers[k](body[k]);
+      }
+    }
     await writeJSON("gi.json", db);
     return res.json({ ok:true, id: it.id });
   }
 
-  // insert
-  const row = {
-    id: genId(),
-    appointmentId: body.appointmentId || null,
-    clientId: String(body.clientId||""),
-    clientName: String(body.clientName||"Cliente"),
-    date: String(body.date || new Date().toISOString()),
-    consultantId: String(body.consultantId || req.user.id),
-    consultantName: String(body.consultantName || req.user.name || "unknown"),
-    services: String(body.services || ""),
-    vssTotal: Number(body.vssTotal || 0),
-    schedule: Array.isArray(body.schedule) ? body.schedule.map(x => ({
-      dueDate: String(x.dueDate||""), amount: Number(x.amount||0), note: String(x.note||"")
-    })) : [],
-    createdAt: todayISO()
-  };
+  function buildRow(){
+    return {
+      id: genId(),
+      appointmentId: body.appointmentId || null,
+      clientId: String(body.clientId||""),
+      clientName: String(body.clientName||"Cliente"),
+      date: String(body.date || new Date().toISOString()),
+      consultantId: String(body.consultantId || req.user.id),
+      consultantName: String(body.consultantName || req.user.name || "unknown"),
+      services: String(body.services || ""),
+      vssTotal: Number(body.vssTotal || 0),
+      schedule: _mapSchedule(body.schedule),
+      createdAt: todayISO()
+    };
+  }
+
+  if(body.id){
+    const it = db.sales.find(s => s.id === body.id);
+    if(!it) return res.status(404).json({ error:"not found" });
+    return applyUpdate(it);
+  }
+
+  const row = buildRow();
   db.sales.push(row);
   await writeJSON("gi.json", db);
-  res.json({ ok:true, id: row.id });
+  return res.json({ ok:true, id: row.id });
 });
 
 app.delete("/api/gi", auth, async (req,res)=>{
