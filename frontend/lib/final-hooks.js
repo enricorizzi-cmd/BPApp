@@ -1,5 +1,4 @@
-import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
-import { initPostSaleBanners } from '../src/postSaleBanners.js';
+// globals are provided by ./globals-polyfills.js loaded earlier
 
 /* global logger */
 
@@ -111,7 +110,9 @@ if (!window.POST) {
 }
 
 /* ===== Post-vendita & Post-NNCF banners – flow completo (VSS + GI) ===== */
-initPostSaleBanners(hapticImpact);
+if (typeof window !== 'undefined' && typeof window.initPostSaleBanners === 'function') {
+  window.initPostSaleBanners(hapticImpact);
+}
 /* ====== QUICK VSS MODALE + GI AUTO + BUILDER PAGAMENTI ====== */
 
 // — CSS della modale (centrata)

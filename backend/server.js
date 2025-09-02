@@ -1080,6 +1080,13 @@ async function setupStatic(){
       app.use('/lib', express.static(libDir, { maxAge: '1h' }));
     }
   }catch(_){ }
+  // Expose selected source modules used directly by the SPA (no bundler)
+  try{
+    const srcDir = path.join(root, 'src');
+    if(await fs.pathExists(srcDir)){
+      app.use('/src', express.static(srcDir, { maxAge: '1h' }));
+    }
+  }catch(_){ }
   try{
     const cssDir = path.join(root, 'css');
     if(await fs.pathExists(cssDir)){
@@ -1090,11 +1097,41 @@ async function setupStatic(){
   try{
     const swFromFrontRoot = path.join(frontRoot, 'push-sw.js');
     const swFromSourceRoot = path.join(root, 'push-sw.js');
+    const swFromBackend    = path.join(__dirname, 'push-sw.js'); // optional local fallback
     app.get('/push-sw.js', async (_req,res)=>{
-      const file = (await fs.pathExists(swFromFrontRoot)) ? swFromFrontRoot : swFromSourceRoot;
       res.set('Cache-Control','no-store');
       res.type('application/javascript');
-      return res.sendFile(file);
+
+      // try a few locations in order, then inline fallback
+      const candidates = [swFromFrontRoot, swFromSourceRoot, swFromBackend];
+      for (const p of candidates){
+        try{ if (await fs.pathExists(p)) return res.sendFile(p); }catch(_){ /* ignore */ }
+      }
+
+      const inlineFallback = `/* BPApp push-sw fallback (inline) */
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients && self.clients.claim && clients.claim());
+self.addEventListener('push', (event) => {
+  try{
+    const data = event.data ? event.data.json() : {};
+    const title = data.title || 'Battle Plan';
+    const body = data.body || 'Hai una nuova notifica';
+    const tag = data.tag || 'bp-tag';
+    const url = data.url || '/';
+    event.waitUntil(self.registration.showNotification(title, { body, tag, data: { url }, icon: data.icon || '/favicon.ico', badge: data.badge || '/favicon.ico' }));
+  }catch(_){
+    event.waitUntil(self.registration.showNotification('Battle Plan', { body: 'Hai una nuova notifica', tag: 'bp-tag-fallback' }));
+  }
+});
+self.addEventListener('notificationclick', (event) => {
+  event.notification && event.notification.close && event.notification.close();
+  const targetUrl = (event.notification && event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(self.clients && self.clients.matchAll ? self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    for (const client of clientList) { if (client.focus) return client.focus(); }
+    if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+  }) : Promise.resolve());
+});`;
+      return res.send(inlineFallback);
     });
   }catch(_){ }
   // static di base (no speciale caching per index)

@@ -229,7 +229,7 @@
     return acc;
   }, {});
 </script>
-<script src="https://cdn.jsdelivr.net/npm/pino@8.17.0/pino.min.js"></script>
+<!-- Pino browser build requires bundling; omit CDN to avoid errors -->
 <script src="./lib/logger.js?v=1"></script>
 
 <script>window.BP_USE_SERIES_API = true;</script>
@@ -253,6 +253,8 @@
 <script src="./lib/ics-sanitize.js?v=1"></script>
 
 <!-- === FINAL PACK: includes features from former main-plus.js and bp-hooks.js === -->
+<!-- Post-sale banners (exposed as window.initPostSaleBanners) -->
+<script src="./src/postSaleBanners.js"></script>
 <link rel="stylesheet" href="./css/final-hooks.css?v=1">
 <script src="./lib/final-hooks.js?v=2"></script>
 <script src="./lib/push-client.js?v=1"></script>

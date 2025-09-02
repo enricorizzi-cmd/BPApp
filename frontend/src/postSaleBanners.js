@@ -1,4 +1,5 @@
-export function initPostSaleBanners(hapticImpact){
+;(function(global){
+  function initPostSaleBanners(hapticImpact){
   // --- Parametri ---
   const LOOKBACK_DAYS = window.BANNERS_LOOKBACK_DAYS || 7; // ultimi N giorni
   const KIND_NNCF = 'nncf';
@@ -203,4 +204,8 @@ export function initPostSaleBanners(hapticImpact){
   } else {
     scan();
   }
-}
+  }
+  if (typeof global !== 'undefined') {
+    global.initPostSaleBanners = initPostSaleBanners;
+  }
+})(typeof window !== 'undefined' ? window : this);

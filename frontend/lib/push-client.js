@@ -1,6 +1,6 @@
 /* BPApp – push-client.js
    Gestisce la sottoscrizione Web Push e l'invio al backend */
-import './logger.js';
+// logger is loaded globally via index.html
 
 /* global logger */
 (function(){

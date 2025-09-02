@@ -24,9 +24,5 @@ if (typeof window !== 'undefined'){
   }
 }
 
-// CommonJS/ES module exports
-export { effectivePeriodType, isoWeekNum };
-if (typeof module !== 'undefined'){
-  module.exports = { effectivePeriodType, isoWeekNum };
-}
+// (No module exports when used in-browser via classic <script>)
 

@@ -1,5 +1,3 @@
-import { effectivePeriodType, isoWeekNum } from './globals-polyfills.js';
-
 // bp-hooks-core.js — core helpers unificati (users preload, period types, buckets, labels)
 (function(){
   // ----------------------------- Auth token & preload users

@@ -7,7 +7,7 @@
      { id, client, start, end, type, notes, vss, vsdPersonal }
      start/end: "YYYY-MM-DDTHH:MM" (locale)
 */
-import './logger.js';
+// logger is loaded globally via index.html
 
 /* global logger */
 (function () {
