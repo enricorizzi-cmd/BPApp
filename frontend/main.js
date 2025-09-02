@@ -124,8 +124,10 @@ function viewLogin(){
       toast('Bentornato '+r.user.name+'!'); addXP(10);
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();
-    }).catch(function(err){
+    }, function(err){
       toast('Credenziali errate'); logger.error(err);
+    }).catch(function(err){
+      logger.error(err);
     }).finally(function(){ btn.disabled = false; });
   });
 
