@@ -994,10 +994,52 @@ function __readMode(scope){
       return String(d.getFullYear());
     });
   }
-  async function ensurePeriods(){
-    if (Array.isArray(window.periods) && window.periods.length) return window.periods;
-    try{ const j = await GET('/api/periods?global=1'); if (j && Array.isArray(j.periods)){ window.periods=j.periods; return j.periods; } }catch(_){}
-    return window.periods || [];
+  // Cache per chiave (tipo/from/to[/userId]) per ridurre payload e garantire separazione banche dati
+  const __periodsCache = (typeof window !== 'undefined' ? (window.__periodsCache || (window.__periodsCache = {})) : {});
+  function _toYMD(d){ try{ const x=new Date(d); const y=x.getUTCFullYear(); const m=String(x.getUTCMonth()+1).padStart(2,'0'); const dy=String(x.getUTCDate()).padStart(2,'0'); return y+'-'+m+'-'+dy; }catch(_){ return ''; } }
+  function _effType(t){ try{ return (typeof effectivePeriodType==='function') ? effectivePeriodType(String(t||'mensile').toLowerCase()) : String(t||'mensile').toLowerCase(); }catch(_){ return String(t||'mensile').toLowerCase(); } }
+  async function ensurePeriods(scopeOrOpts){
+    // Backcompat: nessun argomento -> usa cache globale legacy
+    if (!scopeOrOpts){
+      if (Array.isArray(window.periods) && window.periods.length) return window.periods;
+      try{ const j = await GET('/api/periods?global=1'); if (j && Array.isArray(j.periods)){ window.periods=j.periods; return j.periods; } }catch(_){}
+      return window.periods || [];
+    }
+
+    // Calcola type/from/to dal range unificato in base allo scope, o usa opts espliciti
+    let type, fromISO, toISO, userId=null;
+    if (typeof scopeOrOpts === 'string'){
+      const r = (window.readUnifiedRange && window.readUnifiedRange(scopeOrOpts)) || { type:'mensile', end:new Date() };
+      type = r.type || 'mensile';
+      const buckets = (window.buildBuckets ? window.buildBuckets(type, r.end) : []);
+      if (buckets && buckets.length){
+        fromISO = _toYMD(new Date(buckets[0].s));
+        toISO   = _toYMD(new Date(buckets[buckets.length-1].e));
+      } else if (r.start && r.end){
+        fromISO = _toYMD(new Date(r.start));
+        toISO   = _toYMD(new Date(r.end));
+      } else {
+        const now=new Date(); fromISO=_toYMD(now); toISO=_toYMD(now);
+      }
+    } else {
+      const o = scopeOrOpts || {};
+      type = o.type || 'mensile';
+      fromISO = o.from || _toYMD(new Date());
+      toISO   = o.to   || _toYMD(new Date());
+      userId  = o.userId || null;
+    }
+    const eff = _effType(type);
+    const key = [eff, fromISO, toISO, userId||''].join('|');
+    if (__periodsCache[key]) return __periodsCache[key];
+
+    const qs = ['?global=1','type='+encodeURIComponent(eff),'from='+encodeURIComponent(fromISO),'to='+encodeURIComponent(toISO)]
+                .concat(userId?[ 'userId='+encodeURIComponent(userId) ]:[]).join('&').replace('?&','?');
+    try{
+      const j = await GET('/api/periods'+qs).catch(function(){ return GET('/api/periods'+qs.replace('?global=1','?').replace('??','?')); });
+      const rows = (j && Array.isArray(j.periods)) ? j.periods : [];
+      __periodsCache[key] = rows;
+      return rows;
+    }catch(_){ return []; }
   }
   function sumIndicator(p, mode, k){
     const bag = (String(mode).toLowerCase()==='previsionale') ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{});
@@ -1019,7 +1061,7 @@ async function recomputeDashboardMini(){
   const mode = __readMode('dash'); // consuntivo | previsionale
 
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
-  const periods = await ensurePeriods();
+  const periods = await ensurePeriods('dash');
   const L = (window.labelsFor?window.labelsFor(type, buckets):buckets.map((_,i)=>String(i+1)));
 
   ['VSS','VSDPersonale','GI','NNCF'].forEach(k=>{
@@ -1080,7 +1122,7 @@ async function recomputeCommsMini(){
   const mode = (__readMode && __readMode(scope)) || (__readMode && __readMode('cm')) || 'cons';
 
   const buckets = (window.buildBuckets ? window.buildBuckets(type, r.end) : []);
-  const periods = await ensurePeriods();
+  const periods = await ensurePeriods('comm');
   const L = (window.labelsFor ? window.labelsFor(type, buckets) : buckets.map((_,i)=>String(i+1)));
 
   const data = buckets.map(B=>{
@@ -1176,7 +1218,7 @@ function recomputeTeamAggChart(){
   var type   = rng.gran || rng.type;
 
   Promise.all([
-    ensurePeriods('team', mode),
+    ensurePeriods('t'),
     ensureUsers(),
     ensureSettings()
   ]).then(function(arr){
@@ -1232,7 +1274,10 @@ function recomputeTeamAggChart(){
   const ind    = ($1('#tg_ind')||{}).value || 'VSS';
 
   const buckets = (window.buildBuckets ? window.buildBuckets(type, r.end) : []);
-  const periods = await ensurePeriods();
+  function __ymd(d){ try{ const x=new Date(d); const y=x.getUTCFullYear(); const m=String(x.getUTCMonth()+1).padStart(2,'0'); const dy=String(x.getUTCDate()).padStart(2,'0'); return y+'-'+m+'-'+dy; }catch(_){ return ''; } }
+  const fromISO = buckets.length ? __ymd(new Date(buckets[0].s)) : __ymd(new Date());
+  const toISO   = buckets.length ? __ymd(new Date(buckets[buckets.length-1].e)) : __ymd(new Date());
+  const periods = await ensurePeriods({ type: type, from: fromISO, to: toISO, userId: (userId||null) });
   const L = (window.labelsFor ? window.labelsFor(type, buckets) : buckets.map((_,i)=>String(i+1)));
 
   const data = buckets.map(B=>{
@@ -2010,7 +2055,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   // === Coach + Undo su delete ===
   window.wireCoachUndoHaptics = function(){
-document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+function __clearPeriodsCache(){ try{ if (window.__periodsCache) { Object.keys(window.__periodsCache).forEach(function(k){ delete window.__periodsCache[k]; }); } delete window.periods; }catch(_){} }
+document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  __clearPeriodsCache(); });
+document.addEventListener('bp:deleted',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); __clearPeriodsCache(); });
 document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
 document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
 document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });

@@ -711,7 +711,14 @@ function viewHome(){
     }
 
     // uso periods locale come in Squadra quando /api/series non è disponibile
-    return GET('/api/periods?global=1').catch(function(){ return GET('/api/periods'); }).then(function(resp){
+    var __qsDash = (function(){
+      var from = buckets.length ? ymd(new Date(buckets[0].s)) : ymd(new Date());
+      var to   = buckets.length ? ymd(new Date(buckets[buckets.length-1].e)) : ymd(new Date());
+      var s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      if (userId) s += '&userId='+encodeURIComponent(userId);
+      return s;
+    })();
+    return GET('/api/periods'+__qsDash).catch(function(){ return GET('/api/periods'+__qsDash.replace('?global=1','')); }).then(function(resp){
       var periods = (resp && resp.periods) || [];
 
       var filtered = periods.filter(function(p){
@@ -755,6 +762,7 @@ function viewHome(){
 function recomputeKPI(){
   var mode = (document.getElementById('dash_mode')||{}).value || 'consuntivo';
   var r    = readUnifiedRange('dash');
+  var type = effectivePeriodType(r.type || 'mensile');
 
   // usa numeri (niente ISO / timezone)
   var f = new Date(r.start).getTime();
@@ -783,13 +791,23 @@ function recomputeKPI(){
     return asNum(bag.ProvvGI) + asNum(bag.ProvvVSD);
   }
 
-  return GET('/api/periods').then(function(j){
+  var qsKpi = (function(){
+    var fromISO = ymd(new Date(f));
+    var toISO   = ymd(new Date(t));
+    var s = '?type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+    if (cons) s += '&userId='+encodeURIComponent(cons);
+    return s;
+  })();
+  return GET('/api/periods'+qsKpi).then(function(j){
     var periods = (j && j.periods) || [];
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
 
     for(var i=0;i<periods.length;i++){
       var p = periods[i];
+
+      // rispetta il tipo periodo selezionato (nessun mix tra banche dati)
+      if (String(p.type) !== String(type)) continue;
 
       // rispetta il consulente
       if(cons && String(p.userId||p.uid||'') !== String(cons)) continue;
@@ -932,9 +950,18 @@ function cardAppt(x){
   function hasCons(bag){ return bag && Object.keys(bag).length>0; }
   function safeN(n){ n = Number(n||0); return isFinite(n)?n:0; }
 
-  Promise.all([ GET('/api/appointments'), GET('/api/periods') ]).then(function(arr){
+  var __qsDash = (function(){
+    var fromISO = ymd(new Date(rDash.start));
+    var toISO   = ymd(new Date(rDash.end));
+    var s = '?type='+encodeURIComponent(typeDash)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+    if (cons) s += '&userId='+encodeURIComponent(cons);
+    return s;
+  })();
+  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash) ]).then(function(arr){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
+    var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
+    var typeDash = (typeof effectivePeriodType==='function' ? effectivePeriodType(rDash.type||'mensile') : (rDash.type||'mensile'));
 
     // ===== PROSSIMI APPUNTAMENTI (oggi + domani) =====
     (function renderNext(){
@@ -1026,6 +1053,7 @@ function cardAppt(x){
     (function renderLastBPs(){
       var lastBPsEl = document.getElementById('lastBPs'); if(!lastBPsEl) return;
       var pFiltered = pers.filter(function(p){
+        if (String(p.type) !== String(typeDash)) return false; // mostra solo BP del tipo selezionato
         if(cons && String(p.userId||p.uid||'') !== String(cons)) return false;
         return true;
       }).sort(function(a,b){ return new Date(b.endDate)-new Date(a.endDate); }).slice(0,3);
@@ -1741,7 +1769,9 @@ function viewPeriods(){
       if(!confirm('Eliminare definitivamente questo BP?')) return;
       delBP.disabled=true;
       apiDeletePeriod(EDIT_PID).then(function(){
-        toast('BP eliminato'); EDIT_PID=null; CURRENT_P=null; clearPrev(); clearCons(); setFormMode(false); computeBoundsAndPreview(); listPeriods();
+        toast('BP eliminato');
+        try{ document.dispatchEvent(new Event('bp:deleted')); }catch(_){ }
+         EDIT_PID=null; CURRENT_P=null; clearPrev(); clearCons(); setFormMode(false); computeBoundsAndPreview(); listPeriods();
       }).catch(function(){ toast('Endpoint delete non disponibile'); }).finally(function(){ delBP.disabled=false; });
     };
 
@@ -1756,6 +1786,7 @@ function viewPeriods(){
       payload.indicatorsCons = {};
       POST('/api/periods', payload).then(function(){
         toast('Consuntivo eliminato');
+        try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
         if(CURRENT_P){ CURRENT_P.indicatorsCons={}; }
         setFormMode(true); listPeriods(); renderDeleteZone();
       }).catch(function(){ toast('Errore eliminazione Consuntivo'); }).finally(function(){ delCons.disabled=false; });
@@ -3113,7 +3144,14 @@ function viewTeam(){
       return Number(bag[ind]||0);
     }
 
-    return GET('/api/periods?global=1').catch(function(){ return GET('/api/periods'); }).then(function(resp){
+    var __qsTeam = (function(){
+      var from = buckets.length ? ymd(new Date(buckets[0].s)) : ymd(new Date());
+      var to   = buckets.length ? ymd(new Date(buckets[buckets.length-1].e)) : ymd(new Date());
+      var s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      if (userId) s += '&userId='+encodeURIComponent(userId);
+      return s;
+    })();
+    return GET('/api/periods'+__qsTeam).catch(function(){ return GET('/api/periods'+__qsTeam.replace('?global=1','')); }).then(function(resp){
       var periods = (resp && resp.periods) || [];
 
       var filtered = periods.filter(function(p){
@@ -3373,12 +3411,22 @@ function renderProvvPie(provvGI, provvVSD, giBase){
     var userSel = isAdmin ? ($('comm_user').value || '__all') : String(getUser().id);
     var from = new Date(r.start).getTime();
     var to   = new Date(r.end).getTime();
+    // Filtra SEMPRE per tipo periodo selezionato: niente mix tra banche dati
+    var type = effectivePeriodType(r.type || 'mensile'); // ytd/ltm => mensile
 
-    GET('/api/periods').then(function(j){
+    var qsComm = (function(){
+      var fromISO = ymd(new Date(from));
+      var toISO   = ymd(new Date(to));
+      var s = '?type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+      if (isAdmin && userSel && userSel!=='__all') s += '&userId='+encodeURIComponent(userSel);
+      return s;
+    })();
+    GET('/api/periods'+qsComm).then(function(j){
       var periods = (j && j.periods) || [];
 
-      // filtro periodo + utente (se admin != tutta squadra)
+      // filtro tipo periodo + finestra temporale + utente (se admin != tutta squadra)
       var filtered = periods.filter(function(p){
+        if (p.type !== type) return false; // separazione assoluta tra settimanale/mensile/...
         var ps = new Date(p.startDate).getTime();
         var pe = new Date(p.endDate).getTime();
         if (ps < from || pe > to) return false;

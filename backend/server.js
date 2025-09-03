@@ -652,13 +652,42 @@ app.use('/api', pushRoutes);
 
 // ---------- Periods (BP) ----------
 app.get("/api/periods", auth, async (req,res)=>{
-  const global = req.query.global === "1";
+  const { global, type: typeQ, from: fromISO, to: toISO, userId: userQ } = req.query || {};
   const db = await readJSON("periods.json");
-  if (global && req.user.role === "admin") {
-    return res.json({ periods: db.periods || [] });
+
+  // Base set: admin+global=1 => tutti; altrimenti solo i propri
+  const isAdmin = req.user.role === "admin";
+  let rows = (db.periods || []);
+  if (!(global === "1" && isAdmin)) {
+    rows = rows.filter(p => String(p.userId) === String(req.user.id));
   }
-  const mine = (db.periods || []).filter(p => p.userId === req.user.id);
-  res.json({ periods: mine });
+
+  // Filtro opzionale: utente specifico (solo admin)
+  if (userQ && isAdmin) {
+    rows = rows.filter(p => String(p.userId) === String(userQ));
+  }
+
+  // Filtro opzionale: tipo periodo (settimanale|mensile|trimestrale|semestrale|annuale)
+  const { effectivePeriodType } = require('./lib/periods');
+  const t = typeQ ? effectivePeriodType(String(typeQ).toLowerCase()) : null;
+  if (t) rows = rows.filter(p => String(p.type) === t);
+
+  // Filtro opzionale: finestra temporale (inclusiva). Manteniamo la stessa
+  // semantica usata lato frontend per dashboard/provvigioni: il periodo deve
+  // essere completamente contenuto tra "from" e "to".
+  if (fromISO && toISO) {
+    const fs = new Date(fromISO).getTime();
+    const te = new Date(toISO).getTime();
+    if (isFinite(fs) && isFinite(te)) {
+      rows = rows.filter(p => {
+        const ps = new Date(p.startDate).getTime();
+        const pe = new Date(p.endDate).getTime();
+        return isFinite(ps) && isFinite(pe) && ps >= fs && pe <= te;
+      });
+    }
+  }
+
+  res.json({ periods: rows });
 });
 
 // --- helpers provvigioni (GI 15% tutti; VSDPersonale 20% junior / 25% senior) ---
