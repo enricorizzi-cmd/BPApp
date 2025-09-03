@@ -3337,6 +3337,48 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
   fillUsers();
   compute();
 }
+// ===== VENDITE E RIORDINI =====
+function viewVendite(){
+  if(!getUser()) return viewLogin();
+  document.title = 'Battle Plan – Vendite e Riordini';
+
+  appEl.innerHTML = topbarHTML()+`
+    <div class="wrap">
+
+      <div class="card">
+        <b>Filtro</b>
+        <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <label>Consulente</label>
+            <select id="vr_cons"><option value="">Tutti</option></select>
+          </div>
+        </div>
+        ${unifiedFiltersHTML("vr")}
+      </div>
+
+      <div class="card">
+        <b>Vendite e Riordini</b>
+        <div class="table" style="overflow:auto">
+          <table class="simple" style="min-width:980px">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Consulente</th>
+              </tr>
+            </thead>
+            <tbody id="vr_rows">
+              <tr><td colspan="3" class="muted">Nessun dato</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>`;
+
+  renderTopbar();
+  bindUnifiedFilters('vr', ()=>{});
+}
 // ===== GI & SCADENZARIO =====
 function viewGI(){
   if(!getUser()) return viewLogin();
@@ -4207,6 +4249,7 @@ window.viewLeaderboard  = viewLeaderboard;
 window.viewClients      = viewClients;
 window.viewTeam         = viewTeam;
 window.viewCommissions  = viewCommissions;
+window.viewVendite     = viewVendite;
 window.viewReport       = viewReport;
 window.viewUsers        = viewUsers;
 window.toggleDrawer     = toggleDrawer;
