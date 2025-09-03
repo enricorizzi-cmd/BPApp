@@ -1170,6 +1170,7 @@ function viewCalendar(){
             '<label class="chip small"><input type="checkbox" id="only_free"> Solo giorni liberi</label> '+
             '<label class="chip small"><input type="checkbox" id="only_4h"> Solo slot ≥ 4h</label>'+
           '</div>'+
+          '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
           '<div class="right" style="margin-left:auto"><button id="cal_refresh" class="ghost">Aggiorna</button></div>'+
         '</div>'+
       '</div>'+
@@ -1353,6 +1354,19 @@ function viewCalendar(){
             }
             h+='</div>';
           }
+          var daySlots = (slots||[]).filter(function(s){ return s.date===dateStr; });
+          if(daySlots.length){
+            h += '<div class="row" style="margin-top:8px">';
+            for(var si=0; si<daySlots.length; si++){
+              var s = daySlots[si];
+              var partTxt = (s.part==='morning'?'mattina':'pomeriggio');
+              h += '<div class="card slotBtn" data-start="'+s.start+'" data-end="'+s.end+'" style="flex:1 1 280px;cursor:pointer">'+
+                    '<div class="small">'+partTxt+' · '+timeHMlocal(s.start)+'–'+timeHMlocal(s.end)+'</div>'+
+                    '</div>';
+            }
+            h += '</div>';
+          }
+
           box.style.display='block'; box.innerHTML = h;
 
           box.querySelectorAll('.cal-app').forEach(function(c){
@@ -1360,6 +1374,14 @@ function viewCalendar(){
               ev.stopPropagation();
               save('bp_edit_aid', c.getAttribute('data-aid'));
               viewAppointments();
+            });
+          });
+
+          box.querySelectorAll('.slotBtn').forEach(function(el){
+            el.addEventListener('click', function(ev){
+              ev.stopPropagation();
+              save('bp_prefill_slot', {start:el.getAttribute('data-start'), end:el.getAttribute('data-end')});
+              viewAppointments(); toast('Slot precompilato negli appuntamenti');
             });
           });
 
@@ -1415,6 +1437,8 @@ function viewCalendar(){
     renderMonth(y, m, filters);
   }
   document.getElementById('cal_refresh').onclick = doRender;
+  var btnAdd = document.getElementById('cal_add');
+  if(btnAdd) btnAdd.onclick = function(){ viewAppointments(); };
   document.getElementById('cal_month').onchange = doRender;
 
   // bottoni prev/next mese
