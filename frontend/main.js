@@ -1671,7 +1671,14 @@ function viewPeriods(){
       var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
       for(var i=0;i<list.length;i++){ var a=list[i], d=new Date(a.start);
-        if(d>=sD && d<=eD){ agg.VSS+=Number(a.vss||0); agg.VSDPersonale+=Number(a.vsdPersonal||0); if(a.nncf) agg.NNCF+=1; }
+        if(d>=sD && d<=eD){
+          agg.VSS+=Number(a.vss||0);
+          agg.VSDPersonale+=Number(a.vsdPersonal||0);
+          agg.VSDIndiretto+=Number(a.vsdIndiretto||0);
+          agg.Telefonate+=Number(a.telefonate||0);
+          agg.AppFissati+=Number(a.appFissati||0);
+          if(a.nncf) agg.NNCF+=1;
+        }
       }
       fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); window.addXP(10);
     }).catch(function(){ toast('Errore import agenda'); });
