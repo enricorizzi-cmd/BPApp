@@ -778,23 +778,30 @@ app.get("/api/availability", auth, async (req,res)=>{
     { startH:14, startM:0,  endH:19, endM:30, part:"afternoon" }
   ];
   function freeMinutesForBlock(date, b){
-    const s = new Date(date); s.setHours(b.startH,b.startM,0,0);
-    const e = new Date(date); e.setHours(b.endH,b.endM,0,0);
-    const total = Math.max(0, (e - s)/60000);
-    // Nuova logica: lo slot è LIBERO solo se non esiste alcuna sovrapposizione
-    // con appuntamenti in quella fascia oraria (anche 30 minuti lo rende occupato).
+    const dayKey = ymd(date);
+    const blockStart = b.startH*60 + b.startM;
+    const blockEnd   = b.endH*60 + b.endM;
+
+    // Consideriamo lo slot occupato se QUALSIASI appuntamento
+    // del giorno si sovrappone anche parzialmente al blocco.
     for(const a of my){
-      const aS = fromLocalInputValue(a.start);
-      const aE = fromLocalInputValue(a.end);
-      if(aS.toDateString() !== s.toDateString()) continue; // solo stesso giorno
-      const overlapMs = Math.max(0, Math.min(aE, e) - Math.max(aS, s));
-      if (overlapMs > 0) {
-        // Qualsiasi overlap rende lo slot NON libero
-        return 0;
+      const startStr = String(a.start||'');
+      if(startStr.slice(0,10) !== dayKey) continue; // solo stesso giorno
+
+      const endStr = String(a.end || a.start);
+      const [aSH,aSM] = startStr.slice(11,16).split(':').map(Number);
+      const [aEH,aEM] = endStr.slice(11,16).split(':').map(Number);
+      const aStart = aSH*60 + aSM;
+      const aEnd   = aEH*60 + aEM;
+
+      const overlap = Math.max(0, Math.min(aEnd, blockEnd) - Math.max(aStart, blockStart));
+      if(overlap > 0){
+        return 0; // qualsiasi sovrapposizione invalida lo slot
       }
     }
-    // Nessun overlap: tutto il blocco è effettivamente libero
-    return total;
+
+    // slot completamente libero
+    return blockEnd - blockStart;
   }
 
   const out = [];
@@ -805,9 +812,10 @@ app.get("/api/availability", auth, async (req,res)=>{
     for(const b of blocks){
       const free = freeMinutesForBlock(d,b);
       if(free >= 240){
-        const s = new Date(d); s.setHours(b.startH,b.startM,0,0);
-        const e = new Date(d); e.setHours(b.endH,b.endM,0,0);
-        out.push({ date: ymd(d), start: toLocalInputValue(s), end: toLocalInputValue(e), part: b.part });
+        const dateKey = ymd(d);
+        const start = `${dateKey}T${pad2(b.startH)}:${pad2(b.startM)}`;
+        const end   = `${dateKey}T${pad2(b.endH)}:${pad2(b.endM)}`;
+        out.push({ date: dateKey, start, end, part: b.part });
       }
     }
   }
