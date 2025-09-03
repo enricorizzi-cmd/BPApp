@@ -8,6 +8,7 @@ if(!file){
   process.exit(1);
 }
 const dryRun = rest.includes('--dry-run');
+const writeFileMode = rest.includes('--write-file') || process.env.API_URL === 'file';
 
 // Load CSV
 function parseCsv(content){
@@ -76,15 +77,34 @@ function findUserByName(name){
 
 // Group periods by userId
 const periodsByUser = {}; // { [userId]: { name, periods: { [key]: data } } }
+
+function ensurePeriod(userId, userName, type, startDate, endDate){
+  if(!periodsByUser[userId]) periodsByUser[userId] = { name: userName, periods: {} };
+  const key = `${type}|${startDate}`;
+  if(!periodsByUser[userId].periods[key]){
+    periodsByUser[userId].periods[key] = { type, startDate, endDate, indicatorsPrev:{}, indicatorsCons:{} };
+  }
+  return periodsByUser[userId].periods[key];
+}
+function addValue(userId, userName, type, start, end, kpi, val){
+  if(!val) return;
+  const bag = ensurePeriod(userId, userName, type, start.toISOString(), end.toISOString());
+  bag.indicatorsPrev[kpi] = (bag.indicatorsPrev[kpi] || 0) + val;
+  bag.indicatorsCons[kpi] = (bag.indicatorsCons[kpi] || 0) + val;
+}
+
 rows.forEach(r=>{
   const kpi = mapKpi(r.kpi);
   const valCombined = Number(r.VALORE || r.valore || 0);
   const prevVal = Number(r.indicatorsprev || r.IndicatorsPrev || r.prev || 0);
   const consVal = Number(r.indicatorscons || r.IndicatorsCons || r.cons || 0);
+  const aggVal = prevVal || consVal || valCombined || 0;
 
   const week = Number(r.settimana || r.week || 0);
   const month = Number(r.mese || r.month || 0);
   const year = Number(r.anno || r.year || 0);
+  const quarter = Number(r.trimestre || r.quarter || 0) || (month ? Math.floor((month-1)/3)+1 : 0);
+  const semester = Number(r.semestre || r.semester || 0) || (month ? (month<=6?1:2) : 0);
 
   // Resolve user by id first, then by name
   const userIdRaw = r.userid || r.userId || r.USERID || '';
@@ -95,26 +115,36 @@ rows.forEach(r=>{
     return;
   }
 
-  const type = week ? 'settimanale' : 'mensile';
-  const { start, end } = week ? weekBounds(year, week) : monthBounds(year, month);
-  const startDate = start.toISOString();
-  const endDate = end.toISOString();
-
-  if(!periodsByUser[user.id]) periodsByUser[user.id] = { name: user.name, periods: {} };
-  const key = `${type}|${startDate}`;
-  if(!periodsByUser[user.id].periods[key]){
-    periodsByUser[user.id].periods[key] = { type, startDate, endDate, indicatorsPrev:{}, indicatorsCons:{} };
+  // Always fill settimanale if week present (as prima importazione)
+  if(week && year){
+    const { start, end } = weekBounds(year, week);
+    addValue(user.id, user.name, 'settimanale', start, end, kpi, aggVal);
   }
-  const bag = periodsByUser[user.id].periods[key];
-  if(valCombined){
-    bag.indicatorsPrev[kpi] = (bag.indicatorsPrev[kpi] || 0) + valCombined;
-    bag.indicatorsCons[kpi] = (bag.indicatorsCons[kpi] || 0) + valCombined;
+  // Monthly aggregation
+  if(month && year){
+    const { start, end } = monthBounds(year, month);
+    addValue(user.id, user.name, 'mensile', start, end, kpi, aggVal);
   }
-  if(prevVal){
-    bag.indicatorsPrev[kpi] = (bag.indicatorsPrev[kpi] || 0) + prevVal;
+  // Quarterly aggregation
+  if(quarter && year){
+    const startM = (quarter-1)*3 + 1;
+    const start = new Date(year, startM-1, 1);
+    const end   = new Date(year, startM+2, 0);
+    addValue(user.id, user.name, 'trimestrale', start, end, kpi, aggVal);
   }
-  if(consVal){
-    bag.indicatorsCons[kpi] = (bag.indicatorsCons[kpi] || 0) + consVal;
+  // Semestral aggregation
+  if(semester && year){
+    const startM = (semester===1) ? 1 : 7;
+    const endM   = (semester===1) ? 6 : 12;
+    const start = new Date(year, startM-1, 1);
+    const end   = new Date(year, endM, 0);
+    addValue(user.id, user.name, 'semestrale', start, end, kpi, aggVal);
+  }
+  // Annual aggregation
+  if(year){
+    const start = new Date(year, 0, 1);
+    const end   = new Date(year, 12, 0);
+    addValue(user.id, user.name, 'annuale', start, end, kpi, aggVal);
   }
 });
 
@@ -133,6 +163,67 @@ async function postPeriod(token, base, data){
 
 async function main(){
   const baseUrl = process.env.API_URL || 'http://localhost:3000';
+
+  if(writeFileMode && !dryRun){
+    // offline: write directly to backend/data/periods.json with server-like upsert + provvigioni
+    const dbPath = path.join(__dirname, '..', 'data', 'periods.json');
+    let db = { periods: [] };
+    try{ db = JSON.parse(fs.readFileSync(dbPath, 'utf8')); }
+    catch(_){ /* initialize empty */ }
+    db.periods = db.periods || [];
+
+    const { customAlphabet } = require('nanoid');
+    const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 16);
+
+    function _gradeOf(userId){
+      const u = findUserById(userId);
+      return (u && u.grade==='senior') ? 'senior' : 'junior';
+    }
+    function _computeProvvigioniForBag(bag, grade){
+      if(!bag) return;
+      const gi  = Number(bag.GI || 0);
+      const vsdP= Number(bag.VSDPersonale || 0);
+      const rateGi   = 0.15;
+      const rateVsdP = (grade==='senior') ? 0.25 : 0.20;
+      const provvGi  = (bag.ProvvGI!=null)  ? Number(bag.ProvvGI)  : gi  * rateGi;
+      const provvVsd = (bag.ProvvVSD!=null) ? Number(bag.ProvvVSD) : vsdP* rateVsdP;
+      const tot      = (bag.TotProvvigioni!=null) ? Number(bag.TotProvvigioni) : (provvGi + provvVsd);
+      bag.ProvvGI = provvGi; bag.ProvvVSD = provvVsd; bag.TotProvvigioni = tot;
+    }
+    function _periodKey(p){
+      return [ p.userId, p.type, new Date(p.startDate).toISOString().slice(0,10), new Date(p.endDate).toISOString().slice(0,10) ].join('|');
+    }
+    function _mergeIndicators(target, incoming){
+      const out = { ...(target||{}) };
+      for(const [k,v] of Object.entries(incoming||{})) out[k] = Number(v||0);
+      return out;
+    }
+
+    let created = 0, updated = 0;
+    for(const [userId, rec] of Object.entries(periodsByUser)){
+      const grade = _gradeOf(userId);
+      for(const p of Object.values(rec.periods)){
+        const probe = { userId, type: p.type, startDate: new Date(p.startDate).toISOString(), endDate: new Date(p.endDate).toISOString() };
+        let existing = db.periods.find(x => _periodKey(x) === _periodKey(probe));
+        if(existing){
+          if(p.indicatorsPrev) existing.indicatorsPrev = _mergeIndicators(existing.indicatorsPrev, p.indicatorsPrev);
+          if(p.indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, p.indicatorsCons);
+          _computeProvvigioniForBag(existing.indicatorsPrev, grade);
+          _computeProvvigioniForBag(existing.indicatorsCons, grade);
+          updated++;
+        } else {
+          const row = { id: nanoid(), ...probe, indicatorsPrev: p.indicatorsPrev || {}, indicatorsCons: p.indicatorsCons || {} };
+          _computeProvvigioniForBag(row.indicatorsPrev, grade);
+          _computeProvvigioniForBag(row.indicatorsCons, grade);
+          db.periods.push(row);
+          created++;
+        }
+      }
+    }
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+    console.log(`File updated: ${created} created, ${updated} updated`);
+    return;
+  }
 
   for(const [userId, rec] of Object.entries(periodsByUser)){
     const user = findUserById(userId);

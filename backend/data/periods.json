@@ -682,6 +682,2066 @@
         "ProvvVSD": 0,
         "TotProvvigioni": 0
       }
+    },
+    {
+      "id": "ytqvnymtuysg47aq",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-08-17T22:00:00.000Z",
+      "endDate": "2025-08-23T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 2300,
+        "VSDPersonale": 1000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSS": 2300,
+        "VSDPersonale": 1000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "pku3gpyf8ipme7po",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-08-03T22:00:00.000Z",
+      "endDate": "2025-08-09T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1860,
+        "VSDPersonale": 3120,
+        "NNCF": 3,
+        "ProvvGI": 0,
+        "ProvvVSD": 780,
+        "TotProvvigioni": 780
+      },
+      "indicatorsCons": {
+        "VSS": 1860,
+        "VSDPersonale": 3120,
+        "NNCF": 3,
+        "ProvvGI": 0,
+        "ProvvVSD": 780,
+        "TotProvvigioni": 780
+      }
+    },
+    {
+      "id": "b77uqqaietdd9h9p",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-07-27T22:00:00.000Z",
+      "endDate": "2025-08-02T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 9570,
+        "VSDPersonale": 120,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 30,
+        "TotProvvigioni": 30
+      },
+      "indicatorsCons": {
+        "VSS": 9570,
+        "VSDPersonale": 120,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 30,
+        "TotProvvigioni": 30
+      }
+    },
+    {
+      "id": "1ocbkb39ez37gzoc",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-07-20T22:00:00.000Z",
+      "endDate": "2025-07-26T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1450,
+        "VSDPersonale": 660,
+        "VSDIndiretto": 1000,
+        "NNCF": 5,
+        "ProvvGI": 0,
+        "ProvvVSD": 165,
+        "TotProvvigioni": 165
+      },
+      "indicatorsCons": {
+        "VSS": 1450,
+        "VSDPersonale": 660,
+        "VSDIndiretto": 1000,
+        "NNCF": 5,
+        "ProvvGI": 0,
+        "ProvvVSD": 165,
+        "TotProvvigioni": 165
+      }
+    },
+    {
+      "id": "n5eltyd8mg4s9fxl",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-07-13T22:00:00.000Z",
+      "endDate": "2025-07-19T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1490,
+        "VSDPersonale": 2000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSS": 1490,
+        "VSDPersonale": 2000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "ppuv00qy1lpuaml5",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-06-01T22:00:00.000Z",
+      "endDate": "2025-06-07T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 700,
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSS": 700,
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "q8ufnwqmn40oldtu",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-05-11T22:00:00.000Z",
+      "endDate": "2025-05-17T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1200,
+        "VSDPersonale": 5000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      },
+      "indicatorsCons": {
+        "VSS": 1200,
+        "VSDPersonale": 5000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      }
+    },
+    {
+      "id": "1mowrbf5wtw6mhkz",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-03-30T22:00:00.000Z",
+      "endDate": "2025-04-05T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 47890,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 1600,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSS": 47890,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 1600,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "pmmcoxciro5thnjw",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-02-16T23:00:00.000Z",
+      "endDate": "2025-02-22T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 7380,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 7380,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "uqpakv6jztltbaqy",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-02-09T23:00:00.000Z",
+      "endDate": "2025-02-15T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 9400,
+        "VSDPersonale": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSS": 9400,
+        "VSDPersonale": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "detm41bzh2184z3z",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-01-19T23:00:00.000Z",
+      "endDate": "2025-01-25T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 10790,
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSS": 10790,
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "mh9xjkw8v2xmjak6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-10-20T22:00:00.000Z",
+      "endDate": "2024-10-26T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 500,
+        "VSDPersonale": 3700,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 925,
+        "TotProvvigioni": 925
+      },
+      "indicatorsCons": {
+        "VSS": 500,
+        "VSDPersonale": 3700,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 925,
+        "TotProvvigioni": 925
+      }
+    },
+    {
+      "id": "iz17wjvzhdp1yb5e",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-10-13T22:00:00.000Z",
+      "endDate": "2024-10-19T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1400,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 1800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSS": 1400,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 1800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "lcgf3yrgyvrscyti",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-06-23T22:00:00.000Z",
+      "endDate": "2024-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 7000,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 7000,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "05bkj5deh23g7ybp",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-06-02T22:00:00.000Z",
+      "endDate": "2024-06-08T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 23490,
+        "VSDIndiretto": 6400,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 23490,
+        "VSDIndiretto": 6400,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "xyify8mbpqjciuva",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-05-19T22:00:00.000Z",
+      "endDate": "2024-05-25T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 12690,
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSS": 12690,
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "tppejojcryw13cm3",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-05-05T22:00:00.000Z",
+      "endDate": "2024-05-11T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 900,
+        "VSDIndiretto": 1600,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 900,
+        "VSDIndiretto": 1600,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "nyh7em6dvv4sfh72",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-04-07T22:00:00.000Z",
+      "endDate": "2024-04-13T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 60390,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 60390,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "m5predvi6qzwsnz2",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-03-31T22:00:00.000Z",
+      "endDate": "2024-04-06T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 110990,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 110990,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "2ndcq2b2evydkjb8",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-03-03T23:00:00.000Z",
+      "endDate": "2024-03-09T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 10700,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 10700,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "8l72suzieyb19r7o",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-02-25T23:00:00.000Z",
+      "endDate": "2024-03-02T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 3600,
+        "VSDPersonale": 700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      },
+      "indicatorsCons": {
+        "VSS": 3600,
+        "VSDPersonale": 700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      }
+    },
+    {
+      "id": "h15kvzaiw6hcg1hp",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-02-18T23:00:00.000Z",
+      "endDate": "2024-02-24T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1400,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSS": 1400,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "jsakca5ss8fse3w3",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-08-24T22:00:00.000Z",
+      "endDate": "2025-08-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 700,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 700,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      }
+    },
+    {
+      "id": "nk4q0zd48obg5uq7",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-07-06T22:00:00.000Z",
+      "endDate": "2025-07-12T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1480,
+        "VSDIndiretto": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 370,
+        "TotProvvigioni": 370
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1480,
+        "VSDIndiretto": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 370,
+        "TotProvvigioni": 370
+      }
+    },
+    {
+      "id": "adrp866z5okiwgbu",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-06-29T22:00:00.000Z",
+      "endDate": "2025-07-05T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "jafd3g03d5v51feb",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-06-15T22:00:00.000Z",
+      "endDate": "2025-06-21T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 4140,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1035,
+        "TotProvvigioni": 1035
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 4140,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1035,
+        "TotProvvigioni": 1035
+      }
+    },
+    {
+      "id": "pon12s1tnhi3o2jm",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-06-08T22:00:00.000Z",
+      "endDate": "2025-06-14T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1000,
+        "TotProvvigioni": 1000
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1000,
+        "TotProvvigioni": 1000
+      }
+    },
+    {
+      "id": "14lki6orblzumwh6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-05-18T22:00:00.000Z",
+      "endDate": "2025-05-24T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3720,
+        "VSDIndiretto": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 930,
+        "TotProvvigioni": 930
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3720,
+        "VSDIndiretto": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 930,
+        "TotProvvigioni": 930
+      }
+    },
+    {
+      "id": "pc794ylytexsm8n5",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-05-04T22:00:00.000Z",
+      "endDate": "2025-05-10T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4600,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4600,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "nz28nslrh2l44n8l",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-04-20T22:00:00.000Z",
+      "endDate": "2025-04-26T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 4600,
+        "VSDIndiretto": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1150,
+        "TotProvvigioni": 1150
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 4600,
+        "VSDIndiretto": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1150,
+        "TotProvvigioni": 1150
+      }
+    },
+    {
+      "id": "1ywzvsfb634b89yj",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-04-06T22:00:00.000Z",
+      "endDate": "2025-04-12T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2700,
+        "ProvvGI": 0,
+        "ProvvVSD": 675,
+        "TotProvvigioni": 675
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2700,
+        "ProvvGI": 0,
+        "ProvvVSD": 675,
+        "TotProvvigioni": 675
+      }
+    },
+    {
+      "id": "h2v5hnajzqt34q4o",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-03-16T23:00:00.000Z",
+      "endDate": "2025-03-22T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 8000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 8000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "kabgthu0pmdgur55",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-03-02T23:00:00.000Z",
+      "endDate": "2025-03-08T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1300,
+        "ProvvGI": 0,
+        "ProvvVSD": 325,
+        "TotProvvigioni": 325
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1300,
+        "ProvvGI": 0,
+        "ProvvVSD": 325,
+        "TotProvvigioni": 325
+      }
+    },
+    {
+      "id": "br3w1oy0txessns3",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-02-23T23:00:00.000Z",
+      "endDate": "2025-03-01T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2680,
+        "VSDIndiretto": 2700,
+        "ProvvGI": 0,
+        "ProvvVSD": 670,
+        "TotProvvigioni": 670
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2680,
+        "VSDIndiretto": 2700,
+        "ProvvGI": 0,
+        "ProvvVSD": 670,
+        "TotProvvigioni": 670
+      }
+    },
+    {
+      "id": "f96xw8x2hsmkrcdk",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-02-02T23:00:00.000Z",
+      "endDate": "2025-02-08T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "eeubpjtuoaagmcus",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-01-26T23:00:00.000Z",
+      "endDate": "2025-02-01T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "c0l3z1ouy2l51ulz",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2025-01-12T23:00:00.000Z",
+      "endDate": "2025-01-18T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 4600,
+        "ProvvGI": 0,
+        "ProvvVSD": 1150,
+        "TotProvvigioni": 1150
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 4600,
+        "ProvvGI": 0,
+        "ProvvVSD": 1150,
+        "TotProvvigioni": 1150
+      }
+    },
+    {
+      "id": "gvw6ziz6gbv1bcpq",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-12-15T23:00:00.000Z",
+      "endDate": "2024-12-21T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 600,
+        "ProvvGI": 0,
+        "ProvvVSD": 150,
+        "TotProvvigioni": 150
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 600,
+        "ProvvGI": 0,
+        "ProvvVSD": 150,
+        "TotProvvigioni": 150
+      }
+    },
+    {
+      "id": "dn1nqhpo1x9u265n",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-12-01T23:00:00.000Z",
+      "endDate": "2024-12-07T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "fsq8uz9ifuah51il",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-11-24T23:00:00.000Z",
+      "endDate": "2024-11-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2900,
+        "ProvvGI": 0,
+        "ProvvVSD": 725,
+        "TotProvvigioni": 725
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2900,
+        "ProvvGI": 0,
+        "ProvvVSD": 725,
+        "TotProvvigioni": 725
+      }
+    },
+    {
+      "id": "wr2bh24d803pqadf",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-11-17T23:00:00.000Z",
+      "endDate": "2024-11-23T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "vumihvk0k98exudy",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-11-10T23:00:00.000Z",
+      "endDate": "2024-11-16T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "bjjkhg0c1jorxi67",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-11-03T23:00:00.000Z",
+      "endDate": "2024-11-09T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1500,
+        "ProvvGI": 0,
+        "ProvvVSD": 375,
+        "TotProvvigioni": 375
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1500,
+        "ProvvGI": 0,
+        "ProvvVSD": 375,
+        "TotProvvigioni": 375
+      }
+    },
+    {
+      "id": "y9odt0ek7e5lhhk9",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-10-27T23:00:00.000Z",
+      "endDate": "2024-11-02T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2500,
+        "ProvvGI": 0,
+        "ProvvVSD": 625,
+        "TotProvvigioni": 625
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2500,
+        "ProvvGI": 0,
+        "ProvvVSD": 625,
+        "TotProvvigioni": 625
+      }
+    },
+    {
+      "id": "4f8fxcjy37vajy9r",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-10-06T22:00:00.000Z",
+      "endDate": "2024-10-12T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "ttnls8ikc8cv4qmq",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-09-29T22:00:00.000Z",
+      "endDate": "2024-10-05T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 5000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 5000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      }
+    },
+    {
+      "id": "ep81ppscmshc8in6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-09-15T22:00:00.000Z",
+      "endDate": "2024-09-21T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3300,
+        "ProvvGI": 0,
+        "ProvvVSD": 825,
+        "TotProvvigioni": 825
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3300,
+        "ProvvGI": 0,
+        "ProvvVSD": 825,
+        "TotProvvigioni": 825
+      }
+    },
+    {
+      "id": "53t4guljsal44n6v",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-09-08T22:00:00.000Z",
+      "endDate": "2024-09-14T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3500,
+        "ProvvGI": 0,
+        "ProvvVSD": 875,
+        "TotProvvigioni": 875
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3500,
+        "ProvvGI": 0,
+        "ProvvVSD": 875,
+        "TotProvvigioni": 875
+      }
+    },
+    {
+      "id": "q54pj72gosi8396h",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-09-01T22:00:00.000Z",
+      "endDate": "2024-09-07T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 5000,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 5000,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      }
+    },
+    {
+      "id": "i2m35px9eujz9eai",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-08-25T22:00:00.000Z",
+      "endDate": "2024-08-31T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 250,
+        "TotProvvigioni": 250
+      }
+    },
+    {
+      "id": "ps8vpa1tqr55bhig",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-08-18T22:00:00.000Z",
+      "endDate": "2024-08-24T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1900,
+        "ProvvGI": 0,
+        "ProvvVSD": 475,
+        "TotProvvigioni": 475
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1900,
+        "ProvvGI": 0,
+        "ProvvVSD": 475,
+        "TotProvvigioni": 475
+      }
+    },
+    {
+      "id": "tx6d5azlx3qf6832",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-08-04T22:00:00.000Z",
+      "endDate": "2024-08-10T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1500,
+        "TotProvvigioni": 1500
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1500,
+        "TotProvvigioni": 1500
+      }
+    },
+    {
+      "id": "h5smqgzke7dtc2nv",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-07-28T22:00:00.000Z",
+      "endDate": "2024-08-03T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3500,
+        "ProvvGI": 0,
+        "ProvvVSD": 875,
+        "TotProvvigioni": 875
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3500,
+        "ProvvGI": 0,
+        "ProvvVSD": 875,
+        "TotProvvigioni": 875
+      }
+    },
+    {
+      "id": "0ggbedug6o6d7kxg",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-07-21T22:00:00.000Z",
+      "endDate": "2024-07-27T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1500,
+        "ProvvGI": 0,
+        "ProvvVSD": 375,
+        "TotProvvigioni": 375
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1500,
+        "ProvvGI": 0,
+        "ProvvVSD": 375,
+        "TotProvvigioni": 375
+      }
+    },
+    {
+      "id": "72e73q8o2vnwrur0",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-07-14T22:00:00.000Z",
+      "endDate": "2024-07-20T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1000,
+        "TotProvvigioni": 1000
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1000,
+        "TotProvvigioni": 1000
+      }
+    },
+    {
+      "id": "pdqa0vicyio7cou0",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-07-07T22:00:00.000Z",
+      "endDate": "2024-07-13T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 5000,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 5000,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 1250,
+        "TotProvvigioni": 1250
+      }
+    },
+    {
+      "id": "69qyww1ubxghyrvv",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-06-30T22:00:00.000Z",
+      "endDate": "2024-07-06T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 900,
+        "ProvvGI": 0,
+        "ProvvVSD": 225,
+        "TotProvvigioni": 225
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 900,
+        "ProvvGI": 0,
+        "ProvvVSD": 225,
+        "TotProvvigioni": 225
+      }
+    },
+    {
+      "id": "1ny3qzkazm6gyjkf",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-06-16T22:00:00.000Z",
+      "endDate": "2024-06-22T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "m5zkx7mpi4ra0agd",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-04-28T22:00:00.000Z",
+      "endDate": "2024-05-04T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1400,
+        "ProvvGI": 0,
+        "ProvvVSD": 350,
+        "TotProvvigioni": 350
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1400,
+        "ProvvGI": 0,
+        "ProvvVSD": 350,
+        "TotProvvigioni": 350
+      }
+    },
+    {
+      "id": "gt60x22folab8d5x",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-04-21T22:00:00.000Z",
+      "endDate": "2024-04-27T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2100,
+        "ProvvGI": 0,
+        "ProvvVSD": 525,
+        "TotProvvigioni": 525
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2100,
+        "ProvvGI": 0,
+        "ProvvVSD": 525,
+        "TotProvvigioni": 525
+      }
+    },
+    {
+      "id": "tsop2lfffd91q9iu",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-04-14T22:00:00.000Z",
+      "endDate": "2024-04-20T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2400,
+        "ProvvGI": 0,
+        "ProvvVSD": 600,
+        "TotProvvigioni": 600
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2400,
+        "ProvvGI": 0,
+        "ProvvVSD": 600,
+        "TotProvvigioni": 600
+      }
+    },
+    {
+      "id": "y7ab68c2qz68rs1w",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-03-24T23:00:00.000Z",
+      "endDate": "2024-03-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "iyd70skkgg5nmksx",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-09-22T22:00:00.000Z",
+      "endDate": "2024-09-28T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDIndiretto": 7000,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSDIndiretto": 7000,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "fxmz27x9c3b79uir",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "settimanale",
+      "startDate": "2024-05-12T22:00:00.000Z",
+      "endDate": "2024-05-18T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDIndiretto": 900,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      },
+      "indicatorsCons": {
+        "VSDIndiretto": 900,
+        "ProvvGI": 0,
+        "ProvvVSD": 0,
+        "TotProvvigioni": 0
+      }
+    },
+    {
+      "id": "5utdpmnw9qfk3762",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-07-31T22:00:00.000Z",
+      "endDate": "2025-08-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 4160,
+        "VSDPersonale": 4820,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 1205,
+        "TotProvvigioni": 1205
+      },
+      "indicatorsCons": {
+        "VSS": 4160,
+        "VSDPersonale": 4820,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 1205,
+        "TotProvvigioni": 1205
+      }
+    },
+    {
+      "id": "yc5cz46hghehz5hu",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2025-06-30T22:00:00.000Z",
+      "endDate": "2025-09-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 16670,
+        "VSDPersonale": 10080,
+        "VSDIndiretto": 4000,
+        "NNCF": 14,
+        "ProvvGI": 0,
+        "ProvvVSD": 2520,
+        "TotProvvigioni": 2520
+      },
+      "indicatorsCons": {
+        "VSS": 16670,
+        "VSDPersonale": 10080,
+        "VSDIndiretto": 4000,
+        "NNCF": 14,
+        "ProvvGI": 0,
+        "ProvvVSD": 2520,
+        "TotProvvigioni": 2520
+      }
+    },
+    {
+      "id": "hapmfrch268j36w9",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "semestrale",
+      "startDate": "2025-06-30T22:00:00.000Z",
+      "endDate": "2025-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 16670,
+        "VSDPersonale": 10080,
+        "VSDIndiretto": 4000,
+        "NNCF": 14,
+        "ProvvGI": 0,
+        "ProvvVSD": 2520,
+        "TotProvvigioni": 2520
+      },
+      "indicatorsCons": {
+        "VSS": 16670,
+        "VSDPersonale": 10080,
+        "VSDIndiretto": 4000,
+        "NNCF": 14,
+        "ProvvGI": 0,
+        "ProvvVSD": 2520,
+        "TotProvvigioni": 2520
+      }
+    },
+    {
+      "id": "9bgcoebj7r1s00ui",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "annuale",
+      "startDate": "2024-12-31T23:00:00.000Z",
+      "endDate": "2025-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 94030,
+        "VSDPersonale": 56820,
+        "VSDIndiretto": 30900,
+        "NNCF": 17,
+        "ProvvGI": 0,
+        "ProvvVSD": 14205,
+        "TotProvvigioni": 14205
+      },
+      "indicatorsCons": {
+        "VSS": 94030,
+        "VSDPersonale": 56820,
+        "VSDIndiretto": 30900,
+        "NNCF": 17,
+        "ProvvGI": 0,
+        "ProvvVSD": 14205,
+        "TotProvvigioni": 14205
+      }
+    },
+    {
+      "id": "38ed8yqswarjydz7",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-06-30T22:00:00.000Z",
+      "endDate": "2025-07-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 12510,
+        "VSDPersonale": 5260,
+        "VSDIndiretto": 4000,
+        "NNCF": 10,
+        "ProvvGI": 0,
+        "ProvvVSD": 1315,
+        "TotProvvigioni": 1315
+      },
+      "indicatorsCons": {
+        "VSS": 12510,
+        "VSDPersonale": 5260,
+        "VSDIndiretto": 4000,
+        "NNCF": 10,
+        "ProvvGI": 0,
+        "ProvvVSD": 1315,
+        "TotProvvigioni": 1315
+      }
+    },
+    {
+      "id": "qqot51rroer14e2n",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-05-31T22:00:00.000Z",
+      "endDate": "2025-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 700,
+        "VSDPersonale": 11140,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2785,
+        "TotProvvigioni": 2785
+      },
+      "indicatorsCons": {
+        "VSS": 700,
+        "VSDPersonale": 11140,
+        "VSDIndiretto": 2000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2785,
+        "TotProvvigioni": 2785
+      }
+    },
+    {
+      "id": "0u5m4j3t62c65c1x",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2025-03-31T22:00:00.000Z",
+      "endDate": "2025-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 49790,
+        "VSDPersonale": 31160,
+        "VSDIndiretto": 10200,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 7790,
+        "TotProvvigioni": 7790
+      },
+      "indicatorsCons": {
+        "VSS": 49790,
+        "VSDPersonale": 31160,
+        "VSDIndiretto": 10200,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 7790,
+        "TotProvvigioni": 7790
+      }
+    },
+    {
+      "id": "mcvqxdvgk11l89sg",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "semestrale",
+      "startDate": "2024-12-31T23:00:00.000Z",
+      "endDate": "2025-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 77360,
+        "VSDPersonale": 46740,
+        "VSDIndiretto": 26900,
+        "NNCF": 3,
+        "ProvvGI": 0,
+        "ProvvVSD": 11685,
+        "TotProvvigioni": 11685
+      },
+      "indicatorsCons": {
+        "VSS": 77360,
+        "VSDPersonale": 46740,
+        "VSDIndiretto": 26900,
+        "NNCF": 3,
+        "ProvvGI": 0,
+        "ProvvVSD": 11685,
+        "TotProvvigioni": 11685
+      }
+    },
+    {
+      "id": "ct9g7ol47bb61gbj",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-04-30T22:00:00.000Z",
+      "endDate": "2025-05-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1200,
+        "VSDPersonale": 9720,
+        "VSDIndiretto": 5600,
+        "ProvvGI": 0,
+        "ProvvVSD": 2430,
+        "TotProvvigioni": 2430
+      },
+      "indicatorsCons": {
+        "VSS": 1200,
+        "VSDPersonale": 9720,
+        "VSDIndiretto": 5600,
+        "ProvvGI": 0,
+        "ProvvVSD": 2430,
+        "TotProvvigioni": 2430
+      }
+    },
+    {
+      "id": "nj646wnq32d0tj8z",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-03-31T22:00:00.000Z",
+      "endDate": "2025-04-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 47890,
+        "VSDPersonale": 10300,
+        "VSDIndiretto": 2600,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 2575,
+        "TotProvvigioni": 2575
+      },
+      "indicatorsCons": {
+        "VSS": 47890,
+        "VSDPersonale": 10300,
+        "VSDIndiretto": 2600,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 2575,
+        "TotProvvigioni": 2575
+      }
+    },
+    {
+      "id": "mxp2l5qaakiqj60b",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-01-31T23:00:00.000Z",
+      "endDate": "2025-02-27T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 16780,
+        "VSDPersonale": 5680,
+        "VSDIndiretto": 2700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 1420,
+        "TotProvvigioni": 1420
+      },
+      "indicatorsCons": {
+        "VSS": 16780,
+        "VSDPersonale": 5680,
+        "VSDIndiretto": 2700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 1420,
+        "TotProvvigioni": 1420
+      }
+    },
+    {
+      "id": "q9zlhe76pbonb6y6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2024-12-31T23:00:00.000Z",
+      "endDate": "2025-03-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 27570,
+        "VSDPersonale": 15580,
+        "VSDIndiretto": 16700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 3895,
+        "TotProvvigioni": 3895
+      },
+      "indicatorsCons": {
+        "VSS": 27570,
+        "VSDPersonale": 15580,
+        "VSDIndiretto": 16700,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 3895,
+        "TotProvvigioni": 3895
+      }
+    },
+    {
+      "id": "716uapzdhex0xgm6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-12-31T23:00:00.000Z",
+      "endDate": "2025-01-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 10790,
+        "VSDPersonale": 6600,
+        "VSDIndiretto": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1650,
+        "TotProvvigioni": 1650
+      },
+      "indicatorsCons": {
+        "VSS": 10790,
+        "VSDPersonale": 6600,
+        "VSDIndiretto": 6000,
+        "ProvvGI": 0,
+        "ProvvVSD": 1650,
+        "TotProvvigioni": 1650
+      }
+    },
+    {
+      "id": "54rbtufy2k8jtgnr",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-09-30T22:00:00.000Z",
+      "endDate": "2024-10-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1900,
+        "VSDPersonale": 16200,
+        "VSDIndiretto": 5800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 4050,
+        "TotProvvigioni": 4050
+      },
+      "indicatorsCons": {
+        "VSS": 1900,
+        "VSDPersonale": 16200,
+        "VSDIndiretto": 5800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 4050,
+        "TotProvvigioni": 4050
+      }
+    },
+    {
+      "id": "3vngwz323zxpa32l",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2024-09-30T22:00:00.000Z",
+      "endDate": "2024-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1900,
+        "VSDPersonale": 26200,
+        "VSDIndiretto": 9800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 6550,
+        "TotProvvigioni": 6550
+      },
+      "indicatorsCons": {
+        "VSS": 1900,
+        "VSDPersonale": 26200,
+        "VSDIndiretto": 9800,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 6550,
+        "TotProvvigioni": 6550
+      }
+    },
+    {
+      "id": "fjnee21gi33sgabt",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "semestrale",
+      "startDate": "2024-06-30T22:00:00.000Z",
+      "endDate": "2024-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 1900,
+        "VSDPersonale": 62800,
+        "VSDIndiretto": 27200,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 15700,
+        "TotProvvigioni": 15700
+      },
+      "indicatorsCons": {
+        "VSS": 1900,
+        "VSDPersonale": 62800,
+        "VSDIndiretto": 27200,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 15700,
+        "TotProvvigioni": 15700
+      }
+    },
+    {
+      "id": "epy1ol6oevcaje74",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "annuale",
+      "startDate": "2023-12-31T23:00:00.000Z",
+      "endDate": "2024-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 233060,
+        "VSDPersonale": 76400,
+        "VSDIndiretto": 40100,
+        "NNCF": 9,
+        "ProvvGI": 0,
+        "ProvvVSD": 19100,
+        "TotProvvigioni": 19100
+      },
+      "indicatorsCons": {
+        "VSS": 233060,
+        "VSDPersonale": 76400,
+        "VSDIndiretto": 40100,
+        "NNCF": 9,
+        "ProvvGI": 0,
+        "ProvvVSD": 19100,
+        "TotProvvigioni": 19100
+      }
+    },
+    {
+      "id": "kdszyewhvl9u1nu8",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-05-31T22:00:00.000Z",
+      "endDate": "2024-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 30490,
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 10400,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSS": 30490,
+        "VSDPersonale": 2000,
+        "VSDIndiretto": 10400,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "lpi1aqlxkl2s6v42",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2024-03-31T22:00:00.000Z",
+      "endDate": "2024-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 215460,
+        "VSDPersonale": 10900,
+        "VSDIndiretto": 12900,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 2725,
+        "TotProvvigioni": 2725
+      },
+      "indicatorsCons": {
+        "VSS": 215460,
+        "VSDPersonale": 10900,
+        "VSDIndiretto": 12900,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 2725,
+        "TotProvvigioni": 2725
+      }
+    },
+    {
+      "id": "lte6q3bt33f303l5",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "semestrale",
+      "startDate": "2023-12-31T23:00:00.000Z",
+      "endDate": "2024-06-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 231160,
+        "VSDPersonale": 13600,
+        "VSDIndiretto": 12900,
+        "NNCF": 7,
+        "ProvvGI": 0,
+        "ProvvVSD": 3400,
+        "TotProvvigioni": 3400
+      },
+      "indicatorsCons": {
+        "VSS": 231160,
+        "VSDPersonale": 13600,
+        "VSDIndiretto": 12900,
+        "NNCF": 7,
+        "ProvvGI": 0,
+        "ProvvVSD": 3400,
+        "TotProvvigioni": 3400
+      }
+    },
+    {
+      "id": "utw3593evk76cqxs",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-04-30T22:00:00.000Z",
+      "endDate": "2024-05-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 13590,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 2500,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      },
+      "indicatorsCons": {
+        "VSS": 13590,
+        "VSDPersonale": 3000,
+        "VSDIndiretto": 2500,
+        "ProvvGI": 0,
+        "ProvvVSD": 750,
+        "TotProvvigioni": 750
+      }
+    },
+    {
+      "id": "80zz3605uix9snzd",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-03-31T22:00:00.000Z",
+      "endDate": "2024-04-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 171380,
+        "VSDPersonale": 5900,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 1475,
+        "TotProvvigioni": 1475
+      },
+      "indicatorsCons": {
+        "VSS": 171380,
+        "VSDPersonale": 5900,
+        "NNCF": 2,
+        "ProvvGI": 0,
+        "ProvvVSD": 1475,
+        "TotProvvigioni": 1475
+      }
+    },
+    {
+      "id": "81b330o5qc8hdzb1",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-02-29T23:00:00.000Z",
+      "endDate": "2024-03-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 10700,
+        "VSDPersonale": 2000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      },
+      "indicatorsCons": {
+        "VSS": 10700,
+        "VSDPersonale": 2000,
+        "NNCF": 1,
+        "ProvvGI": 0,
+        "ProvvVSD": 500,
+        "TotProvvigioni": 500
+      }
+    },
+    {
+      "id": "f2ynq17360p900ny",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2023-12-31T23:00:00.000Z",
+      "endDate": "2024-03-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 15700,
+        "VSDPersonale": 2700,
+        "NNCF": 5,
+        "ProvvGI": 0,
+        "ProvvVSD": 675,
+        "TotProvvigioni": 675
+      },
+      "indicatorsCons": {
+        "VSS": 15700,
+        "VSDPersonale": 2700,
+        "NNCF": 5,
+        "ProvvGI": 0,
+        "ProvvVSD": 675,
+        "TotProvvigioni": 675
+      }
+    },
+    {
+      "id": "pfweywyck8j9fj5e",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-01-31T23:00:00.000Z",
+      "endDate": "2024-02-28T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSS": 5000,
+        "VSDPersonale": 700,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      },
+      "indicatorsCons": {
+        "VSS": 5000,
+        "VSDPersonale": 700,
+        "NNCF": 4,
+        "ProvvGI": 0,
+        "ProvvVSD": 175,
+        "TotProvvigioni": 175
+      }
+    },
+    {
+      "id": "reuy996ugckhorki",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2025-02-28T23:00:00.000Z",
+      "endDate": "2025-03-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 3300,
+        "VSDIndiretto": 8000,
+        "ProvvGI": 0,
+        "ProvvVSD": 825,
+        "TotProvvigioni": 825
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 3300,
+        "VSDIndiretto": 8000,
+        "ProvvGI": 0,
+        "ProvvVSD": 825,
+        "TotProvvigioni": 825
+      }
+    },
+    {
+      "id": "v1wzgjtl9hixrgeh",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-11-30T23:00:00.000Z",
+      "endDate": "2024-12-30T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 1600,
+        "ProvvGI": 0,
+        "ProvvVSD": 400,
+        "TotProvvigioni": 400
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 1600,
+        "ProvvGI": 0,
+        "ProvvVSD": 400,
+        "TotProvvigioni": 400
+      }
+    },
+    {
+      "id": "wgviat988705gzsc",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-10-31T23:00:00.000Z",
+      "endDate": "2024-11-29T23:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 8400,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2100,
+        "TotProvvigioni": 2100
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 8400,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2100,
+        "TotProvvigioni": 2100
+      }
+    },
+    {
+      "id": "1ie2udy7favlqkr6",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-08-31T22:00:00.000Z",
+      "endDate": "2024-09-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 12800,
+        "VSDIndiretto": 10200,
+        "ProvvGI": 0,
+        "ProvvVSD": 3200,
+        "TotProvvigioni": 3200
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 12800,
+        "VSDIndiretto": 10200,
+        "ProvvGI": 0,
+        "ProvvVSD": 3200,
+        "TotProvvigioni": 3200
+      }
+    },
+    {
+      "id": "1qhlamvxmmkuh5kk",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "trimestrale",
+      "startDate": "2024-06-30T22:00:00.000Z",
+      "endDate": "2024-09-29T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 36600,
+        "VSDIndiretto": 17400,
+        "ProvvGI": 0,
+        "ProvvVSD": 9150,
+        "TotProvvigioni": 9150
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 36600,
+        "VSDIndiretto": 17400,
+        "ProvvGI": 0,
+        "ProvvVSD": 9150,
+        "TotProvvigioni": 9150
+      }
+    },
+    {
+      "id": "sj89cbqxp906fott",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-07-31T22:00:00.000Z",
+      "endDate": "2024-08-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 8900,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2225,
+        "TotProvvigioni": 2225
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 8900,
+        "VSDIndiretto": 4000,
+        "ProvvGI": 0,
+        "ProvvVSD": 2225,
+        "TotProvvigioni": 2225
+      }
+    },
+    {
+      "id": "ebx606zrw6q9l9tb",
+      "userId": "2e64a0dc2dbd0cdc197a35a4",
+      "type": "mensile",
+      "startDate": "2024-06-30T22:00:00.000Z",
+      "endDate": "2024-07-30T22:00:00.000Z",
+      "indicatorsPrev": {
+        "VSDPersonale": 14900,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 3725,
+        "TotProvvigioni": 3725
+      },
+      "indicatorsCons": {
+        "VSDPersonale": 14900,
+        "VSDIndiretto": 3200,
+        "ProvvGI": 0,
+        "ProvvVSD": 3725,
+        "TotProvvigioni": 3725
+      }
     }
   ]
 }
