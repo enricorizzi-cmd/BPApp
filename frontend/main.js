@@ -67,6 +67,14 @@ if (typeof window.haptic !== 'function'){
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.stroke();
+    ctx.fillStyle = '#2e6cff';
+    for(let i=0;i<data.length;i++){
+      const x = 4 + i*stepX;
+      const y = el.height-6 - (data[i]/max)*(el.height-12);
+      ctx.beginPath();
+      ctx.arc(x,y,2,0,Math.PI*2);
+      ctx.fill();
+    }
   }
   // Decide how to render X-axis labels: compressed or rotated
   function computeTickOptions(labels, width){
@@ -74,38 +82,27 @@ if (typeof window.haptic !== 'function'){
       const n = Array.isArray(labels) ? labels.length : 0;
       if(!n) return { autoSkip:true, maxRotation:0, minRotation:0 };
       const maxLen = Math.max(0, ...labels.map(s => String(s||'').length));
-      // rough estimate of needed width per label (px)
       const estPer = Math.max(28, Math.min(90, Math.round(maxLen * 7)));
       const need = n * estPer;
-      // If labels overflow chart width, prefer vertical labels
       if(need > (width||320)*1.2){
         return {
-          autoSkip:false,
-          maxRotation:90,
-          minRotation:90,
-          callback: function(v){ return String(v||''); }
+          autoSkip:true,
+          maxRotation:45,
+          minRotation:45,
+          callback: v => String(v||'')
         };
       }
-      // Otherwise compress a bit: show every other if very dense
-      if(n > 12){
-        return {
-          autoSkip:false,
-          maxRotation:0,
-          minRotation:0,
-          callback: function(v, idx){ return (idx % 2 === 0) ? String(v||'') : ''; }
-        };
-      }
-      // Default: compact labels (trim long ones)
       return {
         autoSkip:true,
         maxRotation:0,
         minRotation:0,
-        callback: function(v){ const s=String(v||''); return s.length>10 ? (s.slice(0,9)+'…') : s; }
+        callback: v => String(v||'')
       };
     }catch(_){
       return { autoSkip:true, maxRotation:0, minRotation:0 };
     }
   }
+  window.computeTickOptions = computeTickOptions;
 
   window.drawFullLine = function(canvasId, labels, data){
     const el = document.getElementById(canvasId);
@@ -119,6 +116,10 @@ if (typeof window.haptic !== 'function'){
     }
     const key = String(canvasId);
     const tickOpts = computeTickOptions(labels, el.width||320);
+    if(registry[key] && registry[key].canvas !== el){
+      try{ registry[key].destroy(); }catch(_){ }
+      delete registry[key];
+    }
     if(!registry[key]){
       const ctx = el.getContext('2d');
       registry[key] = new Chart(ctx, {
@@ -130,8 +131,8 @@ if (typeof window.haptic !== 'function'){
           backgroundColor: 'rgba(46,108,255,0.10)',
           borderWidth: 2,
           tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
           fill: false
         }] },
         options: {
@@ -1906,7 +1907,7 @@ function viewAppointments(){
         background:var(--accent);color:#fff;border-color:var(--accent);
         box-shadow:0 0 0 2px rgba(20,99,255,.08) inset;
       }
-      #a_list .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      #a_list .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     `;
     document.head.appendChild(st);
   }
@@ -2069,13 +2070,15 @@ function viewAppointments(){
     document.getElementById('a_start').value=isoToLocalInput(a.start);
 
     const s = new Date(a.start);
-    let   e = new Date(a.end);
-    let   dur = Math.max(1, Math.round((e - s)/60000));
-    // se end non valido o "prima" dello start, usa la durata di default del tipo
-    if(!(e instanceof Date) || isNaN(e) || e < s){
-      const def = defDurByType(a.type||'vendita');
-      e = new Date(s.getTime()+def*60000);
-      dur = def;
+    let e = a.end ? new Date(a.end) : null;
+    let dur = Number(a.durationMinutes);
+    if(e instanceof Date && !isNaN(e) && e >= s){
+      dur = Math.max(1, Math.round((e - s)/60000));
+    } else if(isFinite(dur) && dur > 0){
+      e = new Date(s.getTime() + dur*60000);
+    } else {
+      dur = defDurByType(a.type||'vendita');
+      e = new Date(s.getTime()+dur*60000);
     }
     document.getElementById('a_dur').value = String(dur);
     document.getElementById('a_end').value = ('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
@@ -2219,9 +2222,10 @@ function deleteA(){
   // --------- rendering lista ----------
   function cardHTML(a){
     const s = new Date(a.start);
-    let   e = new Date(a.end);
+    let e = a.end ? new Date(a.end) : null;
     if(!(e instanceof Date) || isNaN(e) || e < s){
-      e = new Date(s.getTime() + defDurByType(a.type||'vendita')*60000);
+      const dur = isFinite(a.durationMinutes) ? Number(a.durationMinutes) : defDurByType(a.type||'vendita');
+      e = new Date(s.getTime() + dur*60000);
     }
     const when = dmy(s)+' '+('0'+s.getHours()).slice(-2)+':'+('0'+s.getMinutes()).slice(-2)+'–'+('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
     const line2 = 'VSS '+fmtEuro(a.vss||0)+' · VSD '+fmtEuro(a.vsdPersonal||0)+' · NNCF '+(a.nncf?'✅':'—');
@@ -2230,10 +2234,7 @@ function deleteA(){
         '<div class="small muted">'+htmlEscape(when)+' · '+htmlEscape(a.type||'vendita')+'</div>'+
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
           '<div><b>'+htmlEscape(a.client||'')+'</b></div>'+
-          '<div class="row" style="gap:6px">'+
-            '<button class="ghost btn-ics" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">📅</button>'+
-            '<button class="ghost" title="Modifica" data-edit="'+htmlEscape(String(a.id||''))+'">✏️</button>'+
-          '</div>'+
+          '<button class="ghost btn-ics" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">📅</button>'+
         '</div>'+
         '<div class="small">'+line2+'</div>'+
       '</div>';
@@ -2292,14 +2293,6 @@ function deleteA(){
               toast('Export .ics non disponibile');
             }
           } else { toast('Export .ics non disponibile'); }
-        });
-      });
-      host.querySelectorAll('[data-edit]').forEach(bt=>{
-        bt.addEventListener('click', ev=>{
-          ev.stopPropagation();
-          const id=bt.getAttribute('data-edit');
-          const a=allShown.find(z=> String(z.id)===String(id));
-          if(a){ fillForm(a); window.scrollTo({top:0, behavior:'smooth'}); }
         });
       });
       // Click on the whole card opens it in edit
@@ -2676,7 +2669,7 @@ function viewTeam(){
       (isAdmin ? (
         '<div class="card">'+
           '<b>Vista Amministratore</b>'+
-          '<div id="t_adminbar" class="row" style="margin-top:8px;display:flex;align-items:flex-end;gap:16px;flex-wrap:nowrap">'+
+          '<div id="t_adminbar" class="row" style="margin-top:8px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
             '<div><label>Modalità</label>'+
               '<select id="t_mode" name="mode">'+
                 '<option value="consuntivo">Consuntivo</option>'+
@@ -2695,7 +2688,7 @@ function viewTeam(){
         '<div class="card">'+
           '<b>Aggregato Squadra</b>'+
           '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
-          '<div class="row" style="margin-top:12px;align-items:flex-end;gap:16px;flex-wrap:nowrap">'+
+          '<div class="row" style="margin-top:12px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
             '<div>'+
               '<label>Indicatore grafico</label>'+
               '<select id="t_ind">'+
@@ -2799,20 +2792,30 @@ function viewTeam(){
         i?ctx.lineTo(x,y):ctx.moveTo(x,y);
       });
       ctx.stroke();
+      ctx.fillStyle='#2e6cff';
+      data.forEach(function(v,i){
+        var x=4+i*step, y=canvas.height-6-(v/max)*(canvas.height-12);
+        ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+      });
       return;
     }
 
     var ctx = canvas.getContext('2d');
+    var tickOpts = (typeof window.computeTickOptions==='function')
+      ? window.computeTickOptions(labels, canvas.width||600)
+      : {autoSkip:true, maxRotation:0, minRotation:0};
     if(!tChart){
+      var existing = typeof Chart.getChart==='function'?Chart.getChart(canvas):null;
+      if(existing) existing.destroy();
       tChart = new Chart(ctx, {
         type: 'line',
-        data: { labels: labels, datasets: [{ label: '', data: data, tension: .3, pointRadius: 0 }] },
+        data: { labels: labels, datasets: [{ label: '', data: data, tension: .3, pointRadius: 3, pointHoverRadius:5 }] },
         options: {
           responsive:false, maintainAspectRatio:false,
           animation:false, animations:false,
           plugins:{ legend:{ display:false } },
           scales:{
-            x:{ grid:{ display:false }, ticks:{ autoSkip:true, maxRotation:0, minRotation:0 } },
+            x:{ grid:{ display:false }, ticks: tickOpts },
             y:{ beginAtZero:true }
           }
         }
@@ -2820,6 +2823,7 @@ function viewTeam(){
     }else{
       tChart.data.labels = labels;
       tChart.data.datasets[0].data = data;
+      tChart.options.scales.x.ticks = tickOpts;
       tChart.update();
     }
   }
