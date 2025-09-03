@@ -61,27 +61,61 @@ function monthBounds(year, month){
 const content = fs.readFileSync(file, 'utf8');
 const rows = parseCsv(content);
 
-// Group periods by consultant
-const periodsByUser = {};
+// Load users to resolve userid or name
+const usersDb = JSON.parse(fs.readFileSync(path.join(__dirname,'..','data','users.json'),'utf8'));
+
+function findUserById(id){
+  if(!id) return null;
+  return (usersDb.users||[]).find(u => String(u.id) === String(id));
+}
+function findUserByName(name){
+  if(!name) return null;
+  const key = String(name).toLowerCase();
+  return (usersDb.users||[]).find(u => (u.name||'').toLowerCase() === key);
+}
+
+// Group periods by userId
+const periodsByUser = {}; // { [userId]: { name, periods: { [key]: data } } }
 rows.forEach(r=>{
   const kpi = mapKpi(r.kpi);
-  const val = Number(r.VALORE || 0);
-  const user = r.CONSULENTE;
-  const week = Number(r.settimana);
-  const month = Number(r.mese);
-  const year = Number(r.anno);
+  const valCombined = Number(r.VALORE || r.valore || 0);
+  const prevVal = Number(r.indicatorsprev || r.IndicatorsPrev || r.prev || 0);
+  const consVal = Number(r.indicatorscons || r.IndicatorsCons || r.cons || 0);
+
+  const week = Number(r.settimana || r.week || 0);
+  const month = Number(r.mese || r.month || 0);
+  const year = Number(r.anno || r.year || 0);
+
+  // Resolve user by id first, then by name
+  const userIdRaw = r.userid || r.userId || r.USERID || '';
+  const userNameRaw = r.CONSULENTE || r.consulente || r.name || '';
+  let user = findUserById(userIdRaw) || findUserByName(userNameRaw);
+  if(!user){
+    console.error('No user', userNameRaw || userIdRaw || 'undefined');
+    return;
+  }
+
   const type = week ? 'settimanale' : 'mensile';
   const { start, end } = week ? weekBounds(year, week) : monthBounds(year, month);
   const startDate = start.toISOString();
   const endDate = end.toISOString();
 
-  periodsByUser[user] = periodsByUser[user] || {};
+  if(!periodsByUser[user.id]) periodsByUser[user.id] = { name: user.name, periods: {} };
   const key = `${type}|${startDate}`;
-  if(!periodsByUser[user][key]){
-    periodsByUser[user][key] = { type, startDate, endDate, indicatorsPrev:{}, indicatorsCons:{} };
+  if(!periodsByUser[user.id].periods[key]){
+    periodsByUser[user.id].periods[key] = { type, startDate, endDate, indicatorsPrev:{}, indicatorsCons:{} };
   }
-  periodsByUser[user][key].indicatorsPrev[kpi] = val;
-  periodsByUser[user][key].indicatorsCons[kpi] = val;
+  const bag = periodsByUser[user.id].periods[key];
+  if(valCombined){
+    bag.indicatorsPrev[kpi] = (bag.indicatorsPrev[kpi] || 0) + valCombined;
+    bag.indicatorsCons[kpi] = (bag.indicatorsCons[kpi] || 0) + valCombined;
+  }
+  if(prevVal){
+    bag.indicatorsPrev[kpi] = (bag.indicatorsPrev[kpi] || 0) + prevVal;
+  }
+  if(consVal){
+    bag.indicatorsCons[kpi] = (bag.indicatorsCons[kpi] || 0) + consVal;
+  }
 });
 
 async function login(email, password, base){
@@ -99,19 +133,19 @@ async function postPeriod(token, base, data){
 
 async function main(){
   const baseUrl = process.env.API_URL || 'http://localhost:3000';
-  const usersDb = JSON.parse(fs.readFileSync(path.join(__dirname,'..','data','users.json'),'utf8'));
 
-  for(const [name, periods] of Object.entries(periodsByUser)){
-    const user = (usersDb.users||[]).find(u => u.name.toLowerCase() === String(name).toLowerCase());
-    if(!user){ console.error('No user', name); continue; }
-    if(String(user.pass||'').startsWith('$2')){ console.error('Cannot login for', name, '- hashed password'); continue; }
-    const token = dryRun ? null : await login(user.email, user.pass, baseUrl).catch(e=>{ console.error('Login failed for', name, e.message); return null; });
-    for(const p of Object.values(periods)){
+  for(const [userId, rec] of Object.entries(periodsByUser)){
+    const user = findUserById(userId);
+    const label = `${rec.name} (${userId})`;
+    if(!user){ console.error('No user for id', userId); continue; }
+    if(String(user.pass||'').startsWith('$2')){ console.error('Cannot login for', label, '- hashed password'); continue; }
+    const token = dryRun ? null : await login(user.email, user.pass, baseUrl).catch(e=>{ console.error('Login failed for', label, e.message); return null; });
+    for(const p of Object.values(rec.periods)){
       if(dryRun){
-        console.log(name, p);
+        console.log(label, p);
       }else if(token){
         const r = await postPeriod(token, baseUrl, p);
-        console.log(name, p.startDate, r.status, r.body && (r.body.error||r.body.ok));
+        console.log(label, p.startDate, r.status, r.body && (r.body.error||r.body.ok));
       }
     }
   }
