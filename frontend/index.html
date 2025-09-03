@@ -50,7 +50,7 @@
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
     a{ color:var(--accent); text-decoration:none; }
-    .wrap{ max-width: 1180px; margin: 80px auto 40px; padding: 0 16px; }
+    .wrap{ max-width: 1180px; margin: calc(56px + env(safe-area-inset-top) + 32px) auto 40px; padding: 0 16px; }
     .grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
     .right{ margin-left:auto; }
@@ -144,7 +144,7 @@
     @media (max-width: 980px){
       .nav.right{ display:none; }
       .hamb{ display:flex; }
-      .wrap{ margin-top: 76px; }
+      .wrap{ margin-top: calc(56px + env(safe-area-inset-top) + 32px); }
       button, input, select{ font-size:14px; padding:9px 12px; }
     }
 
