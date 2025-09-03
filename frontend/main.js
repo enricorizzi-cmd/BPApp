@@ -17,6 +17,7 @@ import { toast, celebrate } from "./modules/notifications.js";
 import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
 import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
 import { $1, $all, getQuery } from "./src/query.js";
+import "./lib/ics-single.js";
 ;(function () {
   'use strict';
 
@@ -904,7 +905,7 @@ function cardAppt(x){
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
         '<div><b>'+htmlEscape(x.client||'')+'</b></div>'+
         '<div class="row" style="gap:6px">'+
-          '<button class="ghost" title="Esporta .ics" data-ics="'+htmlEscape(String(x.id||''))+'">.ics</button>'+
+          '<button class="ghost btn-ics" title="Esporta .ics" data-ics="'+htmlEscape(String(x.id||''))+'">📅</button>'+
         '</div>'+
       '</div>'+
       '<div class="small">VSS '+fmtEuro(x.vss||0)+' · VSD '+fmtEuro(x.vsdPersonal||0)+nncfTxt+'</div>'+
@@ -950,8 +951,8 @@ function cardAppt(x){
           var id = bt.getAttribute('data-ics');
           var a  = list.find(z=>String(z.id)===String(id)) || apps.find(z=>String(z.id)===String(id));
           if(!a) { toast('Appuntamento non trovato'); return; }
-          if (typeof icsFromAppt==='function' && typeof downloadICS==='function'){
-            downloadICS(`bp_${(a.client||'app').replace(/\s+/g,'_')}_${(a.start||'').slice(0,10)}`, icsFromAppt(a));
+          if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
+            BP.ICS.downloadIcsForAppointment(a);
             if (typeof haptic==='function') haptic('medium');
             toast('.ics esportato');
           } else {
@@ -985,8 +986,8 @@ function cardAppt(x){
           var id = bt.getAttribute('data-ics');
           var a  = list.find(z=>String(z.id)===String(id)) || apps.find(z=>String(z.id)===String(id));
           if(!a) { toast('Appuntamento non trovato'); return; }
-          if (typeof icsFromAppt==='function' && typeof downloadICS==='function'){
-            downloadICS(`bp_${(a.client||'app').replace(/\s+/g,'_')}_${(a.start||'').slice(0,10)}`, icsFromAppt(a));
+          if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
+            BP.ICS.downloadIcsForAppointment(a);
             if (typeof haptic==='function') haptic('medium');
             toast('.ics esportato');
           } else {
@@ -2220,7 +2221,7 @@ function deleteA(){
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
           '<div><b>'+htmlEscape(a.client||'')+'</b></div>'+
           '<div class="row" style="gap:6px">'+
-            '<button class="ghost" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">Esporta</button>'+
+            '<button class="ghost btn-ics" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">📅</button>'+
             '<button class="ghost" title="Modifica" data-edit="'+htmlEscape(String(a.id||''))+'">✏️</button>'+
           '</div>'+
         '</div>'+

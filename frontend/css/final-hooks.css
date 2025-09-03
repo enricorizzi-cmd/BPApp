@@ -44,4 +44,5 @@
 .today::after{ content:"Oggi"; position:absolute; top:2px; right:4px; font-size:.7em; color:var(--acc,#0aa); }
 .btn-ghost{ background:transparent; border:1px solid #999; border-radius:.5rem; padding:.35rem .6rem; cursor:pointer; }
 .btn-ghost:hover{ background:rgba(0,0,0,.04); }
+.btn-ics{ padding:2px 4px; font-size:1.1rem; line-height:1; }
 .kpi-mini canvas{ max-height:180px; }

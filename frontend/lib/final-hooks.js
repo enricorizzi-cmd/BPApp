@@ -607,8 +607,8 @@ function esc(s){
       if (!start) continue; // niente start, niente ics affidabile
       var a = document.createElement('a');
       a.href = '#';
-      a.className = 'bp-ics';
-      a.textContent = 'ICS';
+      a.className = 'bp-ics btn-ics';
+      a.textContent = '📅';
       a.style.marginLeft = '6px';
       a.onclick = function(ev){
         ev.preventDefault();
@@ -1313,11 +1313,11 @@ function wireICSInsideDayBox(){
       var title = card.getAttribute('data-title') || (card.querySelector('b')? card.querySelector('b').textContent.trim() : 'Appuntamento');
 
       if(!start || !end) continue;
-      if(typeof window.icsFromAppt!=='function' || typeof window.downloadICS!=='function') continue;
+      if(!(window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function')) continue;
 
       var btn = document.createElement('button');
-      btn.className = 'ghost';
-      btn.textContent = '.ics';
+      btn.className = 'ghost btn-ics';
+      btn.textContent = '📅';
       btn.setAttribute('data-ics-inline','1');
       btn.style.marginTop = '6px';
 
@@ -1329,7 +1329,7 @@ function wireICSInsideDayBox(){
         var tt  = par.getAttribute('data-title') || (par.querySelector('b')? par.querySelector('b').textContent.trim() : 'Appuntamento');
         var obj = { client: tt, start: st, end: en, type: 'manuale', vss: 0, vsdPersonal: 0, nncf: false };
         try{
-          window.downloadICS('bp_'+(tt||'app')+'_'+(st||'').slice(0,10), window.icsFromAppt(obj));
+          BP.ICS.downloadIcsForAppointment(obj);
           hapticImpact('medium');
         }catch(_){}
       });
