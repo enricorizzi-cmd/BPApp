@@ -17,6 +17,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     const s = String(t||'').toLowerCase();
     if (s.includes('mezza')) return 240;
     if (s.includes('giorn')) return 570;
+    if (s.includes('formaz')) return 570;
+    if (s.includes('mbs')) return 570;
+    if (s.includes('sottoprod')) return 240;
     if (s.includes('vend'))  return 90;
     return 90; // fallback
   }
@@ -60,6 +63,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if (Object.prototype.hasOwnProperty.call(body, 'type'))   it.type   = String(body.type || 'manuale');
     if (Object.prototype.hasOwnProperty.call(body, 'vss'))    it.vss    = Number(body.vss||0);
     if (Object.prototype.hasOwnProperty.call(body, 'vsdPersonal')) it.vsdPersonal = Number(body.vsdPersonal||0);
+    if (Object.prototype.hasOwnProperty.call(body, 'vsdIndiretto')) it.vsdIndiretto = Number(body.vsdIndiretto||0);
+    if (Object.prototype.hasOwnProperty.call(body, 'telefonate')) it.telefonate = Number(body.telefonate||0);
+    if (Object.prototype.hasOwnProperty.call(body, 'appFissati')) it.appFissati = Number(body.appFissati||0);
     if (Object.prototype.hasOwnProperty.call(body, 'nncf'))   it.nncf   = !!body.nncf;
     if (Object.prototype.hasOwnProperty.call(body, 'notes'))  it.notes  = body.notes || '';
 
@@ -100,7 +106,15 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
   }
 
   async function handleCreate(req, res, body, db){
-    if(!body.client || !body.start) return res.status(400).json({ error:'missing fields' });
+    if(!body.start) return res.status(400).json({ error:'missing fields' });
+    if(!body.client){
+      const t = String(body.type||'').toLowerCase();
+      if(t==='formazione' || t==='mbs' || t==='sottoprodotti'){
+        body.client = body.type;
+      } else {
+        return res.status(400).json({ error:'missing fields' });
+      }
+    }
     const start = parseDateSmart(body.start);
     if(isNaN(start)) return res.status(400).json({ error:'invalid start' });
 
@@ -130,6 +144,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       durationMinutes: minutes,
       vss: Number(body.vss||0),
       vsdPersonal: Number(body.vsdPersonal||0),
+      vsdIndiretto: Number(body.vsdIndiretto||0),
+      telefonate: Number(body.telefonate||0),
+      appFissati: Number(body.appFissati||0),
       nncf: !!body.nncf,
       notes: body.notes||''
     };

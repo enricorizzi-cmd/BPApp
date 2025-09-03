@@ -884,6 +884,9 @@ function defDurByType(t){
   t = String(t||'').toLowerCase();
   if (t.indexOf('mezza')  > -1) return 240; // mezza giornata
   if (t.indexOf('giorn')  > -1) return 570; // giornata intera (9,5h)
+  if (t.indexOf('formaz') > -1) return 570;
+  if (t.indexOf('mbs')    > -1) return 570;
+  if (t.indexOf('sottoprod') > -1) return 240;
   if (t.indexOf('vend')   > -1) return 90;  // vendita
   return 90;                                  // fallback
 }
@@ -900,6 +903,17 @@ function cardAppt(x){
 
   var when   = dmy(s)+' '+timeHM(s)+'–'+(('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2));
   var nncfTxt = x.nncf ? ' · NNCF ✅' : '';
+  var t = String(x.type||'').toLowerCase();
+  var indLine;
+  if(t.indexOf('mbs')>-1){
+    indLine = 'VSD ind '+fmtEuro(x.vsdIndiretto||0);
+  }else if(t.indexOf('sottoprod')>-1){
+    indLine = 'Tel '+fmtInt(x.telefonate||0)+' · AppFissati '+fmtInt(x.appFissati||0);
+  }else if(t.indexOf('formaz')>-1){
+    indLine = '';
+  }else{
+    indLine = 'VSS '+fmtEuro(x.vss||0)+' · VSD '+fmtEuro(x.vsdPersonal||0)+nncfTxt;
+  }
   return ''+
     '<div class="card lastApp" data-aid="'+htmlEscape(String(x.id||''))+'" style="cursor:pointer">'+
       '<div class="small muted">'+htmlEscape(when)+' · '+htmlEscape(x.type||'manuale')+'</div>'+
@@ -909,7 +923,7 @@ function cardAppt(x){
           '<button class="ghost btn-ics" title="Esporta .ics" data-ics="'+htmlEscape(String(x.id||''))+'">📅</button>'+
         '</div>'+
       '</div>'+
-      '<div class="small">VSS '+fmtEuro(x.vss||0)+' · VSD '+fmtEuro(x.vsdPersonal||0)+nncfTxt+'</div>'+
+      (indLine?'<div class="small">'+indLine+'</div>':'')+
     '</div>';
 }
 
@@ -1199,15 +1213,18 @@ function viewCalendar(){
 
       // --- util risultati ---
       function sumInRange(s, e){
-        var out = {vss:0, vsd:0, nncf:0, count:0};
+        var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0};
         for(var i=0;i<apps.length;i++){
           var a = apps[i];
           var t = new Date(a.start);
           if(t>=s && t<=e){
-            out.vss   += Number(a.vss||0);
-            out.vsd   += Number(a.vsdPersonal||0);
-            out.nncf  += (a.nncf?1:0);
-            out.count += 1;
+            out.vss        += Number(a.vss||0);
+            out.vsd        += Number(a.vsdPersonal||0);
+            out.vsdI       += Number(a.vsdIndiretto||0);
+            out.telefonate += Number(a.telefonate||0);
+            out.appFissati += Number(a.appFissati||0);
+            out.nncf       += (a.nncf?1:0);
+            out.count      += 1;
           }
         }
         return out;
@@ -1222,6 +1239,9 @@ function viewCalendar(){
           '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">'+
             '<span class="chip small">VSS <b>'+fmtEuro(tot.vss)+'</b></span>'+
             '<span class="chip small">VSD <b>'+fmtEuro(tot.vsd)+'</b></span>'+
+            '<span class="chip small">VSD ind <b>'+fmtEuro(tot.vsdI)+'</b></span>'+
+            '<span class="chip small">Tel <b>'+fmtInt(tot.telefonate)+'</b></span>'+
+            '<span class="chip small">AppFiss <b>'+fmtInt(tot.appFissati)+'</b></span>'+
             '<span class="chip small">NNCF <b>'+fmtInt(tot.nncf)+'</b></span>'+
             '<span class="chip small">N. app <b>'+fmtInt(tot.count)+'</b></span>'+
           '</div>';
@@ -1238,9 +1258,12 @@ function viewCalendar(){
         var a=apps[i]; var s=new Date(a.start);
         if(s<from || s>to) continue;
         var key = ymd(s);
-        if(!map[key]) map[key]={vss:0,vsd:0,nncf:0,mins:0,count:0,items:[]};
+        if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
         map[key].vss += Number(a.vss||0);
         map[key].vsd += Number(a.vsdPersonal||0);
+        map[key].vsdI += Number(a.vsdIndiretto||0);
+        map[key].telefonate += Number(a.telefonate||0);
+        map[key].appFissati += Number(a.appFissati||0);
         map[key].nncf += (a.nncf?1:0);
         map[key].mins += Number(a.durationMinutes||0);
         map[key].count += 1;
@@ -1268,7 +1291,7 @@ function viewCalendar(){
         for(var k=0;k<7;k++){
           var inMonth = (d.getMonth()===(m-1));
           var key = ymd(d);
-          var v = map[key]||{vss:0,vsd:0,nncf:0,mins:0,count:0,items:[]};
+          var v = map[key]||{vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
           var dow = d.getDay(); // 0=Dom .. 6=Sab
           var isWeekend = (dow===0 || dow===6);
           var hasSlot4h = !isWeekend && (slots.some(function(s){ return s.date===key; }));
@@ -1297,6 +1320,9 @@ function viewCalendar(){
             if(!(isWeekend && v.count===0)){
               if(v.vss>0){  lines += '<div class="small">VSS '+fmtEuro(v.vss)+'</div>'; nLines++; }
               if(v.vsd>0){  lines += '<div class="small">VSD '+fmtEuro(v.vsd)+'</div>'; nLines++; }
+              if(v.vsdI>0){ lines += '<div class="small">VSD ind '+fmtEuro(v.vsdI)+'</div>'; nLines++; }
+              if(v.telefonate>0){ lines += '<div class="small">Tel '+fmtInt(v.telefonate)+'</div>'; nLines++; }
+              if(v.appFissati>0){ lines += '<div class="small">AppFiss '+fmtInt(v.appFissati)+'</div>'; nLines++; }
               if(v.nncf>0){ lines += '<div class="small">NNCF '+fmtInt(v.nncf)+'</div>'; nLines++; }
               if(v.count>0){lines += '<div class="small">App. '+fmtInt(v.count)+'</div>'; nLines++; }
               if(hasSlot4h){ lines += '<div class="tag" style="margin-top:4px">slot ≥4h</div>'; nLines++; }
@@ -1345,10 +1371,16 @@ function viewCalendar(){
             for(var i=0;i<items.length;i++){
               var x=items[i];
               var ds=' data-start="'+x.start+'" data-end="'+x.end+'" data-title="'+htmlEscape(x.client||'Appuntamento')+'" ';
+              var tt = String(x.type||'').toLowerCase();
+              var indLine;
+              if(tt.indexOf('mbs')>-1){ indLine = 'VSD ind '+fmtEuro(x.vsdIndiretto||0); }
+              else if(tt.indexOf('sottoprod')>-1){ indLine = 'Tel '+fmtInt(x.telefonate||0)+' · AppFissati '+fmtInt(x.appFissati||0); }
+              else if(tt.indexOf('formaz')>-1){ indLine = ''; }
+              else { indLine = 'VSS '+fmtEuro(x.vss)+' · VSD '+fmtEuro(x.vsdPersonal)+' · NNCF '+(x.nncf?'✅':'—'); }
               h += '<div class="card cal-app" data-aid="'+x.id+'" '+ds+' style="flex:1 1 320px;cursor:pointer">'+
                      '<div class="small muted">'+timeHMlocal(x.start)+'–'+timeHMlocal(x.end)+' · '+htmlEscape(x.type||'')+'</div>'+
                      '<div><b>'+htmlEscape(x.client||'')+'</b></div>'+
-                     '<div class="small">VSS '+fmtEuro(x.vss)+' · VSD '+fmtEuro(x.vsdPersonal)+' · NNCF '+(x.nncf?'✅':'—')+'</div>'+
+                     (indLine?'<div class="small">'+indLine+'</div>':'')+
                      (x.notes?('<div class="small muted">'+htmlEscape(x.notes)+'</div>'):'')+
                    '</div>';
             }
@@ -1952,6 +1984,7 @@ function viewAppointments(){
           '<div><label>Ora fine</label><input id="a_end" type="time"></div>'+
           '<div><label>Durata (min)</label><input id="a_dur" type="number" placeholder="60" min="1"></div>'+
         '</div>'+
+        '<div class="row" style="margin-top:8px"><div style="flex:1"><label>Descrizione appuntamento</label><textarea id="a_desc" rows="2"></textarea></div></div>'+
         '<div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">'+
           '<div class="appt-type">'+
             '<label>Tipo</label>'+
@@ -1959,11 +1992,17 @@ function viewAppointments(){
               '<button type="button" id="t_vendita" class="seg">Vendita</button>'+
               '<button type="button" id="t_mezza"   class="seg" data-vsd="1000">Mezza giornata</button>'+
               '<button type="button" id="t_full"    class="seg" data-vsd="2000">Giornata intera</button>'+
+              '<button type="button" id="t_form"    class="seg">Formazione</button>'+
+              '<button type="button" id="t_mbs"     class="seg">MBS</button>'+
+              '<button type="button" id="t_sotto"   class="seg">Sottoprodotti</button>'+
             '</div>'+
             '<input id="a_type" type="hidden" value="vendita">'+
           '</div>'+
-          '<div><label>VSS</label><input id="a_vss" type="number" step="1" placeholder="0"></div>'+
-          '<div><label>VSD personale</label><input id="a_vsd" type="number" step="1" placeholder="0"></div>'+
+          '<div id="row_vss"><label>VSS</label><input id="a_vss" type="number" step="1" placeholder="0"></div>'+
+          '<div id="row_vsd_p"><label>VSD personale</label><input id="a_vsd" type="number" step="1" placeholder="0"></div>'+
+          '<div id="row_vsd_i" style="display:none"><label>VSD indiretto</label><input id="a_vsd_i" type="number" step="1" placeholder="0"></div>'+
+          '<div id="row_tel" style="display:none"><label>Telefonate</label><input id="a_tel" type="number" step="1" placeholder="0"></div>'+
+          '<div id="row_app" style="display:none"><label>Appunt. fissati</label><input id="a_app" type="number" step="1" placeholder="0"></div>'+
         '</div>'+
         '<div class="row" style="margin-top:8px;gap:8px;align-items:center">'+
           '<div><button id="btnSaveA">Salva</button></div>'+
@@ -2010,6 +2049,9 @@ function viewAppointments(){
     t = String(t||'').toLowerCase();
     if(t.indexOf('mezza')>-1) return 240;
     if(t.indexOf('giorn')>-1) return 570;
+    if(t.indexOf('formaz')>-1) return 570;
+    if(t.indexOf('mbs')>-1) return 570;
+    if(t.indexOf('sottoprod')>-1) return 240;
     return 90; // vendita (default)
   }
 
@@ -2027,13 +2069,41 @@ function viewAppointments(){
   const segSale = document.getElementById('t_vendita');
   const segHalf = document.getElementById('t_mezza');
   const segFull = document.getElementById('t_full');
-  const allSegs = [segSale, segHalf, segFull];
+  const segForm = document.getElementById('t_form');
+  const segMbs  = document.getElementById('t_mbs');
+  const segSotto= document.getElementById('t_sotto');
+  const allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto];
   function selectSeg(btn){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
+    const clientInput = document.getElementById('a_client');
+    const rowVss  = document.getElementById('row_vss');
+    const rowVsdP = document.getElementById('row_vsd_p');
+    const rowVsdI = document.getElementById('row_vsd_i');
+    const rowTel  = document.getElementById('row_tel');
+    const rowApp  = document.getElementById('row_app');
+    // reset
+    document.getElementById('a_vss').value='';
+    document.getElementById('a_vsd').value='';
+    document.getElementById('a_vsd_i').value='';
+    document.getElementById('a_tel').value='';
+    document.getElementById('a_app').value='';
+    rowVss.style.display='';
+    rowVsdP.style.display='';
+    rowVsdI.style.display='none';
+    rowTel.style.display='none';
+    rowApp.style.display='none';
+    clientInput.disabled=false;
+    nncfBtn.style.display='';
+    nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false'); nncfBtn.classList.remove('active');
+    if(clientInput.value==='Formazione' || clientInput.value==='MBS' || clientInput.value==='Sottoprodotti') clientInput.value='';
+
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
-    if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
-    if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
+    else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
+    else if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
+    else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientInput.value='Formazione'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+    else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientInput.value='MBS'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
+    else if(btn===segSotto){ typeHidden.value='sottoprodotti'; setDur(240); clientInput.value='Sottoprodotti'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowTel.style.display=''; rowApp.style.display=''; nncfBtn.style.display='none'; }
   }
   function setDur(min){
     const dEl=document.getElementById('a_dur');
@@ -2082,6 +2152,12 @@ function viewAppointments(){
     document.getElementById('a_dur').value='';
     document.getElementById('a_vss').value='';
     document.getElementById('a_vsd').value='';
+    document.getElementById('a_vsd_i').value='';
+    document.getElementById('a_tel').value='';
+    document.getElementById('a_app').value='';
+    document.getElementById('a_desc').value='';
+    document.getElementById('a_client').disabled=false;
+    nncfBtn.style.display='';
     nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false');
     nncfBtn.classList.remove('active');
     selectSeg(segSale);
@@ -2090,6 +2166,15 @@ function viewAppointments(){
   function fillForm(a){
     editId=a.id;
     document.getElementById('a_form_title').textContent='Modifica appuntamento';
+    // Seleziona tipo prima di valorizzare i campi
+    var t = String(a.type||'vendita').toLowerCase();
+    if(t.indexOf('mezza')>-1) selectSeg(segHalf);
+    else if(t.indexOf('giorn')>-1) selectSeg(segFull);
+    else if(t.indexOf('formaz')>-1) selectSeg(segForm);
+    else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
+    else if(t.indexOf('sottoprod')>-1) selectSeg(segSotto);
+    else selectSeg(segSale);
+
     document.getElementById('a_client').value=a.client||'';
     document.getElementById('a_start').value=isoToLocalInput(a.start);
 
@@ -2109,22 +2194,25 @@ function viewAppointments(){
 
     document.getElementById('a_vss').value=a.vss||'';
     document.getElementById('a_vsd').value=a.vsdPersonal || a.vsd || '';
+    document.getElementById('a_vsd_i').value=a.vsdIndiretto || '';
+    document.getElementById('a_tel').value=a.telefonate || '';
+    document.getElementById('a_app').value=a.appFissati || '';
+    document.getElementById('a_desc').value=a.notes || '';
     const on=!!a.nncf;
     nncfBtn.setAttribute('data-active', on?'1':'0'); nncfBtn.setAttribute('aria-pressed', on?'true':'false');
     nncfBtn.classList.toggle('active', on);
-    // Mantieni il tipo selezionato dall'utente (non dedurre dalla durata)
-    var t = String(a.type||'vendita').toLowerCase();
-    if(t.indexOf('mezza')>-1) selectSeg(segHalf);
-    else if(t.indexOf('giorn')>-1) selectSeg(segFull);
-    else selectSeg(segSale);
-
     document.getElementById('btnDeleteA').style.display='';
   }
 
   // --------- save / delete ----------
   function collectForm(){
-    const client=(document.getElementById('a_client').value||'').trim();
-    if(!client){ toast('Cliente obbligatorio'); return null; }
+    let client=(document.getElementById('a_client').value||'').trim();
+    const typeVal=document.getElementById('a_type').value;
+    if(!client){
+      const tl=String(typeVal||'').toLowerCase();
+      if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ client=typeVal; }
+      else { toast('Cliente obbligatorio'); return null; }
+    }
     const startLocal=document.getElementById('a_start').value;
     if(!startLocal){ toast('Data/ora obbligatorie'); return null; }
 
@@ -2147,15 +2235,20 @@ function viewAppointments(){
       endISO = eLocal.toISOString();
     }
 
+    const desc = document.getElementById('a_desc').value || '';
     return {
       id: editId || undefined,
       client: client,
       start: localInputToISO(startLocal),
       end: endISO,
       durationMinutes: dur,
-      type: document.getElementById('a_type').value,
+      type: typeVal,
       vss: Number(document.getElementById('a_vss').value||0),
       vsdPersonal: Number(document.getElementById('a_vsd').value||0),
+      vsdIndiretto: Number(document.getElementById('a_vsd_i').value||0),
+      telefonate: Number(document.getElementById('a_tel').value||0),
+      appFissati: Number(document.getElementById('a_app').value||0),
+      notes: desc,
       nncf: (nncfBtn.getAttribute('data-active')==='1')
     };
   }
@@ -2252,7 +2345,12 @@ function deleteA(){
       e = new Date(s.getTime() + dur*60000);
     }
     const when = dmy(s)+' '+('0'+s.getHours()).slice(-2)+':'+('0'+s.getMinutes()).slice(-2)+'–'+('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
-    const line2 = 'VSS '+fmtEuro(a.vss||0)+' · VSD '+fmtEuro(a.vsdPersonal||0)+' · NNCF '+(a.nncf?'✅':'—');
+    var line2;
+    var tt = String(a.type||'').toLowerCase();
+    if(tt.indexOf('mbs')>-1){ line2 = 'VSD ind '+fmtEuro(a.vsdIndiretto||0); }
+    else if(tt.indexOf('sottoprod')>-1){ line2 = 'Tel '+fmtInt(a.telefonate||0)+' · AppFissati '+fmtInt(a.appFissati||0); }
+    else if(tt.indexOf('formaz')>-1){ line2 = ''; }
+    else { line2 = 'VSS '+fmtEuro(a.vss||0)+' · VSD '+fmtEuro(a.vsdPersonal||0)+' · NNCF '+(a.nncf?'✅':'—'); }
     return ''+
       '<div class="card" data-aid="'+htmlEscape(String(a.id||''))+'" style="flex:1 1 320px;cursor:pointer">'+
         '<div class="small muted">'+htmlEscape(when)+' · '+htmlEscape(a.type||'vendita')+'</div>'+
@@ -2260,7 +2358,7 @@ function deleteA(){
           '<div><b>'+htmlEscape(a.client||'')+'</b></div>'+
           '<button class="ghost btn-ics" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">📅</button>'+
         '</div>'+
-        '<div class="small">'+line2+'</div>'+
+        (line2?'<div class="small">'+line2+'</div>':'')+
       '</div>';
   }
   function listA(){
