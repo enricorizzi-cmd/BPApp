@@ -1161,6 +1161,56 @@ self.addEventListener('notificationclick', (event) => {
       return res.send(inlineFallback);
     });
   }catch(_){ }
+  // PWA: manifest e icone a path radice, anche in modalità non-build
+  try{
+    const manifestFromFrontRoot = path.join(frontRoot, 'manifest.webmanifest');
+    const manifestFromPublic    = path.join(root, 'public', 'manifest.webmanifest');
+    app.get('/manifest.webmanifest', async (_req, res) => {
+      res.set('Cache-Control', 'no-cache');
+      res.type('application/manifest+json');
+      const candidates = [manifestFromFrontRoot, manifestFromPublic];
+      for (const p of candidates){
+        try{ if (await fs.pathExists(p)) return res.sendFile(p); }catch(_){ /* ignore */ }
+      }
+      return res.json({ name: 'Battle Plan', short_name: 'BP', display: 'standalone', start_url: '/', scope: '/', background_color: '#0e1116', theme_color: '#0e1116' });
+    });
+
+    const iconsFromFrontRoot = path.join(frontRoot, 'icons');
+    const iconsFromPublic    = path.join(root, 'public', 'icons');
+    app.get(/^\/icons\/(.*)/, async (req, res) => {
+      const rel = req.params[0] || '';
+      const candidates = [path.join(iconsFromFrontRoot, rel), path.join(iconsFromPublic, rel)];
+      for (const p of candidates){
+        try{ if (await fs.pathExists(p)) return res.sendFile(p); }catch(_){ /* ignore */ }
+      }
+      res.status(404).end();
+    });
+
+    // iOS fallback: /apple-touch-icon.png richiesto alla radice
+    const atiCandidates = [
+      path.join(frontRoot, 'apple-touch-icon.png'),
+      path.join(root, 'public', 'apple-touch-icon.png'),
+      path.join(frontRoot, 'icons', 'apple-touch-icon.png'),
+      path.join(root, 'public', 'icons', 'apple-touch-icon.png')
+    ];
+    app.get('/apple-touch-icon.png', async (_req, res) => {
+      for (const p of atiCandidates){
+        try{ if (await fs.pathExists(p)) return res.sendFile(p); }catch(_){ /* ignore */ }
+      }
+      res.status(404).end();
+    });
+    // Offline fallback page (served from dist/ or public/)
+    const offCandidates = [
+      path.join(frontRoot, 'offline.html'),
+      path.join(root, 'public', 'offline.html')
+    ];
+    app.get('/offline.html', async (_req, res) => {
+      for (const p of offCandidates){
+        try{ if (await fs.pathExists(p)) return res.sendFile(p); }catch(_){ /* ignore */ }
+      }
+      res.status(404).end();
+    });
+  }catch(_){ }
   // static di base (no speciale caching per index)
   app.use(express.static(frontRoot));
   app.get("/", (_req,res)=> { res.set('Cache-Control','no-store'); res.sendFile(path.join(frontRoot, "index.html")); });
