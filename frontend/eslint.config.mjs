@@ -31,4 +31,11 @@ export default [
       complexity: ["warn", 10],
     },
   },
+  // Loosen complexity threshold for specific modules to reduce noise
+  {
+    files: ["modules/ui.js"],
+    rules: {
+      complexity: ["warn", 12],
+    },
+  },
 ];

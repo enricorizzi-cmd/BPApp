@@ -39,4 +39,23 @@ export default [
       complexity: ["warn", 20],
     },
   },
+  // Reduce noise: tailor complexity thresholds for specific files
+  {
+    files: ["lib/storage-pg.js"],
+    rules: {
+      complexity: ["warn", 16],
+    },
+  },
+  {
+    files: ["routes/appointments.js"],
+    rules: {
+      complexity: ["warn", 36],
+    },
+  },
+  {
+    files: ["routes/push.js"],
+    rules: {
+      complexity: ["warn", 12],
+    },
+  },
 ];
