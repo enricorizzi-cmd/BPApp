@@ -1085,20 +1085,10 @@ function viewCalendar(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Calendario';
 
-  // --- helper orari in LOCALE (evita shift 1–2h con ISO/UTC) ---
-  function parseLocalISO(s){
-    if(!s) return new Date(NaN);
-    if(typeof s === 'string'){
-      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
-      if(m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5]);
-    }
-    return new Date(s);
-  }
+  // Orari in locale coerenti con dashboard/appuntamenti
+  // Usa il formatter condiviso `timeHM` (gestisce correttamente ISO/UTC → locale)
   function timeHMlocal(s){
-    var d = parseLocalISO(s);
-    var hh = isFinite(d) ? ('0'+d.getHours()).slice(-2) : '--';
-    var mm = isFinite(d) ? ('0'+d.getMinutes()).slice(-2) : '--';
-    return hh+':'+mm;
+    return timeHM(s);
   }
 
   // CSS del calendario (iniettato una sola volta)
@@ -2085,9 +2075,10 @@ function viewAppointments(){
     const on=!!a.nncf;
     nncfBtn.setAttribute('data-active', on?'1':'0'); nncfBtn.setAttribute('aria-pressed', on?'true':'false');
     nncfBtn.classList.toggle('active', on);
-
-    if(dur===240) selectSeg(segHalf);
-    else if(dur===570) selectSeg(segFull);
+    // Mantieni il tipo selezionato dall'utente (non dedurre dalla durata)
+    var t = String(a.type||'vendita').toLowerCase();
+    if(t.indexOf('mezza')>-1) selectSeg(segHalf);
+    else if(t.indexOf('giorn')>-1) selectSeg(segFull);
     else selectSeg(segSale);
 
     document.getElementById('btnDeleteA').style.display='';
@@ -2124,6 +2115,7 @@ function viewAppointments(){
       client: client,
       start: localInputToISO(startLocal),
       end: endISO,
+      durationMinutes: dur,
       type: document.getElementById('a_type').value,
       vss: Number(document.getElementById('a_vss').value||0),
       vsdPersonal: Number(document.getElementById('a_vsd').value||0),
@@ -2132,10 +2124,12 @@ function viewAppointments(){
   }
   function saveA(exportAfter){
     const payload=collectForm(); if(!payload) return;
+    const wasNew = !editId;
     POST('/api/appointments', payload).then(()=>{
  toast('Appuntamento salvato');
       if (typeof haptics!=='undefined') haptics.try('success');
       document.dispatchEvent(new Event('appt:saved'));
+      if (wasNew){ try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ } }
       if (exportAfter && window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
         BP.ICS.downloadIcsForAppointment(payload);
         if (typeof haptics!=='undefined') haptics.try('medium');
@@ -4070,6 +4064,7 @@ function viewUsers(){
       POST('/api/users', payload).then(function(){
         toast('Profilo aggiornato'); window.addXP(3);
         var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
+        try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
       }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
     };
     return;

@@ -255,6 +255,7 @@ async function openPaymentBuilderById(id){
       const sched = ($('pb_rates')._data)||[];
       try{
         await POST('/api/gi', { id: it.id, vssTotal: vss, schedule: sched });
+        try{ document.dispatchEvent(new CustomEvent('payments:defined',{ detail:{ id: it.id, vssTotal: vss, schedule: sched } })); }catch(_){ }
         toast('Piano pagamenti salvato'); closeCentered();
       }catch(e){ logger.error(e); toast('Errore salvataggio'); }
     };
@@ -289,6 +290,7 @@ function openVSSModal(appt){
       closeCentered();
       toast('VSS salvato');
       if (saleId) { openPaymentBuilderById(saleId); }
+      try{ if (saleId) document.dispatchEvent(new CustomEvent('gi:created',{ detail:{ id: saleId } })); }catch(_){ }
       document.dispatchEvent(new Event('bp:saved')); // trigger coach/haptics
     }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
   };
@@ -445,6 +447,7 @@ window.pipelineNo  = pipelineNo;
         // crea GI e apri builder
         const gid = await createGIFromAppt(appt, v);
         close();
+        if (gid){ try{ document.dispatchEvent(new CustomEvent('gi:created',{ detail:{ id: gid } })); }catch(_){ } }
         if (typeof window.coachSay==='function') coachSay('medium');
         gotoGIAndOpenBuilder(gid);
       }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
@@ -547,15 +550,18 @@ function esc(s){
         const url='https://mail.google.com/mail/?view=cm&fs=1&tf=1'
           +'&su='+enc(subject)+'&cc='+enc(cc)+'&body='+enc(body);
         window.open(url,'_blank');
+        try{ document.dispatchEvent(new Event('report:composed')); }catch(_){ }
       };
     }
     if (bA){
       bA.onclick = function(){
         const url='googlegmail:///co?subject='+enc(subject)+'&cc='+enc(cc)+'&body='+enc(body);
         location.href = url;
+        try{ document.dispatchEvent(new Event('report:composed')); }catch(_){ }
         setTimeout(function(){
           if (!document.hidden){
             location.href = 'mailto:?subject='+enc(subject)+'&cc='+enc(cc)+'&body='+enc(body);
+            try{ document.dispatchEvent(new Event('report:composed')); }catch(_){ }
           }
         }, 1200);
       };
@@ -1028,6 +1034,41 @@ async function recomputeDashboardMini(){
     });
     drawLineGeneric('d_mini_'+k.toLowerCase(), L, data);
   });
+
+  // Coach: obiettivi raggiunti o vicini (80% / 100%)
+  try{
+    if (window.BP && BP.Targets && typeof BP.Targets.getForPeriod==='function'){
+      const user = JSON.parse(localStorage.getItem('user')||'{}')||{};
+      const grade = String(user.grade||'junior').toLowerCase()==='senior'?'senior':'junior';
+      const tgt = BP.Targets.getForPeriod(grade, effectivePeriodType(type)) || {};
+      const keys = ['VSS','VSDPersonale','GI','NNCF'];
+      const lastVals = {};
+      keys.forEach(k=>{
+        let s=0; const B=buckets[buckets.length-1]; if(!B) return;
+        periods.forEach(p=>{
+          if (p.type !== effectivePeriodType(type)) return;
+          const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
+          if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, k);
+        });
+        lastVals[k]=Math.round(s);
+      });
+      window.__bpCoachKpiFired = window.__bpCoachKpiFired || {};
+      keys.forEach(k=>{
+        const target = Number(tgt[k]||0);
+        if (target<=0) return;
+        const val = Number(lastVals[k]||0);
+        const pct = Math.round((val/target)*100);
+        const base = effectivePeriodType(type)+'_'+k;
+        if (pct>=100 && !window.__bpCoachKpiFired[base+'_100']){
+          window.__bpCoachKpiFired[base+'_100']=true;
+          try{ document.dispatchEvent(new CustomEvent('kpi:goal-reached',{ detail:{ key:k, value:val, target } })); }catch(_){ }
+        } else if (pct>=80 && !window.__bpCoachKpiFired[base+'_80']){
+          window.__bpCoachKpiFired[base+'_80']=true;
+          try{ document.dispatchEvent(new CustomEvent('kpi:goal-80',{ detail:{ key:k, value:val, target } })); }catch(_){ }
+        }
+      });
+    }
+  }catch(_){ }
 }
 
 async function recomputeCommsMini(){
@@ -1791,7 +1832,26 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; },2200);
     setTimeout(()=>{ el.remove(); },2420);
   }
+  // Esponi API globale coerente e alias BP.Coach.say
   window.coachSay = window.coachSay || coachSay;
+  try{
+    window.BP = window.BP || {};
+    window.BP.Coach = window.BP.Coach || {};
+    // Compat: consenti sia Coach.say(event|level, opts) sia Coach.say(level)
+    window.BP.Coach.say = window.BP.Coach.say || function(evOrLevel, opts){
+      try{
+        const s = String(evOrLevel||'').toLowerCase();
+        let lvl = (opts && opts.intensity) || (s==='low'||s==='medium'||s==='high'? s : undefined);
+        if (!lvl){
+          // mappa eventi tipici ad intensità
+          if (s==='bp_saved' || s==='client_converted' || s==='gi_created') lvl='high';
+          else if (s==='appointment_created' || s==='payments_defined' || s==='report_composed') lvl='medium';
+          else lvl='low';
+        }
+        coachSay(lvl);
+      }catch(_){ coachSay('medium'); }
+    };
+  }catch(_){ }
 
 // -------- Banner “È diventato cliente?” (NNCF) --------
 (function(){
@@ -1931,7 +1991,10 @@ BPFinal.ensureClientSection = function ensureClientSection(){
         try{ bar.remove(); }catch(e){}
         if (typeof onUndo === 'function'){
           Promise.resolve(onUndo())
-            .then(function(){ hapticImpact('medium'); })
+            .then(function(){
+              hapticImpact('medium');
+              try{ document.dispatchEvent(new Event('undo:performed')); }catch(_){ }
+            })
             .catch(function(){ hapticImpact('heavy'); });
         }
       };
@@ -1952,6 +2015,13 @@ document.addEventListener('appt:saved',       function(){ if(window.coachSay) co
 document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
 document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
 document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+document.addEventListener('gi:created',       function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+document.addEventListener('payments:defined', function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+document.addEventListener('user:profile-updated', function(){ if(window.coachSay) coachSay('low'); hapticImpact('light'); });
+document.addEventListener('appt:created',     function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+document.addEventListener('undo:performed',   function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
+document.addEventListener('kpi:goal-80',      function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
+document.addEventListener('kpi:goal-reached', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
 
 // Global delegate: trigger coach on generic close buttons (low intensity)
 // Matches: [data-close], ids/classes containing "close", aria-label "Chiudi"/"Close", or text content 'Chiudi'/'Close'.
@@ -2123,6 +2193,16 @@ onceReady(async ()=>{
   if (typeof wireCoachUndoHaptics==='function') wireCoachUndoHaptics();
 // Coach per banner NNCF
   if (typeof scanNNCF==='function') scanNNCF();
+  // Saluto iniziale (una volta al giorno)
+  try{
+    const k='bpCoachGreetedDate';
+    const today=(new Date()).toISOString().slice(0,10);
+    const last=localStorage.getItem(k)||'';
+    if (last!==today && typeof window.coachSay==='function'){
+      localStorage.setItem(k,today);
+      coachSay('low');
+    }
+  }catch(_){ }
   mo.observe(document.body,{childList:true,subtree:true});
 
   // 🔁 Allinea gli scope dei filtri unificati con il main
