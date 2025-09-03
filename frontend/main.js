@@ -262,7 +262,7 @@ function unifiedFiltersHTML(prefix){
   const mm=(new Date()).getMonth()+1;
   const wk=isoWeekNum(new Date());
   return ''+
-    '<div class="row">'+
+    '<div class="uf"><div class="row">'+
       '<div>'+
         '<label>Granularità</label>'+
         '<select id="'+prefix+'_gran">'+
@@ -306,7 +306,7 @@ function unifiedFiltersHTML(prefix){
       '</div>'+
 
       '<div style="align-self:flex-end"><button id="'+prefix+'_refresh" class="ghost">Aggiorna</button></div>'+
-    '</div>';
+    '</div></div>';
 }
 
 // === Event bus: ascolto/emissione cambi range ===
@@ -878,7 +878,7 @@ function refreshLists(){
   })();
 
   function grid3(inner){
-    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'+inner+'</div>';
+    return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">'+inner+'</div>';
   }
 function defDurByType(t){
   t = String(t||'').toLowerCase();
@@ -1907,7 +1907,7 @@ function viewAppointments(){
         background:var(--accent);color:#fff;border-color:var(--accent);
         box-shadow:0 0 0 2px rgba(20,99,255,.08) inset;
       }
-      #a_list .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+      #a_list .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
     `;
     document.head.appendChild(st);
   }
@@ -4201,3 +4201,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // === fine IIFE (chiusura unica) ===
 })();
+

@@ -79,6 +79,30 @@ export function renderTopbar(){
   try{ injectMobileLightModeCSS(); }catch{ /* ignore */ }
   try{ injectLightBadgesCSS(); }catch{ /* ignore */ }
 
+  // Unified filters + Squadra header responsiveness (mobile-friendly)
+  if(!document.getElementById('bp-unified-filters-css')){
+    const css = `
+      /* Nested inputs align in two columns inside unified filters */
+      .uf .row .row{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+
+      @media (max-width: 980px){
+        .uf input, .uf select{ min-width: 0; width: 100%; }
+        .uf .row > div{ flex: 1 1 180px; min-width: 0; }
+
+        /* Squadra admin bar: grid on small screens */
+        #t_adminbar{ display:grid !important; grid-template-columns: 1fr 1fr; align-items:end; gap:10px; }
+        #t_adminbar > div{ min-width: 0; }
+        #t_adminbar .row{ display:grid; grid-template-columns: 1fr 1fr; gap:8px; }
+      }
+
+      @media (max-width: 560px){
+        #t_adminbar{ grid-template-columns: 1fr; }
+      }
+    `;
+    const st=document.createElement('style'); st.id='bp-unified-filters-css'; st.textContent=css;
+    document.head.appendChild(st);
+  }
+
   // Wiring interazioni
   const hamb = document.getElementById('hamb');
   if(hamb){

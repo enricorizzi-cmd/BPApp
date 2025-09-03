@@ -781,15 +781,20 @@ app.get("/api/availability", auth, async (req,res)=>{
     const s = new Date(date); s.setHours(b.startH,b.startM,0,0);
     const e = new Date(date); e.setHours(b.endH,b.endM,0,0);
     const total = Math.max(0, (e - s)/60000);
-    let busy = 0;
+    // Nuova logica: lo slot è LIBERO solo se non esiste alcuna sovrapposizione
+    // con appuntamenti in quella fascia oraria (anche 30 minuti lo rende occupato).
     for(const a of my){
       const aS = fromLocalInputValue(a.start);
       const aE = fromLocalInputValue(a.end);
-      if(aS.toDateString() !== s.toDateString()) continue;
-      const overlap = Math.max(0, Math.min(aE, e) - Math.max(aS, s));
-      busy += overlap/60000;
+      if(aS.toDateString() !== s.toDateString()) continue; // solo stesso giorno
+      const overlapMs = Math.max(0, Math.min(aE, e) - Math.max(aS, s));
+      if (overlapMs > 0) {
+        // Qualsiasi overlap rende lo slot NON libero
+        return 0;
+      }
     }
-    return Math.max(0, total - busy);
+    // Nessun overlap: tutto il blocco è effettivamente libero
+    return total;
   }
 
   const out = [];
