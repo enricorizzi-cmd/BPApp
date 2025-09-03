@@ -9,6 +9,7 @@ if(!file){
 }
 const dryRun = rest.includes('--dry-run');
 const writeFileMode = rest.includes('--write-file') || process.env.API_URL === 'file';
+const writePgMode   = rest.includes('--write-pg') || process.env.BP_STORAGE === 'pg' || !!process.env.PG_URL || !!process.env.DATABASE_URL;
 
 // Load CSV
 function parseCsv(content){
@@ -62,8 +63,10 @@ function monthBounds(year, month){
 const content = fs.readFileSync(file, 'utf8');
 const rows = parseCsv(content);
 
-// Load users to resolve userid or name
-const usersDb = JSON.parse(fs.readFileSync(path.join(__dirname,'..','data','users.json'),'utf8'));
+// Load users to resolve userid or name (fallback to local file; PG loaded later when needed)
+let usersDb = { users: [] };
+try { usersDb = JSON.parse(fs.readFileSync(path.join(__dirname,'..','data','users.json'),'utf8')); }
+catch(_) { usersDb = { users: [] }; }
 
 function findUserById(id){
   if(!id) return null;
@@ -109,11 +112,8 @@ rows.forEach(r=>{
   // Resolve user by id first, then by name
   const userIdRaw = r.userid || r.userId || r.USERID || '';
   const userNameRaw = r.CONSULENTE || r.consulente || r.name || '';
-  let user = findUserById(userIdRaw) || findUserByName(userNameRaw);
-  if(!user){
-    console.error('No user', userNameRaw || userIdRaw || 'undefined');
-    return;
-  }
+  let user = findUserById(userIdRaw) || findUserByName(userNameRaw) || (userIdRaw ? { id: userIdRaw, name: userNameRaw || userIdRaw } : null);
+  if(!user){ console.error('No user', userNameRaw || userIdRaw || 'undefined'); return; }
 
   // Always fill settimanale if week present (as prima importazione)
   if(week && year){
@@ -222,6 +222,72 @@ async function main(){
     }
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
     console.log(`File updated: ${created} created, ${updated} updated`);
+    return;
+  }
+
+  if(writePgMode && !dryRun){
+    // Write directly to Postgres KV using backend's storage-pg
+    const storage = require('../lib/storage-pg');
+    await storage.init();
+
+    // Refresh usersDb from PG for accurate grades
+    try { usersDb = await storage.readJSON('users.json'); } catch(_){ usersDb = { users: [] }; }
+
+    function _gradeOf(userId){
+      const u = (usersDb.users||[]).find(x => String(x.id) === String(userId));
+      return (u && u.grade==='senior') ? 'senior' : 'junior';
+    }
+    function _computeProvvigioniForBag(bag, grade){
+      if(!bag) return;
+      const gi  = Number(bag.GI || 0);
+      const vsdP= Number(bag.VSDPersonale || 0);
+      const rateGi   = 0.15;
+      const rateVsdP = (grade==='senior') ? 0.25 : 0.20;
+      const provvGi  = (bag.ProvvGI!=null)  ? Number(bag.ProvvGI)  : gi  * rateGi;
+      const provvVsd = (bag.ProvvVSD!=null) ? Number(bag.ProvvVSD) : vsdP* rateVsdP;
+      const tot      = (bag.TotProvvigioni!=null) ? Number(bag.TotProvvigioni) : (provvGi + provvVsd);
+      bag.ProvvGI = provvGi; bag.ProvvVSD = provvVsd; bag.TotProvvigioni = tot;
+    }
+    function _periodKey(p){
+      return [ p.userId, p.type, new Date(p.startDate).toISOString().slice(0,10), new Date(p.endDate).toISOString().slice(0,10) ].join('|');
+    }
+    function _mergeIndicators(target, incoming){
+      const out = { ...(target||{}) };
+      for(const [k,v] of Object.entries(incoming||{})) out[k] = Number(v||0);
+      return out;
+    }
+
+    let db = { periods: [] };
+    try { db = await storage.readJSON('periods.json'); } catch(_){ db = { periods: [] }; }
+    db.periods = db.periods || [];
+
+    const { customAlphabet } = require('nanoid');
+    const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 16);
+
+    let created = 0, updated = 0;
+    for(const [userId, rec] of Object.entries(periodsByUser)){
+      const grade = _gradeOf(userId);
+      for(const p of Object.values(rec.periods)){
+        const probe = { userId, type: p.type, startDate: new Date(p.startDate).toISOString(), endDate: new Date(p.endDate).toISOString() };
+        let existing = db.periods.find(x => _periodKey(x) === _periodKey(probe));
+        if(existing){
+          if(p.indicatorsPrev) existing.indicatorsPrev = _mergeIndicators(existing.indicatorsPrev, p.indicatorsPrev);
+          if(p.indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, p.indicatorsCons);
+          _computeProvvigioniForBag(existing.indicatorsPrev, grade);
+          _computeProvvigioniForBag(existing.indicatorsCons, grade);
+          updated++;
+        } else {
+          const row = { id: nanoid(), ...probe, indicatorsPrev: p.indicatorsPrev || {}, indicatorsCons: p.indicatorsCons || {} };
+          _computeProvvigioniForBag(row.indicatorsPrev, grade);
+          _computeProvvigioniForBag(row.indicatorsCons, grade);
+          db.periods.push(row);
+          created++;
+        }
+      }
+    }
+
+    await storage.writeJSON('periods.json', db);
+    console.log(`Postgres updated: ${created} created, ${updated} updated`);
     return;
   }
 

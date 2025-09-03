@@ -1,4 +1,4 @@
-{
+﻿{
     "name":  "bp-backend",
     "version":  "13.0.0",
     "private":  true,
@@ -6,15 +6,16 @@
     "engines":  {
                     "node":  "\u003e=20"
                 },
-    "scripts":  {
+  "scripts":  {
                     "lint":  "eslint .",
                     "start":  "node server.js",
                     "start:prod":  "NODE_ENV=production node server.js",
                     "migrate":  "node migrate.js",
                     "test":  "node --test",
+                    "push:periods:pg": "node tools/push-periods-to-pg.js",
                     "vapid:gen":  "node -e \"const w=require(\u0027web-push\u0027).generateVAPIDKeys();console.log(\u0027VAPID_PUBLIC_KEY=\u0027+w.publicKey+\u0027\\nVAPID_PRIVATE_KEY=\u0027+w.privateKey)\""
                 },
-  "dependencies":  {
+    "dependencies":  {
                          "compression":  "^1.7.4",
                          "bcryptjs":  "^2.4.3",
                          "better-sqlite3":  "^9.4.0",
