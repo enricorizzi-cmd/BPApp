@@ -1691,7 +1691,7 @@ function viewPeriods(){
   function renderDeleteZone(){
     var zone=document.getElementById('p_delete_zone'); if(!zone) return;
     if(!EDIT_PID){ zone.innerHTML=''; return; }
-    var showDelCons = !!(CONS_MODE && CURRENT_P && hasCons(CURRENT_P));
+    var showDelCons = !!(CURRENT_P && hasCons(CURRENT_P));
     var html='';
     if(showDelCons) html += '<button id="btnDelCons" class="ghost" style="border-color:#7d1731;color:#7d1731">Elimina Consuntivo</button> ';
     html += '<button id="btnDelBP" class="ghost" style="border-color:#7d1731;color:#7d1731">Elimina BP</button>';
