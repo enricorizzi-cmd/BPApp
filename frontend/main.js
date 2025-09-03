@@ -952,9 +952,14 @@ function cardAppt(x){
           var a  = list.find(z=>String(z.id)===String(id)) || apps.find(z=>String(z.id)===String(id));
           if(!a) { toast('Appuntamento non trovato'); return; }
           if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
-            BP.ICS.downloadIcsForAppointment(a);
-            if (typeof haptic==='function') haptic('medium');
-            toast('.ics esportato');
+            const ok = BP.ICS.downloadIcsForAppointment(a);
+            if (ok) {
+              if (typeof haptic==='function') haptic('medium');
+              try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+              toast('.ics esportato');
+            } else {
+              toast('Export .ics non disponibile');
+            }
           } else {
             toast('Export .ics non disponibile');
           }
@@ -987,9 +992,14 @@ function cardAppt(x){
           var a  = list.find(z=>String(z.id)===String(id)) || apps.find(z=>String(z.id)===String(id));
           if(!a) { toast('Appuntamento non trovato'); return; }
           if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
-            BP.ICS.downloadIcsForAppointment(a);
-            if (typeof haptic==='function') haptic('medium');
-            toast('.ics esportato');
+            const ok = BP.ICS.downloadIcsForAppointment(a);
+            if (ok) {
+              if (typeof haptic==='function') haptic('medium');
+              try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+              toast('.ics esportato');
+            } else {
+              toast('Export .ics non disponibile');
+            }
           } else {
             toast('Export .ics non disponibile');
           }
@@ -2131,10 +2141,16 @@ function viewAppointments(){
       document.dispatchEvent(new Event('appt:saved'));
       if (wasNew){ try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ } }
       if (exportAfter && window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
-        BP.ICS.downloadIcsForAppointment(payload);
-        if (typeof haptics!=='undefined') haptics.try('medium');
-        document.dispatchEvent(new Event('ics:exported'));
-      }      resetForm(); listA();
+        const ok = BP.ICS.downloadIcsForAppointment(payload);
+        if (ok) {
+          if (typeof haptics!=='undefined') haptics.try('medium');
+          try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+          toast('.ics esportato');
+        } else {
+          toast('Export .ics non disponibile');
+        }
+      }
+      resetForm(); listA();
     }).catch(()=> toast('Errore salvataggio'));
   }
 function deleteA(){
@@ -2267,10 +2283,14 @@ function deleteA(){
           const a=allShown.find(z=> String(z.id)===String(id));
           if(!a){ toast('Appuntamento non trovato'); return; }
           if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
-            BP.ICS.downloadIcsForAppointment(a);
-            if (typeof haptics!=='undefined') haptics.try('medium');
-            document.dispatchEvent(new Event('ics:exported'));
-            toast('Esportato');
+            const ok = BP.ICS.downloadIcsForAppointment(a);
+            if (ok) {
+              if (typeof haptics!=='undefined') haptics.try('medium');
+              try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+              toast('Esportato');
+            } else {
+              toast('Export .ics non disponibile');
+            }
           } else { toast('Export .ics non disponibile'); }
         });
       });

@@ -92,22 +92,63 @@
     return out.join("\r\n");
   }
 
-  function downloadIcs(appt) {
-    const ics = buildIcs(appt);
-    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
-    const nDate = (appt && appt.start ? appt.start.split("T")[0] : "evento");
-    const nameSafe = ((appt && appt.client) || "appuntamento").trim().replace(/[^\w\-]+/g, "_").slice(0, 40);
-    const fname = `bp_${nameSafe}_${nDate}.ics`;
+  function isSafariLike(){
+    try {
+      const ua = navigator.userAgent || navigator.vendor || "";
+      const isIOS = /iP(ad|hone|od)/.test(ua);
+      const isSafari = /^((?!chrome|android|crios|fxios|edgi).)*safari/i.test(ua);
+      return isIOS || isSafari;
+    } catch(_) { return false; }
+  }
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = fname;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }, 50);
+  function downloadIcs(appt) {
+    try {
+      const ics = buildIcs(appt);
+      const nDate = (appt && appt.start ? String(appt.start).split("T")[0] : "evento");
+      const nameSafe = ((appt && appt.client) || "appuntamento").trim().replace(/[^\w\-]+/g, "_").slice(0, 40);
+      const fname = `bp_${nameSafe}_${nDate}.ics`;
+
+      // Safari/iOS: anchor download on Blob is unreliable. Use data: fallback/new tab.
+      if (isSafariLike()) {
+        try {
+          const dataUrl = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.setAttribute("target", "_blank");
+          // 'download' may be ignored by Safari, but harmless
+          a.setAttribute("download", fname);
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return true;
+        } catch (e1) {
+          try {
+            // Last resort: navigate current tab
+            window.location.assign("data:text/calendar;charset=utf-8," + encodeURIComponent(ics));
+            return true;
+          } catch (e2) {
+            try { logger.error(e2); } catch(_) {}
+            return false;
+          }
+        }
+      }
+
+      // Default path: Blob + download works across modern browsers
+      const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try { URL.revokeObjectURL(a.href); } catch(_) {}
+        a.remove();
+      }, 50);
+      return true;
+    } catch (err) {
+      try { logger.error(err); } catch(_) {}
+      return false;
+    }
   }
 
   ICS.makeIcsForAppointment = buildIcs;
