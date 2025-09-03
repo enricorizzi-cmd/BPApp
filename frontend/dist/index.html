@@ -199,25 +199,35 @@
 
     .tag{ display:inline-block; font-size:11px; padding:2px 6px; border-radius:10px; border:1px solid var(--hair2); }
 
-    .toast{
+    #toast-container{
       position: fixed; left:50%; transform: translateX(-50%);
-      bottom: 24px; background: rgba(20,24,34,.92); color:#fff;
+      bottom: 24px; display:flex; flex-direction:column; gap:8px; z-index:100;
+    }
+    .toast{
+      background: rgba(20,24,34,.92); color:#fff;
       border:1px solid var(--hair2); border-radius: 12px;
-      padding:10px 14px; z-index:100; box-shadow: var(--shadow);
+      padding:10px 14px; box-shadow: var(--shadow);
       animation: pop .18s ease-out;
     }
-    @keyframes pop{ from{ transform: translate(-50%, 4px); opacity: .0 } to{ transform: translate(-50%, 0); opacity: 1 } }
-
+    @keyframes pop{ from{ transform: translateY(4px); opacity: .0 } to{ transform: translateY(0); opacity: 1 } }
+    
     .confetti{ position:fixed; inset:0; pointer-events:none; z-index:90; }
 
     .last-app:hover, .last-bp:hover{ border-color: var(--accent); box-shadow: 0 6px 18px rgba(93,211,255,.18); }
+
+    .lb-card{
+      background: linear-gradient(180deg, rgba(93,211,255,.15), rgba(141,123,255,.12));
+      text-align:center;
+    }
+    .lb-bar{ height:10px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; margin-top:6px; }
+    .lb-bar>div{ height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
 
     .row > div{ min-width: 200px; flex: 1 1 200px; }
 
     canvas{ image-rendering: -webkit-optimize-contrast; }
   </style>
-  <script type="module" crossorigin src="/assets/index-D5W69n4q.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DRwo2f5q.css">
+  <script type="module" crossorigin src="/assets/index-CKtD8KSQ.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DCWIVQK0.css">
   <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();window.__vite_is_modern_browser=true</script>
   <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
 </head>
@@ -239,7 +249,7 @@
     return acc;
   }, {});
 </script>
-<!-- Pino CDN omitted: browser build requires bundling -->
+<!-- Pino browser build requires bundling; omit CDN to avoid errors -->
 <script src="./lib/logger.js?v=1"></script>
 
 <script>window.BP_USE_SERIES_API = true;</script>
@@ -263,7 +273,7 @@
 
 <!-- === FINAL PACK: includes features from former main-plus.js and bp-hooks.js === -->
 <!-- Post-sale banners (exposed as window.initPostSaleBanners) -->
-<script src="./src/postSaleBanners.js"></script>
+<script src="./src/postSaleBanners.js"></script>
 <script src="./lib/final-hooks.js?v=2"></script>
 <script src="./lib/push-client.js?v=1"></script>
 
@@ -280,7 +290,7 @@
     })();
   </script>
   <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
-  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-Dv6r9FsO.js"></script>
-  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-CIYEU7KM.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-BNhjYnuV.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-Cc5ZoI6y.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
 </body>
 </html>
