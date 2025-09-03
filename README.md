@@ -42,3 +42,20 @@ Notes
 - JWT secret is required in production; the server will exit if it uses the default.
 - Static assets are served with long-lived cache; `index.html` is no-store.
 - SQLite is configured with WAL and a busy timeout for concurrency.
+
+## Import KPIs from CSV
+
+The backend includes a helper script to load KPI values from a CSV file and create/update BP periods.
+
+```
+cd backend
+node jobs/import-bp-csv.js path/to/file.csv [--dry-run]
+```
+
+The CSV must have the header:
+
+```
+kpi,Data,settimana,mese,anno,CONSULENTE,VALORE
+```
+
+For each consultant and period the script authenticates using credentials in `backend/data/users.json` and calls `POST /api/periods`. Use `--dry-run` to inspect the derived periods without performing any write.
