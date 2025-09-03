@@ -28,8 +28,12 @@ function monthToDates(period){
 function buildRequests(rows){
   const map = new Map();
   for(const r of rows){
-    const userId = r.consultantId || r.userId || r.consultant;
-    const period = r.period;
+    const userId = r.consultantId || r.userId || r.consultant || r.userid;
+    let period = r.period;
+    if(!period && r.anno && r.mese){
+      const m = String(r.mese).padStart(2, '0');
+      period = `${r.anno}-${m}`;
+    }
     if(!userId || !period) continue;
     const key = `${userId}|${period}`;
     let entry = map.get(key);
@@ -43,8 +47,16 @@ function buildRequests(rows){
     const kind = String(r.kind || '').toLowerCase();
     if(kind === 'cons'){
       entry.indicatorsCons[kpi] = (entry.indicatorsCons[kpi] || 0) + val;
-    } else {
+    } else if(kind){
       entry.indicatorsPrev[kpi] = (entry.indicatorsPrev[kpi] || 0) + val;
+    }
+    const prev = Number(r.indicatorsprev || r.indicatorsPrev || 0);
+    const cons = Number(r.indicatorscons || r.indicatorsCons || 0);
+    if(prev){
+      entry.indicatorsPrev[kpi] = (entry.indicatorsPrev[kpi] || 0) + prev;
+    }
+    if(cons){
+      entry.indicatorsCons[kpi] = (entry.indicatorsCons[kpi] || 0) + cons;
     }
   }
   const requests = [];
