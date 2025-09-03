@@ -148,6 +148,21 @@ rows.forEach(r=>{
   }
 });
 
+// helpers to normalize indicator bags: include zeros for all standard indicators
+const DEFAULT_INDICATORS = [
+  'VSS','VSDPersonale','VSDIndiretto','GI','Telefonate','AppFissati','AppFatti','CorsiLeadership','iProfile','MBS','NNCF'
+];
+function normalizeBag(bag, baseIndicators){
+  const out = { ...(bag||{}) };
+  const list = Array.isArray(baseIndicators) && baseIndicators.length ? baseIndicators : DEFAULT_INDICATORS;
+  for(const k of list){ if(out[k]==null) out[k] = 0; else out[k] = Number(out[k]||0); }
+  // ensure provvigioni keys exist
+  if(out.ProvvGI==null) out.ProvvGI = 0;
+  if(out.ProvvVSD==null) out.ProvvVSD = 0;
+  if(out.TotProvvigioni==null) out.TotProvvigioni = 0;
+  return out;
+}
+
 async function login(email, password, base){
   const res = await fetch(base + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
   if(!res.ok) throw new Error('login failed');
@@ -199,6 +214,14 @@ async function main(){
       return out;
     }
 
+    // load base indicators from local settings.json if available
+    let baseIndicators = DEFAULT_INDICATORS;
+    try{
+      const sPath = path.join(__dirname, '..', 'data', 'settings.json');
+      const s = JSON.parse(fs.readFileSync(sPath, 'utf8'));
+      if(s && Array.isArray(s.indicators) && s.indicators.length) baseIndicators = s.indicators;
+    }catch(_){ /* keep default */ }
+
     let created = 0, updated = 0;
     for(const [userId, rec] of Object.entries(periodsByUser)){
       const grade = _gradeOf(userId);
@@ -210,11 +233,15 @@ async function main(){
           if(p.indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, p.indicatorsCons);
           _computeProvvigioniForBag(existing.indicatorsPrev, grade);
           _computeProvvigioniForBag(existing.indicatorsCons, grade);
+          existing.indicatorsPrev = normalizeBag(existing.indicatorsPrev, baseIndicators);
+          existing.indicatorsCons = normalizeBag(existing.indicatorsCons, baseIndicators);
           updated++;
         } else {
           const row = { id: nanoid(), ...probe, indicatorsPrev: p.indicatorsPrev || {}, indicatorsCons: p.indicatorsCons || {} };
           _computeProvvigioniForBag(row.indicatorsPrev, grade);
           _computeProvvigioniForBag(row.indicatorsCons, grade);
+          row.indicatorsPrev = normalizeBag(row.indicatorsPrev, baseIndicators);
+          row.indicatorsCons = normalizeBag(row.indicatorsCons, baseIndicators);
           db.periods.push(row);
           created++;
         }
@@ -232,6 +259,9 @@ async function main(){
 
     // Refresh usersDb from PG for accurate grades
     try { usersDb = await storage.readJSON('users.json'); } catch(_){ usersDb = { users: [] }; }
+    // Load base indicators from settings.json in PG
+    let baseIndicators = DEFAULT_INDICATORS;
+    try{ const s = await storage.readJSON('settings.json'); if(s && Array.isArray(s.indicators) && s.indicators.length) baseIndicators = s.indicators; }catch(_){ /* keep default */ }
 
     function _gradeOf(userId){
       const u = (usersDb.users||[]).find(x => String(x.id) === String(userId));
@@ -275,11 +305,15 @@ async function main(){
           if(p.indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, p.indicatorsCons);
           _computeProvvigioniForBag(existing.indicatorsPrev, grade);
           _computeProvvigioniForBag(existing.indicatorsCons, grade);
+          existing.indicatorsPrev = normalizeBag(existing.indicatorsPrev, baseIndicators);
+          existing.indicatorsCons = normalizeBag(existing.indicatorsCons, baseIndicators);
           updated++;
         } else {
           const row = { id: nanoid(), ...probe, indicatorsPrev: p.indicatorsPrev || {}, indicatorsCons: p.indicatorsCons || {} };
           _computeProvvigioniForBag(row.indicatorsPrev, grade);
           _computeProvvigioniForBag(row.indicatorsCons, grade);
+          row.indicatorsPrev = normalizeBag(row.indicatorsPrev, baseIndicators);
+          row.indicatorsCons = normalizeBag(row.indicatorsCons, baseIndicators);
           db.periods.push(row);
           created++;
         }
