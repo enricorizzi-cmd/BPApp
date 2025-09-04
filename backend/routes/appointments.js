@@ -47,8 +47,12 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
 
   async function handleGetList(req, res, db, clientsDb, isAdmin){
     const global = req.query.global === '1';
+    const userId = req.query.user;
     const all = db.appointments||[];
-    const list = (global && isAdmin) ? all : all.filter(a => a.userId === req.user.id);
+    let list;
+    if(global && isAdmin) list = all;
+    else if(isAdmin && userId) list = all.filter(a => a.userId === userId);
+    else list = all.filter(a => a.userId === req.user.id);
     const enriched = (list||[]).map(a => ({ ...a, clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)) }));
     return res.json({ appointments: enriched });
   }

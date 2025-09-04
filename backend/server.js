@@ -799,61 +799,78 @@ app.get("/api/availability", auth, async (req,res)=>{
   const { from, to } = req.query || {};
   if(!from || !to) return res.status(400).json({ error:"missing from/to" });
 
+  const global = req.query.global === '1' && req.user.role === 'admin';
+  const userIdQ = req.query.user;
   const db = await readJSON("appointments.json");
-  const my = (db.appointments||[]).filter(a => a.userId === req.user.id);
+  const usersDb = await readJSON("users.json");
+  const allApps = db.appointments||[];
 
   const blocks = [
     { startH:8,  startM:30, endH:13, endM:0,  part:"morning"   },
     { startH:14, startM:0,  endH:19, endM:30, part:"afternoon" }
   ];
-  function freeMinutesForBlock(date, b){
-    const dayKey = ymd(date);
-    const blockStart = b.startH*60 + b.startM;
-    const blockEnd   = b.endH*60 + b.endM;
-
-    // Consideriamo lo slot occupato se QUALSIASI appuntamento
-    // del giorno si sovrappone anche parzialmente al blocco.
-    for(const a of my){
-      const startStr = String(a.start||'');
-      if(startStr.slice(0,10) !== dayKey) continue; // solo stesso giorno
-
-      const endStr = String(a.end || a.start);
-      const [aSH,aSM] = startStr.slice(11,16).split(':').map(Number);
-      const [aEH,aEM] = endStr.slice(11,16).split(':').map(Number);
-      const aStart = aSH*60 + aSM;
-      const aEnd   = aEH*60 + aEM;
-
-      const overlap = Math.max(0, Math.min(aEnd, blockEnd) - Math.max(aStart, blockStart));
-      if(overlap > 0){
-        return 0; // qualsiasi sovrapposizione invalida lo slot
+  function computeSlots(apps){
+    function freeMinutesForBlock(date, b){
+      const dayKey = ymd(date);
+      const blockStart = b.startH*60 + b.startM;
+      const blockEnd   = b.endH*60 + b.endM;
+      for(const a of apps){
+        const startStr = String(a.start||'');
+        if(startStr.slice(0,10) !== dayKey) continue;
+        const endStr = String(a.end || a.start);
+        const [aSH,aSM] = startStr.slice(11,16).split(':').map(Number);
+        const [aEH,aEM] = endStr.slice(11,16).split(':').map(Number);
+        const aStart = aSH*60 + aSM;
+        const aEnd   = aEH*60 + aEM;
+        const overlap = Math.max(0, Math.min(aEnd, blockEnd) - Math.max(aStart, blockStart));
+        if(overlap > 0) return 0;
+      }
+      return blockEnd - blockStart;
+    }
+    const out = [];
+    const d0 = new Date(from), d1 = new Date(to);
+    for(let d = new Date(d0); d <= d1; d.setDate(d.getDate()+1)){
+      const dow = d.getDay();
+      if(dow===0 || dow===6) continue;
+      for(const b of blocks){
+        const free = freeMinutesForBlock(d,b);
+        if(free >= 240){
+          const dateKey = ymd(d);
+          const start = `${dateKey}T${pad2(b.startH)}:${pad2(b.startM)}`;
+          const end   = `${dateKey}T${pad2(b.endH)}:${pad2(b.endM)}`;
+          out.push({ date: dateKey, start, end, part: b.part });
+        }
       }
     }
-
-    // slot completamente libero
-    return blockEnd - blockStart;
+    const summary = {
+      total: out.length,
+      mondays: out.filter(x => new Date(x.date).getDay()===1).length,
+      others: out.filter(x => ![0,1,6].includes(new Date(x.date).getDay())).length
+    };
+    return { slots: out, summary };
   }
 
-  const out = [];
-  const d0 = new Date(from), d1 = new Date(to);
-  for(let d = new Date(d0); d <= d1; d.setDate(d.getDate()+1)){
-    const dow = d.getDay(); // 0 Sun .. 6 Sat
-    if(dow===0 || dow===6) continue;
-    for(const b of blocks){
-      const free = freeMinutesForBlock(d,b);
-      if(free >= 240){
-        const dateKey = ymd(d);
-        const start = `${dateKey}T${pad2(b.startH)}:${pad2(b.startM)}`;
-        const end   = `${dateKey}T${pad2(b.endH)}:${pad2(b.endM)}`;
-        out.push({ date: dateKey, start, end, part: b.part });
-      }
+  if(global){
+    let allSlots = [];
+    const details = [];
+    for(const u of (usersDb.users||[])){
+      const apps = allApps.filter(a => a.userId === u.id);
+      const { slots, summary } = computeSlots(apps);
+      allSlots = allSlots.concat(slots);
+      details.push({ userId:u.id, name:u.name, total:summary.total });
     }
+    const summary = {
+      total: allSlots.length,
+      mondays: allSlots.filter(x => new Date(x.date).getDay()===1).length,
+      others: allSlots.filter(x => ![0,1,6].includes(new Date(x.date).getDay())).length
+    };
+    return res.json({ slots: allSlots, summary, details });
+  } else {
+    const uid = (req.user.role==='admin' && userIdQ) ? userIdQ : req.user.id;
+    const apps = allApps.filter(a => a.userId === uid);
+    const { slots, summary } = computeSlots(apps);
+    return res.json({ slots, summary });
   }
-  const summary = {
-    total: out.length,
-    mondays: out.filter(x => new Date(x.date).getDay()===1).length,
-    others: out.filter(x => ![0,1,6].includes(new Date(x.date).getDay())).length
-  };
-  res.json({ slots: out, summary });
 });
 
 // ---- Leaderboard helpers ----

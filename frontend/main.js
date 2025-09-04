@@ -71,28 +71,34 @@ if (typeof window.haptic !== 'function'){
   const registry = (window.__miniCharts = window.__miniCharts || {});
   function drawFallback(el, labels, data){
     const ctx = el.getContext('2d');
-    el.width  = el.clientWidth  || 320;
-    el.height = el.clientHeight || 80;
-    ctx.clearRect(0,0,el.width,el.height);
+    const dpr = window.devicePixelRatio || 1;
+    const w = el.clientWidth  || 320;
+    const h = el.clientHeight || 80;
+    el.width  = Math.round(w * dpr);
+    el.height = Math.round(h * dpr);
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0,0,w,h);
     const max = Math.max(1, ...data);
-    const stepX = (data.length>1) ? (el.width-8)/(data.length-1) : 0;
+    const stepX = (data.length>1) ? (w-8)/(data.length-1) : 0;
     ctx.strokeStyle = '#2e6cff';
     ctx.lineWidth = 2;
     ctx.beginPath();
     for(let i=0;i<data.length;i++){
       const x = 4 + i*stepX;
-      const y = el.height-6 - (data[i]/max)*(el.height-12);
+      const y = h-6 - (data[i]/max)*(h-12);
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.stroke();
     ctx.fillStyle = '#2e6cff';
     for(let i=0;i<data.length;i++){
       const x = 4 + i*stepX;
-      const y = el.height-6 - (data[i]/max)*(el.height-12);
+      const y = h-6 - (data[i]/max)*(h-12);
       ctx.beginPath();
       ctx.arc(x,y,2,0,Math.PI*2);
       ctx.fill();
     }
+    ctx.restore();
   }
   // Decide how to render X-axis labels: compressed or rotated
   function computeTickOptions(labels, width){
@@ -130,6 +136,7 @@ if (typeof window.haptic !== 'function'){
     el.height = el.clientHeight || el.height || 80;
     if (typeof Chart === 'undefined'){
       drawFallback(el, labels, data);
+      registry[String(canvasId)] = { canvas: el, labels, data, fallback: true };
       return;
     }
     const key = String(canvasId);
@@ -159,6 +166,7 @@ if (typeof window.haptic !== 'function'){
           animation: false,
           animations: false,
           plugins: { legend: { display:false } },
+          devicePixelRatio: window.devicePixelRatio || 1,
           scales: {
             x: { grid: { display:false }, ticks: tickOpts },
             y: { beginAtZero:true }
@@ -173,6 +181,30 @@ if (typeof window.haptic !== 'function'){
       ch.update();
     }
   };
+
+  // Ridisegna i grafici se il DPR cambia (es. dopo resume/orientation su iOS)
+  let lastDpr = window.devicePixelRatio || 1;
+  function refreshAll(){
+    Object.keys(registry).forEach(k=>{
+      const ch = registry[k];
+      if(ch && typeof ch.resize==='function'){
+        try{ ch.resize(); }catch(_){ }
+      } else if(ch && ch.fallback){
+        try{ drawFallback(ch.canvas, ch.labels, ch.data); }catch(_){ }
+      }
+    });
+  }
+  function maybeRefresh(){
+    const d = window.devicePixelRatio || 1;
+    if(d !== lastDpr){
+      lastDpr = d;
+      refreshAll();
+    }
+  }
+  window.addEventListener('pageshow', refreshAll);
+  window.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') maybeRefresh(); });
+  window.addEventListener('resize', maybeRefresh);
+  window.addEventListener('orientationchange', ()=>setTimeout(()=>{ lastDpr = -1; maybeRefresh(); },50));
 })();
 
 /* === Commission helpers (client fallback; server endpoint arriverà) === */
@@ -1236,15 +1268,16 @@ function viewCalendar(){
     '<div class="wrap">'+
       '<div class="card">'+
         '<div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">'+
-          '<div class="row" style="align-items:flex-end;gap:8px">'+
-            '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
-            '<div><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
-            '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
-          '</div>'+
-          '<div class="cal-filters">'+
-            '<label class="chip small"><input type="checkbox" id="only_free"> Solo giorni liberi</label> '+
-            '<label class="chip small"><input type="checkbox" id="only_4h"> Solo slot ≥ 4h</label>'+
-          '</div>'+
+        '<div class="row" style="align-items:flex-end;gap:8px">'+
+          '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
+          '<div><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
+          '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
+        '</div>'+
+        '<div><label>Consulente</label><select id="cal_consultant"></select></div>'+
+        '<div class="cal-filters">'+
+          '<label class="chip small"><input type="checkbox" id="only_free"> Solo giorni liberi</label> '+
+          '<label class="chip small"><input type="checkbox" id="only_4h"> Solo slot ≥ 4h</label>'+
+        '</div>'+
           '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
           '<div class="right" style="margin-left:auto"><button id="cal_refresh" class="ghost">Aggiorna</button></div>'+
         '</div>'+
@@ -1259,10 +1292,33 @@ function viewCalendar(){
     '</div>';
   renderTopbar();
 
-  function renderMonth(y, m, filters){
+  var consSel = document.getElementById('cal_consultant');
+  function populateConsultants(){
+    var me = getUser() || {};
+    consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
+    GET('/api/users').then(function(r){
+      var list = r.users || [];
+      var h = '<option value="all">Tutti</option>';
+      for(var i=0;i<list.length;i++){
+        var u = list[i];
+        h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
+      }
+      consSel.innerHTML = h;
+      consSel.value = me.id;
+    }).catch(function(){
+      consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
+    });
+  }
+  populateConsultants();
+
+  function renderMonth(y, m, filters, consultant){
+    var baseApps = '/api/appointments';
+    var baseAvail = '/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
+    if(consultant==='all'){ baseApps += '?global=1'; baseAvail += '&global=1'; }
+    else if(consultant && consultant!==getUser().id){ baseApps += '?user='+consultant; baseAvail += '&user='+consultant; }
     Promise.all([
-      GET('/api/appointments'),
-      GET('/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate()))
+      GET(baseApps),
+      GET(baseAvail)
     ])
     .then(function(arr){
       var apps  = (arr[0] && arr[0].appointments) ? arr[0].appointments : [];
@@ -1488,7 +1544,17 @@ function viewCalendar(){
       var todayKeyStr = (function(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());})();
       var futureSlots = (slots||[]).filter(function(s){ return String(s.date||'').slice(0,10) >= todayKeyStr; });
 
-      if(futureSlots.length){
+      if(consultant==='all'){
+        var det = avAll.details || [];
+        var hAll = '<b>Slot liberi ≥ 4h per consulente</b>';
+        hAll += '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">';
+        for(var di=0; di<det.length; di++){
+          var d = det[di];
+          hAll += '<span class="chip small">'+htmlEscape(d.name||'')+' <b>'+fmtInt(d.total||0)+'</b></span>';
+        }
+        hAll += '</div>';
+        box2.style.display='block'; box2.innerHTML = hAll;
+      } else if(futureSlots.length){
         var h2 = '<b>Slot liberi ≥ 4h (da oggi in poi)</b> · <span class="badge">Tot: '+futureSlots.length+'</span>';
         h2 += '<div class="row" style="margin-top:8px">';
         for(var sidx=0; sidx<futureSlots.length && sidx<80; sidx++){
@@ -1527,7 +1593,8 @@ function viewCalendar(){
     var y = parseInt(mval.split('-')[0],10);
     var m = parseInt(mval.split('-')[1],10);
     var filters = { only_free: document.getElementById('only_free').checked, only_4h: document.getElementById('only_4h').checked };
-    renderMonth(y, m, filters);
+    var consultant = document.getElementById('cal_consultant').value;
+    renderMonth(y, m, filters, consultant);
   }
   document.getElementById('cal_refresh').onclick = doRender;
   var btnAdd = document.getElementById('cal_add');
@@ -1550,6 +1617,7 @@ function viewCalendar(){
 
   document.getElementById('only_free').onchange = doRender;
   document.getElementById('only_4h').onchange = doRender;
+  consSel.onchange = doRender;
 
   doRender();
 }
@@ -2067,6 +2135,9 @@ function viewAppointments(){
         background:var(--accent);color:#fff;border-color:var(--accent);
         box-shadow:0 0 0 2px rgba(20,99,255,.08) inset;
       }
+      .appt-type > div{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+      .appt-row-end-dur{display:flex;gap:8px;align-items:flex-end}
+      #a_desc{width:100%;min-height:3.2em}
       #a_list .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
     `;
     document.head.appendChild(st);
@@ -2085,10 +2156,12 @@ function viewAppointments(){
             '</div>'+
           '</div>'+
           '<div><label>Data/ora inizio</label><input id="a_start" type="datetime-local"></div>'+
-          '<div><label>Ora fine</label><input id="a_end" type="time"></div>'+
-          '<div><label>Durata (min)</label><input id="a_dur" type="number" placeholder="60" min="1"></div>'+
+          '<div class="appt-row-end-dur">'+
+            '<div><label>Ora fine</label><input id="a_end" type="time"></div>'+
+            '<div><label>Durata (min)</label><input id="a_dur" type="number" placeholder="60" min="1" style="width:80px"></div>'+
+          '</div>'+
         '</div>'+
-        '<div class="row" style="margin-top:8px"><div style="flex:1"><label>Descrizione appuntamento</label><textarea id="a_desc" rows="2"></textarea></div></div>'+
+        '<div style="margin-top:8px"><label>Descrizione appuntamento</label><textarea id="a_desc" rows="2" style="width:100%;min-height:3.2em"></textarea></div>'+
         '<div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">'+
           '<div class="appt-type">'+
             '<label>Tipo</label>'+
@@ -3328,7 +3401,7 @@ function viewCommissions(){
       // Indicatori sintetici
       '<div class="card">'+
         '<b>Indicatori periodo</b>'+
-        '<div id="comm_total" class="row" style="margin-top:8px; gap:12px; flex-wrap:wrap"></div>'+
+        '<div id="comm_total" style="margin-top:8px"></div>'+
       '</div>'+
 
       // Torta provvigioni
@@ -3367,18 +3440,22 @@ function viewCommissions(){
   // ===== UI builders
   function stat(label, value){
     return ''+
-      '<div class="card" style="flex:1 1 180px">'+
+      '<div class="card" style="flex:1 1 100px">'+
         '<div class="small muted">'+htmlEscape(label)+'</div>'+
         '<div style="font-weight:700; font-size:20px; margin-top:4px">'+value+'</div>'+
       '</div>';
   }
   function cardTot(t){
     return ''+
-      stat('VSD personale', fmtEuro(t.vsd||0))+
-      stat('GI', fmtEuro(t.gi||0))+
-      stat('Provv. VSD', fmtEuro(t.provv_vsd||0))+
-      stat('Provv. GI', fmtEuro(t.provv_gi||0))+
-      stat('Totale Provvigioni', fmtEuro(t.provv_total||0));
+      '<div class="row" style="gap:12px; flex-wrap:wrap">'+
+        stat('VSD personale', fmtEuro(t.vsd||0))+
+        stat('GI', fmtEuro(t.gi||0))+
+      '</div>'+
+      '<div class="row" style="gap:12px; flex-wrap:wrap; margin-top:8px">'+
+        stat('Provv. VSD', fmtEuro(t.provv_vsd||0))+
+        stat('Provv. GI', fmtEuro(t.provv_gi||0))+
+        stat('Totale Provvigioni', fmtEuro(t.provv_total||0))+
+      '</div>';
   }
   function renderRows(rows){
     if(!rows.length) return '<div class="muted">Nessun dato</div>';

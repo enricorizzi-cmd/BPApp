@@ -1564,6 +1564,36 @@ window.wireICSInsideDayBox = window.wireICSInsideDayBox || wireICSInsideDayBox;
   };
 })();
 
+// Mostra tutti gli appuntamenti per un cliente in una modale
+function showClientAppointments(card){
+  if(!card) return;
+  const id   = card.getAttribute('data-clid') || '';
+  const name = (card.querySelector('b')?.textContent || '').trim();
+  GET('/api/appointments?global=1').then(j=>{
+    const list = (j&&j.appointments)||[];
+    const key = name.toLowerCase();
+    const arr = list.filter(a => String(a.clientId||'')===id || String(a.client||'').trim().toLowerCase()===key);
+    arr.sort((a,b)=> new Date(b.start) - new Date(a.start));
+    const rows = arr.map(a=>{
+      const d = new Date(a.start);
+      const dd = ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+      const ind=[];
+      if(Number(a.vss)>0) ind.push('VSS '+Number(a.vss).toLocaleString('it-IT')+'€');
+      if(Number(a.vsdPersonal)>0) ind.push('VSD '+Number(a.vsdPersonal).toLocaleString('it-IT')+'€');
+      if(Number(a.vsdIndiretto)>0) ind.push('VSD ind '+Number(a.vsdIndiretto).toLocaleString('it-IT')+'€');
+      if(Number(a.telefonate)>0) ind.push('Tel '+Number(a.telefonate));
+      if(Number(a.appFissati)>0) ind.push('AppFiss '+Number(a.appFissati));
+      return `<div class="small">${htmlEscape(a.type||'')} – ${dd}${ind.length?' – '+ind.join(' · '):''}</div>`;
+    }).join('') || '<div class="muted">Nessun appuntamento</div>';
+    const dlg=document.createElement('div'); dlg.className='modal';
+    dlg.innerHTML=`<div class="card"><h3>Appuntamenti per ${htmlEscape(name)}</h3><div style="margin-top:8px">${rows}</div><div class="row right"><button class="ghost" data-x>Chiudi</button></div></div>`;
+    document.body.appendChild(dlg);
+    const close=dlg.querySelector('[data-x]'); if(close) close.onclick=()=>dlg.remove();
+    dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.remove(); });
+  }).catch(err=>{ logger.error(err); toast('Errore caricamento appuntamenti'); });
+}
+BPFinal.showClientAppointments = showClientAppointments;
+
 /* 2) Enrichment delle card Clienti:
       - scrive “Ultimo appuntamento”
       - imposta data-last-ts per l’ordinamento
@@ -1596,6 +1626,14 @@ BPFinal.enrichClientCards = function enrichClientCards(){
       // per ordinamento A→Z
       if(!card.getAttribute('data-name-lower') && name){
         card.setAttribute('data-name-lower', name);
+      }
+
+      if(!card.__bp_appts){
+        card.__bp_appts = true;
+        card.addEventListener('click', ev=>{
+          if(ev.target.closest('button,select,input,a')) return;
+          showClientAppointments(card);
+        });
       }
     }
   });
@@ -2212,6 +2250,7 @@ if (typeof viewGI !== 'undefined') expose('viewGI', viewGI);
   // <<< QUI quelle che ora ti risultano "undefined" in console >>>
   if (typeof ensureClientFilters    !== 'undefined') expose('ensureClientFilters',    ensureClientFilters);
   if (typeof enrichClientCards      !== 'undefined') expose('enrichClientCards',      enrichClientCards);
+  if (typeof showClientAppointments !== 'undefined') expose('showClientAppointments', showClientAppointments);
   if (typeof wireReportButtons      !== 'undefined') expose('wireReportButtons',      wireReportButtons);
   if (typeof scanNNCF               !== 'undefined') expose('scanNNCF',               scanNNCF);
   if (typeof ensureNNCFChip         !== 'undefined') expose('ensureNNCFChip',         ensureNNCFChip);
