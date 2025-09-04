@@ -713,6 +713,37 @@ function viewHome(){
 
   renderTopbar();
 
+  // Normalize calendar header layout: wrap actions together and fix labels
+  (function fixCalHeader(){
+    try{
+      var root = document.querySelector('.uf-row');
+      if(!root) return;
+      // Ensure arrow icons render correctly (avoid encoding glitches)
+      var p = document.getElementById('cal_prev'); if(p) p.textContent = '◀';
+      var n = document.getElementById('cal_next'); if(n) n.textContent = '▶';
+
+      // Fix second checkbox label to use ≥ symbol
+      var chk4h = root.querySelector('#only_4h');
+      if(chk4h && chk4h.parentElement){
+        chk4h.parentElement.innerHTML = '<input type="checkbox" id="only_4h"> Solo slot ≥ 4h';
+      }
+
+      // Group action buttons on the right
+      var addBtn = document.getElementById('cal_add');
+      var rightDiv = root.querySelector('.right');
+      var refreshBtn = rightDiv ? rightDiv.querySelector('#cal_refresh') : null;
+      if(addBtn && refreshBtn){
+        var actions = document.createElement('div');
+        actions.className = 'actions';
+        // Insert actions before the original rightDiv then remove it
+        rightDiv.parentNode.insertBefore(actions, rightDiv);
+        actions.appendChild(addBtn);
+        actions.appendChild(refreshBtn);
+        rightDiv.remove();
+      }
+    }catch(e){ logger && logger.warn && logger.warn('cal header fix fail', e); }
+  })();
+
   // ===== mini helpers base (riuso funzioni globali se presenti)
   function setText(id, text){ var el=document.getElementById(id); if(el) el.textContent = text; }
   function fmtEuro(n){ var v=Number(n)||0; return v.toLocaleString('it-IT')+'€'; }

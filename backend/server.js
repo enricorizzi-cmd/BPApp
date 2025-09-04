@@ -86,8 +86,8 @@ app.use(helmet({
       "style-src": ["'self'", "'unsafe-inline'"],
       // Allow images and icons embedded as data URIs
       "img-src": ["'self'", "data:", "blob:"],
-      // API calls are same-origin
-      "connect-src": ["'self'"],
+      // Allow same-origin API calls and CDN fetches (e.g., Chart.js via SW)
+      "connect-src": ["'self'", "https://cdn.jsdelivr.net"],
       // Fonts from self (and allow data: for inlined fonts if any)
       "font-src": ["'self'", "data:"],
       "object-src": ["'none'"],
