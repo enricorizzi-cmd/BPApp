@@ -58,6 +58,40 @@
     await POST('/api/clients', { id: it.id, status });
   }
 
+  // --- Apertura affidabile del builder pagamenti GI ---
+  function tryOpenGiBuilder(id){
+    if (!id) return;
+    try{
+      // Se esiste un helper globale, usalo
+      if (typeof window.openPaymentBuilderById === 'function') { window.openPaymentBuilderById(id); return; }
+      if (typeof window.gotoGIAndOpenBuilder === 'function') { window.gotoGIAndOpenBuilder(id); return; }
+
+      // Se siamo già nella vista GI, apri subito
+      if (document.querySelector('#gi_rows')){
+        document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+        return;
+      }
+
+      // Prova a navigare alla vista GI e poi apri
+      if (typeof window.viewGI === 'function'){
+        try{ window.viewGI(); }catch(_){ }
+        let tries = 0;
+        (function waitAndOpen(){
+          const ok = document.getElementById('gi_rows');
+          if (ok || tries>40){
+            try{ document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } })); }catch(_){ }
+            return;
+          }
+          tries++; setTimeout(waitAndOpen, 100);
+        })();
+        return;
+      }
+
+      // Fallback assoluto: invia comunque l'evento
+      document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+    }catch(_){ /* ignora */ }
+  }
+
   // --- Quick editor VSS (solo quel campo) ---
   function openVSSQuickEditor(appt, opts){
     const initial = Number(appt.vss || appt.vsdPersonal || 0) || 0;
@@ -99,7 +133,7 @@
               const sale = await upsertGIFromAppointment(appt, v);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
-                document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+                tryOpenGiBuilder(id);
               }
             }catch(e){ logger.error(e); }
           }
@@ -116,25 +150,25 @@
     document.body.appendChild(d);
     const close = ()=>{ try{ d.remove(); }catch(_){ } };
     d.querySelector('#vss_x').onclick = close;
-    d.querySelector('#vss_ok').onclick = async ()=>{
-      try{
-        const v = Math.max(0, Number(d.querySelector('#vss_val').value||0));
-        await POST('/api/appointments', { id: appt.id, vss: v });
-        hapticImpact('medium'); toast('Appuntamento aggiornato');
-        close();
+      d.querySelector('#vss_ok').onclick = async ()=>{
+        try{
+          const v = Math.max(0, Number(d.querySelector('#vss_val').value||0));
+          await POST('/api/appointments', { id: appt.id, vss: v });
+          hapticImpact('medium'); toast('Appuntamento aggiornato');
+          close();
 
-        if (v>0){
-          try{
-            const sale = await upsertGIFromAppointment(appt, v);
-            if (sale && (sale.id || sale._id)){
-              const id = sale.id || sale._id;
-              document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
-            }
-          }catch(e){ logger.error(e); }
-        }
-        if (opts && typeof opts.onSaved==='function') opts.onSaved(v);
+          if (v>0){
+            try{
+              const sale = await upsertGIFromAppointment(appt, v);
+              if (sale && (sale.id || sale._id)){
+                const id = sale.id || sale._id;
+                tryOpenGiBuilder(id);
+              }
+            }catch(e){ logger.error(e); }
+          }
+          if (opts && typeof opts.onSaved==='function') opts.onSaved(v);
       }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
-    };
+      };
   }
 
   async function upsertGIFromAppointment(appt, vss){
