@@ -50,7 +50,7 @@
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
     }
     a{ color:var(--accent); text-decoration:none; }
-    .wrap{ max-width: 1180px; margin: 80px auto 40px; padding: 0 16px; }
+    .wrap{ max-width: 1180px; margin: calc(56px + env(safe-area-inset-top) + 32px) auto 40px; padding: 0 16px; }
     .grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
     .right{ margin-left:auto; }
@@ -144,7 +144,7 @@
     @media (max-width: 980px){
       .nav.right{ display:none; }
       .hamb{ display:flex; }
-      .wrap{ margin-top: 76px; }
+      .wrap{ margin-top: calc(56px + env(safe-area-inset-top) + 32px); }
       button, input, select{ font-size:14px; padding:9px 12px; }
     }
 
@@ -226,7 +226,7 @@
 
     canvas{ image-rendering: -webkit-optimize-contrast; }
   </style>
-  <script type="module" crossorigin src="/assets/index-CKtD8KSQ.js"></script>
+  <script type="module" crossorigin src="/assets/index-BNa5Vc_Y.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-DCWIVQK0.css">
   <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();window.__vite_is_modern_browser=true</script>
   <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
@@ -237,10 +237,7 @@
 <!-- Chart.js per mini-chart KPI -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-<!-- Polyfill & Core shims (PRIMA di main.js) -->
-<script src="./lib/globals-polyfills.js?v=1"></script>
-<script src="./lib/auth-fetch-shim.js?v=1"></script>
-<script src="./lib/bp-hooks-core.js?v=1"></script>
+<!-- Polyfill & Core shims now bundled via main.js imports -->
 
 <!-- Logging library -->
 <script>
@@ -249,33 +246,16 @@
     return acc;
   }, {});
 </script>
-<!-- Pino browser build requires bundling; omit CDN to avoid errors -->
-<script src="./lib/logger.js?v=1"></script>
+<!-- Pino browser build provided via bundled logger.js (see main.js imports) -->
 
 <script>window.BP_USE_SERIES_API = true;</script>
 
 <!-- App core (render UI) -->
 
-<!-- (opzionale) inoltro type/mode alle API classifiche -->
-<script src="./lib/leaderboard-hooks.js?v=1"></script>
+<!-- Librerie locali incluse nel bundle (vedi main.js) -->
 
-<!-- Librerie di supporto -->
-<script src="./lib/phrases.js"></script>
-<script src="./lib/haptics.js"></script>
-<script src="./lib/undo.js"></script>
-<script src="./lib/clients-helpers.js"></script>
-<script src="./lib/targets.js"></script>
-<script src="./lib/ics-single.js"></script>
-<script src="./lib/ics.js"></script>
-<script src="./lib/client-status.js"></script>
-<script src="./lib/telemetry.js?v=1"></script>
-<script src="./lib/ics-sanitize.js?v=1"></script>
-
-<!-- === FINAL PACK: includes features from former main-plus.js and bp-hooks.js === -->
-<!-- Post-sale banners (exposed as window.initPostSaleBanners) -->
-<script src="./src/postSaleBanners.js"></script>
-<script src="./lib/final-hooks.js?v=2"></script>
-<script src="./lib/push-client.js?v=1"></script>
+<!-- === FINAL PACK: CSS rimane separato; JS è nel bundle === -->
+<!-- push-client.js incluso nel bundle -->
 
   <!-- Service Worker per Push (registrazione semplice) -->
   <script>
@@ -290,7 +270,7 @@
     })();
   </script>
   <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
-  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-BNhjYnuV.js"></script>
-  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-Cc5ZoI6y.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-syjcT7i2.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-Dt8zGuIM.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
 </body>
 </html>

@@ -10,6 +10,23 @@
    Compatibilità: conserva namespace, funzioni e v=13. 
 */
 /* global logger */
+import "./lib/globals-polyfills.js";
+import "./lib/auth-fetch-shim.js";
+import "./lib/bp-hooks-core.js";
+import "./lib/logger.js";
+import "./lib/phrases.js";
+import "./lib/haptics.js";
+import "./lib/undo.js";
+import "./lib/clients-helpers.js";
+import "./lib/targets.js";
+import "./lib/ics.js";
+import "./lib/client-status.js";
+import "./lib/telemetry.js";
+import "./lib/ics-sanitize.js";
+import "./lib/final-hooks.js";
+import "./lib/leaderboard-hooks.js";
+import "./src/postSaleBanners.js";
+import "./lib/push-client.js";
 import { save, load, del, setToken, getToken, setUser, getUser, logout } from "./src/auth.js";
 import { api, GET, POST, DEL } from "./src/api.js";
 import { pad2, dmy, ymd, timeHM, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isoWeekNum, startOfQuarter, endOfQuarter, startOfSemester, endOfSemester, startOfYear, endOfYear, startOfIsoWeek, weekBoundsOf, nextWeekBounds, prevWeekBounds, nextMonthBounds, prevMonthBounds, nextQuarterBounds, prevQuarterBounds, nextSemesterBounds, prevSemesterBounds, nextYearBounds, prevYearBounds, formatPeriodLabel } from "./src/dateUtils.js";
