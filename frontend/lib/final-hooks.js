@@ -1871,9 +1871,16 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   // -------- Coach (frasi motivazionali) --------
   const coachHost = document.createElement('div');
-  coachHost.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:1200;display:flex;flex-direction:column;gap:6px;pointer-events:none;';
+  coachHost.className = 'bp-coach-host';
+  coachHost.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);z-index:1200;display:flex;flex-direction:column;gap:6px;pointer-events:none;';
   document.documentElement.appendChild(coachHost);
   const cssCoach = `
+    /* Desktop default */
+    .bp-coach-host{ top:14px; }
+    /* Mobile: place below header + safe-area */
+    @media (max-width:980px){
+      .bp-coach-host{ top: calc(env(safe-area-inset-top) + 56px + 12px); }
+    }
     .bp-coach{background:rgba(20,24,34,.92);color:#fff;border:1px solid rgba(255,255,255,.16);
       border-radius:12px;padding:8px 10px;font-weight:700;box-shadow:0 12px 24px rgba(0,0,0,.35);opacity:.98;transform:translateY(0);transition:all .18s;}
     @keyframes bpCoachPop{from{transform:translateY(-6px);opacity:0}to{transform:translateY(0);opacity:1}}

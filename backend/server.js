@@ -1289,6 +1289,20 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     return !prevOk ? "Completa il BP Previsionale della settimana." : "Completa il BP Consuntivo della settimana.";
   }
 
+  // Retrieve saved push subscriptions for a user from JSON storage (normalizes legacy and new shapes)
+  async function getSubscriptions(userId){
+    try{
+      const db = await readJSON("push_subscriptions.json");
+      const list = (db.subs || db.subscriptions || [])
+        .filter(s => String(s.userId||'') === String(userId));
+      return list
+        .map(s => s.subscription || { endpoint: s.endpoint, keys: (s.keys||{}) })
+        .filter(x => x && x.endpoint);
+    }catch(_){
+      return [];
+    }
+  }
+
   async function runWeekendNoonPushOncePerDay(){
     const now = new Date();
     const day = now.getDay(); // 0 dom, 6 sab

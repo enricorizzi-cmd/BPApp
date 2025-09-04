@@ -23,9 +23,10 @@ import "./lib/ics.js";
 import "./lib/client-status.js";
 import "./lib/telemetry.js";
 import "./lib/ics-sanitize.js";
+// Ensure post-sale/NNCF banners are registered before final-hooks tries to init them
+import "./src/postSaleBanners.js";
 import "./lib/final-hooks.js";
 import "./lib/leaderboard-hooks.js";
-import "./src/postSaleBanners.js";
 import "./lib/push-client.js";
 import { save, load, del, setToken, getToken, setUser, getUser, logout } from "./src/auth.js";
 import { api, GET, POST, DEL } from "./src/api.js";
@@ -58,9 +59,9 @@ import "./lib/ics-single.js";
 
 
 /* ---- Fallback haptic() ---- */
+// Mappa su BP.Haptics.impact se disponibile, altrimenti no-op
 if (typeof window.haptic !== 'function'){
-  // no-op se non disponibile; manteniamo la firma generica
-  window.haptic = function(){};
+  window.haptic = (window.BP && BP.Haptics && BP.Haptics.impact) ? BP.Haptics.impact : function(){};
 }
 
 /* ---- Line chart helper condiviso (mini grafici = stile Squadra) ---- */
@@ -1785,10 +1786,30 @@ function viewPeriods(){
     if(delBP) delBP.onclick=function(){
       if(!confirm('Eliminare definitivamente questo BP?')) return;
       delBP.disabled=true;
+      // Snapshot per Undo
+      var bpBackup = CURRENT_P ? JSON.parse(JSON.stringify(CURRENT_P)) : null;
       apiDeletePeriod(EDIT_PID).then(function(){
         toast('BP eliminato');
         try{ document.dispatchEvent(new Event('bp:deleted')); }catch(_){ }
-         EDIT_PID=null; CURRENT_P=null; clearPrev(); clearCons(); setFormMode(false); computeBoundsAndPreview(); listPeriods();
+        // Reset UI
+        EDIT_PID=null; CURRENT_P=null; clearPrev(); clearCons(); setFormMode(false); computeBoundsAndPreview(); listPeriods();
+        // Undo: ricrea il periodo (nuovo id) con i dati precedenti
+        if (typeof showUndo==='function' && bpBackup){
+          var restorePayload = {
+            // crea un nuovo periodo con gli stessi dati
+            type: bpBackup.type,
+            startDate: ymd(bpBackup.startDate),
+            endDate: ymd(bpBackup.endDate),
+            indicatorsPrev: Object.assign({}, bpBackup.indicatorsPrev||{}),
+            indicatorsCons: Object.assign({}, bpBackup.indicatorsCons||{})
+          };
+          showUndo('BP eliminato', function(){
+            return POST('/api/periods', restorePayload).then(function(){
+              try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
+              listPeriods();
+            });
+          }, 5000);
+        }
       }).catch(function(){ toast('Endpoint delete non disponibile'); }).finally(function(){ delBP.disabled=false; });
     };
 
@@ -1796,6 +1817,8 @@ function viewPeriods(){
     if(delCons) delCons.onclick=function(){
       if(!confirm('Rimuovere solo il Consuntivo?')) return;
       delCons.disabled=true;
+      // Snapshot per Undo
+      var consBackup = CURRENT_P ? JSON.parse(JSON.stringify(CURRENT_P.indicatorsCons||{})) : null;
       var payload=buildUpdatePayloadFromCurrent({});
       if(!payload){ delCons.disabled=false; return; }
       var grade = getGrade();
@@ -1806,6 +1829,17 @@ function viewPeriods(){
         try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
         if(CURRENT_P){ CURRENT_P.indicatorsCons={}; }
         setFormMode(true); listPeriods(); renderDeleteZone();
+        // Undo: ripristina il consuntivo precedente
+        if (typeof showUndo==='function' && consBackup){
+          var restore = buildUpdatePayloadFromCurrent(consBackup);
+          showUndo('Consuntivo eliminato', function(){
+            return POST('/api/periods', restore).then(function(){
+              try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
+              if(CURRENT_P){ CURRENT_P.indicatorsCons = consBackup; }
+              listPeriods(); renderDeleteZone();
+            });
+          }, 5000);
+        }
       }).catch(function(){ toast('Errore eliminazione Consuntivo'); }).finally(function(){ delCons.disabled=false; });
     };
   }
@@ -3943,9 +3977,24 @@ appEl.innerHTML = topbarHTML() + `
       if (del){
         del.onclick = async ()=>{
           if(!confirm('Eliminare definitivamente questa vendita?')) return;
+          // Snapshot per Undo (senza id per ricreare una nuova vendita)
+          const backup = it ? JSON.parse(JSON.stringify(it)) : null;
           try{
             await POST('/api/gi/delete', { id: it.id }).catch(()=> POST('/api/gi', { id: it.id, _delete:1 }));
             close(); toast('Vendita eliminata'); load();
+            if (typeof showUndo==='function' && backup){
+              const restorePayload = {
+                date: new Date(backup.date||backup.createdAt||new Date()).toISOString(),
+                clientId: backup.clientId,
+                clientName: backup.clientName,
+                vssTotal: Math.round(Number(backup.vssTotal||0)),
+                services: backup.services || '',
+                schedule: Array.isArray(backup.schedule) ? backup.schedule : []
+              };
+              showUndo('Vendita eliminata', function(){
+                return POST('/api/gi', restorePayload).then(function(){ load(); });
+              }, 5000);
+            }
           }catch(e){ logger.error(e); toast('Errore eliminazione'); }
         };
       }
@@ -4398,9 +4447,25 @@ function viewUsers(){
         bt.addEventListener('click', function(){
           var id = bt.getAttribute('data-del');
           if(!confirm('Eliminare definitivamente questo utente?')) return;
+          // Snapshot per Undo (trova l'utente corrente nella lista)
+          var backup = (Array.isArray(list)? list : []).find(function(u){ return String(u.id)===String(id); });
           fetch('/api/users?id='+encodeURIComponent(id), { method:'DELETE', headers:{ 'Authorization':'Bearer '+getToken() } })
             .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-            .then(function(){ toast('Utente eliminato'); loadUsers(); })
+            .then(function(){
+              toast('Utente eliminato'); loadUsers();
+              if (typeof showUndo==='function' && backup){
+                var restore = {
+                  id: backup.id,
+                  name: backup.name,
+                  email: backup.email,
+                  grade: backup.grade,
+                  role: backup.role
+                };
+                showUndo('Utente eliminato', function(){
+                  return POST('/api/users', restore).then(function(){ loadUsers(); });
+                }, 5000);
+              }
+            })
             .catch(function(err){ logger.error(err); toast('Errore eliminazione'); });
         });
       });
