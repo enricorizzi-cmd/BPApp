@@ -54,6 +54,26 @@
       var buckets = [];
       function push(s,e){ buckets.push({s:s.getTime(), e:e.getTime()}); }
 
+      // Special cases: YTD and LTM use monthly buckets with custom spans
+      if (raw==='ytd'){
+        // From January to current month (inclusive) of current year
+        for (var m=0; m<=now.getUTCMonth(); m++){
+          var s = toUTC(now.getUTCFullYear(), m, 1);
+          var e = eodUTC(lastOfMonth(s.getUTCFullYear(), s.getUTCMonth()));
+          push(s,e);
+        }
+        return buckets;
+      }
+      if (raw==='ltm'){
+        // Last 12 months rolling up to current month
+        var mRef = toUTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+        for (var k=11; k>=0; k--){
+          var m = toUTC(mRef.getUTCFullYear(), mRef.getUTCMonth()-k, 1);
+          push(m, eodUTC(lastOfMonth(m.getUTCFullYear(), m.getUTCMonth())));
+        }
+        return buckets;
+      }
+
       if (t==='settimanale'){
         var cur = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         var day = (cur.getUTCDay()+6)%7; cur.setUTCDate(cur.getUTCDate()-day);
@@ -109,15 +129,15 @@
   if (typeof window.labelsForBuckets !== 'function'){
       window.labelsForBuckets = function(type, buckets){
         var t = effectivePeriodType(type||'mensile');
-      return (buckets||[]).map(function(B){
-        var d = new Date(B.s);
-        if (t==='settimanale')  return 'W'+isoWeekNum(d);
-        if (t==='mensile')      return String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
-        if (t==='trimestrale')  return 'Q'+(Math.floor(d.getUTCMonth()/3)+1)+' '+d.getUTCFullYear();
-        if (t==='semestrale')   return (d.getUTCMonth()<6?'S1 ':'S2 ')+d.getUTCFullYear();
-        return String(d.getUTCFullYear());
-      });
-    };
+        return (buckets||[]).map(function(B){
+          var d = new Date(B.s);
+          if (t==='settimanale')  return 'W'+isoWeekNum(d)+' '+d.getUTCFullYear();
+          if (t==='mensile')      return String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
+          if (t==='trimestrale')  return 'Q'+(Math.floor(d.getUTCMonth()/3)+1)+' '+d.getUTCFullYear();
+          if (t==='semestrale')   return (d.getUTCMonth()<6?'S1 ':'S2 ')+d.getUTCFullYear();
+          return String(d.getUTCFullYear());
+        });
+      };
   }
 
   // ----------------------------- Sum indicator helper (compat main)

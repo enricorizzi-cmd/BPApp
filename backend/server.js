@@ -853,11 +853,17 @@ app.get("/api/availability", auth, async (req,res)=>{
   if(global){
     let allSlots = [];
     const details = [];
+    // Calcola chiave "oggi" per filtrare gli slot da oggi in poi (coerente con la UI)
+    const todayKey = ymd(new Date());
     for(const u of (usersDb.users||[])){
       const apps = allApps.filter(a => a.userId === u.id);
       const { slots, summary } = computeSlots(apps);
       allSlots = allSlots.concat(slots);
-      details.push({ userId:u.id, name:u.name, total:summary.total });
+      // Conta solo gli slot futuri (>= oggi) per i dettagli per-consulente
+      const futureTotal = (slots||[]).filter(s => String(s.date||'').slice(0,10) >= todayKey).length;
+      // Manteniamo 'total' come conteggio da oggi in poi per corrispondere alla UX
+      // Esponiamo anche 'totalAll' per eventuali usi futuri (totale nel range richiesto)
+      details.push({ userId:u.id, name:u.name, total: futureTotal, totalAll: summary.total });
     }
     const summary = {
       total: allSlots.length,

@@ -59,3 +59,23 @@ kpi,Data,settimana,mese,anno,CONSULENTE,VALORE
 ```
 
 For each consultant and period the script authenticates using credentials in `backend/data/users.json` and calls `POST /api/periods`. Use `--dry-run` to inspect the derived periods without performing any write.
+
+## Grafici: Granularità e Etichette
+
+- Settimanale: 53 settimane ISO (lun–dom) fino alla settimana corrente; etichette `W<numero> <anno>` (es. `W37 2024 … W36 2025`).
+- Mensile: ultimi 24 mesi fino al mese corrente; etichette `MM/YYYY` (es. `10/2023 … 09/2025`).
+- YTD (Anno corrente): solo BP mensili da gennaio all’attuale; numero di punti = mese corrente.
+- LTM (Ultimi 12 mesi): solo BP mensili, ultimi 12 mesi (es. se mese corrente è 09/2025 → `10/2024 … 09/2025`).
+- Trimestrale: ultimi 12 trimestri; etichette `Qn YYYY`.
+- Semestrale: ultimi 6 semestri; etichette `S1 YYYY`/`S2 YYYY`.
+- Annuale: ultimi 3 anni; etichetta `YYYY`.
+
+Dashboard e Squadra usano gli stessi bucket e formati etichetta; le serie non mostrano più indici 1..N ma etichette reali dei periodi.
+
+### Smoke test locale etichette
+
+Esegui la stampa di esempio delle etichette per ogni granularità:
+
+```
+node scripts/print-buckets.js
+```

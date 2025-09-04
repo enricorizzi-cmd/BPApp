@@ -515,7 +515,8 @@ window.effectivePeriodType = effectivePeriodType;
 
 // Usa SEMPRE la effectivePeriodType globale già definita
 function buildBuckets(type, ref){
-  var t = effectivePeriodType(type||'mensile');
+  var raw = String(type||'mensile').toLowerCase();
+  var t = effectivePeriodType(raw||'mensile');
   var now = ref ? new Date(ref) : new Date();
   var y = now.getUTCFullYear();
   var buckets = [];
@@ -524,6 +525,27 @@ function buildBuckets(type, ref){
   function toUTC(y,m,d){ return new Date(Date.UTC(y,m,d)); }
   function eodUTC(dt){ return new Date(dt.getTime() + 24*3600*1000 - 1); }
   function lastOfMonth(yy,mm){ return new Date(Date.UTC(yy,mm+1,0)); }
+
+  // YTD: from January to current month (inclusive)
+  if (raw==='ytd'){
+    for (var m=0; m<=now.getUTCMonth(); m++){
+      var s = toUTC(now.getUTCFullYear(), m, 1);
+      var e = eodUTC(lastOfMonth(s.getUTCFullYear(), s.getUTCMonth()));
+      buckets.push({ s: s.getTime(), e: e.getTime() });
+    }
+    return buckets;
+  }
+
+  // LTM: last 12 months up to current month
+  if (raw==='ltm'){
+    var mRef = toUTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+    for (var k=11; k>=0; k--){
+      var m0 = toUTC(mRef.getUTCFullYear(), mRef.getUTCMonth()-k, 1);
+      var e0 = eodUTC(lastOfMonth(m0.getUTCFullYear(), m0.getUTCMonth()));
+      buckets.push({ s: m0.getTime(), e: e0.getTime() });
+    }
+    return buckets;
+  }
 
   if (t==='settimanale'){
     // 53 settimane rolling, allineate al lunedì ISO (UTC)
@@ -1250,9 +1272,15 @@ function viewCalendar(){
         .calendar .day .tag{ font-size:10px; }
       }
 
+      /* Header filters alignment (desktop + mobile) */
+      .cal-filters{ display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; }
       .cal-filters .chip{
         display:inline-flex; align-items:center; gap:6px;
         padding:6px 10px; border-radius:999px; border:1px solid var(--hair2);
+      }
+      .cal-filters .chip input[type=checkbox]{ width:16px; height:16px; }
+      @media (max-width: 600px){
+        .cal-filters{ align-items:center; }
       }
     `;
     var st = document.createElement('style');
@@ -1546,7 +1574,7 @@ function viewCalendar(){
 
       if(consultant==='all'){
         var det = avAll.details || [];
-        var hAll = '<b>Slot liberi ≥ 4h per consulente</b>';
+        var hAll = '<b>Slot liberi ≥ 4h per consulente (da oggi in poi)</b>';
         hAll += '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">';
         for(var di=0; di<det.length; di++){
           var d = det[di];
@@ -3804,11 +3832,15 @@ appEl.innerHTML = topbarHTML() + `
         '@media (max-width:740px){ .gi-grid{display:block} .gi-col{width:100%} .gi-modal{min-width:96vw} }'+
         '.gi-grid{display:flex; gap:12px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
         '.gi-section{border-top:1px solid var(--hair, rgba(0,0,0,.12)); padding-top:10px; margin-top:10px}'+
-        '.pilltabs{display:flex; gap:12px; align-items:center} .pilltabs label{display:flex; align-items:center; gap:6px; cursor:pointer}'+
+        '.pilltabs{display:flex; gap:12px; align-items:center} .pilltabs label{display:flex; align-items:center; gap:6px; cursor:pointer; padding:6px 10px; border:1px solid var(--hair, rgba(0,0,0,.15)); border-radius:999px}'+
         '.mrow{display:flex; gap:8px; align-items:center; flex-wrap:wrap}'+
+        '.mrow label{min-width:96px}'+
+        '.mrow input[type=date], .mrow select{min-width:160px}'+
+        '.mrow input[type=text]{flex:1; min-width:220px}'+
         '.mini input[type=number]{width:120px}'+
         '.gi-rlist{margin-top:6px; max-height:200px; overflow:auto; border:1px dashed rgba(0,0,0,.15); border-radius:8px; padding:6px}'+
         '.gi-r{display:flex; gap:6px; align-items:center; padding:4px 0}'+
+        '.gi-r input[type=date]{min-width:160px} .gi-r input[type=number]{width:120px} .gi-r input[type=text]{flex:1; min-width:220px}'+
         '.gi-foot{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center">'+
@@ -4072,7 +4104,8 @@ appEl.innerHTML = topbarHTML() + `
           // Snapshot per Undo (senza id per ricreare una nuova vendita)
           const backup = it ? JSON.parse(JSON.stringify(it)) : null;
           try{
-            await POST('/api/gi/delete', { id: it.id }).catch(()=> POST('/api/gi', { id: it.id, _delete:1 }));
+            // Prefer the canonical DELETE endpoint, fall back to legacy path if present
+            await DEL('/api/gi?id=' + encodeURIComponent(it.id)).catch(()=> POST('/api/gi/delete', { id: it.id }));
             close(); toast('Vendita eliminata'); load();
             if (typeof showUndo==='function' && backup){
               const restorePayload = {

@@ -7,7 +7,7 @@ services:
     buildCommand: >-
       npm ci --prefix frontend &&
       npm run build --prefix frontend &&
-      npm ci --prefix backend &&
+      npm ci --prefix backend --omit=dev &&
       npm run migrate --prefix backend
     startCommand: npm run start:prod --prefix backend
     envVars:
@@ -35,4 +35,3 @@ services:
       name: data
       mountPath: /app/backend/data
       sizeGB: 1
-

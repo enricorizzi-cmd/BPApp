@@ -1002,15 +1002,23 @@ function __readMode(scope){
     }
   })();
 
-  // -------- Buckets helpers (usa bp-hooks-core.js globali) --------
+  // -------- Buckets helpers (delegates to global labelsForBuckets if present) --------
   function labelsFor(type, buckets){
+    try{
+      if (typeof window.labelsForBuckets === 'function'){
+        return window.labelsForBuckets(type, buckets);
+      }
+    }catch(_){ /* fallback below */ }
+    const t = (typeof effectivePeriodType==='function')
+      ? effectivePeriodType(String(type||'mensile').toLowerCase())
+      : String(type||'mensile').toLowerCase();
     return (buckets||[]).map(B=>{
       const d=new Date(B.s);
-      if (type==='settimanale') return String(isoWeekNum(d));
-      if (type==='mensile'||type==='ytd'||type==='ltm') return String(d.getMonth()+1);
-      if (type==='trimestrale') return String(Math.floor(d.getMonth()/3)+1);
-      if (type==='semestrale') return (d.getMonth()<6?'1':'2');
-      return String(d.getFullYear());
+      if (t==='settimanale')  return 'W'+(typeof isoWeekNum==='function'?isoWeekNum(d):'')+' '+d.getUTCFullYear();
+      if (t==='mensile')      return String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
+      if (t==='trimestrale')  return 'Q'+(Math.floor(d.getUTCMonth()/3)+1)+' '+d.getUTCFullYear();
+      if (t==='semestrale')   return (d.getUTCMonth()<6?'S1 ':'S2 ')+d.getUTCFullYear();
+      return String(d.getUTCFullYear());
     });
   }
   // Cache per chiave (tipo/from/to[/userId]) per ridurre payload e garantire separazione banche dati
@@ -1081,7 +1089,7 @@ async function recomputeDashboardMini(){
 
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
   const periods = await ensurePeriods('dash');
-  const L = (window.labelsFor?window.labelsFor(type, buckets):buckets.map((_,i)=>String(i+1)));
+  const L = labelsFor(type, buckets);
 
   ['VSS','VSDPersonale','GI','NNCF'].forEach(k=>{
     const data = buckets.map(B=>{
@@ -1142,7 +1150,7 @@ async function recomputeCommsMini(){
 
   const buckets = (window.buildBuckets ? window.buildBuckets(type, r.end) : []);
   const periods = await ensurePeriods('comm');
-  const L = (window.labelsFor ? window.labelsFor(type, buckets) : buckets.map((_,i)=>String(i+1)));
+  const L = labelsFor(type, buckets);
 
   const data = buckets.map(B=>{
     let s = 0;
@@ -1216,13 +1224,13 @@ function sumProvvForPeriod(p, mode, which, rates){
   return 0;
 }
 
-function sumProvv(periods, mode, which, rates){
+  function sumProvv(periods, mode, which, rates){
   var s = 0;
   for (var i=0;i<periods.length;i++) s += sumProvvForPeriod(periods[i], mode, which, rates);
   return Math.round(s);
 }
 
-function recomputeTeamAggChart(){
+  function recomputeTeamAggChart(){
   var canvas = $1('#t_chart');
   if (!canvas) return;
 
@@ -1233,8 +1241,10 @@ function recomputeTeamAggChart(){
 
   // Legge range unificato "t" (stessa logica degli altri grafici)
   var rng    = readUnifiedRange('t');
-  var labels = labelsFor(rng);
-  var type   = rng.gran || rng.type;
+  var type   = rng && (rng.type || rng.gran) || 'mensile';
+  // Costruisce i bucket coerenti col tipo (YTD/LTM inclusi)
+  var B      = (typeof buildBuckets==='function') ? buildBuckets(type, rng && rng.end) : [];
+  var labels = labelsFor(type, B);
 
   Promise.all([
     ensurePeriods('t'),
@@ -1244,8 +1254,7 @@ function recomputeTeamAggChart(){
     var periods  = arr[0] || [];
     var rates    = extractRates(arr[2] || {});
 
-    // Costruisce i bucket temporali per il range selezionato
-    var B = buildBuckets(rng);
+    // B già calcolati sopra
 
     // Riempie i bucket con i periodi pertinenti
     periods.forEach(function(p){
@@ -1297,7 +1306,7 @@ function recomputeTeamAggChart(){
   const fromISO = buckets.length ? __ymd(new Date(buckets[0].s)) : __ymd(new Date());
   const toISO   = buckets.length ? __ymd(new Date(buckets[buckets.length-1].e)) : __ymd(new Date());
   const periods = await ensurePeriods({ type: type, from: fromISO, to: toISO, userId: (userId||null) });
-  const L = (window.labelsFor ? window.labelsFor(type, buckets) : buckets.map((_,i)=>String(i+1)));
+  const L = labelsFor(type, buckets);
 
   const data = buckets.map(B=>{
     let s = 0;
@@ -2303,8 +2312,8 @@ onceReady(async ()=>{
   // Haptics + Coach
   if (typeof wireHapticsUI==='function')       wireHapticsUI();
   if (typeof wireCoachUndoHaptics==='function') wireCoachUndoHaptics();
-// Coach per banner NNCF
-  if (typeof scanNNCF==='function') scanNNCF();
+// Coach per banner NNCF (legacy): disabilitato per rimuovere banner duplicato "Non ancora"
+//  if (typeof scanNNCF==='function') scanNNCF();
   // Saluto iniziale (una volta al giorno)
   try{
     const k='bpCoachGreetedDate';
