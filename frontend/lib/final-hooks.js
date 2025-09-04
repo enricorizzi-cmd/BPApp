@@ -988,7 +988,21 @@ function __readMode(scope){
       if (window.Chart){
         try{
           if (el.__chart && typeof el.__chart.destroy==='function') el.__chart.destroy();
-          const cfg = { type:'line', data:{ labels, datasets:[{ data, tension:.35, pointRadius:2, borderWidth:2 }] }, options:{ responsive:true, plugins:{legend:{display:false}}, scales:{x:{display:true},y:{display:true}} } };
+          const tickOpts = (typeof window.computeTickOptions==='function')
+            ? window.computeTickOptions(labels, el.clientWidth||320)
+            : undefined;
+          const cfg = {
+            type:'line',
+            data:{ labels, datasets:[{ data, tension:.35, pointRadius:2, borderWidth:2 }] },
+            options:{
+              responsive:true,
+              plugins:{legend:{display:false}},
+              scales:{
+                x: Object.assign({ display:true }, tickOpts ? { ticks: tickOpts } : {}),
+                y: { display:true }
+              }
+            }
+          };
           el.__chart = new Chart(el.getContext('2d'), cfg);
           return;
         }catch(_){ /* fallback sotto */ }

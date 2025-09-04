@@ -105,6 +105,22 @@ if (typeof window.haptic !== 'function'){
     try{
       const n = Array.isArray(labels) ? labels.length : 0;
       if(!n) return { autoSkip:true, maxRotation:0, minRotation:0 };
+
+      // In Chart.js v3/v4, ticks.callback receives the raw value (index for category scales).
+      // Map that index back to the actual label string. Fallback to the provided array.
+      function labelCb(value, index){
+        try{
+          // When used on a category scale, this.getLabelForValue(value) returns the label.
+          if (this && typeof this.getLabelForValue === 'function'){
+            return String(this.getLabelForValue(value));
+          }
+        }catch(_){}
+        // Fallback: resolve from input labels by index
+        const i = (typeof value === 'number') ? value : index;
+        const lab = Array.isArray(labels) ? labels[i] : value;
+        return String(lab!=null ? lab : value);
+      }
+
       const maxLen = Math.max(0, ...labels.map(s => String(s||'').length));
       const estPer = Math.max(28, Math.min(90, Math.round(maxLen * 7)));
       const need = n * estPer;
@@ -113,14 +129,14 @@ if (typeof window.haptic !== 'function'){
           autoSkip:true,
           maxRotation:45,
           minRotation:45,
-          callback: v => String(v||'')
+          callback: labelCb
         };
       }
       return {
         autoSkip:true,
         maxRotation:0,
         minRotation:0,
-        callback: v => String(v||'')
+        callback: labelCb
       };
     }catch(_){
       return { autoSkip:true, maxRotation:0, minRotation:0 };
@@ -1295,13 +1311,13 @@ function viewCalendar(){
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
       '<div class="card">'+
-        '<div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">'+
+        '<div class="uf-row">'+
+        '<div><label>Consulente</label><select id="cal_consultant"></select></div>'+
         '<div class="row" style="align-items:flex-end;gap:8px">'+
           '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
           '<div><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
           '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
         '</div>'+
-        '<div><label>Consulente</label><select id="cal_consultant"></select></div>'+
         '<div class="cal-filters">'+
           '<label class="chip small"><input type="checkbox" id="only_free"> Solo giorni liberi</label> '+
           '<label class="chip small"><input type="checkbox" id="only_4h"> Solo slot ≥ 4h</label>'+
@@ -3831,16 +3847,18 @@ appEl.innerHTML = topbarHTML() + `
         '.gi-modal{min-width:min(760px,96vw);max-width:980px;max-height:86vh;overflow:auto}'+
         '@media (max-width:740px){ .gi-grid{display:block} .gi-col{width:100%} .gi-modal{min-width:96vw} }'+
         '.gi-grid{display:flex; gap:12px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
+        /* Keep inputs constrained to their columns to avoid overflow */
+        '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0}'+
         '.gi-section{border-top:1px solid var(--hair, rgba(0,0,0,.12)); padding-top:10px; margin-top:10px}'+
         '.pilltabs{display:flex; gap:12px; align-items:center} .pilltabs label{display:flex; align-items:center; gap:6px; cursor:pointer; padding:6px 10px; border:1px solid var(--hair, rgba(0,0,0,.15)); border-radius:999px}'+
         '.mrow{display:flex; gap:8px; align-items:center; flex-wrap:wrap}'+
         '.mrow label{min-width:96px}'+
-        '.mrow input[type=date], .mrow select{min-width:160px}'+
-        '.mrow input[type=text]{flex:1; min-width:220px}'+
+        '.mrow input[type=date], .mrow select{min-width:160px; max-width:100%}'+
+        '.mrow input[type=text]{flex:1; min-width:220px; max-width:100%}'+
         '.mini input[type=number]{width:120px}'+
         '.gi-rlist{margin-top:6px; max-height:200px; overflow:auto; border:1px dashed rgba(0,0,0,.15); border-radius:8px; padding:6px}'+
         '.gi-r{display:flex; gap:6px; align-items:center; padding:4px 0}'+
-        '.gi-r input[type=date]{min-width:160px} .gi-r input[type=number]{width:120px} .gi-r input[type=text]{flex:1; min-width:220px}'+
+        '.gi-r input[type=date]{min-width:160px} .gi-r input[type=number]{width:120px} .gi-r input[type=text]{flex:1; min-width:220px; max-width:100%}'+
         '.gi-foot{display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:12px}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center">'+

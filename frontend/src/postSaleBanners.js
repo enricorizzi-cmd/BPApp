@@ -17,12 +17,33 @@
   const isDone     = (id,kind)=> { try{ return localStorage.getItem(doneKey(id,kind))==='1'; }catch(_){ return false; } };
   const markDone   = (id,kind)=> { try{ localStorage.setItem(doneKey(id,kind),'1'); }catch(_){ } };
 
+  // --- Push markers (avoid duplicate push per appointment/kind)
+  const pushKey  = (id, kind)=> `bp_push_${kind}_${id}`;
+  const pushSent = (id,kind)=> { try{ return localStorage.getItem(pushKey(id,kind))==='1'; }catch(_){ return false; } };
+  const markPush = (id,kind)=> { try{ localStorage.setItem(pushKey(id,kind),'1'); }catch(_){ } };
+
   // --- Safe utils / shims già presenti altrove ---
   const GET  = (window.BPFinal && BPFinal.GET)  || window.GET;
   const POST = (window.BPFinal && BPFinal.POST) || window.POST;
   const toast = window.toast || (m=>alert(m));
 
   function htmlEscape(s){ return String(s||'').replace(/[&<>\"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+
+  // --- Trigger a Web Push when a banner would appear (once per appt/kind)
+  async function triggerPush(kind, appt){
+    try{
+      if(!POST || !appt || !appt.id) return;
+      if(pushSent(appt.id, kind)) return;
+      const when = new Date(appt.end || appt.start || Date.now()).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+      const title = 'Battle Plan';
+      const body  = (kind==='nncf')
+        ? `È diventato cliente? ${String(appt.client||'')}. Appuntamento del ${when}`
+        : `Hai venduto a ${String(appt.client||'Cliente')}? Appuntamento del ${when}`;
+      const payload = { title, body, tag: (kind==='nncf' ? 'bp-nncf' : 'bp-sale'), url: '/' };
+      await POST('/api/push/test', { payload });
+      markPush(appt.id, kind);
+    }catch(_){ /* ignore */ }
+  }
 
   // --- Coda banner (riuso se già definita) ---
   function ensureBannerCSS(){
@@ -237,6 +258,8 @@
         markDone(appt.id, KIND_NNCF);
         close();
         try{
+          // Persisti che il banner NNCF è stato gestito (Sì)
+          await POST('/api/appointments', { id: appt.id, nncfPromptAnswered: true });
           await updateClientStatusByName(appt.client, 'attivo');
         }catch(_){}
         openVSSQuickEditor(appt);
@@ -245,6 +268,8 @@
         markDone(appt.id, KIND_NNCF);
         close();
         try{
+          // Persisti che il banner NNCF è stato gestito (No)
+          await POST('/api/appointments', { id: appt.id, nncfPromptAnswered: true });
           await updateClientStatusByName(appt.client, 'lead non chiuso');
           await POST('/api/appointments', { id: appt.id, vss: 0 });
           toast('Aggiornato: Lead non chiuso, VSS=0');
@@ -271,10 +296,14 @@
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
           if (!isVendita) return;
           if (appt.nncf){
+            // Se già risposto (persistente) o già fatto snooze/done local, non riproporre
+            if (appt.nncfPromptAnswered) return;
             if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF)) return;
+            triggerPush(KIND_NNCF, appt);
             enqueueBanner(bannerNNCF(appt));
           } else {
             if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE)) return;
+            triggerPush(KIND_SALE, appt);
             enqueueBanner(bannerSale(appt));
           }
         }catch(_){}

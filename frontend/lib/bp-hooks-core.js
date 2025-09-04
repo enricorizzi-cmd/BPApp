@@ -154,4 +154,61 @@
     };
   }
 
+  // ----------------------------- Chart.js global defaults + plugin for line charts
+  (function ensureChartGlobalTicks(){
+    try{
+      if (typeof window.Chart === 'undefined') return;
+
+      // Generic label callback: map index/value to the actual category label
+      function labelCb(value, index){
+        try{ if (this && typeof this.getLabelForValue==='function') return String(this.getLabelForValue(value)); }catch(_){ }
+        try{
+          var i = (typeof value==='number') ? value : index;
+          var arr = (this && this.chart && this.chart.data && this.chart.data.labels) || [];
+          var lab = (Array.isArray(arr) ? arr[i] : undefined);
+          return String(lab!=null ? lab : value);
+        }catch(_){ return String(value); }
+      }
+
+      try{
+        Chart.defaults = Chart.defaults || {};
+        Chart.defaults.scales = Chart.defaults.scales || {};
+        Chart.defaults.scales.category = Chart.defaults.scales.category || {};
+        Chart.defaults.scales.category.ticks = Object.assign({}, Chart.defaults.scales.category.ticks || {}, { callback: labelCb });
+      }catch(_){ }
+
+      // Plugin: auto-apply tick options (rotation/autoskip) to all line charts
+      var plugin = {
+        id: 'bpAutoTicks',
+        beforeUpdate: function(chart){
+          try{
+            if (!chart || (chart.config && chart.config.type) !== 'line') return;
+            var labels = (chart.config && chart.config.data && chart.config.data.labels) || [];
+            var w = (chart.canvas && (chart.canvas.clientWidth || chart.canvas.width)) || 320;
+            function compute(labelsArr, width){
+              try{
+                var n = Array.isArray(labelsArr) ? labelsArr.length : 0;
+                if(!n) return { autoSkip:true, maxRotation:0, minRotation:0, callback: labelCb };
+                var maxLen = 0; for(var i=0;i<labelsArr.length;i++){ var s = ''+(labelsArr[i]==null?'':labelsArr[i]); if (s.length>maxLen) maxLen=s.length; }
+                var estPer = Math.max(28, Math.min(90, Math.round(maxLen * 7)));
+                var need = n * estPer;
+                if(need > (width||320)*1.2){
+                  return { autoSkip:true, maxRotation:45, minRotation:45, callback: labelCb };
+                }
+                return { autoSkip:true, maxRotation:0, minRotation:0, callback: labelCb };
+              }catch(_){ return { autoSkip:true, maxRotation:0, minRotation:0, callback: labelCb }; }
+            }
+            var fn = (typeof window.computeTickOptions==='function') ? window.computeTickOptions : compute;
+            var tickOpts = fn(labels, w);
+            chart.options = chart.options || {};
+            chart.options.scales = chart.options.scales || {};
+            var x = chart.options.scales.x || (chart.options.scales.x = { display:true });
+            x.ticks = Object.assign({}, x.ticks || {}, tickOpts);
+          }catch(_){ }
+        }
+      };
+      try{ if (Chart.register) Chart.register(plugin); else if (Chart.plugins && Chart.plugins.register) Chart.plugins.register(plugin); }catch(_){ }
+    }catch(_){ }
+  })();
+
 })();

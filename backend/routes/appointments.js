@@ -71,6 +71,8 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if (Object.prototype.hasOwnProperty.call(body, 'telefonate')) it.telefonate = Number(body.telefonate||0);
     if (Object.prototype.hasOwnProperty.call(body, 'appFissati')) it.appFissati = Number(body.appFissati||0);
     if (Object.prototype.hasOwnProperty.call(body, 'nncf'))   it.nncf   = !!body.nncf;
+    // Hidden/persisted flags
+    if (Object.prototype.hasOwnProperty.call(body, 'nncfPromptAnswered')) it.nncfPromptAnswered = !!body.nncfPromptAnswered;
     if (Object.prototype.hasOwnProperty.call(body, 'notes'))  it.notes  = body.notes || '';
 
     const startOld = parseDateSmart(it.start);
@@ -152,6 +154,7 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       telefonate: Number(body.telefonate||0),
       appFissati: Number(body.appFissati||0),
       nncf: !!body.nncf,
+      nncfPromptAnswered: !!body.nncfPromptAnswered,
       notes: body.notes||''
     };
     db.appointments.push(row);

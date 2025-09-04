@@ -15,7 +15,8 @@
 }
 #bp-overlay .bp-overlay-panel {
   position: relative;
-  max-width: min(92vw, 560px);
+  /* Allow larger modals (GI & Scadenzario) to fit without overflowing */
+  max-width: min(96vw, 1024px);
   width: auto;
   background: #fff;
   color: #111;
@@ -23,6 +24,8 @@
   box-shadow: 0 10px 30px rgba(0,0,0,.3);
   padding: 16px;
   margin: 12px;
+  box-sizing: border-box;
+  overflow: auto;
 }
 /* piccoli aiuti per i form dentro all'overlay */
 #bp-overlay .row { display: flex; gap: 12px; }
