@@ -276,9 +276,16 @@ function viewLogin(){
 }
 // ====== FILTRI UNIFICATI (UI builders) ======
 function unifiedFiltersHTML(prefix){
-  const yr=(new Date()).getFullYear();
-  const mm=(new Date()).getMonth()+1;
-  const wk=isoWeekNum(new Date());
+  const now=new Date();
+  const yr=now.getFullYear();
+  const mm=now.getMonth()+1;
+  const wk=isoWeekNum(now);
+  const qd=Math.floor((mm-1)/3)+1;
+  const yFrom=2000, yTo=2100;
+  const yearOpts=(function(){ let s=''; for(let y=yFrom;y<=yTo;y++){ s+=`<option value="${y}" ${y===yr?'selected':''}>${y}</option>`; } return s; })();
+  const monthOpts=(function(){ let s=''; for(let m=1;m<=12;m++){ s+=`<option value="${m}" ${m===mm?'selected':''}>${m}</option>`; } return s; })();
+  const weekOpts=(function(){ let s=''; for(let w=1;w<=53;w++){ s+=`<option value="${w}" ${w===wk?'selected':''}>${w}</option>`; } return s; })();
+  const quarterOpts=(function(){ let s=''; for(let q=1;q<=4;q++){ s+=`<option value="${q}" ${q===qd?'selected':''}>Q${q}</option>`; } return s; })();
   return ''+
     '<div class="uf"><div class="row">'+
       '<div>'+
@@ -296,34 +303,40 @@ function unifiedFiltersHTML(prefix){
 
       '<div id="'+prefix+'_wrap_week" style="display:none">'+
         '<label>Settimana ISO</label>'+
-        '<div class="row"><input type="number" id="'+prefix+'_week" min="1" max="53" value="'+wk+'">'+
-        '<input type="number" id="'+prefix+'_year_w" min="2000" max="2100" value="'+yr+'"></div>'+
+        '<div class="row">'+
+          '<select id="'+prefix+'_week">'+ weekOpts +'</select>'+
+          '<select id="'+prefix+'_year_w">'+ yearOpts +'</select>'+
+        '</div>'+
       '</div>'+
 
       '<div id="'+prefix+'_wrap_month">'+
         '<label>Mese</label>'+
-        '<div class="row"><input type="number" id="'+prefix+'_month" min="1" max="12" value="'+mm+'">'+
-        '<input type="number" id="'+prefix+'_year_m" min="2000" max="2100" value="'+yr+'"></div>'+
+        '<div class="row">'+
+          '<select id="'+prefix+'_month">'+ monthOpts +'</select>'+
+          '<select id="'+prefix+'_year_m">'+ yearOpts +'</select>'+
+        '</div>'+
       '</div>'+
 
       '<div id="'+prefix+'_wrap_quarter" style="display:none">'+
         '<label>Trimestre</label>'+
-        '<div class="row"><input type="number" id="'+prefix+'_quarter" min="1" max="4" value="'+Math.floor((mm-1)/3)+1+'">'+
-        '<input type="number" id="'+prefix+'_year_q" min="2000" max="2100" value="'+yr+'"></div>'+
+        '<div class="row">'+
+          '<select id="'+prefix+'_quarter">'+ quarterOpts +'</select>'+
+          '<select id="'+prefix+'_year_q">'+ yearOpts +'</select>'+
+        '</div>'+
       '</div>'+
 
       '<div id="'+prefix+'_wrap_sem" style="display:none">'+
         '<label>Semestre</label>'+
         '<div class="row"><select id="'+prefix+'_sem"><option value="1">1°</option><option value="2">2°</option></select>'+
-        '<input type="number" id="'+prefix+'_year_s" min="2000" max="2100" value="'+yr+'"></div>'+
+        '<select id="'+prefix+'_year_s">'+ yearOpts +'</select></div>'+
       '</div>'+
 
       '<div id="'+prefix+'_wrap_year" style="display:none">'+
         '<label>Anno</label>'+
-        '<input type="number" id="'+prefix+'_year" min="2000" max="2100" value="'+yr+'">'+
+        '<select id="'+prefix+'_year">'+ yearOpts +'</select>'+
       '</div>'+
 
-      '<div style="align-self:flex-end"><button id="'+prefix+'_refresh" class="ghost">Aggiorna</button></div>'+
+      '<div class="actions"><button id="'+prefix+'_refresh" class="ghost">Aggiorna</button></div>'+
     '</div></div>';
 }
 
@@ -563,7 +576,7 @@ function viewHome(){
     '<div class="wrap">'+
       '<div class="card">'+
         '<b>Filtro</b>'+
-        '<div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
+        '<div class="row uf-row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
           '<div>'+
             '<label>Modalità</label>'+
             '<select id="dash_mode" name="mode">'+
@@ -898,6 +911,10 @@ function recomputeKPI(){
 function refreshLists(){
   var cons = (document.getElementById('dash_cons')||{}).value || '';
 
+  // Range e tipo periodo selezionati (usati per query /api/periods)
+  var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
+  var typeDash = (typeof effectivePeriodType==='function' ? effectivePeriodType(rDash.type||'mensile') : (rDash.type||'mensile'));
+
   // assicura la card "Prossimi appuntamenti" sopra "Ultimi appuntamenti"
   (function ensureNextAppsCard(){
     var lastAppsBox = document.getElementById('lastApps');
@@ -978,8 +995,6 @@ function cardAppt(x){
   Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash) ]).then(function(arr){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
-    var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
-    var typeDash = (typeof effectivePeriodType==='function' ? effectivePeriodType(rDash.type||'mensile') : (rDash.type||'mensile'));
 
     // ===== PROSSIMI APPUNTAMENTI (oggi + domani) =====
     (function renderNext(){

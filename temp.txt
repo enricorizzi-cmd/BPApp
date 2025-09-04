@@ -1,0 +1,6 @@
+﻿
+      '<div id="'+prefix+'_wrap_quarter" style="display:none">'+
+        '<label>Trimestre</label>'+
+        '<div class="row"><input type="number" id="'+prefix+'_quarter" min="1" max="4" value="'+Math.floor((mm-1)/3)+1+'">'+
+        '<input type="number" id="'+prefix+'_year_q" min="2000" max="2100" value="'+yr+'"></div>'+
+      '</div>'+

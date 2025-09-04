@@ -225,6 +225,20 @@
     .row > div{ min-width: 200px; flex: 1 1 200px; }
 
     canvas{ image-rendering: -webkit-optimize-contrast; }
+    
+    /* Unified filters: equal widths + responsive grid */
+    .uf .row, .uf-row{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+    .uf .row > div, .uf-row > div{ min-width: 0; }
+    .uf select, .uf input, .uf-row select, .uf-row input{ width: 100%; min-width: 0; }
+    .uf .row .actions, .uf-row .actions{ align-self: end; }
+    @media (min-width: 981px){
+      .uf .row, .uf-row{ grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    }
   </style>
 </head>
 <body>
