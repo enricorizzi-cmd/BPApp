@@ -124,9 +124,11 @@
       card.className = 'bp-banner-card';
       card.setAttribute('role','alertdialog');
       card.setAttribute('aria-live','assertive');
+      const dateStr = new Date(appt.end || appt.start || Date.now())
+        .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
         `<div class="msg"><b>Allora, hai venduto a ${htmlEscape(appt.client||'Cliente')}?</b>
-           <div class="small muted">Appuntamento di vendita concluso</div></div>
+           <div class="small muted">Appuntamento del ${htmlEscape(dateStr)}</div></div>
          <div class="row">
            <button class="ghost" data-act="later">Posticipa</button>
            <button class="ghost" data-act="no">No</button>
@@ -153,8 +155,11 @@
       card.className = 'bp-banner-card';
       card.setAttribute('role','alertdialog');
       card.setAttribute('aria-live','assertive');
+      const dateStr = new Date(appt.end || appt.start || Date.now())
+        .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
-        `<div class="msg"><b>È diventato cliente?</b> ${htmlEscape(appt.client||'')}</div>
+        `<div class="msg"><b>È diventato cliente?</b> ${htmlEscape(appt.client||'')}
+           <div class="small muted">Appuntamento del ${htmlEscape(dateStr)}</div></div>
          <div class="row">
            <button class="ghost" data-act="later">Posticipa</button>
            <button class="ghost" data-act="no">No</button>
@@ -194,11 +199,12 @@
         try{
           const end = +new Date(appt.end || appt.start || 0);
           if (!end || end>now || end<fromTs) return;
-          const isVendita = String(appt.type||'').toLowerCase()==='vendita' || Number(appt.vss||0)>0 || Number(appt.vsdPersonal||0)>0;
+          const isVendita = String(appt.type||'').toLowerCase()==='vendita';
+          if (!isVendita) return;
           if (appt.nncf){
             if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF)) return;
             enqueueBanner(bannerNNCF(appt));
-          } else if (isVendita){
+          } else {
             if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE)) return;
             enqueueBanner(bannerSale(appt));
           }
