@@ -201,12 +201,14 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = function(){
+        markDone(appt.id, KIND_SALE);
         close();
-        openVSSQuickEditor(appt, { onSaved: ()=> markDone(appt.id, KIND_SALE) });
+        openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
+        markDone(appt.id, KIND_SALE);
         close();
-        try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); markDone(appt.id, KIND_SALE); toast('Registrato: nessuna vendita'); }catch(_){}
+        try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
       };
       card.querySelector('[data-act="later"]').onclick = function(){
         snooze1d(appt.id, KIND_SALE); toast('Te lo ripropongo domani'); close();
@@ -232,18 +234,19 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
+        markDone(appt.id, KIND_NNCF);
         close();
         try{
           await updateClientStatusByName(appt.client, 'attivo');
         }catch(_){}
-        openVSSQuickEditor(appt, { onSaved: ()=> markDone(appt.id, KIND_NNCF) });
+        openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
+        markDone(appt.id, KIND_NNCF);
         close();
         try{
           await updateClientStatusByName(appt.client, 'lead non chiuso');
           await POST('/api/appointments', { id: appt.id, vss: 0 });
-          markDone(appt.id, KIND_NNCF);
           toast('Aggiornato: Lead non chiuso, VSS=0');
         }catch(_){}
       };
