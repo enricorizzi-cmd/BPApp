@@ -62,9 +62,7 @@
   function openVSSQuickEditor(appt, opts){
     const initial = Number(appt.vss || appt.vsdPersonal || 0) || 0;
     const name = appt.client || 'Cliente';
-    const d = document.createElement('div');
-    d.className = 'modal';
-    d.innerHTML = `
+    const panelHTML = `
       <div class="card" style="min-width:min(380px,96vw);max-width:480px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <b>VSS per ${htmlEscape(name)}</b>
@@ -81,6 +79,40 @@
           <button id="vss_ok">Salva</button>
         </div>
       </div>`;
+
+    // Preferisci l'overlay globale (centrata). Fallback: modal inline.
+    if (typeof window.showOverlay === 'function' && typeof window.hideOverlay === 'function'){
+      showOverlay(panelHTML);
+      const panel = document.getElementById('bp-overlay-panel') || document.body;
+      const q = (s)=> panel.querySelector(s);
+      const close = ()=>{ try{ hideOverlay(); }catch(_){ } };
+      q('#vss_x').onclick = close;
+      q('#vss_ok').onclick = async ()=>{
+        try{
+          const v = Math.max(0, Number(q('#vss_val').value||0));
+          await POST('/api/appointments', { id: appt.id, vss: v });
+          hapticImpact('medium'); toast('Appuntamento aggiornato');
+          close();
+
+          if (v>0){
+            try{
+              const sale = await upsertGIFromAppointment(appt, v);
+              if (sale && (sale.id || sale._id)){
+                const id = sale.id || sale._id;
+                document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+              }
+            }catch(e){ logger.error(e); }
+          }
+          if (opts && typeof opts.onSaved==='function') opts.onSaved(v);
+        }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
+      };
+      return;
+    }
+
+    // Fallback legacy: append inline modal (non centrata)
+    const d = document.createElement('div');
+    d.className = 'modal';
+    d.innerHTML = panelHTML;
     document.body.appendChild(d);
     const close = ()=>{ try{ d.remove(); }catch(_){ } };
     d.querySelector('#vss_x').onclick = close;
