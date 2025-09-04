@@ -937,28 +937,47 @@ function __readMode(scope){
 
   // --------- Patch drawFullLine (Chart.js safe) + canvas puro ----------
   function _drawLineCanvas(canvasId, labels, data){
-    const el = document.getElementById(canvasId); if(!el) return;
+    const el = document.getElementById(canvasId);
+    if(!el) return;
     const ctx = el.getContext('2d');
-    const W = el.width = Math.max(220, el.clientWidth||320);
-    const H = el.height = Math.max(80,  el.clientHeight||80);
-    ctx.clearRect(0,0,W,H);
-    const arr = Array.isArray(data)?data.map(v=>+v||0):[];
+
+    // Handle HiDPI devices by scaling the canvas according to devicePixelRatio
+    const ratio = window.devicePixelRatio || 1;
+    const cssW = Math.max(220, el.clientWidth || 320);
+    const cssH = Math.max(80,  el.clientHeight || 80);
+    el.style.width  = cssW + 'px';
+    el.style.height = cssH + 'px';
+    el.width  = cssW * ratio;
+    el.height = cssH * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const arr = Array.isArray(data) ? data.map(v => +v || 0) : [];
     if(!arr.length) return;
     const max = Math.max(...arr), min = Math.min(...arr);
     const pad = (max-min)===0 ? (max||1)*.2 : (max-min)*.2;
     const Ymax = max+pad, Ymin = Math.max(0, min-pad);
-    const stepX = (arr.length>1) ? (W-8)/(arr.length-1) : 0;
+    const stepX = (arr.length>1) ? (cssW-8)/(arr.length-1) : 0;
     const xAt = i => 4 + i*stepX;
     const yAt = v => {
-      const t=(v-Ymin)/(Ymax-Ymin||1);
-      return H-6 - t*(H-12);
+      const t = (v-Ymin)/(Ymax-Ymin||1);
+      return cssH-6 - t*(cssH-12);
     };
-    ctx.lineWidth=2; ctx.strokeStyle='#2e6cff';
-    ctx.beginPath(); ctx.moveTo(xAt(0), yAt(arr[0]));
-    for(let i=1;i<arr.length;i++) ctx.lineTo(xAt(i), yAt(arr[i]));
+
+    ctx.lineWidth = 2;
+    ctx.lineJoin = ctx.lineCap = 'round';
+    ctx.strokeStyle = '#2e6cff';
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yAt(arr[0]));
+    for(let i=1; i<arr.length; i++) ctx.lineTo(xAt(i), yAt(arr[i]));
     ctx.stroke();
-    ctx.fillStyle='#2e6cff';
-    for(let i=0;i<arr.length;i++){ ctx.beginPath(); ctx.arc(xAt(i),yAt(arr[i]),2,0,Math.PI*2); ctx.fill(); }
+
+    ctx.fillStyle = '#2e6cff';
+    for(let i=0; i<arr.length; i++){
+      ctx.beginPath();
+      ctx.arc(xAt(i), yAt(arr[i]), 2, 0, Math.PI*2);
+      ctx.fill();
+    }
   }
   // Monkey patch globale: se main.js definisce già drawFullLine con Chart,
   // lo rimpiazziamo con versione che distrugge il precedente grafico per evitare l’errore “Canvas is already in use…”
