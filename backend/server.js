@@ -475,6 +475,21 @@ app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>
   await writeJSON("users.json", db);
   res.json({ ok:true });
 });
+app.post("/api/users/profile", auth, async (req,res)=>{
+  const { id, name, email, password } = req.body || {};
+  if(req.user.id !== id) return res.status(403).json({ error:"forbidden" });
+  const db = await readJSON("users.json");
+  const u = (db.users||[]).find(x => x.id === id);
+  if(!u) return res.status(404).json({ error:"user not found" });
+  const r = _applyUserUpdates(db, u, { name, email });
+  if(r.error) return res.status(r.error.code).json({ error:r.error.msg });
+  if(password){
+    u.pass = await bcrypt.hash(String(password), 10);
+  }
+  await writeJSON("users.json", db);
+  res.json({ ok:true });
+});
+
 
 // update credentials (email/password) self/admin
 function _tryUpdateEmail(db, user, email, isSelf, isAdmin){

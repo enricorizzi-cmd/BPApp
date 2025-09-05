@@ -4657,18 +4657,19 @@ function viewUsers(){
       '</div>';
     renderTopbar();
     $1('#p_save').onclick=function(){
-      var name = $1('#p_name').value.trim();
-      var email= $1('#p_email').value.trim();
-      var pwd  = $1('#p_pwd').value;
-      var payload={ id: me.id, name:name, email:email };
-      if(pwd) payload.password=pwd;
-      POST('/api/users', payload).then(function(){
-        toast('Profilo aggiornato'); window.addXP(3);
-        var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
-        try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
-      }).catch(function(err){ logger.error(err); toast('Errore aggiornamento'); });
-    };
-    return;
+        var name = $1('#p_name').value.trim();
+        var email= $1('#p_email').value.trim();
+        var pwd  = $1('#p_pwd').value;
+        if(!name || !email){ toast('Nome ed email obbligatori'); return; }
+        var payload={ id: me.id, name:name, email:email };
+        if(pwd) payload.password=pwd;
+        POST('/api/users/profile', payload).then(function(){
+          toast('Profilo aggiornato'); window.addXP(3);
+          var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
+          try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
+        }).catch(function(err){ logger.error(err); toast(err.message || 'Errore aggiornamento'); });
+      };
+      return;
   }
 
   // === Vista ADMIN ===
