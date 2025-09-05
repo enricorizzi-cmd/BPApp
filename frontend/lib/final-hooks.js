@@ -123,7 +123,7 @@ if (typeof window !== 'undefined' && typeof window.initPostSaleBanners === 'func
   st.textContent = `
     #bp_overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);
       display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}
-    .bp-modal{max-width:620px;width:clamp(300px,92vw,620px);background:var(--card,#fff);
+    .bp-modal{max-width:560px;width:clamp(300px,90vw,560px);background:var(--card,#fff);
       color:var(--text,#111);border-radius:14px;border:1px solid rgba(0,0,0,.12);
       box-shadow:0 12px 34px rgba(0,0,0,.35)}
     .bp-modal .hd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px}
@@ -343,8 +343,8 @@ window.pipelineNo  = pipelineNo;
     if (document.getElementById('bp-center-css')) return;
     const css = `
       #bp_overlay{display:flex;align-items:center;justify-content:center}
-      .bp-modal-card{min-width:min(560px,96vw);max-width:680px;max-height:86vh;overflow:auto}
-      @media (max-width:640px){ .bp-modal-card{min-width:96vw} }
+      .bp-modal-card{min-width:min(480px,90vw);max-width:600px;max-height:86vh;overflow:auto}
+      @media (max-width:640px){ .bp-modal-card{min-width:90vw} }
       .bp-modal-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
     `;
     const st=document.createElement('style'); st.id='bp-center-css'; st.textContent=css; document.head.appendChild(st);
