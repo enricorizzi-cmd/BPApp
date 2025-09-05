@@ -2199,9 +2199,13 @@ function viewPeriods(){
         var node=domFromHTML('<div class="card" style="flex:1 1 360px">'+
           '<div><b>'+htmlEscape(formatPeriodLabel(tp,cur.start))+'</b></div>'+
           '<div class="small muted">'+dmy(cur.start)+' → '+dmy(cur.end)+'</div>'+
-          '<div class="right" style="margin-top:6px"><button class="ghost" type="button" data-mid="'+bp.id+'">Modifica</button></div>'+
+          '<div class="right" style="margin-top:6px">'+
+            '<button class="ghost" type="button" data-edit="'+bp.id+'">Modifica previs.</button>'+
+            '<button type="button" data-cons="'+bp.id+'">Consuntivo…</button>'+
+          '</div>'+
         '</div>');
-        node.querySelector('[data-mid]').addEventListener('click',function(){ loadPeriodIntoForm(bp,false);});
+        node.querySelector('[data-edit]').addEventListener('click',function(){ loadPeriodIntoForm(bp,false);});
+        node.querySelector('[data-cons]').addEventListener('click',function(){ loadPeriodIntoForm(bp,true);});
         contSent.appendChild(node);
       }
     });
