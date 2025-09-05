@@ -3557,21 +3557,27 @@ function viewCommissions(){
   // ===== UI builders
   function stat(label, value){
     return ''+
-      '<div class="card" style="flex:1 1 100px">'+
+      '<div class="card">'+
         '<div class="small muted">'+htmlEscape(label)+'</div>'+
         '<div style="font-weight:700; font-size:20px; margin-top:4px">'+value+'</div>'+
       '</div>';
   }
   function cardTot(t){
     return ''+
-      '<div class="row" style="gap:12px; flex-wrap:wrap">'+
-        stat('VSD personale', fmtEuro(t.vsd||0))+
-        stat('GI', fmtEuro(t.gi||0))+
-      '</div>'+
-      '<div class="row" style="gap:12px; flex-wrap:wrap; margin-top:8px">'+
-        stat('Provv. VSD', fmtEuro(t.provv_vsd||0))+
-        stat('Provv. GI', fmtEuro(t.provv_gi||0))+
-        stat('Totale Provvigioni', fmtEuro(t.provv_total||0))+
+      '<div class="table" style="overflow:auto">'+
+        '<table class="simple" style="width:100%; border-collapse:separate; border-spacing:12px 8px">'+
+          '<tbody>'+
+            '<tr>'+
+              '<td>'+stat('VSD personale', fmtEuro(t.vsd||0))+'</td>'+
+              '<td>'+stat('GI', fmtEuro(t.gi||0))+'</td>'+
+            '</tr>'+
+            '<tr>'+
+              '<td>'+stat('Provv. VSD', fmtEuro(t.provv_vsd||0))+'</td>'+
+              '<td>'+stat('Provv. GI', fmtEuro(t.provv_gi||0))+'</td>'+
+              '<td>'+stat('Totale Provvigioni', fmtEuro(t.provv_total||0))+'</td>'+
+            '</tr>'+
+          '</tbody>'+
+        '</table>'+
       '</div>';
   }
   function renderRows(rows){
