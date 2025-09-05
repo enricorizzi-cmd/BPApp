@@ -1,5 +1,5 @@
 import { getUser } from '../src/auth.js';
-import { injectMobileDrawerCSS, injectMobileLightModeCSS, injectLightBadgesCSS } from '../src/mobileStyles.js';
+import { injectMobileDrawerCSS, injectMobileLightModeCSS, injectLightBadgesCSS, injectSummaryClickableCSS } from '../src/mobileStyles.js';
 
 export function topbarHTML(){
   const u = getUser();
@@ -80,6 +80,7 @@ export function renderTopbar(){
   try{ injectMobileDrawerCSS(); }catch{ /* ignore */ }
   try{ injectMobileLightModeCSS(); }catch{ /* ignore */ }
   try{ injectLightBadgesCSS(); }catch{ /* ignore */ }
+  try{ injectSummaryClickableCSS(); }catch{ /* ignore */ }
 
   // Unified filters + Squadra header responsiveness (mobile-friendly)
   if(!document.getElementById('bp-unified-filters-css')){

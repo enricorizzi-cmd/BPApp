@@ -110,3 +110,14 @@ export function injectLightBadgesCSS(){
   s.textContent = css;
   document.head.appendChild(s);
 }
+
+export function injectSummaryClickableCSS(){
+  if (document.getElementById('bp-summary-css')) return;
+  const css = `
+    summary{ cursor:pointer; padding:4px 0; }
+  `;
+  const s = document.createElement('style');
+  s.id = 'bp-summary-css';
+  s.textContent = css;
+  document.head.appendChild(s);
+}

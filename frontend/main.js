@@ -2090,19 +2090,30 @@ function viewPeriods(){
   function listPeriods(){
     GET('/api/periods').then(function(r){
       var list=r.periods||[]; list.sort(function(a,b){return new Date(b.startDate)-new Date(a.startDate);});
-      var html='';
+      var groups={settimanale:[],mensile:[],trimestrale:[],semestrale:[],annuale:[]};
       for(var i=0;i<list.length;i++){
         var p=list[i], name=formatPeriodLabel(p.type,p.startDate)+' · '+dmy(p.startDate)+' → '+dmy(p.endDate);
-        html += '<div class="card" style="flex:1 1 360px">'+
-                  '<div><b>'+htmlEscape(name)+'</b></div>'+
-                  '<div class="small">Prev VSS '+fmtEuro((p.indicatorsPrev||{}).VSS||0)+' · Cons '+fmtEuro((p.indicatorsCons||{}).VSS||0)+'</div>'+
-                  '<div class="right" style="margin-top:6px">'+
-                    '<button class="ghost" data-edit="'+p.id+'">Modifica previs.</button>'+
-                    '<button data-cons="'+p.id+'">Consuntivo…</button>'+
-                  '</div>'+
-                '</div>';
+        var card = '<div class="card" style="flex:1 1 360px">'+
+                    '<div><b>'+htmlEscape(name)+'</b></div>'+
+                    '<div class="small">Prev VSS '+fmtEuro((p.indicatorsPrev||{}).VSS||0)+' · Cons '+fmtEuro((p.indicatorsCons||{}).VSS||0)+'</div>'+
+                    '<div class="right" style="margin-top:6px">'+
+                      '<button class="ghost" data-edit="'+p.id+'">Modifica previs.</button>'+
+                      '<button data-cons="'+p.id+'">Consuntivo…</button>'+
+                    '</div>'+
+                  '</div>';
+        if(groups[p.type]) groups[p.type].push(card);
       }
-      document.getElementById('p_list').innerHTML = html || '<div class="muted">Nessun BP</div>';
+      var order=['settimanale','mensile','trimestrale','semestrale','annuale'];
+      var labels={settimanale:'Settimanali',mensile:'Mensili',trimestrale:'Trimestrali',semestrale:'Semestrali',annuale:'Annuali'};
+      var sections='';
+      for(var j=0;j<order.length;j++){
+        var t=order[j];
+        var cards=groups[t].join('');
+        if(cards){
+          sections += '<details><summary>'+labels[t]+'</summary><div class="row">'+cards+'</div></details>';
+        }
+      }
+      document.getElementById('p_list').innerHTML = sections || '<div class="muted">Nessun BP</div>';
 
       document.querySelectorAll('[data-edit]').forEach(function(el){
         el.addEventListener('click', function(){
