@@ -226,6 +226,7 @@ async function ensureFiles(){
     return computeEndLocal(base, a.type, a.durationMinutes);
   }
   function mapLegacyAppointment(a){
+    const nowIso = new Date().toISOString();
     return {
       id: a.id || genId(),
       userId: a.userId,
@@ -238,7 +239,9 @@ async function ensureFiles(){
       vss: Number(a.vss||0),
       vsdPersonal: Number(a.vsdPersonal||0),
       nncf: !!a.nncf,
-      notes: a.notes || ""
+      notes: a.notes || "",
+      createdAt: a.createdAt || nowIso,
+      updatedAt: a.updatedAt || nowIso
     };
   }
 

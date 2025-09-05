@@ -125,6 +125,8 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
 
     const c = await findOrCreateClientByName(it.client, it.nncf, { id:req.user.id, name:(req.user.name||'') });
     it.clientId = c.id;
+    if(!it.createdAt) it.createdAt = new Date().toISOString();
+    it.updatedAt = new Date().toISOString();
 
     await writeJSON('appointments.json', db);
     return res.json({ ok:true, id: it.id, clientId: it.clientId });
@@ -158,6 +160,7 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     }
 
     const c = await findOrCreateClientByName(body.client, !!body.nncf, { id:req.user.id, name:(req.user.name||'') });
+    const nowIso = new Date().toISOString();
     const row = {
       id: body.id || genId(),
       userId: req.user.id,
@@ -174,7 +177,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       appFissati: Number(body.appFissati||0),
       nncf: !!body.nncf,
       nncfPromptAnswered: !!body.nncfPromptAnswered,
-      notes: body.notes||''
+      notes: body.notes||'',
+      createdAt: nowIso,
+      updatedAt: nowIso
     };
     db.appointments.push(row);
     await writeJSON('appointments.json', db);

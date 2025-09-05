@@ -702,7 +702,7 @@ function viewHome(){
       '</div>'+
 
       '<div class="card">'+
-        '<b>Ultimi appuntamenti</b>'+
+        '<b>Ultimi appuntamenti inseriti</b>'+
         '<div id="lastApps" class="row" style="margin-top:8px"></div>'+
       '</div>'+
 
@@ -1022,16 +1022,16 @@ function refreshLists(){
   var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
   var typeDash = (typeof effectivePeriodType==='function' ? effectivePeriodType(rDash.type||'mensile') : (rDash.type||'mensile'));
 
-  // assicura la card "Prossimi appuntamenti" sopra "Ultimi appuntamenti"
+  // assicura la card "Prossimi appuntamenti" sopra "Ultimi appuntamenti inseriti"
   (function ensureNextAppsCard(){
     var lastAppsBox = document.getElementById('lastApps');
     if(!lastAppsBox) return;
-    var lastCard = lastAppsBox.parentElement; // la card che contiene "Ultimi appuntamenti"
+    var lastCard = lastAppsBox.parentElement; // la card che contiene "Ultimi appuntamenti inseriti"
     if(!document.getElementById('nextApps')){
       var nextCard = document.createElement('div');
       nextCard.className = 'card';
       nextCard.innerHTML =
-        '<b>Prossimi appuntamenti (oggi + domani)</b>'+
+        '<b>Prossimi appuntamenti</b>'+
         '<div id="nextApps" style="margin-top:8px"></div>';
       lastCard.parentElement.insertBefore(nextCard, lastCard); // inserisci sopra
     }
@@ -1103,21 +1103,19 @@ function cardAppt(x){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
 
-    // ===== PROSSIMI APPUNTAMENTI (oggi + domani) =====
+    // ===== PROSSIMI APPUNTAMENTI (prossimi 4) =====
     (function renderNext(){
       var host = document.getElementById('nextApps'); if(!host) return;
       var now = new Date();
-      var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0,0,0,0);
-      var endTomorrow= new Date(now.getFullYear(), now.getMonth(), now.getDate()+2, 0,0,0,0); // esclusivo
       var list = apps.filter(function(a){
         var st = new Date(a.start).getTime();
-        var ok = (st >= startToday.getTime() && st < endTomorrow.getTime());
+        var ok = st >= now.getTime();
         var okUser = cons ? (String(a.userId||a.uid||'')===String(cons)) : true;
         return ok && okUser;
-      }).sort(function(a,b){ return new Date(a.start)-new Date(b.start); });
+      }).sort(function(a,b){ return new Date(a.start)-new Date(b.start); }).slice(0,4);
 
       host.innerHTML = list.length ? grid3(list.map(cardAppt).join(''))
-                                   : '<div class="muted">Nessun appuntamento tra oggi e domani</div>';
+                                   : '<div class="muted">Nessun prossimo appuntamento</div>';
 
       // click → apri in modifica
       host.querySelectorAll('.lastApp[data-aid]').forEach(function(card){
@@ -1149,12 +1147,14 @@ function cardAppt(x){
       });
     })();
 
-    // ===== ULTIMI APPUNTAMENTI (ultimi 6, 2 righe × 3) =====
+    // ===== ULTIMI APPUNTAMENTI INSERITI (ultimi 4) =====
     (function renderLast(){
       var host = document.getElementById('lastApps'); if(!host) return;
       var list = apps.filter(function(a){
         return cons ? (String(a.userId||a.uid||'')===String(cons)) : true;
-      }).sort(function(a,b){ return new Date(b.start)-new Date(a.start); }).slice(0,6);
+      }).sort(function(a,b){
+        return new Date(b.updatedAt || b.createdAt || b.start) - new Date(a.updatedAt || a.createdAt || a.start);
+      }).slice(0,4);
 
       host.innerHTML = list.length ? grid3(list.map(cardAppt).join(''))
                                    : '<div class="muted">Nessun appuntamento</div>';
