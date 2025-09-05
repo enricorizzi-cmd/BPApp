@@ -3113,38 +3113,40 @@ function viewTeam(){
             '</div>'+
             '<div id="t_unified_wrap">'+ unifiedFiltersHTML("t") + '</div>'+
           '</div>'+
-        '</div>'+
+        '</div>'
+      ) : '')+
 
-        '<div class="card">'+
-          '<b>Grafico</b>'+
-          '<div class="row" style="margin-top:8px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
-            '<div>'+
-              '<label>Indicatore grafico</label>'+
-              '<select id="t_ind">'+
-                '<option value="VSS">VSS</option>'+
-                '<option value="VSDPersonale">VSD Personale</option>'+
-                '<option value="VSDIndiretto">VSD Indiretto</option>'+
-                '<option value="VSDTotale">VSD Totale</option>'+
-                '<option value="GI">GI</option>'+
-                '<option value="NNCF">NNCF</option>'+
-                '<option value="provv_gi">Provv GI</option>'+
-                '<option value="provv_vsd">Provv VSD</option>'+
-                '<option value="tot_provv" selected>Tot Provvigioni</option>'+
-              '</select>'+
-            '</div>'+
-            '<div>'+
-              '<label>Consulente</label>'+
-              '<select id="t_cons"><option value="">Tutti</option></select>'+
-            '</div>'+
+      '<div class="card">'+
+        '<b>Grafico</b>'+
+        '<div class="row" style="margin-top:8px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
+          '<div>'+
+            '<label>Indicatore grafico</label>'+
+            '<select id="t_ind">'+
+              '<option value="VSS">VSS</option>'+
+              '<option value="VSDPersonale">VSD Personale</option>'+
+              '<option value="VSDIndiretto">VSD Indiretto</option>'+
+              '<option value="VSDTotale">VSD Totale</option>'+
+              '<option value="GI">GI</option>'+
+              '<option value="NNCF">NNCF</option>'+
+              '<option value="provv_gi">Provv GI</option>'+
+              '<option value="provv_vsd">Provv VSD</option>'+
+              '<option value="tot_provv" selected>Tot Provvigioni</option>'+
+            '</select>'+
           '</div>'+
-          '<div style="margin-top:8px"><canvas id="t_chart" height="160" style="width:100%"></canvas></div>'+
+          '<div>'+
+            '<label>Consulente</label>'+
+            '<select id="t_cons"><option value="">Tutti</option></select>'+
+          '</div>'+
         '</div>'+
+        '<div style="margin-top:8px"><canvas id="t_chart" height="160" style="width:100%"></canvas></div>'+
+      '</div>'+
 
-        '<div class="card">'+
-          '<b>Aggregato Squadra</b>'+
-          '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
-        '</div>'+
+      '<div class="card">'+
+        '<b>Aggregato Squadra</b>'+
+        '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
+      '</div>'+
 
+      (isAdmin ? (
         '<div class="card">'+
           '<b>Riepilogo per utente</b>'+
           '<div id="t_users" class="row" style="margin-top:8px"></div>'+
@@ -3513,7 +3515,7 @@ function viewTeam(){
   }
 
   // wiring
-  bindUnifiedFilters('t', function(){
+  if(isAdmin) bindUnifiedFilters('t', function(){
     if (typeof haptic==='function') haptic('light');
     loadTeam();
   });
