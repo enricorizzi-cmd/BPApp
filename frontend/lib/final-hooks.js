@@ -1587,9 +1587,24 @@ window.wireICSInsideDayBox = window.wireICSInsideDayBox || wireICSInsideDayBox;
   };
 })();
 
-// Mostra tutti gli appuntamenti per un cliente in una modale
+// Mostra/chiude gli appuntamenti per un cliente direttamente nella card
 function showClientAppointments(card){
   if(!card) return;
+  let box = card.querySelector('.bp-appts');
+  // Se già visibile, chiudi
+  if(box && box.style.display !== 'none'){
+    box.remove();
+    return;
+  }
+  if(!box){
+    box = document.createElement('div');
+    box.className = 'bp-appts';
+    box.style.marginTop = '8px';
+    card.appendChild(box);
+  }
+  box.innerHTML = '<div class="muted">Caricamento…</div>';
+  box.style.display = 'block';
+
   const id   = card.getAttribute('data-clid') || '';
   const name = (card.querySelector('b')?.textContent || '').trim();
   GET('/api/appointments?global=1').then(j=>{
@@ -1608,12 +1623,11 @@ function showClientAppointments(card){
       if(Number(a.appFissati)>0) ind.push('AppFiss '+Number(a.appFissati));
       return `<div class="small">${htmlEscape(a.type||'')} – ${dd}${ind.length?' – '+ind.join(' · '):''}</div>`;
     }).join('') || '<div class="muted">Nessun appuntamento</div>';
-    const dlg=document.createElement('div'); dlg.className='modal';
-    dlg.innerHTML=`<div class="card"><h3>Appuntamenti per ${htmlEscape(name)}</h3><div style="margin-top:8px">${rows}</div><div class="row right"><button class="ghost" data-x>Chiudi</button></div></div>`;
-    document.body.appendChild(dlg);
-    const close=dlg.querySelector('[data-x]'); if(close) close.onclick=()=>dlg.remove();
-    dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.remove(); });
-  }).catch(err=>{ logger.error(err); toast('Errore caricamento appuntamenti'); });
+    box.innerHTML = rows;
+  }).catch(err=>{
+    logger.error(err);
+    box.innerHTML = '<div class="muted">Errore caricamento appuntamenti</div>';
+  });
 }
 BPFinal.showClientAppointments = showClientAppointments;
 
