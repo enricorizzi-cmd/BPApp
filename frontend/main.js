@@ -10,6 +10,7 @@
    Compatibilità: conserva namespace, funzioni e v=13. 
 */
 /* global logger */
+import Chart from 'chart.js/auto';
 import "./lib/globals-polyfills.js";
 import "./lib/auth-fetch-shim.js";
 import "./lib/bp-hooks-core.js";
@@ -36,6 +37,7 @@ import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
 import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
 import { $1, $all, getQuery } from "./src/query.js";
 import "./lib/ics-single.js";
+window.Chart = Chart;
 ;(function () {
   'use strict';
 
@@ -150,7 +152,7 @@ if (typeof window.haptic !== 'function'){
     // dimensionamento esplicito per evitare reflow da resize responsivi
     el.width  = el.clientWidth  || el.width  || 320;
     el.height = el.clientHeight || el.height || 80;
-    if (typeof Chart === 'undefined'){
+    if (!Chart){
       drawFallback(el, labels, data);
       registry[String(canvasId)] = { canvas: el, labels, data, fallback: true };
       return;
@@ -3152,7 +3154,7 @@ function viewTeam(){
       : points.map(function(p){ return labelFor(p.x, type); });
     var data   = points.map(function(p){ return p.y; });
 
-    if (typeof Chart === 'undefined'){
+    if (!Chart){
       // fallback a linea semplice
       var ctx = canvas.getContext('2d');
       canvas.width = canvas.clientWidth || 600;
