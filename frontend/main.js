@@ -2348,7 +2348,7 @@ function viewAppointments(){
     nncfBtn.setAttribute('data-active', on?'1':'0');
     nncfBtn.setAttribute('aria-pressed', on?'true':'false');
     nncfBtn.classList.toggle('active', on);
-    if(on) selectSeg(document.getElementById('t_vendita'));
+    if(on) selectSeg(document.getElementById('t_vendita'), true);
   });
 
   // --------- segment buttons ----------
@@ -2359,7 +2359,7 @@ function viewAppointments(){
   const segMbs  = document.getElementById('t_mbs');
   const segSotto= document.getElementById('t_sotto');
   const allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto];
-  function selectSeg(btn){
+  function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
     const clientInput = document.getElementById('a_client');
@@ -2381,7 +2381,11 @@ function viewAppointments(){
     rowApp.style.display='none';
     clientInput.disabled=false;
     nncfBtn.style.display='';
-    nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false'); nncfBtn.classList.remove('active');
+    if(!keepNncf){
+      nncfBtn.setAttribute('data-active','0');
+      nncfBtn.setAttribute('aria-pressed','false');
+      nncfBtn.classList.remove('active');
+    }
     if(clientInput.value==='Formazione' || clientInput.value==='MBS' || clientInput.value==='Sottoprodotti') clientInput.value='';
 
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
