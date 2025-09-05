@@ -240,6 +240,42 @@
     @media (min-width: 981px){
       .uf .row, .uf-row{ grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     }
+
+    /* Calendar controls layout */
+    #cal_controls{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    #cal_controls .cal-row{
+      display:flex;
+      gap:10px;
+      align-items:end;
+    }
+    #cal_controls .cal-row > *{ flex:1 1 0; }
+    #cal_controls button{ flex:0 0 auto; }
+    @media (max-width:600px){
+      #cal_controls{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        grid-template-areas:
+          "consult consult"
+          "prev month next"
+          "add add"
+          "free free"
+          "fourh refresh";
+        align-items:end;
+      }
+      #cal_controls .cal-row{ display:contents; }
+      #cal_consultant_wrap{ grid-area:consult; }
+      #cal_prev{ grid-area:prev; justify-self:start; }
+      #cal_month_wrap{ grid-area:month; }
+      #cal_next{ grid-area:next; }
+      #cal_add{ grid-area:add; justify-self:start; }
+      #only_free{ grid-area:free; }
+      #only_4h{ grid-area:fourh; }
+      #cal_refresh{ grid-area:refresh; justify-self:end; }
+    }
   </style>
 </head>
 <body>

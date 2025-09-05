@@ -1342,19 +1342,19 @@ function viewCalendar(){
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
       '<div class="card">'+
-        '<div class="uf-row">'+
-        '<div><label>Consulente</label><select id="cal_consultant"></select></div>'+
-        '<div class="row" style="align-items:flex-end;gap:8px">'+
-          '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
-          '<div><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
-          '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
-        '</div>'+
-        '<div class="cal-filters">'+
-          '<label class="chip small"><input type="checkbox" id="only_free"> Solo giorni liberi</label> '+
-          '<label class="chip small"><input type="checkbox" id="only_4h"> Solo slot ≥ 4h</label>'+
-        '</div>'+
-          '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
-          '<div class="right" style="margin-left:auto"><button id="cal_refresh" class="ghost">Aggiorna</button></div>'+
+        '<div id="cal_controls">'+
+          '<div class="cal-row">'+
+            '<div id="cal_consultant_wrap"><label>Consulente</label><select id="cal_consultant"></select></div>'+
+            '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
+            '<div id="cal_month_wrap"><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
+            '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
+          '</div>'+
+          '<div class="cal-row">'+
+            '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
+            '<label id="only_free" class="chip small"><input type="checkbox" id="only_free_cb"> Solo giorni liberi</label> '+
+            '<label id="only_4h" class="chip small"><input type="checkbox" id="only_4h_cb"> Solo slot ≥ 4h</label>'+
+            '<button id="cal_refresh" class="ghost">Aggiorna</button>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div id="cal_container"></div>'+
@@ -1667,7 +1667,7 @@ function viewCalendar(){
     var mval = document.getElementById('cal_month').value;
     var y = parseInt(mval.split('-')[0],10);
     var m = parseInt(mval.split('-')[1],10);
-    var filters = { only_free: document.getElementById('only_free').checked, only_4h: document.getElementById('only_4h').checked };
+    var filters = { only_free: document.getElementById('only_free_cb').checked, only_4h: document.getElementById('only_4h_cb').checked };
     var consultant = document.getElementById('cal_consultant').value;
     renderMonth(y, m, filters, consultant);
   }
@@ -1690,8 +1690,8 @@ function viewCalendar(){
   if(btnPrev) btnPrev.onclick = function(){ shiftMonth(-1); };
   if(btnNext) btnNext.onclick = function(){ shiftMonth(+1); };
 
-  document.getElementById('only_free').onchange = doRender;
-  document.getElementById('only_4h').onchange = doRender;
+  document.getElementById('only_free_cb').onchange = doRender;
+  document.getElementById('only_4h_cb').onchange = doRender;
   consSel.onchange = doRender;
 
   doRender();
