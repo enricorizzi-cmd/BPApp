@@ -3888,6 +3888,36 @@ appEl.innerHTML = topbarHTML() + `
       </div>
     </div>
 
+    <div class="card">
+      <b>Forecast incassi</b>
+      <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
+        <div><label>Granularità</label><select id="gi-forecast-granularity">
+          <option value="settimanale">settimanale</option>
+          <option value="mensile" selected>mensile</option>
+          <option value="trimestrale">trimestrale</option>
+          <option value="semestrale">semestrale</option>
+          <option value="annuale">annuale</option>
+        </select></div>
+        ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
+      </div>
+      <div class="table" style="overflow:auto">
+        <table class="simple" style="min-width:580px">
+          <thead>
+            <tr><th>Periodo</th><th>Totale</th><th>Dettaglio</th></tr>
+          </thead>
+          <tbody id="gi-forecast-future"></tbody>
+        </table>
+      </div>
+      <details id="gi-forecast-past" style="margin-top:8px">
+        <summary>Incassi passati</summary>
+        <div class="table" style="overflow:auto">
+          <table class="simple" style="min-width:580px">
+            <tbody id="gi-forecast-past-body"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
   </div>`;
 
   renderTopbar();
@@ -3909,6 +3939,7 @@ appEl.innerHTML = topbarHTML() + `
 
   // cache clienti + consulenti
   let _clients = [];
+  let salesData = [];
   function loadClients(){
     return GET('/api/clients').then(j=>{
       _clients = (j&&j.clients)||[];
@@ -3946,6 +3977,75 @@ appEl.innerHTML = topbarHTML() + `
     '</tr>';
   }
 
+  function populateForecastConsultants(rows){
+    if(!isAdmin) return;
+    const sel = $('gi-forecast-consultant');
+    if(!sel) return;
+    const map = new Map();
+    rows.forEach(r=>{
+      const id = String(r.consultantId||'');
+      if(!id) return;
+      if(!map.has(id)) map.set(id, r.consultantName||('User '+id));
+    });
+    sel.innerHTML = '<option value="">Tutti</option>' + Array.from(map.entries()).map(([id,name])=>
+      '<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
+  }
+
+  function periodInfo(d, g){
+    const year = d.getFullYear();
+    if(g==='settimanale'){
+      const w = isoWeekNum(d);
+      return { key: year*100+w, label: formatPeriodLabel('settimanale', startOfWeek(d)) };
+    }
+    if(g==='mensile'){
+      const m = d.getMonth()+1;
+      return { key: year*100+m, label: formatPeriodLabel('mensile', startOfMonth(d)) };
+    }
+    if(g==='trimestrale'){
+      const q = Math.floor(d.getMonth()/3)+1;
+      return { key: year*10+q, label: formatPeriodLabel('trimestrale', startOfQuarter(d)) };
+    }
+    if(g==='semestrale'){
+      const s = d.getMonth()<6?1:2;
+      return { key: year*10+s, label: formatPeriodLabel('semestrale', startOfSemester(d)) };
+    }
+    return { key: year, label: formatPeriodLabel('annuale', startOfYear(d)) };
+  }
+
+  function renderForecast(){
+    const granSel = $('gi-forecast-granularity');
+    const consSel = $('gi-forecast-consultant');
+    const gran = granSel ? granSel.value : 'mensile';
+    const consId = consSel ? consSel.value : '';
+    const filtered = salesData.filter(s => !consId || String(s.consultantId||'')===String(consId));
+    const agg = {};
+    filtered.forEach(sale => {
+      const client = sale.clientName || '';
+      (Array.isArray(sale.schedule)?sale.schedule:[]).forEach(sc => {
+        const due = sc && sc.dueDate ? new Date(sc.dueDate) : null;
+        if(!due || isNaN(due)) return;
+        const { key, label } = periodInfo(due, gran);
+        const amt = Number(sc.amount||0);
+        if(!agg[key]) agg[key] = { label, total:0, details:[] };
+        agg[key].total += amt;
+        agg[key].details.push({ cliente: client, amount: amt });
+      });
+    });
+    const nowKey = periodInfo(new Date(), gran).key;
+    const pastRows = [];
+    const futureRows = [];
+    Object.keys(agg).sort((a,b)=>a-b).forEach(k => {
+      const o = agg[k];
+      const det = o.details.map(d=> esc(d.cliente)+' – '+fmtEuro(d.amount)).join('<br>');
+      const row = '<tr><td>'+esc(o.label)+'</td><td style="text-align:right"><b>'+fmtEuro(o.total)+'</b></td><td>'+det+'</td></tr>';
+      if(Number(k) < nowKey) pastRows.push(row); else futureRows.push(row);
+    });
+    const futEl = $('gi-forecast-future');
+    const pastEl = $('gi-forecast-past-body');
+    if(futEl) futEl.innerHTML = futureRows.join('') || '<tr><td colspan="3" class="muted">Nessun dato</td></tr>';
+    if(pastEl) pastEl.innerHTML = pastRows.join('') || '<tr><td colspan="3" class="muted">Nessun dato</td></tr>';
+  }
+
   function load(){
     const r = readRange();
     const el = $('gi_cons');
@@ -3954,9 +4054,12 @@ appEl.innerHTML = topbarHTML() + `
     GET('/api/gi'+qs).then(j=>{
       let rows=(j&&j.sales)||[];
       rows.sort((a,b)=> (+new Date(b.date||b.createdAt||0))-(+new Date(a.date||a.createdAt||0))); // più recenti in alto
+      salesData = rows;
       $('gi_rows').innerHTML = rows.length ? rows.map(rowHTML).join('') :
         '<tr><td colspan="7" class="muted">Nessuna vendita</td></tr>';
       bindRowActions();
+      populateForecastConsultants(rows);
+      renderForecast();
     }).catch(e=>{ logger.error(e); toast('Errore caricamento GI'); });
   }
 
@@ -4304,6 +4407,11 @@ appEl.innerHTML = topbarHTML() + `
   bindUnifiedFilters('gi', ()=>{ haptic('light'); load(); });
   var selGi = $('gi_cons');
   if(selGi) selGi.onchange = ()=>{ haptic('light'); load(); };
+
+  const gSel = $('gi-forecast-granularity');
+  if(gSel) gSel.onchange = ()=>{ haptic('light'); renderForecast(); };
+  const cSel = $('gi-forecast-consultant');
+  if(cSel) cSel.onchange = ()=>{ haptic('light'); renderForecast(); };
 
   loadClients().then(load);
 }
