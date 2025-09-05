@@ -2691,8 +2691,8 @@ function deleteA(){
 
       const pid='past_'+Math.random().toString(36).slice(2,8);
       html += '<div id="'+pid+'_head" style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-                '<b>Passati</b><span class="chev">▸</span></div>'+
-              '<div id="'+pid+'_box" style="display:none;margin-top:8px">'+
+                '<b>Passati</b><span class="chev">▾</span></div>'+
+              '<div id="'+pid+'_box" style="margin-top:8px">'+
                 (past.length ? '<div class="grid3">'+past.map(cardHTML).join('')+'</div>' :
                                '<div class="muted">Nessun appuntamento passato</div>')+
               '</div>';
