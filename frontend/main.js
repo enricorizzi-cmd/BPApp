@@ -1322,6 +1322,18 @@ function viewCalendar(){
       }
 
       /* Header filters alignment (desktop + mobile) */
+      #cal_controls{
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      #cal_controls .cal-row{
+        display:flex;
+        gap:10px;
+        align-items:end;
+      }
+      #cal_controls .cal-row > *{ flex:1 1 0; }
+      #cal_controls button{ flex:0 0 auto; }
       .cal-filters{ display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; }
       .cal-filters .chip{
         display:inline-flex; align-items:center; gap:6px;
@@ -1329,6 +1341,26 @@ function viewCalendar(){
       }
       .cal-filters .chip input[type=checkbox]{ width:16px; height:16px; }
       @media (max-width: 600px){
+        #cal_controls{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          grid-template-areas:
+            "consult consult"
+            "prev month next"
+            "add add"
+            "free free"
+            "fourh refresh";
+          align-items:end;
+        }
+        #cal_controls .cal-row{ display:contents; }
+        #cal_consultant_wrap{ grid-area:consult; }
+        #cal_prev{ grid-area:prev; justify-self:start; }
+        #cal_month_wrap{ grid-area:month; }
+        #cal_next{ grid-area:next; }
+        #cal_add{ grid-area:add; justify-self:start; }
+        #only_free{ grid-area:free; }
+        #only_4h{ grid-area:fourh; }
+        #cal_refresh{ grid-area:refresh; justify-self:end; }
         .cal-filters{ align-items:center; }
       }
     `;
