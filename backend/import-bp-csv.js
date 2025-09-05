@@ -25,47 +25,65 @@ function monthToDates(period){
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+function resolveUserId(row){
+  return row.consultantId || row.userId || row.consultant || row.userid;
+}
+
+function resolvePeriod(row){
+  if (row.period) return row.period;
+  if (row.anno && row.mese) return `${row.anno}-${String(row.mese).padStart(2, '0')}`;
+  return null;
+}
+
+function upsertEntry(map, userId, period){
+  const key = `${userId}|${period}`;
+  let entry = map.get(key);
+  if (!entry) {
+    const { start, end } = monthToDates(period);
+    entry = { userId, type: 'mensile', startDate: start, endDate: end, indicatorsPrev: {}, indicatorsCons: {} };
+    map.set(key, entry);
+  }
+  return entry;
+}
+
+function addToBag(bag, key, amount){
+  if (!amount) return;
+  bag[key] = (bag[key] || 0) + amount;
+}
+
+function applyRowToEntry(entry, r){
+  const kpi = r.kpi;
+  const kindVal = Number(r.value ?? r.val ?? 0);
+  const kind = String(r.kind || '').toLowerCase();
+  const prev = Number(r.indicatorsprev ?? r.indicatorsPrev ?? 0);
+  const cons = Number(r.indicatorscons ?? r.indicatorsCons ?? 0);
+  const isCons = kind === 'cons';
+  const prevAdd = (isCons ? 0 : kindVal) + prev;
+  const consAdd = (isCons ? kindVal : 0) + cons;
+  addToBag(entry.indicatorsPrev, kpi, prevAdd);
+  addToBag(entry.indicatorsCons, kpi, consAdd);
+}
+
+function finalizeRequests(map){
+  const out = [];
+  for (const entry of map.values()) {
+    if (!Object.keys(entry.indicatorsPrev).length) delete entry.indicatorsPrev;
+    if (!Object.keys(entry.indicatorsCons).length) delete entry.indicatorsCons;
+    out.push(entry);
+  }
+  return out;
+}
+
 function buildRequests(rows){
   const map = new Map();
-  for(const r of rows){
-    const userId = r.consultantId || r.userId || r.consultant || r.userid;
-    let period = r.period;
-    if(!period && r.anno && r.mese){
-      const m = String(r.mese).padStart(2, '0');
-      period = `${r.anno}-${m}`;
-    }
-    if(!userId || !period) continue;
-    const key = `${userId}|${period}`;
-    let entry = map.get(key);
-    if(!entry){
-      const { start, end } = monthToDates(period);
-      entry = { userId, type: 'mensile', startDate: start, endDate: end, indicatorsPrev: {}, indicatorsCons: {} };
-      map.set(key, entry);
-    }
-    const kpi = r.kpi;
-    const val = Number(r.value || r.val || 0);
-    const kind = String(r.kind || '').toLowerCase();
-    if(kind === 'cons'){
-      entry.indicatorsCons[kpi] = (entry.indicatorsCons[kpi] || 0) + val;
-    } else if(kind){
-      entry.indicatorsPrev[kpi] = (entry.indicatorsPrev[kpi] || 0) + val;
-    }
-    const prev = Number(r.indicatorsprev || r.indicatorsPrev || 0);
-    const cons = Number(r.indicatorscons || r.indicatorsCons || 0);
-    if(prev){
-      entry.indicatorsPrev[kpi] = (entry.indicatorsPrev[kpi] || 0) + prev;
-    }
-    if(cons){
-      entry.indicatorsCons[kpi] = (entry.indicatorsCons[kpi] || 0) + cons;
-    }
+  for (const r of rows) {
+    const userId = resolveUserId(r);
+    const period = resolvePeriod(r);
+    if (!userId || !period) continue;
+    const entry = upsertEntry(map, userId, period);
+    applyRowToEntry(entry, r);
   }
-  const requests = [];
-  for(const entry of map.values()){
-    if(!Object.keys(entry.indicatorsPrev).length) delete entry.indicatorsPrev;
-    if(!Object.keys(entry.indicatorsCons).length) delete entry.indicatorsCons;
-    requests.push(entry);
-  }
-  return requests;
+  return finalizeRequests(map);
 }
 
 async function run({ csvPath, dryRun }){

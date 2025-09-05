@@ -4,16 +4,30 @@ const fs = require("fs");
 const path = require("path");
 
 const DEFAULT_INDICATORS = [
-  'VSS','VSDPersonale','VSDIndiretto','GI','Telefonate','AppFissati','AppFatti','CorsiLeadership','iProfile','MBS','NNCF'
+  "VSS",
+  "VSDPersonale",
+  "VSDIndiretto",
+  "GI",
+  "Telefonate",
+  "AppFissati",
+  "AppFatti",
+  "CorsiLeadership",
+  "iProfile",
+  "MBS",
+  "NNCF",
 ];
 
-function normalizeBag(bag, baseIndicators){
-  const out = { ...(bag||{}) };
-  const list = Array.isArray(baseIndicators)&&baseIndicators.length ? baseIndicators : DEFAULT_INDICATORS;
-  for(const k of list){ if(out[k]==null) out[k]=0; else out[k]=Number(out[k]||0); }
-  if(out.ProvvGI==null) out.ProvvGI = 0;
-  if(out.ProvvVSD==null) out.ProvvVSD = 0;
-  if(out.TotProvvigioni==null) out.TotProvvigioni = (Number(out.ProvvGI||0) + Number(out.ProvvVSD||0));
+function normalizeBag(bag, baseIndicators) {
+  const out = { ...(bag || {}) };
+  const list = Array.isArray(baseIndicators) && baseIndicators.length ? baseIndicators : DEFAULT_INDICATORS;
+  // Ensure numeric values for all indicators without branching
+  list.forEach((k) => {
+    out[k] = Number(out[k] ?? 0);
+  });
+  // Coerce provision fields and derive total when missing
+  out.ProvvGI = Number(out.ProvvGI ?? 0);
+  out.ProvvVSD = Number(out.ProvvVSD ?? 0);
+  out.TotProvvigioni = Number(out.TotProvvigioni ?? out.ProvvGI + out.ProvvVSD);
   return out;
 }
 
@@ -31,34 +45,35 @@ function normalizeDateToMidnightUTC(dateStr){
   }catch(_){ return dateStr; }
 }
 
-function main(){
+function readBaseIndicators(settingsPath) {
+  try {
+    const s = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+    if (s && Array.isArray(s.indicators) && s.indicators.length) return s.indicators;
+  } catch (_) {}
+  return DEFAULT_INDICATORS;
+}
+
+function normalizePeriod(p, baseIndicators) {
+  if (p.type && typeof p.type === "string") p.type = p.type.toLowerCase();
+  if (p.startDate) p.startDate = normalizeDateToMidnightUTC(p.startDate);
+  if (p.endDate) p.endDate = normalizeDateToMidnightUTC(p.endDate);
+  p.indicatorsPrev = normalizeBag(p.indicatorsPrev, baseIndicators);
+  p.indicatorsCons = normalizeBag(p.indicatorsCons, baseIndicators);
+}
+
+function main() {
   const file = path.join(__dirname, "..", "data", "periods.json");
   const settingsPath = path.join(__dirname, "..", "data", "settings.json");
-  let baseIndicators = DEFAULT_INDICATORS;
-  try {
-    const s = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    if(s && Array.isArray(s.indicators) && s.indicators.length) baseIndicators = s.indicators;
-  }catch(_){ }
+  const baseIndicators = readBaseIndicators(settingsPath);
 
-  const db = JSON.parse(fs.readFileSync(file, 'utf8'));
-  if(!db || !Array.isArray(db.periods)){
-    console.error('Invalid periods.json structure');
+  const db = JSON.parse(fs.readFileSync(file, "utf8"));
+  if (!db || !Array.isArray(db.periods)) {
+    console.error("Invalid periods.json structure");
     process.exit(1);
   }
-  for(const p of db.periods){
-    // normalizza tipo
-    if (p.type && typeof p.type === 'string') p.type = p.type.toLowerCase();
-
-    // normalizza date di inizio/fine a mezzanotte UTC coerente
-    if (p.startDate) p.startDate = normalizeDateToMidnightUTC(p.startDate);
-    if (p.endDate)   p.endDate   = normalizeDateToMidnightUTC(p.endDate);
-
-    // normalizza indicatori
-    p.indicatorsPrev = normalizeBag(p.indicatorsPrev, baseIndicators);
-    p.indicatorsCons = normalizeBag(p.indicatorsCons, baseIndicators);
-  }
+  db.periods.forEach((p) => normalizePeriod(p, baseIndicators));
   fs.writeFileSync(file, JSON.stringify(db, null, 2));
-  console.log('Normalized', db.periods.length, 'periods (dates + indicators)');
+  console.log("Normalized", db.periods.length, "periods (dates + indicators)");
 }
 
 main();

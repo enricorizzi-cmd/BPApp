@@ -71,29 +71,76 @@ function computeProvvigioni(bag, grade){
   bag.TotProvvigioni = bag.ProvvGI + bag.ProvvVSD;
 }
 
+function pickUserId(usersDb, providedUserId) {
+  if (providedUserId) return providedUserId;
+  const firstAdmin = (usersDb.users || []).find((x) => x.role === 'admin');
+  const firstAny = (usersDb.users || [])[0];
+  if (!firstAdmin && !firstAny) throw new Error('No users found. Provide --user-id=...');
+  return (firstAdmin || firstAny).id;
+}
+
+function loadUsersDb(usersPath) {
+  try { return JSON.parse(fs.readFileSync(usersPath, 'utf8')); } catch (_) { return { users: [] }; }
+}
+
+function loadBaseIndicators(settingsPath) {
+  try {
+    const s = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    if (s && Array.isArray(s.indicators) && s.indicators.length) return s.indicators;
+  } catch (_) {}
+  return DEFAULT_INDICATORS;
+}
+
+function makeGranHelpers(year) {
+  const keyFor = {
+    settimanale: (r) => String(r.settimana || ''),
+    mensile: (r) => String(r.mese || ''),
+    trimestrale: (r) => String(r.trimestre || ''),
+    semestrale: (r) => String(r.semestre || ''),
+    annuale: (r) => String(r.anno || year),
+  };
+  const boundsFor = {
+    settimanale: (r) => {
+      const w = Number(r.settimana || 0);
+      if (!w) return null;
+      return weekBounds(Number(year), w);
+    },
+    mensile: (r) => {
+      const m = Number(r.mese || 0);
+      if (!m) return null;
+      return monthBounds(Number(year), m);
+    },
+    trimestrale: (r) => {
+      const q = Number(r.trimestre || 0);
+      if (!q) return null;
+      return quarterBounds(Number(year), q);
+    },
+    semestrale: (r) => {
+      const h = Number(r.semestre || 0);
+      if (!h) return null;
+      return semesterBounds(Number(year), h);
+    },
+    annuale: (r) => {
+      const y = Number(r.anno || year) || Number(year);
+      return yearBounds(y);
+    },
+  };
+  return { keyFor, boundsFor };
+}
+
 function main(){
   const root = process.argv[2] || path.join(process.cwd(), 'tmp_bp_exports');
   const userIdArg = process.argv.find(a => a.startsWith('--user-id='));
   let userId = userIdArg ? userIdArg.split('=')[1] : null;
 
   const usersPath = path.join(__dirname, '..', 'data', 'users.json');
-  let usersDb = { users: [] };
-  try { usersDb = JSON.parse(fs.readFileSync(usersPath, 'utf8')); } catch(_){ }
-  if(!userId){
-    // pick first admin or first user
-    const u = (usersDb.users||[]).find(x => x.role==='admin') || (usersDb.users||[])[0];
-    if(!u){ console.error('No users found. Provide --user-id=...'); process.exit(1); }
-    userId = u.id;
-  }
+  const usersDb = loadUsersDb(usersPath);
+  if(!userId) userId = pickUserId(usersDb, userId);
   const grade = ((usersDb.users||[]).find(u => u.id===userId)||{}).grade || 'junior';
 
   // try to load base indicators from settings.json
   const settingsPath = path.join(__dirname, '..', 'data', 'settings.json');
-  let baseIndicators = DEFAULT_INDICATORS;
-  try {
-    const s = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    if(s && Array.isArray(s.indicators) && s.indicators.length) baseIndicators = s.indicators;
-  } catch(_){ }
+  const baseIndicators = loadBaseIndicators(settingsPath);
 
   const out = { periods: [] };
   const map = new Map(); // key -> obj
@@ -123,47 +170,30 @@ function main(){
     const consFiles = fs.readdirSync(dir).filter(f => f.toLowerCase().includes('_cons.csv'));
     const prev = prevFiles[0] ? parseCsv(path.join(dir, prevFiles[0])) : [];
     const cons = consFiles[0] ? parseCsv(path.join(dir, consFiles[0])) : [];
-    const consMap = new Map();
-    // build key map for cons
-    for(const r of cons){
-      let key;
-      if(gran==='settimanale') key = String(r.settimana||'');
-      else if(gran==='mensile') key = String(r.mese||'');
-      else if(gran==='trimestrale') key = String(r.trimestre||'');
-      else if(gran==='semestrale') key = String(r.semestre||'');
-      else if(gran==='annuale') key = String(r.anno||year);
-      consMap.set(key, r);
-    }
+    const { keyFor, boundsFor } = makeGranHelpers(year);
+    const consMap = new Map(cons.map((r) => [keyFor[gran](r), r]));
 
     for(const r of prev){
-      let s, e, type;
-      if(gran==='settimanale'){
-        const w = Number(r.settimana||0); if(!w) continue; const b = weekBounds(Number(year), w); s=b.start; e=b.end; type='settimanale';
-      } else if(gran==='mensile'){
-        const m = Number(r.mese||0); if(!m) continue; const b = monthBounds(Number(year), m); s=b.start; e=b.end; type='mensile';
-      } else if(gran==='trimestrale'){
-        const q = Number(r.trimestre||0); if(!q) continue; const b = quarterBounds(Number(year), q); s=b.start; e=b.end; type='trimestrale';
-      } else if(gran==='semestrale'){
-        const h = Number(r.semestre||0); if(!h) continue; const b = semesterBounds(Number(year), h); s=b.start; e=b.end; type='semestrale';
-      } else if(gran==='annuale'){
-        const y = Number(r.anno||year)||Number(year); const b = yearBounds(y); s=b.start; e=b.end; type='annuale';
-      } else continue;
-
-      const o = ensure(type, s, e);
+      const b = boundsFor[gran](r);
+      if (!b) continue;
+      const o = ensure(gran, b.start, b.end);
       applyRow(o, 'indicatorsPrev', r);
-      const keyForCons = (gran==='settimanale')? String(r.settimana||'') : (gran==='mensile'? String(r.mese||'') : (gran==='trimestrale'? String(r.trimestre||'') : (gran==='semestrale'? String(r.semestre||'') : String(r.anno||year))));
-      const rc = consMap.get(keyForCons) || r; // fallback: same as prev
+      const rc = consMap.get(keyFor[gran](r)) || r; // fallback: same as prev
       applyRow(o, 'indicatorsCons', rc);
     }
   }
 
-  const grans = ['settimanale','mensile','trimestrale','semestrale','annuale'];
-  for(const g of grans){
-    const gdir = path.join(root, g);
-    if(!fs.existsSync(gdir)) continue;
-    const years = fs.readdirSync(gdir).filter(x => /^\d{4}$/.test(x));
-    for(const y of years) processYearDir(g, y);
+  function processAllGranularities() {
+    const grans = ['settimanale','mensile','trimestrale','semestrale','annuale'];
+    for (const g of grans) {
+      const gdir = path.join(root, g);
+      if (!fs.existsSync(gdir)) continue;
+      const years = fs.readdirSync(gdir).filter((x) => /^\d{4}$/.test(x));
+      for (const y of years) processYearDir(g, y);
+    }
   }
+
+  processAllGranularities();
 
   // finalize: normalize + compute provvigioni + collect
   for(const p of map.values()){
@@ -180,4 +210,3 @@ function main(){
 }
 
 main();
-

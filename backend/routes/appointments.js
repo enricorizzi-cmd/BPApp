@@ -13,6 +13,45 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     return new Date(NaN);
   }
   function minutesBetween(a,b){ return Math.max(1, Math.round((b - a)/60000)); }
+  const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+  const toStr = (v) => String(v);
+  const toType = (v) => String(v || 'manuale');
+  const toNum = (v) => Number(v || 0);
+  const toBool = (v) => !!v;
+  const orEmpty = (v) => v || '';
+
+  function copyIfPresent(target, src, key, transform) {
+    if (has(src, key)) target[key] = transform ? transform(src[key]) : src[key];
+  }
+
+  function deriveOldDuration(it, startOld, endOld) {
+    const raw = Number(it.durationMinutes);
+    if (isFinite(raw) && raw > 0) return raw;
+    if (isNaN(startOld) || isNaN(endOld)) return 90;
+    return minutesBetween(startOld, endOld);
+  }
+
+  function computeNewTiming(body, startOld, durOld) {
+    const startNew = has(body, 'start') ? parseDateSmart(body.start) : startOld;
+    const endProvided = has(body, 'end');
+    const endCandidate = endProvided ? parseDateSmart(body.end) : null;
+    const durProvided = has(body, 'durationMinutes');
+    let minutes = durProvided ? Number(body.durationMinutes) : durOld;
+    if (!isFinite(minutes) || minutes <= 0) minutes = durOld;
+
+    let endNew;
+    if (endProvided && !isNaN(endCandidate)) {
+      endNew = endCandidate;
+      minutes = minutesBetween(startNew, endNew);
+    } else if (durProvided && isFinite(minutes) && minutes > 0) {
+      endNew = new Date(startNew.getTime() + minutes * 60000);
+    } else {
+      // keep same duration relative to new start
+      endNew = new Date(startNew.getTime() + (durOld > 0 ? durOld : 90) * 60000);
+      minutes = minutesBetween(startNew, endNew);
+    }
+    return { startNew, endNew, minutes };
+  }
   function defaultMinutesForType(t){
     const s = String(t||'').toLowerCase();
     if (s.includes('mezza')) return 240;
@@ -63,42 +102,22 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if(req.user.role!=='admin' && it.userId!==req.user.id) return res.status(403).json({ error:'forbidden' });
 
     // Base fields
-    if (Object.prototype.hasOwnProperty.call(body, 'client')) it.client = String(body.client);
-    if (Object.prototype.hasOwnProperty.call(body, 'type'))   it.type   = String(body.type || 'manuale');
-    if (Object.prototype.hasOwnProperty.call(body, 'vss'))    it.vss    = Number(body.vss||0);
-    if (Object.prototype.hasOwnProperty.call(body, 'vsdPersonal')) it.vsdPersonal = Number(body.vsdPersonal||0);
-    if (Object.prototype.hasOwnProperty.call(body, 'vsdIndiretto')) it.vsdIndiretto = Number(body.vsdIndiretto||0);
-    if (Object.prototype.hasOwnProperty.call(body, 'telefonate')) it.telefonate = Number(body.telefonate||0);
-    if (Object.prototype.hasOwnProperty.call(body, 'appFissati')) it.appFissati = Number(body.appFissati||0);
-    if (Object.prototype.hasOwnProperty.call(body, 'nncf'))   it.nncf   = !!body.nncf;
+    copyIfPresent(it, body, 'client', toStr);
+    copyIfPresent(it, body, 'type', toType);
+    copyIfPresent(it, body, 'vss', toNum);
+    copyIfPresent(it, body, 'vsdPersonal', toNum);
+    copyIfPresent(it, body, 'vsdIndiretto', toNum);
+    copyIfPresent(it, body, 'telefonate', toNum);
+    copyIfPresent(it, body, 'appFissati', toNum);
+    copyIfPresent(it, body, 'nncf', toBool);
     // Hidden/persisted flags
-    if (Object.prototype.hasOwnProperty.call(body, 'nncfPromptAnswered')) it.nncfPromptAnswered = !!body.nncfPromptAnswered;
-    if (Object.prototype.hasOwnProperty.call(body, 'notes'))  it.notes  = body.notes || '';
+    copyIfPresent(it, body, 'nncfPromptAnswered', toBool);
+    copyIfPresent(it, body, 'notes', orEmpty);
 
     const startOld = parseDateSmart(it.start);
     const endOld   = parseDateSmart(it.end);
-    const durOld   = isFinite(Number(it.durationMinutes)) && Number(it.durationMinutes)>0
-                      ? Number(it.durationMinutes)
-                      : (isNaN(startOld) || isNaN(endOld) ? 90 : minutesBetween(startOld, endOld));
-
-    const startNew = Object.prototype.hasOwnProperty.call(body,'start') ? parseDateSmart(body.start) : startOld;
-    const endProvided = Object.prototype.hasOwnProperty.call(body,'end');
-    const endCandidate = endProvided ? parseDateSmart(body.end) : null;
-    const durProvided = Object.prototype.hasOwnProperty.call(body,'durationMinutes');
-    let minutes = durProvided ? Number(body.durationMinutes) : durOld;
-    if (!isFinite(minutes) || minutes<=0) minutes = durOld;
-
-    let endNew;
-    if (endProvided && !isNaN(endCandidate)){
-      endNew = endCandidate;
-      minutes = minutesBetween(startNew, endNew);
-    } else if (durProvided && isFinite(minutes) && minutes>0){
-      endNew = new Date(startNew.getTime() + minutes*60000);
-    } else {
-      // keep same duration relative to new start
-      endNew = new Date(startNew.getTime() + (durOld>0?durOld:90)*60000);
-      minutes = minutesBetween(startNew, endNew);
-    }
+    const durOld   = deriveOldDuration(it, startOld, endOld);
+    const { startNew, endNew, minutes } = computeNewTiming(body, startOld, durOld);
 
     it.start = startNew.toISOString();
     it.end   = endNew.toISOString();

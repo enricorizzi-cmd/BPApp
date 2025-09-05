@@ -41,6 +41,12 @@ export default [
   },
   // Reduce noise: tailor complexity thresholds for specific files
   {
+    files: ["test/**/*.js", "**/*.test.js"],
+    rules: {
+      complexity: "off",
+    },
+  },
+  {
     files: ["lib/storage-pg.js"],
     rules: {
       complexity: ["warn", 16],
