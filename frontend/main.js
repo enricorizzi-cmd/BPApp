@@ -643,6 +643,8 @@ function labelsForBuckets(type, buckets){
 function viewHome(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Dashboard';
+  const isAdmin = getUser().role==='admin';
+  var dashConsHTML = isAdmin ? '<div><label>Consulente</label><select id="dash_cons"><option value="">Tutti</option></select></div>' : '';
 
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
@@ -656,10 +658,7 @@ function viewHome(){
               '<option value="previsionale">Previsionale</option>'+
             '</select>'+
           '</div>'+
-          '<div>'+
-            '<label>Consulente</label>'+
-            '<select id="dash_cons"><option value="">Tutti</option></select>'+
-          '</div>'+
+          dashConsHTML+
         '</div>'+
         unifiedFiltersHTML("dash")+
       '</div>'+
@@ -753,16 +752,18 @@ function viewHome(){
   function htmlEscape(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]); }
 
   // ===== Filtro consulenti (identico a Squadra)
-  (function fillConsultants(){
-    GET('/api/usernames').then(function(r){
-      var users=(r&&r.users)||[];
-      var sel=document.getElementById('dash_cons');
-      if(!sel) return;
-      sel.innerHTML = '<option value="">Tutti</option>'+users.map(function(u){
-        return '<option value="'+htmlEscape(String(u.id))+'">'+htmlEscape(u.name||u.email||('User #'+u.id))+'</option>';
-      }).join('');
-    }).catch(function(){});
-  })();
+  if(isAdmin){
+    (function fillConsultants(){
+      GET('/api/usernames').then(function(r){
+        var users=(r&&r.users)||[];
+        var sel=document.getElementById('dash_cons');
+        if(!sel) return;
+        sel.innerHTML = '<option value="">Tutti</option>'+users.map(function(u){
+          return '<option value="'+htmlEscape(String(u.id))+'">'+htmlEscape(u.name||u.email||('User #'+u.id))+'</option>';
+        }).join('');
+      }).catch(function(){});
+    })();
+  }
 
   // ===== label per bucket (come Squadra)
   function labelFor(d, type){
@@ -902,7 +903,8 @@ function recomputeKPI(){
   var f = new Date(r.start).getTime();
   var t = new Date(r.end).getTime();
 
-  var cons = (document.getElementById('dash_cons')||{}).value || '';
+  var el = document.getElementById('dash_cons');
+  var cons = el ? el.value : getUser().id;
 
   // helper robusti
   function asNum(v){ v = Number((v==null?'':v)); return isFinite(v)?v:0; }
@@ -974,7 +976,8 @@ function recomputeKPI(){
   // ===== Serie minichart (identiche a Squadra)
   function recomputeMini(){
     var mode = (document.getElementById('dash_mode')||{}).value || 'consuntivo';
-    var cons = (document.getElementById('dash_cons')||{}).value || '';
+    var el = document.getElementById('dash_cons');
+    var cons = el ? el.value : getUser().id;
     var range= readUnifiedRange('dash');
     var type = String(range.type||'mensile').toLowerCase();
 
@@ -1012,7 +1015,8 @@ function recomputeKPI(){
 // === SOSTITUISCI INTERAMENTE QUESTA FUNZIONE IN viewHome ===
 // === SOSTITUISCI INTERAMENTE QUESTA FUNZIONE IN viewHome ===
 function refreshLists(){
-  var cons = (document.getElementById('dash_cons')||{}).value || '';
+  var el = document.getElementById('dash_cons');
+  var cons = el ? el.value : getUser().id;
 
   // Range e tipo periodo selezionati (usati per query /api/periods)
   var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
@@ -1273,6 +1277,7 @@ function cardAppt(x){
 function viewCalendar(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Calendario';
+  const isAdmin = getUser().role==='admin';
 
   // Orari in locale coerenti con dashboard/appuntamenti
   // Usa il formatter condiviso `timeHM` (gestisce correttamente ISO/UTC → locale)
@@ -1385,12 +1390,14 @@ function viewCalendar(){
   var now = new Date();
   var ymSel = ymd(startOfMonth(now)).slice(0,7);
 
+  var calConsHTML = isAdmin ? '<div id="cal_consultant_wrap"><label>Consulente</label><select id="cal_consultant"></select></div>' : '';
+
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
       '<div class="card">'+
         '<div id="cal_controls">'+
           '<div class="cal-row">'+
-            '<div id="cal_consultant_wrap"><label>Consulente</label><select id="cal_consultant"></select></div>'+
+            calConsHTML+
             '<button id="cal_prev" class="ghost" title="Mese precedente">◀</button>'+
             '<div id="cal_month_wrap"><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
             '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
@@ -1415,6 +1422,7 @@ function viewCalendar(){
 
   var consSel = document.getElementById('cal_consultant');
   function populateConsultants(){
+    if(!consSel) return;
     var me = getUser() || {};
     consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     GET('/api/users').then(function(r){
@@ -1430,7 +1438,7 @@ function viewCalendar(){
       consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     });
   }
-  populateConsultants();
+  if(consSel) populateConsultants();
 
   function renderMonth(y, m, filters, consultant){
     var baseApps = '/api/appointments';
@@ -1714,7 +1722,8 @@ function viewCalendar(){
     var y = parseInt(mval.split('-')[0],10);
     var m = parseInt(mval.split('-')[1],10);
     var filters = { only_free: document.getElementById('only_free_cb').checked, only_4h: document.getElementById('only_4h_cb').checked };
-    var consultant = document.getElementById('cal_consultant').value;
+    var el = document.getElementById('cal_consultant');
+    var consultant = el ? el.value : getUser().id;
     renderMonth(y, m, filters, consultant);
   }
   document.getElementById('cal_refresh').onclick = doRender;
@@ -1738,7 +1747,7 @@ function viewCalendar(){
 
   document.getElementById('only_free_cb').onchange = doRender;
   document.getElementById('only_4h_cb').onchange = doRender;
-  consSel.onchange = doRender;
+  if(consSel) consSel.onchange = doRender;
 
   doRender();
 }
@@ -2926,6 +2935,9 @@ function viewLeaderboard(){
 function viewClients(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Clienti';
+  const isAdmin = getUser().role==='admin';
+  const newConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_new_owner"><option value="">—</option></select></div>' : '';
+  const filterConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_f_cons"><option value="">Tutti</option></select></div>' : '';
 
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
@@ -2940,7 +2952,7 @@ function viewClients(){
               '<option value="attivo">Attivo</option>'+
             '</select>'+
           '</div>'+
-          '<div><label>Consulente</label><select id="cl_new_owner"><option value="">—</option></select></div>'+
+          newConsHTML+
           '<div class="right"><button id="cl_add">Aggiungi</button></div>'+
         '</div>'+
       '</div>'+
@@ -2956,9 +2968,7 @@ function viewClients(){
               '<option value="potenziale">Potenziale</option>'+
             '</select>'+
           '</div>'+
-          '<div><label>Consulente</label>'+
-            '<select id="cl_f_cons"><option value="">Tutti</option></select>'+
-          '</div>'+
+          filterConsHTML+
           '<div><label>Ordina per</label>'+
             '<select id="cl_order">'+
               '<option value="az">Ragione sociale (A→Z)</option>'+
@@ -2985,6 +2995,7 @@ function viewClients(){
     const payload = { name: name };
     if(st) payload.status = st.value;
     if(ow && ow.value) payload.consultantId = ow.value;
+    else if(!isAdmin) payload.consultantId = getUser().id;
 
     POST('/api/clients', payload).then(function(){
       document.getElementById('cl_name').value='';
@@ -2994,6 +3005,7 @@ function viewClients(){
   }
 
   function fillConsultants(){
+    if(!isAdmin) return;
     // popola sia filtro sia creazione
     GET('/api/usernames').then(function(r){
       const users=(r&&r.users)||[];
@@ -3017,7 +3029,8 @@ function viewClients(){
       const clients=(r&&r.clients)||[];
 
       const fState=document.getElementById('cl_f_state').value;
-      const fCons =document.getElementById('cl_f_cons').value;
+      const elCons=document.getElementById('cl_f_cons');
+      const fCons = elCons ? elCons.value : String(getUser().id);
 
       function norm(s){ return String(s||'').trim().toLowerCase(); }
 
@@ -3074,7 +3087,7 @@ function viewClients(){
   document.getElementById('cl_add').onclick    = addClient;
   document.getElementById('cl_f_apply').onclick= listClients;
 
-  fillConsultants();
+  if(isAdmin) fillConsultants();
   listClients();
   if (typeof kickFinal === 'function') kickFinal('clients');
 }
@@ -3083,9 +3096,7 @@ function viewClients(){
 function viewTeam(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Squadra';
-
-  // abilita vista admin per tutti come in v13
-  var isAdmin = true;
+  const isAdmin = getUser().role==='admin';
 
   // markup
   var html = topbarHTML()+
@@ -3447,11 +3458,14 @@ function viewTeam(){
   }
 
   function loadChart(){
-    var ind   = document.getElementById('t_ind').value;
-    var mode  = document.getElementById('t_mode').value || 'consuntivo';
-    var cons  = document.getElementById('t_cons').value || '';
-    var range = readUnifiedRange('t');
-    var type  = range.type;
+    var indEl  = document.getElementById('t_ind');
+    var ind    = indEl ? indEl.value : 'VSS';
+    var modeEl = document.getElementById('t_mode');
+    var mode   = modeEl ? modeEl.value : 'consuntivo';
+    var consEl = document.getElementById('t_cons');
+    var cons   = consEl ? consEl.value : getUser().id;
+    var range  = readUnifiedRange('t');
+    var type   = range.type;
 
     // prova endpoint /api/series se presente (feature flag)
  var HAS_SERIES_API = false; // disabilitato: usa sempre computeSeriesLocally, niente 404 in console
@@ -3503,9 +3517,12 @@ function viewTeam(){
     if (typeof haptic==='function') haptic('light');
     loadTeam();
   });
-  document.getElementById('t_mode').onchange = function(){ if (typeof haptic==='function') haptic('light'); loadTeam(); };
-  document.getElementById('t_ind').onchange  = function(){ if (typeof haptic==='function') haptic('light'); loadChart(); };
-  document.getElementById('t_cons').onchange = function(){ if (typeof haptic==='function') haptic('light'); loadChart(); };
+  var tMode = document.getElementById('t_mode');
+  if(tMode) tMode.onchange = function(){ if (typeof haptic==='function') haptic('light'); loadTeam(); };
+  var tInd  = document.getElementById('t_ind');
+  if(tInd) tInd.onchange  = function(){ if (typeof haptic==='function') haptic('light'); loadChart(); };
+  var tCons = document.getElementById('t_cons');
+  if(tCons) tCons.onchange = function(){ if (typeof haptic==='function') haptic('light'); loadChart(); };
 
   // Run
   loadTeam();
@@ -3775,6 +3792,7 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
 function viewVendite(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Vendite e Riordini';
+  const isAdmin = getUser().role==='admin';
 
   appEl.innerHTML = topbarHTML()+`
     <div class="wrap">
@@ -3782,10 +3800,7 @@ function viewVendite(){
       <div class="card">
         <b>Filtro</b>
         <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
-          <div>
-            <label>Consulente</label>
-            <select id="vr_cons"><option value="">Tutti</option></select>
-          </div>
+          ${isAdmin ? `<div><label>Consulente</label><select id="vr_cons"><option value="">Tutti</option></select></div>` : ''}
         </div>
         ${unifiedFiltersHTML("vr")}
       </div>
@@ -3817,6 +3832,7 @@ function viewVendite(){
 function viewGI(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – GI & Scadenzario';
+  const isAdmin = getUser().role==='admin';
 
 appEl.innerHTML = topbarHTML() + `
   <div class="wrap">
@@ -3824,10 +3840,7 @@ appEl.innerHTML = topbarHTML() + `
     <div class="card">
       <b>Filtro</b>
       <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
-        <div>
-          <label>Consulente</label>
-          <select id="gi_cons"><option value="">Tutti</option></select>
-        </div>
+        ${isAdmin ? `<div><label>Consulente</label><select id="gi_cons"><option value="">Tutti</option></select></div>` : ''}
       </div>
       ${unifiedFiltersHTML("gi")}
     </div>
@@ -3879,12 +3892,13 @@ appEl.innerHTML = topbarHTML() + `
   function loadClients(){
     return GET('/api/clients').then(j=>{
       _clients = (j&&j.clients)||[];
-      return GET('/api/usernames');
-    }).then(r=>{
-      const users=(r&&r.users)||[];
-      const s=$('gi_cons'); if(!s) return;
-      s.innerHTML = '<option value="">Tutti</option>'+users.map(u =>
-        '<option value="'+esc(String(u.id))+'">'+esc(u.name)+'</option>').join('');
+      if(!isAdmin) return;
+      return GET('/api/usernames').then(r=>{
+        const users=(r&&r.users)||[];
+        const s=$('gi_cons'); if(!s) return;
+        s.innerHTML = '<option value="">Tutti</option>'+users.map(u =>
+          '<option value="'+esc(String(u.id))+'">'+esc(u.name)+'</option>').join('');
+      });
     });
   }
 
@@ -3914,7 +3928,8 @@ appEl.innerHTML = topbarHTML() + `
 
   function load(){
     const r = readRange();
-    const uid = ($('gi_cons')||{}).value || '';
+    const el = $('gi_cons');
+    const uid = el ? el.value : String(getUser().id);
     const qs = '?from='+encodeURIComponent(r.from)+'&to='+encodeURIComponent(r.to)+(uid?('&userId='+encodeURIComponent(uid)):'');
     GET('/api/gi'+qs).then(j=>{
       let rows=(j&&j.sales)||[];
@@ -4267,7 +4282,8 @@ appEl.innerHTML = topbarHTML() + `
   }
 
   bindUnifiedFilters('gi', ()=>{ haptic('light'); load(); });
-  ($('gi_cons')||{}).onchange = ()=>{ haptic('light'); load(); };
+  var selGi = $('gi_cons');
+  if(selGi) selGi.onchange = ()=>{ haptic('light'); load(); };
 
   loadClients().then(load);
 }
