@@ -1852,7 +1852,6 @@ function viewPeriods(){
   function setFormMode(cons){
     CONS_MODE=!!cons;
     modeLbl.textContent = CONS_MODE?'Consuntivo':'Previsionale';
-    btnImport.style.display = CONS_MODE?'none':'';
     var rows=document.querySelectorAll('[data-row]');
     rows.forEach(function(r){
       var p=r.querySelector('[data-prev]'), c=r.querySelector('[data-cons]'), bar=r.querySelector('[data-bar]');
@@ -1922,14 +1921,13 @@ function viewPeriods(){
   function fillPrev(vals){ for(var k in vals){ var el=document.getElementById('prev_'+k); if(el) el.value=String(vals[k]||0); } progressBars(); }
   function fillCons(vals){ for(var k in vals){ var el=document.getElementById('cons_'+k); if(el) el.value=String(vals[k]||0); } progressBars(); }
 
-  // === Import da agenda (solo Previsionale)
+  // === Import da agenda ===
   function doImportAgenda(){
-    if(CONS_MODE) return;
     var s=startH.value, e=endH.value; if(!s||!e){toast('Seleziona il periodo');return;}
     GET('/api/appointments').then(function(r){
       var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
-   for(var i=0;i<list.length;i++){ var a=list[i], d=new Date(a.start);
+      for(var i=0;i<list.length;i++){ var a=list[i], d=new Date(a.start);
         if(d>=sD && d<=eD){
           agg.VSS+=Number(a.vss||0);
           agg.VSDPersonale+=Number(a.vsdPersonal||0);
@@ -1939,7 +1937,11 @@ function viewPeriods(){
           if(a.nncf){ agg.AppFatti+=1; agg.NNCF+=1; }
         }
       }
-      fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); window.addXP(10);
+      if(CONS_MODE){
+        fillCons(agg); toast('Consuntivo compilato dalla tua agenda');
+      }else{
+        fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); window.addXP(10);
+      }
     }).catch(function(){ toast('Errore import agenda'); });
   }
 
