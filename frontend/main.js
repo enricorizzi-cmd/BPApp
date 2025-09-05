@@ -4277,6 +4277,20 @@ function viewReport(){
         '</div>'+
       '</div>'+
 
+      // --- INDICATORI AGGIUNTIVI ---
+      '<div class="card">'+
+        '<b>Indicatori aggiuntivi</b>'+
+        '<div id="rep_indicators" class="row" style="margin-top:8px; gap:8px; flex-wrap:wrap">'+
+          '<button class="pill" data-key="Telefonate" id="ind_Telefonate">Telefonate</button>'+
+          '<button class="pill" data-key="AppFissati" id="ind_AppFissati">AppFissati</button>'+
+          '<button class="pill" data-key="AppFatti" id="ind_AppFatti">AppFatti</button>'+
+          '<button class="pill" data-key="CorsiLeadership" id="ind_CorsiLeadership">CorsiLeadership</button>'+
+          '<button class="pill" data-key="iProfile" id="ind_iProfile">iProfile</button>'+
+          '<button class="pill" data-key="MBS" id="ind_MBS">MBS</button>'+
+          '<button class="pill" data-key="Note" id="ind_Note">Note</button>'+
+        '</div>'+
+      '</div>'+
+
       // --- CORPO REPORT ---
       '<div class="card">'+
         '<b>Report</b>'+
@@ -4306,6 +4320,7 @@ function viewReport(){
   // =========================
   var ALL=[]; // /api/periods
   var SECTIONS = { mensile:false, trimestrale:false, semestrale:false, annuale:false };
+  var EXTRA = { Telefonate:true, AppFissati:true, AppFatti:true, CorsiLeadership:true, iProfile:true, MBS:true, Note:true };
 
   var INDICATORS = [
     {k:'VSS', money:true,  label:'VSS'},
@@ -4320,6 +4335,8 @@ function viewReport(){
     {k:'MBS', money:false, label:'MBS'},
     {k:'NNCF', money:false, label:'NNCF'}
   ];
+
+  function isIndicatorEnabled(key){ return EXTRA[key] !== false; }
 
   function $(id){ return document.getElementById(id); }
   var bodyEl = $('report_body');
@@ -4400,10 +4417,11 @@ function pickClosingAndNext(type, now){
     var cons = rec.indicatorsCons || {};
     var lines = [title, ''];
     INDICATORS.forEach(function(it){
+      if(!isIndicatorEnabled(it.k)) return;
       var pv = vals(prev, it.k), cs = vals(cons, it.k);
       lines.push(it.label+' '+fmtVal(it.k, cs)+' vs '+fmtVal(it.k, pv)+' di previsionali ('+arrow(cs,pv)+')');
     });
-    lines.push('Note:');
+    if(EXTRA.Note) lines.push('Note:');
     return lines.join('\n');
   }
   function buildPrevisionaleBlock(title, type, start, end){
@@ -4411,9 +4429,10 @@ function pickClosingAndNext(type, now){
     var pv = rec.indicatorsPrev || {};
     var lines = [title, ''];
     INDICATORS.forEach(function(it){
+      if(!isIndicatorEnabled(it.k)) return;
       lines.push(it.label+' '+fmtVal(it.k, vals(pv,it.k)));
     });
-    lines.push('Possibili note:');
+    if(EXTRA.Note) lines.push('Possibili note:');
     return lines.join('\n');
   }
 
@@ -4467,6 +4486,12 @@ function pickClosingAndNext(type, now){
     setBtnActive($('tog_semestre'), SECTIONS.semestrale);
     setBtnActive($('tog_anno'), SECTIONS.annuale);
   }
+  function syncIndicatorButtons(){
+    Object.keys(EXTRA).forEach(function(k){
+      var el = $('ind_'+k);
+      if(el) setBtnActive(el, EXTRA[k]);
+    });
+  }
   function autoselectSectionsByDate(){
     var now=new Date();
 
@@ -4495,6 +4520,18 @@ function pickClosingAndNext(type, now){
     $('tog_trimestre').onclick = onToggle;
     $('tog_semestre').onclick = onToggle;
     $('tog_anno').onclick = onToggle;
+  }
+  function bindIndicatorToggles(){
+    function onToggle(ev){
+      var key = ev.currentTarget.getAttribute('data-key');
+      EXTRA[key] = !EXTRA[key];
+      syncIndicatorButtons();
+      rebuildBody();
+    }
+    Object.keys(EXTRA).forEach(function(k){
+      var el = $('ind_'+k);
+      if(el) el.onclick = onToggle;
+    });
   }
 
   // =========================
@@ -4552,6 +4589,8 @@ document.dispatchEvent(new Event('report:composed'));
     GET('/api/periods').then(function(r){
       ALL = (r && r.periods) || [];
       autoselectSectionsByDate();  // auto ON quando siamo in finestra [-7,+5] dal termine del periodo
+      syncIndicatorButtons();
+      bindIndicatorToggles();
       bindToggles();
       rebuildBody();               // genera il corpo (settimana solo nel weekend)
       bindActions();
