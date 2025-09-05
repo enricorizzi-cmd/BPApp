@@ -4635,59 +4635,22 @@ function viewUsers(){
   var me=getUser(); if(!me) return viewLogin();
   document.title = 'Battle Plan – Utenti';
 
-  // Se non admin: mostra form "Profilo" solo per modificare i propri dati
-  if(me.role !== 'admin'){
+  if(me.role === 'admin'){
     appEl.innerHTML = topbarHTML()+
       '<div class="wrap">'+
         '<div class="card">'+
-          '<b>Il mio profilo</b>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div><label>Nome</label><input id="p_name" type="text" value="'+htmlEscape(me.name||'')+'"></div>'+
-            '<div><label>Email</label><input id="p_email" type="email" value="'+htmlEscape(me.email||'')+'"></div>'+
-          '</div>'+
-          '<div class="row">'+
-            '<div><label>Nuova password</label><input id="p_pwd" type="password" placeholder="Lascia vuoto per non cambiare"></div>'+
-            '<div class="right" style="align-self:flex-end"><button id="p_save">Aggiorna</button></div>'+
-          '</div>'+
-          '<div class="row">'+
-            '<div><label>Ruolo</label><input value="'+htmlEscape(me.role||'consultant')+'" disabled></div>'+
-            '<div><label>Grade</label><input value="'+htmlEscape(me.grade||'junior')+'" disabled></div>'+
-          '</div>'+
+          '<b>Gestione utenti</b>'+
+          '<div id="users_list" class="row" style="margin-top:8px"></div>'+
         '</div>'+
       '</div>';
     renderTopbar();
-    $1('#p_save').onclick=function(){
-        var name = $1('#p_name').value.trim();
-        var email= $1('#p_email').value.trim();
-        var pwd  = $1('#p_pwd').value;
-        if(!name || !email){ toast('Nome ed email obbligatori'); return; }
-        var payload={ id: me.id, name:name, email:email };
-        if(pwd) payload.password=pwd;
-        POST('/api/users/profile', payload).then(function(){
-          toast('Profilo aggiornato'); window.addXP(3);
-          var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
-          try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
-        }).catch(function(err){ logger.error(err); toast(err.message || 'Errore aggiornamento'); });
-      };
-      return;
-  }
 
-  // === Vista ADMIN ===
-  appEl.innerHTML = topbarHTML()+
-    '<div class="wrap">'+
-      '<div class="card">'+
-        '<b>Gestione utenti</b>'+
-        '<div id="users_list" class="row" style="margin-top:8px"></div>'+
-      '</div>'+
-    '</div>';
-  renderTopbar();
-
-  function row(u){
-    var name = htmlEscape(u.name || u.email || ('user_'+u.id));
-    var grade = (u.grade==='senior'?'senior':'junior');
-    var role = (u.role==='admin'?'admin':'consultant');
-    return ''+
-      '<div class="card" style="flex:1 1 380px">'+
+    function row(u){
+      var name = htmlEscape(u.name || u.email || ('user_'+u.id));
+      var grade = (u.grade==='senior'?'senior':'junior');
+      var role = (u.role==='admin'?'admin':'consultant');
+      return ''+
+        '<div class="card" style="flex:1 1 380px">'+
         '<div><b>'+name+'</b> <span class="small muted">('+htmlEscape(role)+')</span></div>'+
         '<div class="row" style="margin-top:6px">'+
           '<div><label>Nome</label><input data-nfor="'+u.id+'" type="text" value="'+htmlEscape(u.name||'')+'"></div>'+
@@ -4713,14 +4676,14 @@ function viewUsers(){
           '</div>'+
         '</div>'+
       '</div>';
-  }
+    }
 
-  function loadUsers(){
-    GET('/api/users').then(function(r){
-      var list=(r&&r.users)||[];
-      var host=$1('#users_list'); if(!host) return;
-      host.innerHTML = list.map(row).join('');
-      $all('[data-save]').forEach(function(bt){
+    function loadUsers(){
+      GET('/api/users').then(function(r){
+        var list=(r&&r.users)||[];
+        var host=$1('#users_list'); if(!host) return;
+        host.innerHTML = list.map(row).join('');
+        $all('[data-save]').forEach(function(bt){
         bt.addEventListener('click', function(){
           var id = bt.getAttribute('data-save');
           var name = ($1('input[data-nfor="'+id+'"]')||{}).value||'';
@@ -4763,8 +4726,43 @@ function viewUsers(){
         });
       });
     });
+    }
+    loadUsers();
+  } else {
+    // Se non admin: mostra form "Profilo" solo per modificare i propri dati
+    appEl.innerHTML = topbarHTML()+
+      '<div class="wrap">'+
+        '<div class="card">'+
+          '<b>Il mio profilo</b>'+
+          '<div class="row" style="margin-top:8px">'+
+            '<div><label>Nome</label><input id="p_name" type="text" value="'+htmlEscape(me.name||'')+'"></div>'+
+            '<div><label>Email</label><input id="p_email" type="email" value="'+htmlEscape(me.email||'')+'"></div>'+
+          '</div>'+
+          '<div class="row">'+
+            '<div><label>Nuova password</label><input id="p_pwd" type="password" placeholder="Lascia vuoto per non cambiare"></div>'+
+            '<div class="right" style="align-self:flex-end"><button id="p_save">Aggiorna</button></div>'+
+          '</div>'+
+          '<div class="row">'+
+            '<div><label>Ruolo</label><input value="'+htmlEscape(me.role||'consultant')+'" disabled></div>'+
+            '<div><label>Grade</label><input value="'+htmlEscape(me.grade||'junior')+'" disabled></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    renderTopbar();
+    $1('#p_save').onclick=function(){
+        var name = $1('#p_name').value.trim();
+        var email= $1('#p_email').value.trim();
+        var pwd  = $1('#p_pwd').value;
+        if(!name || !email){ toast('Nome ed email obbligatori'); return; }
+        var payload={ id: me.id, name:name, email:email };
+        if(pwd) payload.password=pwd;
+        POST('/api/users/profile', payload).then(function(){
+          toast('Profilo aggiornato'); window.addXP(3);
+          var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
+          try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
+        }).catch(function(err){ logger.error(err); toast(err.message || 'Errore aggiornamento'); });
+      };
   }
-  loadUsers();
 }
 
 
