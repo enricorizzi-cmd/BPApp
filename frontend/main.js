@@ -3089,14 +3089,8 @@ function viewTeam(){
         '</div>'+
 
         '<div class="card">'+
-          '<b>Riepilogo per utente</b>'+
-          '<div id="t_users" class="row" style="margin-top:8px"></div>'+
-        '</div>'+
-
-        '<div class="card">'+
-          '<b>Aggregato Squadra</b>'+
-          '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
-          '<div class="row" style="margin-top:12px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
+          '<b>Grafico</b>'+
+          '<div class="row" style="margin-top:8px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
             '<div>'+
               '<label>Indicatore grafico</label>'+
               '<select id="t_ind">'+
@@ -3117,6 +3111,16 @@ function viewTeam(){
             '</div>'+
           '</div>'+
           '<div style="margin-top:8px"><canvas id="t_chart" height="160"></canvas></div>'+
+        '</div>'+
+
+        '<div class="card">'+
+          '<b>Aggregato Squadra</b>'+
+          '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
+        '</div>'+
+
+        '<div class="card">'+
+          '<b>Riepilogo per utente</b>'+
+          '<div id="t_users" class="row" style="margin-top:8px"></div>'+
         '</div>'
       ) : '')+
     '</div>';
