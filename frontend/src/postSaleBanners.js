@@ -1,5 +1,7 @@
 ;(function(global){
   function initPostSaleBanners(hapticImpact){
+  // Prevent double initialization (duplicate imports/calls)
+  try{ if (global.__postSaleBannersInitialized) return; global.__postSaleBannersInitialized = true; dbg('init'); }catch(_){ }
   // --- Parametri ---
   const LOOKBACK_DAYS = window.BANNERS_LOOKBACK_DAYS || 7; // ultimi N giorni
   const KIND_NNCF = 'nncf';
@@ -17,6 +19,24 @@
   const isDone     = (id,kind)=> { try{ return localStorage.getItem(doneKey(id,kind))==='1'; }catch(_){ return false; } };
   const markDone   = (id,kind)=> { try{ localStorage.setItem(doneKey(id,kind),'1'); }catch(_){ } };
 
+  // --- Ephemeral pending markers to avoid duplicate queueing within short window ---
+  const _pending = new Set();
+  const pendingKey  = (id,kind)=> `bp_pending_${kind}_${id}`;
+  const isPending   = (id,kind)=> {
+    const k = `${kind}:${id}`;
+    if (_pending.has(k)) return true;
+    try{ const s = localStorage.getItem(pendingKey(id,kind)); return s && (new Date(s).getTime()>Date.now()); }catch(_){ return false; }
+  };
+  const markPending = (id,kind,mins=5)=>{
+    const k = `${kind}:${id}`;
+    _pending.add(k);
+    try{ const t=new Date(); t.setMinutes(t.getMinutes()+Math.max(1,Number(mins)||5)); localStorage.setItem(pendingKey(id,kind), t.toISOString()); }catch(_){ }
+  };
+  const clearPending = (id,kind)=>{
+    const k = `${kind}:${id}`; _pending.delete(k);
+    try{ localStorage.removeItem(pendingKey(id,kind)); }catch(_){ }
+  };
+
   // --- Push markers (avoid duplicate push per appointment/kind)
   const pushKey  = (id, kind)=> `bp_push_${kind}_${id}`;
   const pushSent = (id,kind)=> { try{ return localStorage.getItem(pushKey(id,kind))==='1'; }catch(_){ return false; } };
@@ -26,6 +46,17 @@
   const GET  = (window.BPFinal && BPFinal.GET)  || window.GET;
   const POST = (window.BPFinal && BPFinal.POST) || window.POST;
   const toast = window.toast || (m=>alert(m));
+  // Debug logging, gated by window.DEBUG_BANNERS (default: off)
+  function dbg(){
+    try{ if (!window || window.DEBUG_BANNERS !== true) return; }catch(_){ return; }
+    try{
+      if (window.logger && typeof window.logger.debug==='function'){
+        window.logger.debug('[banners]', ...arguments);
+      } else {
+        console.debug('[banners]', ...arguments);
+      }
+    }catch(_){ }
+  }
 
   function htmlEscape(s){ return String(s||'').replace(/[&<>\"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 
@@ -77,6 +108,18 @@
     const it = list.find(c=> String(c.name||'').trim().toLowerCase() === String(name).trim().toLowerCase());
     if (!it) return;
     await POST('/api/clients', { id: it.id, status });
+  }
+
+  // --- Resolve clientId by name (best-effort) ---
+  async function findClientIdByName(name){
+    try{
+      if(!name) return null;
+      const r = await GET('/api/clients');
+      const list=(r&&r.clients)||[];
+      const key = String(name||'').trim().toLowerCase();
+      const it = list.find(c=> String(c.name||'').trim().toLowerCase() === key);
+      return it ? it.id : null;
+    }catch(_){ return null; }
   }
 
   // --- Apertura affidabile del builder pagamenti GI ---
@@ -193,9 +236,12 @@
   }
 
   async function upsertGIFromAppointment(appt, vss){
+    let clientId = appt.clientId || null;
+    if (!clientId) clientId = await findClientIdByName(appt.client);
     const payload = {
       apptId: appt.id,
       date: new Date(appt.end || appt.start || Date.now()).toISOString(),
+      clientId: clientId || undefined,
       clientName: appt.client || 'Cliente',
       vssTotal: Math.round(Number(vss||0)),
       services: appt.services || appt.note || '',
@@ -223,16 +269,18 @@
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = function(){
         markDone(appt.id, KIND_SALE);
+        clearPending(appt.id, KIND_SALE);
         close();
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
         markDone(appt.id, KIND_SALE);
+        clearPending(appt.id, KIND_SALE);
         close();
         try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
       };
       card.querySelector('[data-act="later"]').onclick = function(){
-        snooze1d(appt.id, KIND_SALE); toast('Te lo ripropongo domani'); close();
+        snooze1d(appt.id, KIND_SALE); clearPending(appt.id, KIND_SALE); toast('Te lo ripropongo domani'); close();
       };
       return card;
     };
@@ -256,6 +304,7 @@
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
         markDone(appt.id, KIND_NNCF);
+        clearPending(appt.id, KIND_NNCF);
         close();
         try{
           // Persisti che il banner NNCF è stato gestito (Sì)
@@ -266,6 +315,7 @@
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
         markDone(appt.id, KIND_NNCF);
+        clearPending(appt.id, KIND_NNCF);
         close();
         try{
           // Persisti che il banner NNCF è stato gestito (No)
@@ -276,7 +326,7 @@
         }catch(_){}
       };
       card.querySelector('[data-act="later"]').onclick = function(){
-        snooze1d(appt.id, KIND_NNCF); toast('Te lo ripropongo domani'); close();
+        snooze1d(appt.id, KIND_NNCF); clearPending(appt.id, KIND_NNCF); toast('Te lo ripropongo domani'); close();
       };
       return card;
     };
@@ -298,12 +348,14 @@
           if (appt.nncf){
             // Se già risposto (persistente) o già fatto snooze/done local, non riproporre
             if (appt.nncfPromptAnswered) return;
-            if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF)) return;
+            if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF) || isPending(appt.id, KIND_NNCF)) { dbg('skip pending NNCF', appt && appt.id); return; }
             triggerPush(KIND_NNCF, appt);
+            markPending(appt.id, KIND_NNCF); dbg('mark pending NNCF', appt && appt.id);
             enqueueBanner(bannerNNCF(appt));
           } else {
-            if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE)) return;
+            if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE) || isPending(appt.id, KIND_SALE)) { dbg('skip pending SALE', appt && appt.id); return; }
             triggerPush(KIND_SALE, appt);
+            markPending(appt.id, KIND_SALE); dbg('mark pending SALE', appt && appt.id);
             enqueueBanner(bannerSale(appt));
           }
         }catch(_){}
