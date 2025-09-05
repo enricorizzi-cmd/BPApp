@@ -1362,6 +1362,16 @@ function viewCalendar(){
         #only_4h{ grid-area:fourh; }
         #cal_refresh{ grid-area:refresh; justify-self:end; }
         .cal-filters{ align-items:center; }
+
+        /* Force chips to occupy full width to avoid overlap */
+        #only_free, #only_4h{
+          display:flex !important;
+          width:100% !important;
+          min-width:0 !important;
+          align-items:center;
+        }
+        /* Allow buttons to shrink within grid cells */
+        #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
       }
     `;
     var st = document.createElement('style');
