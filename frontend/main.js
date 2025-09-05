@@ -1351,7 +1351,7 @@ function viewCalendar(){
             '<div id="cal_month_wrap"><label>Mese</label><input type="month" id="cal_month" value="'+ymSel+'"></div>'+
             '<button id="cal_next" class="ghost" title="Mese successivo">▶</button>'+
           '</div>'+
-          '<div class="cal-row">'+
+          '<div class="cal-row cal-filters">'+
             '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
             '<label id="only_free" class="chip small"><input type="checkbox" id="only_free_cb"> Solo giorni liberi</label> '+
             '<label id="only_4h" class="chip small"><input type="checkbox" id="only_4h_cb"> Solo slot ≥ 4h</label>'+
