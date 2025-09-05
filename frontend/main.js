@@ -3126,7 +3126,7 @@ function viewTeam(){
               '<select id="t_cons"><option value="">Tutti</option></select>'+
             '</div>'+
           '</div>'+
-          '<div style="margin-top:8px"><canvas id="t_chart" height="160"></canvas></div>'+
+          '<div style="margin-top:8px"><canvas id="t_chart" height="160" style="width:100%"></canvas></div>'+
         '</div>'+
 
         '<div class="card">'+
@@ -3228,6 +3228,8 @@ function viewTeam(){
       return;
     }
 
+    canvas.style.width = '100%';
+    canvas.width = canvas.parentNode.clientWidth;
     var ctx = canvas.getContext('2d');
     var tickOpts = (typeof window.computeTickOptions==='function')
       ? window.computeTickOptions(labels, canvas.width||600)
@@ -3239,7 +3241,7 @@ function viewTeam(){
         type: 'line',
         data: { labels: labels, datasets: [{ label: '', data: data, tension: .3, pointRadius: 3, pointHoverRadius:5 }] },
         options: {
-          responsive:false, maintainAspectRatio:false,
+          responsive:true, maintainAspectRatio:false,
           animation:false, animations:false,
           plugins:{ legend:{ display:false } },
           scales:{
@@ -3254,6 +3256,7 @@ function viewTeam(){
       tChart.options.scales.x.ticks = tickOpts;
       tChart.update();
     }
+    tChart.resize();
   }
 
   // Cards
