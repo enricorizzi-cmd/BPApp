@@ -2,6 +2,7 @@
 
 const { Pool } = require("pg");
 const dns = require("dns").promises;
+const logger = require("./logger");
 
 let pool = null;
 
@@ -43,12 +44,24 @@ async function init(){
     ssl: { rejectUnauthorized: sslReject, servername: host }
   };
 
-  pool = new Pool(cfg);
-  await pool.query(`CREATE TABLE IF NOT EXISTS kv (
-    name TEXT PRIMARY KEY,
-    data TEXT NOT NULL
-  )`);
-  return pool;
+  const retries = Number(process.env.PG_CONN_RETRIES || 3);
+  const delayMs = Number(process.env.PG_CONN_RETRY_DELAY_MS || 1000);
+
+  for(let attempt = 1; attempt <= retries; attempt++){
+    try{
+      pool = new Pool(cfg);
+      await pool.query(`CREATE TABLE IF NOT EXISTS kv (
+        name TEXT PRIMARY KEY,
+        data TEXT NOT NULL
+      )`);
+      return pool;
+    }catch(err){
+      logger.warn(`[pg] connection attempt ${attempt}/${retries} to ${hostToUse}:${port} failed: ${err.code || err.message}`);
+      await pool.end().catch(()=>{});
+      if(attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
 }
 
 function requirePool(){

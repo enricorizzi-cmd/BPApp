@@ -38,6 +38,28 @@ Two supported paths: PM2 on a host, or Docker.
 - Reverse proxy (optional)
   - See `deploy/nginx.conf` or `deploy/Caddyfile`
 
+## PostgreSQL configuration
+
+Set `PG_URL` or `DATABASE_URL` to enable PostgreSQL storage, for example:
+
+```
+PG_URL=postgres://user:pass@host:5432/dbname
+```
+
+Additional environment variables:
+
+- `PG_FORCE_IPV4` (default `1`): resolve only IPv4 addresses; set to `0` to allow IPv6.
+- `PG_HOST_IPV4`: explicit IPv4 address to use instead of DNS resolution.
+- `PG_SSL_REJECT_UNAUTHORIZED` (default `true`): set to `false` to accept self-signed certificates.
+- `PG_CONN_RETRIES` (default `3`): number of connection attempts before failing.
+- `PG_CONN_RETRY_DELAY_MS` (default `1000`): delay between retry attempts in milliseconds.
+
+Test connectivity before starting the backend:
+
+```
+psql -h <host> -p <port> -U <user> <db>
+```
+
 Notes
 - JWT secret is required in production; the server will exit if it uses the default.
 - Static assets are served with long-lived cache; `index.html` is no-store.
