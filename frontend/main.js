@@ -1330,7 +1330,7 @@ function viewCalendar(){
       #cal_controls .cal-row{
         display:flex;
         gap:10px;
-        align-items:end;
+        align-items:flex-end;
       }
       #cal_controls .cal-row > *{ flex:1 1 0; }
       #cal_controls button{ flex:0 0 auto; }
@@ -1343,13 +1343,13 @@ function viewCalendar(){
       @media (max-width: 600px){
         #cal_controls{
           display:grid;
-          grid-template-columns:1fr 1fr;
+          grid-template-columns: 1fr 1fr 1fr;
           grid-template-areas:
-            "consult consult"
+            "consult consult consult"
             "prev month next"
-            "add add"
-            "free free"
-            "fourh refresh";
+            "add add add"
+            "free free free"
+            "fourh refresh refresh";
           align-items:end;
         }
         #cal_controls .cal-row{ display:contents; }
@@ -1370,6 +1370,8 @@ function viewCalendar(){
           min-width:0 !important;
           align-items:center;
         }
+        /* Ensure chips span all columns when areas fallback */
+        #only_free, #only_4h{ grid-column: 1 / -1; }
         /* Allow buttons to shrink within grid cells */
         #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
       }
