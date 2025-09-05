@@ -33,6 +33,7 @@ import { save, load, del, setToken, getToken, setUser, getUser, logout } from ".
 import { api, GET, POST, DEL } from "./src/api.js";
 import { pad2, dmy, ymd, timeHM, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isoWeekNum, startOfQuarter, endOfQuarter, startOfSemester, endOfSemester, startOfYear, endOfYear, startOfIsoWeek, weekBoundsOf, nextWeekBounds, prevWeekBounds, nextMonthBounds, prevMonthBounds, nextQuarterBounds, prevQuarterBounds, nextSemesterBounds, prevSemesterBounds, nextYearBounds, prevYearBounds, formatPeriodLabel } from "./src/dateUtils.js";
 import { toast, celebrate } from "./modules/notifications.js";
+import { showAddToHomePrompt } from "./modules/installPrompt.js";
 import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
 import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
 import { $1, $all, getQuery } from "./src/query.js";
@@ -4803,6 +4804,7 @@ window.rerenderTopbarSoon = rerenderTopbarSoon;
 
 // boot
 document.addEventListener('DOMContentLoaded', function () {
+  showAddToHomePrompt();
   if (getUser()) {
     renderTopbar();
     viewHome();
