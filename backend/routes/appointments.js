@@ -109,6 +109,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     copyIfPresent(it, body, 'nncf', toBool);
     // Hidden/persisted flags
     copyIfPresent(it, body, 'nncfPromptAnswered', toBool);
+    copyIfPresent(it, body, 'salePromptAnswered', toBool);
+    copyIfPresent(it, body, 'salePromptSnoozedUntil', orEmpty);
+    copyIfPresent(it, body, 'nncfPromptSnoozedUntil', orEmpty);
     copyIfPresent(it, body, 'notes', orEmpty);
 
     const startOld = parseDateSmart(it.start);
@@ -175,6 +178,9 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       appFissati: Number(body.appFissati||0),
       nncf: !!body.nncf,
       nncfPromptAnswered: !!body.nncfPromptAnswered,
+      salePromptAnswered: !!body.salePromptAnswered,
+      salePromptSnoozedUntil: body.salePromptSnoozedUntil || null,
+      nncfPromptSnoozedUntil: body.nncfPromptSnoozedUntil || null,
       notes: body.notes||'',
       createdAt: nowIso,
       updatedAt: nowIso

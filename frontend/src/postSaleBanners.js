@@ -6,8 +6,9 @@
   const LOOKBACK_DAYS = window.BANNERS_LOOKBACK_DAYS || 7; // ultimi N giorni
   const KIND_NNCF = 'nncf';
   const KIND_SALE = 'sale';
+  const BANNER_DELAY_MINUTES = 1; // Banner appare 1 minuto dopo la fine dell'appuntamento
 
-  // --- Helpers storage (snooze/Done) ---
+  // --- Helpers storage (snooze/Done) - ora solo per cache locale ---
   const snoozeKey  = (id, kind)=> `bp_snooze_${kind}_${id}`;
   const doneKey    = (id, kind)=> `bp_done_${kind}_${id}`;
   const isSnoozed  = (id,kind)=> {
@@ -37,7 +38,7 @@
     try{ localStorage.removeItem(pendingKey(id,kind)); }catch(_){ }
   };
 
-  // --- Push markers (avoid duplicate push per appointment/kind)
+  // --- Push markers (avoid duplicate push per appointment/kind) ---
   const pushKey  = (id, kind)=> `bp_push_${kind}_${id}`;
   const pushSent = (id,kind)=> { try{ return localStorage.getItem(pushKey(id,kind))==='1'; }catch(_){ return false; } };
   const markPush = (id,kind)=> { try{ localStorage.setItem(pushKey(id,kind),'1'); }catch(_){ } };
@@ -60,7 +61,7 @@
 
   function htmlEscape(s){ return String(s||'').replace(/[&<>\"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 
-  // --- Trigger a Web Push when a banner would appear (once per appt/kind)
+  // --- Trigger a Web Push when a banner would appear (once per appt/kind) ---
   async function triggerPush(kind, appt){
     try{
       if(!POST || !appt || !appt.id) return;
@@ -251,6 +252,41 @@
     return (resp && (resp.sale || resp.gi || resp.data)) || resp;
   }
 
+  // --- Funzioni per gestire lo stato persistente dei banner ---
+  async function markBannerAnswered(apptId, kind, action) {
+    try {
+      const field = kind === KIND_NNCF ? 'nncfPromptAnswered' : 'salePromptAnswered';
+      await POST('/api/appointments', { id: apptId, [field]: true });
+      dbg('Marked banner as answered', apptId, kind, action);
+    } catch (e) {
+      dbg('Error marking banner as answered', e);
+    }
+  }
+
+  async function snoozeBanner(apptId, kind, hours = 24) {
+    try {
+      const snoozeUntil = new Date();
+      snoozeUntil.setHours(snoozeUntil.getHours() + hours);
+      const field = kind === KIND_NNCF ? 'nncfPromptSnoozedUntil' : 'salePromptSnoozedUntil';
+      await POST('/api/appointments', { id: apptId, [field]: snoozeUntil.toISOString() });
+      dbg('Snoozed banner', apptId, kind, 'until', snoozeUntil.toISOString());
+    } catch (e) {
+      dbg('Error snoozing banner', e);
+    }
+  }
+
+  function isBannerSnoozed(appt, kind) {
+    const field = kind === KIND_NNCF ? 'nncfPromptSnoozedUntil' : 'salePromptSnoozedUntil';
+    const snoozedUntil = appt[field];
+    if (!snoozedUntil) return false;
+    return new Date(snoozedUntil).getTime() > Date.now();
+  }
+
+  function isBannerAnswered(appt, kind) {
+    const field = kind === KIND_NNCF ? 'nncfPromptAnswered' : 'salePromptAnswered';
+    return !!appt[field];
+  }
+
   function bannerSale(appt){
     return function(close){
       const card = document.createElement('div');
@@ -267,20 +303,26 @@
            <button class="ghost" data-act="no">No</button>
            <button data-act="yes">Sì</button>
          </div>`;
-      card.querySelector('[data-act="yes"]').onclick = function(){
+      card.querySelector('[data-act="yes"]').onclick = async function(){
         markDone(appt.id, KIND_SALE);
         clearPending(appt.id, KIND_SALE);
         close();
+        await markBannerAnswered(appt.id, KIND_SALE, 'yes');
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
         markDone(appt.id, KIND_SALE);
         clearPending(appt.id, KIND_SALE);
         close();
+        await markBannerAnswered(appt.id, KIND_SALE, 'no');
         try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
       };
-      card.querySelector('[data-act="later"]').onclick = function(){
-        snooze1d(appt.id, KIND_SALE); clearPending(appt.id, KIND_SALE); toast('Te lo ripropongo domani'); close();
+      card.querySelector('[data-act="later"]').onclick = async function(){
+        snooze1d(appt.id, KIND_SALE); 
+        clearPending(appt.id, KIND_SALE); 
+        await snoozeBanner(appt.id, KIND_SALE, 24);
+        toast('Te lo ripropongo domani'); 
+        close();
       };
       return card;
     };
@@ -306,9 +348,8 @@
         markDone(appt.id, KIND_NNCF);
         clearPending(appt.id, KIND_NNCF);
         close();
+        await markBannerAnswered(appt.id, KIND_NNCF, 'yes');
         try{
-          // Persisti che il banner NNCF è stato gestito (Sì)
-          await POST('/api/appointments', { id: appt.id, nncfPromptAnswered: true });
           await updateClientStatusByName(appt.client, 'attivo');
         }catch(_){}
         openVSSQuickEditor(appt);
@@ -317,16 +358,19 @@
         markDone(appt.id, KIND_NNCF);
         clearPending(appt.id, KIND_NNCF);
         close();
+        await markBannerAnswered(appt.id, KIND_NNCF, 'no');
         try{
-          // Persisti che il banner NNCF è stato gestito (No)
-          await POST('/api/appointments', { id: appt.id, nncfPromptAnswered: true });
           await updateClientStatusByName(appt.client, 'lead non chiuso');
           await POST('/api/appointments', { id: appt.id, vss: 0 });
           toast('Aggiornato: Lead non chiuso, VSS=0');
         }catch(_){}
       };
-      card.querySelector('[data-act="later"]').onclick = function(){
-        snooze1d(appt.id, KIND_NNCF); clearPending(appt.id, KIND_NNCF); toast('Te lo ripropongo domani'); close();
+      card.querySelector('[data-act="later"]').onclick = async function(){
+        snooze1d(appt.id, KIND_NNCF); 
+        clearPending(appt.id, KIND_NNCF); 
+        await snoozeBanner(appt.id, KIND_NNCF, 24);
+        toast('Te lo ripropongo domani'); 
+        close();
       };
       return card;
     };
@@ -343,19 +387,43 @@
         try{
           const end = +new Date(appt.end || appt.start || 0);
           if (!end || end>now || end<fromTs) return;
+          
+          // Controlla se è passato almeno 1 minuto dalla fine dell'appuntamento
+          const bannerDelayMs = BANNER_DELAY_MINUTES * 60 * 1000;
+          if (end > (now - bannerDelayMs)) return;
+          
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
           if (!isVendita) return;
+          
           if (appt.nncf){
-            // Se già risposto (persistente) o già fatto snooze/done local, non riproporre
-            if (appt.nncfPromptAnswered) return;
-            if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF) || isPending(appt.id, KIND_NNCF)) { dbg('skip pending NNCF', appt && appt.id); return; }
+            // Controlla stato persistente del banner NNCF
+            if (isBannerAnswered(appt, KIND_NNCF)) return;
+            if (isBannerSnoozed(appt, KIND_NNCF)) return;
+            
+            // Controlla anche stato locale per evitare duplicati
+            if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF) || isPending(appt.id, KIND_NNCF)) { 
+              dbg('skip pending NNCF', appt && appt.id); 
+              return; 
+            }
+            
             triggerPush(KIND_NNCF, appt);
-            markPending(appt.id, KIND_NNCF); dbg('mark pending NNCF', appt && appt.id);
+            markPending(appt.id, KIND_NNCF); 
+            dbg('mark pending NNCF', appt && appt.id);
             enqueueBanner(bannerNNCF(appt));
           } else {
-            if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE) || isPending(appt.id, KIND_SALE)) { dbg('skip pending SALE', appt && appt.id); return; }
+            // Controlla stato persistente del banner Sale
+            if (isBannerAnswered(appt, KIND_SALE)) return;
+            if (isBannerSnoozed(appt, KIND_SALE)) return;
+            
+            // Controlla anche stato locale per evitare duplicati
+            if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE) || isPending(appt.id, KIND_SALE)) { 
+              dbg('skip pending SALE', appt && appt.id); 
+              return; 
+            }
+            
             triggerPush(KIND_SALE, appt);
-            markPending(appt.id, KIND_SALE); dbg('mark pending SALE', appt && appt.id);
+            markPending(appt.id, KIND_SALE); 
+            dbg('mark pending SALE', appt && appt.id);
             enqueueBanner(bannerSale(appt));
           }
         }catch(_){}
