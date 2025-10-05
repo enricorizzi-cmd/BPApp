@@ -1575,30 +1575,9 @@ function viewCalendar(){
           var v = map[key]||{vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
           var dow = d.getDay(); // 0=Dom .. 6=Sab
           var isWeekend = (dow===0 || dow===6);
-          // Calcola se ci sono slot liberi ≥4h (non occupati da appuntamenti)
-          var hasSlot4h = false;
-          if (!isWeekend) {
-            var daySlots = (slots||[]).filter(function(s){ return s.date===key; });
-            var dayApps = (apps||[]).filter(function(a){ return ymd(new Date(a.start))===key; });
-            
-            // Verifica se almeno uno slot è completamente libero
-            hasSlot4h = daySlots.some(function(slot){
-              var slotStart = new Date(slot.start);
-              var slotEnd = new Date(slot.end);
-              
-              // Controlla se qualche appuntamento si sovrappone con questo slot
-              var hasOverlap = dayApps.some(function(app){
-                var appStart = new Date(app.start);
-                var appEnd = new Date(app.end || app.start);
-                
-                // Verifica sovrapposizione: slot e appuntamento si sovrappongono se
-                // slot inizia prima che l'appuntamento finisca E slot finisce dopo che l'appuntamento inizia
-                return slotStart < appEnd && slotEnd > appStart;
-              });
-              
-              return !hasOverlap; // Slot è libero solo se non c'è sovrapposizione
-            });
-          }
+          // Gli slot arrivano già calcolati dal backend con logica corretta
+          // Il backend considera uno slot libero solo se ha ≥240 minuti (4 ore) liberi
+          var hasSlot4h = !isWeekend && (slots.some(function(s){ return s.date===key; }));
 
           // Filtri
           if(inMonth && filters){

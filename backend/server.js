@@ -1189,9 +1189,9 @@ app.get("/api/availability", auth, async (req,res)=>{
         const startStr = String(a.start||'');
         if(startStr.slice(0,10) !== dayKey) continue;
         
-        // Filtra solo appuntamenti di vendita per coerenza con frontend
+        // Filtra appuntamenti che occupano slot lavorativi
         const type = String(a.type||'').toLowerCase();
-        if(!(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1)) {
+        if(!(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1 || type.indexOf('mbs') > -1)) {
           continue;
         }
         
