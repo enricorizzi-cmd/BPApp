@@ -41,7 +41,11 @@ async function readJSON(tableName) {
               ...user,
               resetToken: user.resettoken,
               resetTokenExp: user.resettokenexp,
-              createdAt: user.createdat
+              createdAt: user.createdat,
+              // Remove database-specific fields
+              resettoken: undefined,
+              resettokenexp: undefined,
+              createdat: undefined
             }));
             return { users: mappedUsers };
           }
@@ -88,7 +92,12 @@ async function readJSON(tableName) {
               consultantId: client.consultantid,
               consultantName: client.consultantname,
               createdAt: client.createdat,
-              updatedAt: client.updatedat
+              updatedAt: client.updatedat,
+              // Remove database-specific fields
+              consultantid: undefined,
+              consultantname: undefined,
+              createdat: undefined,
+              updatedat: undefined
             }));
             return { clients: mappedClients };
           }
@@ -105,7 +114,15 @@ async function readJSON(tableName) {
         createdAt: period.createdat,
         updatedAt: period.updatedat,
         endDate: period.enddate,
-        startDate: period.startdate
+        startDate: period.startdate,
+        // Remove database-specific fields
+        userid: undefined,
+        indicatorsprev: undefined,
+        indicatorscons: undefined,
+        createdat: undefined,
+        updatedat: undefined,
+        enddate: undefined,
+        startdate: undefined
       }));
       return { periods: mappedPeriods };
     }
@@ -128,7 +145,13 @@ async function readJSON(tableName) {
           auth: sub.auth
         },
         createdAt: sub.createdat,
-        lastSeen: sub.lastseen
+        lastSeen: sub.lastseen,
+        // Remove database-specific fields
+        userid: undefined,
+        p256dh: undefined,
+        auth: undefined,
+        createdat: undefined,
+        lastseen: undefined
       }));
       return { subs: mappedSubs };
     }
@@ -148,13 +171,16 @@ async function readJSON(tableName) {
         consultantId: gi.consultantid,
         consultantName: gi.consultantname,
         appointmentId: gi.appointmentid,
+        clientId: gi.clientid,
         clientName: gi.clientname,
         vssTotal: gi.vsstotal,
         createdAt: gi.createdat,
         updatedAt: gi.updatedat,
+        // Remove database-specific fields
         consultantid: undefined,
         consultantname: undefined,
         appointmentid: undefined,
+        clientid: undefined,
         clientname: undefined,
         vsstotal: undefined,
         createdat: undefined,
