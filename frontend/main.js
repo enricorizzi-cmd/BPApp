@@ -1493,11 +1493,8 @@ function viewCalendar(){
             out.appFissati += Number(a.appFissati||0);
             out.nncf       += (a.nncf?1:0);
             
-            // Conta solo le tipologie vendita, mezza giornata e giornata intera
-            var type = String(a.type||'').toLowerCase();
-            if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
-              out.count += 1;
-            }
+            // Conta tutti gli appuntamenti per coerenza con il calcolo degli slot
+            out.count += 1;
           }
         }
         return out;
@@ -1541,11 +1538,8 @@ function viewCalendar(){
         map[key].nncf += (a.nncf?1:0);
         map[key].mins += Number(a.durationMinutes||0);
         
-        // Conta solo le tipologie vendita, mezza giornata e giornata intera
-        var type = String(a.type||'').toLowerCase();
-        if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
-          map[key].count += 1;
-        }
+        // Conta tutti gli appuntamenti per coerenza con il calcolo degli slot
+        map[key].count += 1;
         
         map[key].items.push(a);
       }
