@@ -728,9 +728,11 @@ app.post("/api/settings", auth, requireAdmin, async (req,res)=>{
       // Settings è una tabella singleton, aggiorna sempre il record con id=1
       const mappedSettings = {
         id: 1, // ID fisso per settings singleton
-        indicators: newSettings.indicators,
-        weights: newSettings.weights,
-        commissions: newSettings.commissions,
+        data: {
+          indicators: newSettings.indicators,
+          weights: newSettings.weights,
+          commissions: newSettings.commissions
+        },
         version: newSettings.version
       };
       await updateRecord('settings', 1, mappedSettings);
