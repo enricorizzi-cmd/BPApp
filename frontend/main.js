@@ -2344,9 +2344,9 @@ function viewAppointments(){
         '<b>Elenco appuntamenti</b>'+
         '<div class="row" style="margin-top:8px;align-items:flex-end;gap:12px;flex-wrap:wrap">'+
           '<div><label>Vista</label>'+
-            '<select id="af_type"><option value="tutti">Tutti</option><option value="mese">Mese</option><option value="sett">Settimana</option></select>'+
+            '<select id="af_type"><option value="sett">Settimana</option><option value="tutti">Tutti</option><option value="mese">Mese</option></select>'+
           '</div>'+
-          '<div id="af_week_wrap" style="display:none"><label>Settimana ISO</label>'+
+          '<div id="af_week_wrap"><label>Settimana ISO</label>'+
             '<input id="af_week" type="number" min="1" max="53" value="'+isoWeekNum(new Date())+'"></div>'+
           '<div id="af_month_wrap" style="display:none"><label>Mese</label>'+
             '<select id="af_month">'+
