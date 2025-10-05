@@ -656,8 +656,8 @@ function viewHome(){
           '<div>'+
             '<label>Modalità</label>'+
             '<select id="dash_mode" name="mode">'+
-              '<option value="consuntivo">Consuntivo</option>'+
               '<option value="previsionale">Previsionale</option>'+
+              '<option value="consuntivo">Consuntivo</option>'+
             '</select>'+
           '</div>'+
           dashConsHTML+
@@ -910,7 +910,7 @@ function viewHome(){
 
   // ===== KPI aggregati (come Squadra: rispetto range from/to; filtro consulente)
 function recomputeKPI(){
-  var mode = (document.getElementById('dash_mode')||{}).value || 'consuntivo';
+  var mode = (document.getElementById('dash_mode')||{}).value || 'previsionale';
   var r    = readUnifiedRange('dash');
   var type = effectivePeriodType(r.type || 'mensile');
 
@@ -990,7 +990,7 @@ function recomputeKPI(){
 
   // ===== Serie minichart (identiche a Squadra)
   function recomputeMini(){
-    var mode = (document.getElementById('dash_mode')||{}).value || 'consuntivo';
+    var mode = (document.getElementById('dash_mode')||{}).value || 'previsionale';
     var el = document.getElementById('dash_cons');
     var cons = el ? el.value : getUser().id;
     var range= readUnifiedRange('dash');
@@ -3696,7 +3696,7 @@ function viewCommissions(){
         '<b>Calcolo provvigioni</b>'+
         '<div class="row" style="margin-top:8px; gap:12px; flex-wrap:wrap">'+
           (isAdmin? '<div><label>Utente</label><select id="comm_user"><option value="__all">Tutta la squadra</option></select></div>' : '')+
-          '<div><label>Modalità</label><select id="comm_mode" name="mode"><option value="consuntivo">Consuntivo</option><option value="previsionale">Previsionale</option></select></div>'+
+          '<div><label>Modalità</label><select id="comm_mode" name="mode"><option value="previsionale">Previsionale</option><option value="consuntivo">Consuntivo</option></select></div>'+
         '</div>'+
         unifiedFiltersHTML("comm")+
       '</div>'+
@@ -4933,7 +4933,7 @@ function viewUsers(){
             '</select>'+
           '</div>'+
           '<div><label>Ruolo</label>'+
-            '<select data-rfor="'+u.id+'">'+
+            '<select data-rfor="'+u.id+'"'+(me.role !== 'admin' ? ' disabled' : '')+'>'+
               '<option value="consultant"'+(role==='consultant'?' selected':'')+'>Consulente</option>'+
               '<option value="admin"'+(role==='admin'?' selected':'')+'>Admin</option>'+
             '</select>'+
