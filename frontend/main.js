@@ -1530,8 +1530,8 @@ function viewCalendar(){
       for(var i=0;i<apps.length;i++){
         var a=apps[i]; var s=BPTimezone.parseUTCString(a.start);
         if(s<from || s>to) continue;
-        // Usa ymdUTC per coerenza con backend, fallback a ymd locale
-        var key = (window.BPTimezone && window.BPTimezone.ymdUTC) ? window.BPTimezone.ymdUTC(s) : ymd(s);
+        // Usa data locale per coerenza con calendario locale
+        var key = ymd(s);
         if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
         map[key].vss += Number(a.vss||0);
         map[key].vsd += Number(a.vsdPersonal||0);
@@ -1570,8 +1570,8 @@ function viewCalendar(){
 
         for(var k=0;k<7;k++){
           var inMonth = (d.getMonth()===(m-1));
-          // Usa ymdUTC per coerenza con backend, fallback a ymd locale
-          var key = (window.BPTimezone && window.BPTimezone.ymdUTC) ? window.BPTimezone.ymdUTC(d) : ymd(d);
+          // Usa data locale per coerenza con calendario locale
+          var key = ymd(d);
           var v = map[key]||{vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
           var dow = d.getDay(); // 0=Dom .. 6=Sab
           var isWeekend = (dow===0 || dow===6);

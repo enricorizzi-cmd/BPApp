@@ -583,8 +583,8 @@ function esc(s){
 
   // Evidenzia la cella "oggi" leggendo data-date o data-day
   function highlightToday(root){
-    // Usa UTC per coerenza con backend, fallback a locale
-    var today = (window.BPTimezone && window.BPTimezone.ymdUTC) ? window.BPTimezone.ymdUTC(new Date()) : ymdLocal(new Date());
+    // Usa data locale per evidenziare "oggi" nel calendario
+    var today = ymdLocal(new Date());
     var box = root.querySelectorAll('[data-date], [data-day]');
     for (var i=0;i<box.length;i++){
       var el = box[i];
