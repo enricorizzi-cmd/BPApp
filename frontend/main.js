@@ -1103,7 +1103,7 @@ function cardAppt(x){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash) ]).then(function(arr){
+  Promise.all([ GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')), GET('/api/periods'+__qsDash) ]).then(function(arr){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
 
@@ -1445,7 +1445,7 @@ function viewCalendar(){
   if(consSel) populateConsultants();
 
   function renderMonth(y, m, filters, consultant){
-    var baseApps = '/api/appointments';
+    var baseApps = '/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '');
     var baseAvail = '/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
     if(consultant==='all'){ baseApps += '?global=1'; baseAvail += '&global=1'; }
     else if(consultant && consultant!==getUser().id){ baseApps += '?user='+consultant; baseAvail += '&user='+consultant; }
@@ -1941,7 +1941,7 @@ function viewPeriods(){
   // === Import da agenda ===
   function doImportAgenda(){
     var s=startH.value, e=endH.value; if(!s||!e){toast('Seleziona il periodo');return;}
-    GET('/api/appointments').then(function(r){
+    GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(function(r){
       var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
       for(var i=0;i<list.length;i++){ var a=list[i], d=BPTimezone.parseUTCString(a.start);
@@ -2735,7 +2735,7 @@ function deleteA(){
       '</div>';
   }
   function listA(){
-    GET('/api/appointments').then(r=>{
+    GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(r=>{
       const list=(r&&r.appointments)||[];
       const b=boundsForList(); const s=b.s.getTime(), e=b.e.getTime();
       const filtered=list.filter(a=>{ 
@@ -2820,7 +2820,7 @@ function deleteA(){
   try{
     const aid=load('bp_edit_aid', null);
     if(aid){
-      GET('/api/appointments').then(r=>{
+      GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(r=>{
         const list=(r&&r.appointments)||[];
         const it=list.find(a=> String(a.id)===String(aid));
         if(it){ fillForm(it); window.scrollTo({top:0, behavior:'smooth'}); }
