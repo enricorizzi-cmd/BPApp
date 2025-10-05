@@ -1437,7 +1437,8 @@ function viewCalendar(){
         h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
       }
       consSel.innerHTML = h;
-      consSel.value = me.id;
+      // Admin vede "Tutti" di default, consultant vede solo se stesso
+      consSel.value = (me.role === 'admin') ? 'all' : me.id;
     }).catch(function(){
       consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     });
