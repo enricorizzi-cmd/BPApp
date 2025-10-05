@@ -709,8 +709,10 @@ function viewHome(){
       '</div>'+
 
       '<div class="card">'+
-        '<b>Ultimi BP inviati</b>'+
-        '<div id="lastBPs" class="row" style="margin-top:8px"></div>'+
+        '<div id="dash_bp_sent_head" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
+          '<b>BP inviati (periodi in essere)</b><span id="dash_bp_sent_chev" class="chev">▸</span>'+
+        '</div>'+
+        '<div id="dash_bp_sent" class="row" style="margin-top:8px;display:none"></div>'+
       '</div>'+
     '</div>';
 
@@ -1204,55 +1206,87 @@ function cardAppt(x){
       });
     })();
 
-    // ===== ULTIMI BP INVIATI → ultimi 3 (con stato + indicatori) =====
-    (function renderLastBPs(){
-      var lastBPsEl = document.getElementById('lastBPs'); if(!lastBPsEl) return;
+    // ===== BP INVIATI (periodi in essere) =====
+    (function renderDashBPSent(){
+      var dashBPSentEl = document.getElementById('dash_bp_sent'); if(!dashBPSentEl) return;
+      
+      // Helper function per calcolare i bounds del periodo corrente
+      function currentBounds(tp,d){ 
+        d=d||new Date(); 
+        var y=d.getFullYear();
+        if(tp==='settimanale'){ var wb=weekBoundsOf(y,isoWeekNum(d)); return {start:wb.start,end:wb.end}; }
+        if(tp==='mensile'){ return {start:startOfMonth(d),end:endOfMonth(d)}; }
+        if(tp==='trimestrale'){ return {start:startOfQuarter(d),end:endOfQuarter(d)}; }
+        if(tp==='semestrale'){ return {start:startOfSemester(d),end:endOfSemester(d)}; }
+        return {start:startOfYear(d),end:endOfYear(d)};
+      }
+      
+      // Filtra periodi per consulente selezionato
       var pFiltered = pers.filter(function(p){
-        if (String(p.type) !== String(typeDash)) return false; // mostra solo BP del tipo selezionato
         if(cons && String(p.userId||p.uid||'') !== String(cons)) return false;
         return true;
-      }).sort(function(a,b){ return new Date(b.endDate)-new Date(a.endDate); }).slice(0,3);
-
-      var htmlP = pFiltered.map(function(p){
-        var lab  = formatPeriodLabel(p.type, p.startDate);
-        var prev = p.indicatorsPrev||{};
-        var consBag = p.indicatorsCons||{};
-        var isCons = hasCons(consBag);
-        var bag = isCons ? consBag : prev;
-
-        var vss  = safeN(bag.VSS);
-        var vsdP = safeN(bag.VSDPersonale);
-        var vsdI = safeN(bag.VSDIndiretto);
-        var gi   = safeN(bag.GI);
-        var nncf = safeN(bag.NNCF);
-        var vsdT = vsdP + vsdI;
-
-        return ''+
-          '<div class="card lastBP" data-pid="'+htmlEscape(String(p.id||''))+'" style="cursor:pointer;flex:1 1 320px">'+
-            '<div style="display:flex;align-items:center;gap:8px">'+
-              '<div><b>'+htmlEscape(lab)+'</b></div>'+
-              '<span class="chip small">'+(isCons?'Consuntivo':'Previsionale')+'</span>'+
-            '</div>'+
-            '<div class="row" style="margin-top:6px;gap:8px;flex-wrap:wrap">'+
-              '<span class="chip small">VSS <b>'+fmtEuro(vss)+'</b></span>'+
-              '<span class="chip small">VSD <b>'+fmtEuro(vsdT)+'</b> <span class="muted">(P '+fmtEuro(vsdP)+' · I '+fmtEuro(vsdI)+')</span></span>'+
-              '<span class="chip small">GI <b>'+fmtEuro(gi)+'</b></span>'+
-              '<span class="chip small">NNCF <b>'+fmtInt(nncf)+'</b></span>'+
+      });
+      
+      function findBP(tp,s,e){ 
+        return pFiltered.find(function(p){
+          return p.type===tp && ymd(p.startDate)===ymd(s) && ymd(p.endDate)===ymd(e);
+        }); 
+      }
+      
+      var now=new Date();
+      var htmlP = '';
+      
+      // Mostra BP per tutti i tipi di periodo
+      ['settimanale','mensile','trimestrale','semestrale','annuale'].forEach(function(tp){
+        var cur=currentBounds(tp,now);
+        var bp=findBP(tp,cur.start,cur.end);
+        if(bp){
+          htmlP += '<div class="card" style="flex:1 1 360px">'+
+            '<div><b>'+htmlEscape(formatPeriodLabel(tp,cur.start))+'</b></div>'+
+            '<div class="small muted">'+dmy(cur.start)+' → '+dmy(cur.end)+'</div>'+
+            '<div class="right" style="margin-top:6px">'+
+              '<button class="ghost" type="button" data-edit="'+bp.id+'">Modifica previs.</button>'+
+              '<button type="button" data-cons="'+bp.id+'">Consuntivo…</button>'+
             '</div>'+
           '</div>';
-      }).join('');
+        }
+      });
 
-      // layout responsive
-      lastBPsEl.innerHTML = htmlP
-        ? grid3(htmlP)
-        : '<div class="muted">Nessun BP</div>';
-
-      lastBPsEl.querySelectorAll('.lastBP[data-pid]').forEach(function(card){
-        card.addEventListener('click', function(){
-          try{ save('bp_open_period', { id: card.getAttribute('data-pid'), mode: false }); }catch(_){}
-          viewPeriods();
+      dashBPSentEl.innerHTML = htmlP || '<div class="muted">Nessun BP in essere</div>';
+      
+      // Aggiungi event listeners per i bottoni
+      dashBPSentEl.querySelectorAll('[data-edit]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var bpId = btn.getAttribute('data-edit');
+          var bp = pFiltered.find(function(p) { return String(p.id) === bpId; });
+          if(bp) {
+            try{ save('bp_open_period', { id: bpId, mode: false }); }catch(_){}
+            viewPeriods();
+          }
         });
       });
+      
+      dashBPSentEl.querySelectorAll('[data-cons]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var bpId = btn.getAttribute('data-cons');
+          var bp = pFiltered.find(function(p) { return String(p.id) === bpId; });
+          if(bp) {
+            try{ save('bp_open_period', { id: bpId, mode: true }); }catch(_){}
+            viewPeriods();
+          }
+        });
+      });
+      
+      // Aggiungi event listener per il toggle collassabile
+      var head = document.getElementById('dash_bp_sent_head');
+      var chev = document.getElementById('dash_bp_sent_chev');
+      if(head && chev) {
+        head.onclick = function(){ 
+          var vis = (dashBPSentEl.style.display !== 'none'); 
+          dashBPSentEl.style.display = vis ? 'none' : ''; 
+          chev.textContent = vis ? '▸' : '▾'; 
+        };
+      }
     })();
 
   }).catch(function(err){ logger.error(err); });
