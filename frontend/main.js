@@ -3287,7 +3287,7 @@ function viewTeam(){
           '</div>'+
           '<div>'+
             '<label>Consulente</label>'+
-            '<select id="t_cons"><option value="">Tutti</option></select>'+
+            '<select id="t_cons">'+(isAdmin ? '<option value="">Tutti</option>' : '')+'</select>'+
           '</div>'+
         '</div>'+
         '<div style="margin-top:8px"><canvas id="t_chart" height="160" style="width:100%"></canvas></div>'+
@@ -3298,12 +3298,10 @@ function viewTeam(){
         '<div id="t_agg" class="row" style="margin-top:8px"></div>'+
       '</div>'+
 
-      (isAdmin ? (
-        '<div class="card">'+
-          '<b>Riepilogo per utente</b>'+
-          '<div id="t_users" class="row" style="margin-top:8px"></div>'+
-        '</div>'
-      ) : '')+
+      '<div class="card">'+
+        '<b>'+(isAdmin ? 'Riepilogo per utente' : 'Il mio riepilogo')+'</b>'+
+        '<div id="t_users" class="row" style="margin-top:8px"></div>'+
+      '</div>'+
     '</div>';
 
   appEl.innerHTML = html;
@@ -3490,9 +3488,16 @@ function viewTeam(){
       // filtro consulente
       var consSel = document.getElementById('t_cons');
       if(consSel){
-        consSel.innerHTML = '<option value="">Tutti</option>'+users.map(function(u){
-          return '<option value="'+u.id+'">'+htmlEscape(u.name)+'</option>';
-        }).join('');
+        var me = getUser();
+        if(isAdmin){
+          // Admin vede tutti gli utenti
+          consSel.innerHTML = '<option value="">Tutti</option>'+users.map(function(u){
+            return '<option value="'+u.id+'">'+htmlEscape(u.name)+'</option>';
+          }).join('');
+        } else {
+          // Utenti non-admin vedono solo se stessi
+          consSel.innerHTML = '<option value="'+me.id+'">'+htmlEscape(me.name||me.email||('User #'+me.id))+'</option>';
+        }
       }
 
       function mapByUser(rows){
@@ -3530,7 +3535,11 @@ function viewTeam(){
 
       // cards utenti
       var host = document.getElementById('t_users');
-      if(host) host.innerHTML = rows.length ? rows.map(cardUser).join('') : '<div class="muted">Nessun dato</div>';
+      if(host) {
+        var me = getUser();
+        var filteredRows = isAdmin ? rows : rows.filter(function(r){ return String(r.userId) === String(me.id); });
+        host.innerHTML = filteredRows.length ? filteredRows.map(cardUser).join('') : '<div class="muted">Nessun dato</div>';
+      }
 
       // totali aggregati
       var tot = rows.reduce(function(a,x){
@@ -3617,7 +3626,7 @@ function viewTeam(){
     var modeEl = document.getElementById('t_mode');
     var mode   = modeEl ? modeEl.value : 'consuntivo';
     var consEl = document.getElementById('t_cons');
-    var cons   = consEl ? consEl.value : getUser().id;
+    var cons   = consEl ? consEl.value : (isAdmin ? '' : getUser().id);
     var range  = readUnifiedRange('t');
     var type   = range.type;
 
