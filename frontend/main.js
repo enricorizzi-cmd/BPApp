@@ -1454,8 +1454,8 @@ function viewCalendar(){
       }
       
       consSel.innerHTML = h;
-      // Tutti vedono se stessi di default, admin può cambiare
-      consSel.value = me.id;
+      // Admin vede "Tutti" di default, altri utenti vedono se stessi
+      consSel.value = (me.role === 'admin') ? 'all' : me.id;
     }).catch(function(){
       consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     });
