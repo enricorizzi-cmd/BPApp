@@ -131,7 +131,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
     if (typeof updateRecord === 'function') {
       try {
-        // Supabase: aggiornamento singolo con mapping corretto dei campi
+        // Supabase: aggiornamento singolo con mapping corretto dei campi esistenti
         const mappedUpdates = {
           client: it.client,
           start_time: it.start,
@@ -145,9 +145,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           appfissati: it.appFissati,
           nncf: it.nncf,
           nncfpromptanswered: it.nncfPromptAnswered,
-          salepromptanswered: it.salePromptAnswered,
-          salepromptsnoozeduntil: it.salePromptSnoozedUntil,
-          nncfpromptsnoozeduntil: it.nncfPromptSnoozedUntil,
           notes: it.notes,
           annotation: it.notes, // Duplicato per compatibilità
           userid: it.userId,
@@ -224,7 +221,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
     if (typeof insertRecord === 'function') {
       try {
-        // Supabase: inserimento singolo con mapping corretto dei campi
+        // Supabase: inserimento singolo con mapping corretto dei campi esistenti
         const mappedRow = {
           id: row.id,
           client: row.client,
@@ -239,9 +236,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           appfissati: row.appFissati,
           nncf: row.nncf,
           nncfpromptanswered: row.nncfPromptAnswered,
-          salepromptanswered: row.salePromptAnswered,
-          salepromptsnoozeduntil: row.salePromptSnoozedUntil,
-          nncfpromptsnoozeduntil: row.nncfPromptSnoozedUntil,
           notes: row.notes,
           annotation: row.notes, // Duplicato per compatibilità
           userid: row.userId,
