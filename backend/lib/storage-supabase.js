@@ -49,15 +49,32 @@ async function readJSON(tableName) {
     if (tableName === 'appointments.json') {
       const { data, error } = await supabase.from('appointments').select('*');
       if (error) throw error;
-      // Map 'start_time' and 'end_time' back to 'start' and 'end', and 'userid' to 'userId'
+      // Map database column names back to application format
       const mappedAppointments = (data || []).map(apt => ({
         ...apt,
         start: apt.start_time,
         end: apt.end_time,
         userId: apt.userid,
+        clientId: apt.clientid,
+        durationMinutes: apt.durationminutes,
+        vsdPersonal: apt.vsdpersonal,
+        vsdIndiretto: apt.vsdindiretto,
+        appFissati: apt.appfissati,
+        nncfPromptAnswered: apt.nncfpromptanswered,
+        createdAt: apt.createdat,
+        updatedAt: apt.updatedat,
+        // Remove database-specific fields
         start_time: undefined,
         end_time: undefined,
-        userid: undefined
+        userid: undefined,
+        clientid: undefined,
+        durationminutes: undefined,
+        vsdpersonal: undefined,
+        vsdindiretto: undefined,
+        appfissati: undefined,
+        nncfpromptanswered: undefined,
+        createdat: undefined,
+        updatedat: undefined
       }));
       return { appointments: mappedAppointments };
     }
