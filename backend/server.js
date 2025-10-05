@@ -388,7 +388,33 @@ app.post("/api/register", async (req,res)=>{
     createdAt: todayISO()
   };
   db.users.push(user);
-  await writeJSON("users.json", db);
+  
+  // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof insertRecord === 'function') {
+    try {
+      const mappedUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        pass: user.pass,
+        role: user.role,
+        grade: user.grade,
+        permissions: user.permissions,
+        resettoken: user.resetToken,
+        resettokenexp: user.resetTokenExp,
+        createdat: user.createdAt
+      };
+      await insertRecord('app_users', mappedUser);
+    } catch (error) {
+      console.error('Error inserting user:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true });
 });
 
@@ -413,7 +439,25 @@ app.post("/api/reset-password", rateLimit({ windowMs: 2*60*1000, max: 5 }), asyn
   const token = genId();
   u.resetToken = await bcrypt.hash(token, 10);
   u.resetTokenExp = Date.now() + 1000*60*60; // 1h
-  await writeJSON("users.json", db);
+  
+  // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof updateRecord === 'function') {
+    try {
+      const mappedUpdates = {
+        resettoken: u.resetToken,
+        resettokenexp: u.resetTokenExp
+      };
+      await updateRecord('app_users', u.id, mappedUpdates);
+    } catch (error) {
+      console.error('Error updating user reset token:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   await sendEmail(u.email, "Reset Password", `Your reset token is ${token}`);
   res.json({ ok:true });
 });
@@ -454,7 +498,33 @@ app.post("/api/users/create", auth, requirePermission("users:write"), async (req
     createdAt: todayISO()
   };
   db.users.push(user);
-  await writeJSON("users.json", db);
+  
+  // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof insertRecord === 'function') {
+    try {
+      const mappedUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        pass: user.pass,
+        role: user.role,
+        grade: user.grade,
+        permissions: user.permissions,
+        resettoken: user.resetToken,
+        resettokenexp: user.resetTokenExp,
+        createdat: user.createdAt
+      };
+      await insertRecord('app_users', mappedUser);
+    } catch (error) {
+      console.error('Error inserting user:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true, id:user.id });
 });
 
@@ -482,7 +552,31 @@ app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>
   if(body.password){
     u.pass = await bcrypt.hash(String(body.password), 10);
   }
-  await writeJSON("users.json", db);
+  
+  // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof updateRecord === 'function') {
+    try {
+      const mappedUpdates = {
+        name: u.name,
+        email: u.email,
+        pass: u.pass,
+        role: u.role,
+        grade: u.grade,
+        permissions: u.permissions,
+        resettoken: u.resetToken,
+        resettokenexp: u.resetTokenExp
+      };
+      await updateRecord('app_users', u.id, mappedUpdates);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true });
 });
 app.post("/api/users/profile", auth, async (req,res)=>{
@@ -496,7 +590,26 @@ app.post("/api/users/profile", auth, async (req,res)=>{
   if(password){
     u.pass = await bcrypt.hash(String(password), 10);
   }
-  await writeJSON("users.json", db);
+  
+  // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof updateRecord === 'function') {
+    try {
+      const mappedUpdates = {
+        name: u.name,
+        email: u.email,
+        pass: u.pass
+      };
+      await updateRecord('app_users', u.id, mappedUpdates);
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true });
 });
 
@@ -536,7 +649,24 @@ app.post("/api/users/credentials", auth, async (req,res)=>{
   const r2 = await _tryUpdatePassword(u, isSelf, isAdmin, oldPassword, newPassword);
   if(r2.error) return res.status(r2.error.code).json({ error:r2.error.msg });
 
-  await writeJSON("users.json", db);
+  // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof updateRecord === 'function') {
+    try {
+      const mappedUpdates = {
+        email: u.email,
+        pass: u.pass
+      };
+      await updateRecord('app_users', u.id, mappedUpdates);
+    } catch (error) {
+      console.error('Error updating user password:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true });
 });
 
@@ -558,7 +688,21 @@ app.delete("/api/users", auth, requirePermission("users:write"), async (req,res)
 
   users.splice(idx, 1);
   db.users = users;
-  await writeJSON("users.json", db);
+  
+  // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof deleteRecord === 'function') {
+    try {
+      await deleteRecord('app_users', id);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("users.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("users.json", db);
+  }
+  
   res.json({ ok:true });
 });
 
@@ -576,7 +720,30 @@ app.get("/api/settings", auth, async (req,res)=>{
 });
 app.post("/api/settings", auth, requireAdmin, async (req,res)=>{
   const cur = await readJSON("settings.json");
-  await writeJSON("settings.json", { ...cur, ...(req.body||{}), version: 13 });
+  const newSettings = { ...cur, ...(req.body||{}), version: 13 };
+  
+  // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof updateRecord === 'function') {
+    try {
+      // Settings è una tabella singleton, aggiorna sempre il record con id=1
+      const mappedSettings = {
+        id: 1, // ID fisso per settings singleton
+        indicators: newSettings.indicators,
+        weights: newSettings.weights,
+        commissions: newSettings.commissions,
+        version: newSettings.version
+      };
+      await updateRecord('settings', 1, mappedSettings);
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("settings.json", newSettings);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("settings.json", newSettings);
+  }
+  
   res.json({ ok:true });
 });
 
@@ -871,7 +1038,29 @@ app.post("/api/periods", auth, async (req,res)=>{
     if (indicatorsPrev) it.indicatorsPrev = _mergeIndicators(it.indicatorsPrev, indicatorsPrev);
     if (indicatorsCons) it.indicatorsCons = _mergeIndicators(it.indicatorsCons, indicatorsCons);
     await _applyProvvigioni(it);
-    await writeJSON("periods.json", db);
+    
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      try {
+        const mappedUpdates = {
+          userid: it.userId,
+          type: it.type,
+          startdate: it.startDate,
+          enddate: it.endDate,
+          indicatorsprev: it.indicatorsPrev,
+          indicatorscons: it.indicatorsCons
+        };
+        await updateRecord('periods', it.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating period:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("periods.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("periods.json", db);
+    }
+    
     return res.json({ ok:true, id: it.id, updated:true });
   }
 
@@ -881,7 +1070,29 @@ app.post("/api/periods", auth, async (req,res)=>{
     if (indicatorsPrev) existing.indicatorsPrev = _mergeIndicators(existing.indicatorsPrev, indicatorsPrev);
     if (indicatorsCons) existing.indicatorsCons = _mergeIndicators(existing.indicatorsCons, indicatorsCons);
     await _applyProvvigioni(existing);
-    await writeJSON("periods.json", db);
+    
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      try {
+        const mappedUpdates = {
+          userid: existing.userId,
+          type: existing.type,
+          startdate: existing.startDate,
+          enddate: existing.endDate,
+          indicatorsprev: existing.indicatorsPrev,
+          indicatorscons: existing.indicatorsCons
+        };
+        await updateRecord('periods', existing.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating existing period:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("periods.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("periods.json", db);
+    }
+    
     return res.json({ ok:true, id: existing.id, updated:true });
   }
 
@@ -894,7 +1105,30 @@ app.post("/api/periods", auth, async (req,res)=>{
     };
     await _applyProvvigioni(row);
     db.periods.push(row);
-    await writeJSON("periods.json", db);
+    
+    // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof insertRecord === 'function') {
+      try {
+        const mappedPeriod = {
+          id: row.id,
+          userid: row.userId,
+          type: row.type,
+          startdate: row.startDate,
+          enddate: row.endDate,
+          indicatorsprev: row.indicatorsPrev,
+          indicatorscons: row.indicatorsCons
+        };
+        await insertRecord('periods', mappedPeriod);
+      } catch (error) {
+        console.error('Error inserting period:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("periods.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("periods.json", db);
+    }
+    
     return res.json({ ok:true, id: row.id, created:true });
   }
 
@@ -911,7 +1145,21 @@ app.delete("/api/periods", auth, async (req,res)=>{
   const i = (db.periods || []).findIndex(p => p.id === id && (req.user.role==="admin" || p.userId === req.user.id));
   if(i === -1) return res.status(404).json({ error:"not found" });
   db.periods.splice(i,1);
-  await writeJSON("periods.json", db);
+  
+  // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof deleteRecord === 'function') {
+    try {
+      await deleteRecord('periods', id);
+    } catch (error) {
+      console.error('Error deleting period:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("periods.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("periods.json", db);
+  }
+  
   res.json({ ok:true });
 });
 // ---------- end Periods (BP) ----------
@@ -1201,7 +1449,33 @@ app.post("/api/gi", auth, async (req,res)=>{
         it[k] = patchers[k](body[k]);
       }
     }
-    await writeJSON("gi.json", db);
+    
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      try {
+        const mappedUpdates = {
+          appointmentid: it.appointmentId,
+          clientid: it.clientId,
+          clientname: it.clientName,
+          date: it.date,
+          consultantid: it.consultantId,
+          consultantname: it.consultantName,
+          services: it.services,
+          vsstotal: it.vssTotal,
+          schedule: it.schedule,
+          createdat: it.createdAt
+        };
+        await updateRecord('gi', it.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating GI/sale:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("gi.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("gi.json", db);
+    }
+    
     return res.json({ ok:true, id: it.id });
   }
 
@@ -1229,7 +1503,34 @@ app.post("/api/gi", auth, async (req,res)=>{
 
   const row = buildRow();
   db.sales.push(row);
-  await writeJSON("gi.json", db);
+  
+  // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof insertRecord === 'function') {
+    try {
+      const mappedSale = {
+        id: row.id,
+        appointmentid: row.appointmentId,
+        clientid: row.clientId,
+        clientname: row.clientName,
+        date: row.date,
+        consultantid: row.consultantId,
+        consultantname: row.consultantName,
+        services: row.services,
+        vsstotal: row.vssTotal,
+        schedule: row.schedule,
+        createdat: row.createdAt
+      };
+      await insertRecord('gi', mappedSale);
+    } catch (error) {
+      console.error('Error inserting GI/sale:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("gi.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("gi.json", db);
+  }
+  
   return res.json({ ok:true, id: row.id });
 });
 
@@ -1239,7 +1540,21 @@ app.delete("/api/gi", auth, async (req,res)=>{
   const i = (db.sales||[]).findIndex(s => s.id===id && (req.user.role==="admin" || String(s.consultantId||'')===String(req.user.id)));
   if(i===-1) return res.status(404).json({ error:"not found" });
   db.sales.splice(i,1);
-  await writeJSON("gi.json", db);
+  
+  // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof deleteRecord === 'function') {
+    try {
+      await deleteRecord('gi', id);
+    } catch (error) {
+      console.error('Error deleting GI/sale:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("gi.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("gi.json", db);
+  }
+  
   res.json({ ok:true });
 });
 // ---------- end GI & Scadenzario ----------
