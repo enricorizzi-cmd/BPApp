@@ -1668,10 +1668,29 @@ function viewCalendar(){
             h+='</div>';
           }
           var daySlots = (slots||[]).filter(function(s){ return s.date===dateStr; });
-          if(daySlots.length){
+          
+          // Verifica se gli slot sono ancora liberi considerando gli appuntamenti esistenti
+          var freeDaySlots = daySlots.filter(function(slot){
+            var slotStart = new Date(slot.start);
+            var slotEnd = new Date(slot.end);
+            
+            // Controlla se qualche appuntamento si sovrappone con questo slot
+            var hasOverlap = apps.some(function(app){
+              var appStart = new Date(app.start);
+              var appEnd = new Date(app.end || app.start);
+              
+              // Verifica sovrapposizione: slot e appuntamento si sovrappongono se
+              // slot inizia prima che l'appuntamento finisca E slot finisce dopo che l'appuntamento inizia
+              return slotStart < appEnd && slotEnd > appStart;
+            });
+            
+            return !hasOverlap; // Slot è libero solo se non c'è sovrapposizione
+          });
+          
+          if(freeDaySlots.length){
             h += '<div class="row" style="margin-top:8px">';
-            for(var si=0; si<daySlots.length; si++){
-              var s = daySlots[si];
+            for(var si=0; si<freeDaySlots.length; si++){
+              var s = freeDaySlots[si];
               var partTxt = (s.part==='morning'?'mattina':'pomeriggio');
               h += '<div class="card slotBtn" data-start="'+s.start+'" data-end="'+s.end+'" style="flex:1 1 280px;cursor:pointer">'+
                     '<div class="small">'+partTxt+' · '+timeHMlocal(s.start)+'–'+timeHMlocal(s.end)+'</div>'+

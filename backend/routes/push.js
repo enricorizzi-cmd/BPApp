@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = function({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KEY }){
+module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY }){
   const router = express.Router();
 
   router.get('/push/publicKey', (req,res)=>{
@@ -18,9 +18,40 @@ module.exports = function({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KE
       db.subs = db.subs || [];
       const idx = db.subs.findIndex(s => s.endpoint === sub.endpoint);
       const row = { userId: req.user.id, endpoint: sub.endpoint, keys: sub.keys, createdAt: todayISO(), lastSeen: todayISO() };
-      if(idx>=0) db.subs[idx] = { ...db.subs[idx], ...row };
-      else db.subs.push(row);
-      await writeJSON('push_subscriptions.json', db);
+      
+      // Usa operazioni Supabase invece di writeJSON per evitare sovrascrittura
+      if (typeof insertRecord === 'function' && typeof updateRecord === 'function') {
+        try {
+          const mappedSub = {
+            userid: row.userId,
+            endpoint: row.endpoint,
+            p256dh: row.keys.p256dh,
+            auth: row.keys.auth,
+            createdat: row.createdAt,
+            lastseen: row.lastSeen
+          };
+          
+          if(idx>=0) {
+            // Aggiorna subscription esistente
+            await updateRecord('push_subscriptions', db.subs[idx].id, mappedSub);
+          } else {
+            // Inserisci nuova subscription
+            mappedSub.id = require('nanoid').nanoid();
+            await insertRecord('push_subscriptions', mappedSub);
+          }
+        } catch (error) {
+          console.error('Error with push subscription:', error);
+          // Fallback al metodo tradizionale se Supabase fallisce
+          if(idx>=0) db.subs[idx] = { ...db.subs[idx], ...row };
+          else db.subs.push(row);
+          await writeJSON('push_subscriptions.json', db);
+        }
+      } else {
+        // SQLite locale: usa il metodo tradizionale
+        if(idx>=0) db.subs[idx] = { ...db.subs[idx], ...row };
+        else db.subs.push(row);
+        await writeJSON('push_subscriptions.json', db);
+      }
       res.json({ ok:true });
     }catch(e){ res.status(400).json({ error:'invalid_subscription' }); }
   });

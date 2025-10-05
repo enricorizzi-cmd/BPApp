@@ -660,18 +660,58 @@ async function findOrCreateClientByName(name, nncf, user){
       createdAt: todayISO()
     };
     cdb.clients.push(c);
-    await writeJSON("clients.json", cdb);
+    
+    // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof insertRecord === 'function') {
+      try {
+        const mappedClient = {
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          consultantid: c.consultantId,
+          consultantname: c.consultantName,
+          createdat: c.createdAt,
+          updatedat: c.createdAt
+        };
+        await insertRecord('clients', mappedClient);
+      } catch (error) {
+        console.error('Error inserting client:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("clients.json", cdb);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("clients.json", cdb);
+    }
   } else {
     // assicura campi consulente
     if(!c.consultantId)   c.consultantId   = user.id;
     if(!c.consultantName) c.consultantName = user.name || "unknown";
-    await writeJSON("clients.json", cdb);
+    
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      try {
+        const mappedUpdates = {
+          consultantid: c.consultantId,
+          consultantname: c.consultantName,
+          updatedat: new Date().toISOString()
+        };
+        await updateRecord('clients', c.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating client:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("clients.json", cdb);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("clients.json", cdb);
+    }
   }
   return c;
 }
 
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
-const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KEY });
+const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
 
