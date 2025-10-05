@@ -49,13 +49,15 @@ async function readJSON(tableName) {
     if (tableName === 'appointments.json') {
       const { data, error } = await supabase.from('appointments').select('*');
       if (error) throw error;
-      // Map 'start_time' and 'end_time' back to 'start' and 'end'
+      // Map 'start_time' and 'end_time' back to 'start' and 'end', and 'userid' to 'userId'
       const mappedAppointments = (data || []).map(apt => ({
         ...apt,
         start: apt.start_time,
         end: apt.end_time,
+        userId: apt.userid,
         start_time: undefined,
-        end_time: undefined
+        end_time: undefined,
+        userid: undefined
       }));
       return { appointments: mappedAppointments };
     }
@@ -123,7 +125,25 @@ async function readJSON(tableName) {
     if (tableName === 'gi.json') {
       const { data, error } = await supabase.from('gi').select('*');
       if (error) throw error;
-      return { gi: data || [] };
+      // Map column names back to application format
+      const mappedGi = (data || []).map(gi => ({
+        ...gi,
+        consultantId: gi.consultantid,
+        consultantName: gi.consultantname,
+        appointmentId: gi.appointmentid,
+        clientName: gi.clientname,
+        vssTotal: gi.vsstotal,
+        createdAt: gi.createdat,
+        updatedAt: gi.updatedat,
+        consultantid: undefined,
+        consultantname: undefined,
+        appointmentid: undefined,
+        clientname: undefined,
+        vsstotal: undefined,
+        createdat: undefined,
+        updatedat: undefined
+      }));
+      return { sales: mappedGi };
     }
     
     if (tableName === 'audit.log') {
@@ -166,13 +186,15 @@ async function writeJSON(tableName, data) {
       const appointments = data.appointments || [];
       await supabase.from('appointments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (appointments.length > 0) {
-        // Map 'start' and 'end' to 'start_time' and 'end_time'
+        // Map 'start' and 'end' to 'start_time' and 'end_time', and 'userId' to 'userid'
         const mappedAppointments = appointments.map(apt => ({
           ...apt,
+          userid: apt.userId,
           start_time: apt.start,
           end_time: apt.end,
           start: undefined,
-          end: undefined
+          end: undefined,
+          userId: undefined
         }));
         await supabase.from('appointments').insert(mappedAppointments);
       }
@@ -259,10 +281,28 @@ async function writeJSON(tableName, data) {
     }
     
     if (tableName === 'gi.json') {
-      const gi = data.gi || [];
+      const gi = data.sales || [];
       await supabase.from('gi').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (gi.length > 0) {
-        await supabase.from('gi').insert(gi);
+        // Map column names to database format
+        const mappedGi = gi.map(giRecord => ({
+          ...giRecord,
+          consultantid: giRecord.consultantId,
+          consultantname: giRecord.consultantName,
+          appointmentid: giRecord.appointmentId,
+          clientname: giRecord.clientName,
+          vsstotal: giRecord.vssTotal,
+          createdat: giRecord.createdAt || new Date().toISOString(),
+          updatedat: giRecord.updatedAt || new Date().toISOString(),
+          consultantId: undefined,
+          consultantName: undefined,
+          appointmentId: undefined,
+          clientName: undefined,
+          vssTotal: undefined,
+          createdAt: undefined,
+          updatedAt: undefined
+        }));
+        await supabase.from('gi').insert(mappedGi);
       }
       logger.info(`Successfully wrote ${gi.length} gi records`);
       return;
