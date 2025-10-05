@@ -4903,15 +4903,15 @@ function viewUsers(){
   var me=getUser(); if(!me) return viewLogin();
   document.title = 'Battle Plan – Utenti';
 
-  if(me.role === 'admin'){
-    appEl.innerHTML = topbarHTML()+
-      '<div class="wrap">'+
-        '<div class="card">'+
-          '<b>Gestione utenti</b>'+
-          '<div id="users_list" class="row" style="margin-top:8px"></div>'+
-        '</div>'+
-      '</div>';
-    renderTopbar();
+  // Tutti possono accedere alla scheda utenti
+  appEl.innerHTML = topbarHTML()+
+    '<div class="wrap">'+
+      '<div class="card">'+
+        '<b>'+(me.role === 'admin' ? 'Gestione utenti' : 'Il mio profilo')+'</b>'+
+        '<div id="users_list" class="row" style="margin-top:8px"></div>'+
+      '</div>'+
+    '</div>';
+  renderTopbar();
 
     function row(u){
       var name = htmlEscape(u.name || u.email || ('user_'+u.id));
@@ -4940,7 +4940,7 @@ function viewUsers(){
           '</div>'+
           '<div class="right" style="align-self:flex-end">'+
             '<button class="ghost" data-save="'+u.id+'">Aggiorna</button> '+
-            '<button class="danger" data-del="'+u.id+'" title="Elimina utente">Elimina</button>'+
+            (me.role === 'admin' ? '<button class="danger" data-del="'+u.id+'" title="Elimina utente">Elimina</button>' : '')+
           '</div>'+
         '</div>'+
       '</div>';
@@ -4948,7 +4948,9 @@ function viewUsers(){
 
     function loadUsers(){
       GET('/api/users').then(function(r){
-        var list=(r&&r.users)||[];
+        var allUsers=(r&&r.users)||[];
+        // Admin vede tutti, utenti non-admin vedono solo se stessi
+        var list = (me.role === 'admin') ? allUsers : allUsers.filter(function(u){ return String(u.id) === String(me.id); });
         var host=$1('#users_list'); if(!host) return;
         host.innerHTML = list.map(row).join('');
         $all('[data-save]').forEach(function(bt){
@@ -4959,7 +4961,9 @@ function viewUsers(){
           var grade= ($1('select[data-gfor="'+id+'"]')||{}).value||'junior';
           var role = ($1('select[data-rfor="'+id+'"]')||{}).value||'consultant';
           var pwdEl =  $1('input[data-pfor="'+id+'"]'); var pwd = pwdEl?pwdEl.value:'';
-          var payload={ id:id, name:name, email:email, grade:grade, role:role };
+          var payload={ id:id, name:name, email:email, grade:grade };
+          // Solo admin può modificare il ruolo
+          if(me.role === 'admin') payload.role = role;
           if(pwd) payload.password=pwd;
           POST('/api/users', payload).then(function(){
             toast('Aggiornato'); window.addXP(5);
@@ -4970,6 +4974,8 @@ function viewUsers(){
       $all('[data-del]').forEach(function(bt){
         bt.addEventListener('click', function(){
           var id = bt.getAttribute('data-del');
+          // Solo admin può eliminare utenti
+          if(me.role !== 'admin') return;
           if(!confirm('Eliminare definitivamente questo utente?')) return;
           // Snapshot per Undo (trova l'utente corrente nella lista)
           var backup = (Array.isArray(list)? list : []).find(function(u){ return String(u.id)===String(id); });
@@ -4996,41 +5002,6 @@ function viewUsers(){
     });
     }
     loadUsers();
-  } else {
-    // Se non admin: mostra form "Profilo" solo per modificare i propri dati
-    appEl.innerHTML = topbarHTML()+
-      '<div class="wrap">'+
-        '<div class="card">'+
-          '<b>Il mio profilo</b>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div><label>Nome</label><input id="p_name" type="text" value="'+htmlEscape(me.name||'')+'"></div>'+
-            '<div><label>Email</label><input id="p_email" type="email" value="'+htmlEscape(me.email||'')+'"></div>'+
-          '</div>'+
-          '<div class="row">'+
-            '<div><label>Nuova password</label><input id="p_pwd" type="password" placeholder="Lascia vuoto per non cambiare"></div>'+
-            '<div class="right" style="align-self:flex-end"><button id="p_save">Aggiorna</button></div>'+
-          '</div>'+
-          '<div class="row">'+
-            '<div><label>Ruolo</label><input value="'+htmlEscape(me.role||'consultant')+'" disabled></div>'+
-            '<div><label>Grade</label><input value="'+htmlEscape(me.grade||'junior')+'" disabled></div>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
-    renderTopbar();
-    $1('#p_save').onclick=function(){
-        var name = $1('#p_name').value.trim();
-        var email= $1('#p_email').value.trim();
-        var pwd  = $1('#p_pwd').value;
-        if(!name || !email){ toast('Nome ed email obbligatori'); return; }
-        var payload={ id: me.id, name:name, email:email };
-        if(pwd) payload.password=pwd;
-        POST('/api/users/profile', payload).then(function(){
-          toast('Profilo aggiornato'); window.addXP(3);
-          var u=getUser(); if(u){ u.name=name; u.email=email; localStorage.setItem('user', JSON.stringify(u)); }
-          try{ document.dispatchEvent(new Event('user:profile-updated')); }catch(_){ }
-        }).catch(function(err){ logger.error(err); toast(err.message || 'Errore aggiornamento'); });
-      };
-  }
 }
 
 
