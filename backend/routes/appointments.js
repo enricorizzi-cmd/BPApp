@@ -130,17 +130,35 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
     // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
     if (typeof updateRecord === 'function') {
-      // Supabase: aggiornamento singolo
-      const mappedUpdates = {
-        ...it,
-        userid: it.userId,
-        start_time: it.start,
-        end_time: it.end,
-        userId: undefined,
-        start: undefined,
-        end: undefined
-      };
-      await updateRecord('appointments', it.id, mappedUpdates);
+      try {
+        // Supabase: aggiornamento singolo con mapping corretto dei campi
+        const mappedUpdates = {
+          client: it.client,
+          start_time: it.start,
+          end_time: it.end,
+          durationminutes: it.durationMinutes,
+          type: it.type,
+          vss: it.vss,
+          vsdpersonal: it.vsdPersonal,
+          vsdindiretto: it.vsdIndiretto,
+          telefonate: it.telefonate,
+          appfissati: it.appFissati,
+          nncf: it.nncf,
+          nncfpromptanswered: it.nncfPromptAnswered,
+          salepromptanswered: it.salePromptAnswered,
+          salepromptsnoozeduntil: it.salePromptSnoozedUntil,
+          nncfpromptsnoozeduntil: it.nncfPromptSnoozedUntil,
+          notes: it.notes,
+          annotation: it.notes, // Duplicato per compatibilità
+          userid: it.userId,
+          clientid: it.clientId,
+          updatedat: it.updatedAt
+        };
+        await updateRecord('appointments', it.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating appointment:', error);
+        return res.status(500).json({ error: 'Failed to update appointment' });
+      }
     } else {
       // SQLite locale: usa il metodo tradizionale
       await writeJSON('appointments.json', db);
@@ -205,17 +223,37 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     
     // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
     if (typeof insertRecord === 'function') {
-      // Supabase: inserimento singolo
-      const mappedRow = {
-        ...row,
-        userid: row.userId,
-        start_time: row.start,
-        end_time: row.end,
-        userId: undefined,
-        start: undefined,
-        end: undefined
-      };
-      await insertRecord('appointments', mappedRow);
+      try {
+        // Supabase: inserimento singolo con mapping corretto dei campi
+        const mappedRow = {
+          id: row.id,
+          client: row.client,
+          start_time: row.start,
+          end_time: row.end,
+          durationminutes: row.durationMinutes,
+          type: row.type,
+          vss: row.vss,
+          vsdpersonal: row.vsdPersonal,
+          vsdindiretto: row.vsdIndiretto,
+          telefonate: row.telefonate,
+          appfissati: row.appFissati,
+          nncf: row.nncf,
+          nncfpromptanswered: row.nncfPromptAnswered,
+          salepromptanswered: row.salePromptAnswered,
+          salepromptsnoozeduntil: row.salePromptSnoozedUntil,
+          nncfpromptsnoozeduntil: row.nncfPromptSnoozedUntil,
+          notes: row.notes,
+          annotation: row.notes, // Duplicato per compatibilità
+          userid: row.userId,
+          clientid: row.clientId,
+          createdat: row.createdAt,
+          updatedat: row.updatedAt
+        };
+        await insertRecord('appointments', mappedRow);
+      } catch (error) {
+        console.error('Error inserting appointment:', error);
+        return res.status(500).json({ error: 'Failed to save appointment' });
+      }
     } else {
       // SQLite locale: usa il metodo tradizionale
       db.appointments.push(row);
