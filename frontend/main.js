@@ -4571,6 +4571,40 @@ function viewReport(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Report';
 
+  // Add CSS for pill buttons with better contrast
+  if(!document.getElementById('report_pill_css')){
+    const st=document.createElement('style');
+    st.id='report_pill_css';
+    st.textContent = `
+      .pill {
+        background: #f8f9fa;
+        color: #495057;
+        border: 2px solid #dee2e6;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        opacity: 1;
+      }
+      .pill:hover {
+        border-color: var(--accent);
+        background: #e3f2fd;
+        color: var(--accent);
+      }
+      .pill.active {
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(93,211,255,.4);
+        opacity: 1;
+        font-weight: 600;
+        transform: translateY(-1px);
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
 
@@ -4628,7 +4662,7 @@ function viewReport(){
   // =========================
   var ALL=[]; // /api/periods
   var SECTIONS = { mensile:false, trimestrale:false, semestrale:false, annuale:false };
-  var EXTRA = { Telefonate:true, AppFissati:true, AppFatti:true, CorsiLeadership:true, iProfile:true, MBS:true, Note:true };
+  var EXTRA = { Telefonate:false, AppFissati:false, AppFatti:false, CorsiLeadership:false, iProfile:false, MBS:false, Note:false };
 
   var INDICATORS = [
     {k:'VSS', money:true,  label:'VSS'},
@@ -4787,7 +4821,7 @@ function pickClosingAndNext(type, now){
   // =========================
   // TOGGLES
   // =========================
-  function setBtnActive(btn, on){ btn.classList.toggle('active', !!on); btn.style.opacity = on ? '1' : '0.65'; }
+  function setBtnActive(btn, on){ btn.classList.toggle('active', !!on); }
   function syncToggleButtons(){
     setBtnActive($('tog_mese'), SECTIONS.mensile);
     setBtnActive($('tog_trimestre'), SECTIONS.trimestrale);
@@ -4896,8 +4930,9 @@ document.dispatchEvent(new Event('report:composed'));
   function init(){
     GET('/api/periods').then(function(r){
       ALL = (r && r.periods) || [];
-      autoselectSectionsByDate();  // auto ON quando siamo in finestra [-7,+5] dal termine del periodo
-      syncIndicatorButtons();
+      // Tutti i bottoni deselezionati di default (rimosso autoselectSectionsByDate)
+      syncToggleButtons();      // Sincronizza bottoni sezioni (tutti deselezionati)
+      syncIndicatorButtons();   // Sincronizza bottoni indicatori (tutti deselezionati)
       bindIndicatorToggles();
       bindToggles();
       rebuildBody();               // genera il corpo (settimana solo nel weekend)
