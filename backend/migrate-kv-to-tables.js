@@ -33,7 +33,7 @@ async function migrateData() {
       console.log(`Processing ${name}...`);
       
       switch (name) {
-        case 'users.json':
+        case 'users.json': {
           if (jsonData.users && jsonData.users.length > 0) {
             console.log(`  Migrating ${jsonData.users.length} users`);
             // Map column names to match database schema
@@ -57,8 +57,9 @@ async function migrateData() {
             }
           }
           break;
+        }
           
-        case 'appointments.json':
+        case 'appointments.json': {
           if (jsonData.appointments && jsonData.appointments.length > 0) {
             console.log(`  Migrating ${jsonData.appointments.length} appointments`);
             // Map start/end to start_time/end_time and fix column names
@@ -88,8 +89,9 @@ async function migrateData() {
             }
           }
           break;
+        }
           
-        case 'clients.json':
+        case 'clients.json': {
           if (jsonData.clients && jsonData.clients.length > 0) {
             console.log(`  Migrating ${jsonData.clients.length} clients`);
             // Map column names to match database schema
@@ -110,8 +112,9 @@ async function migrateData() {
             }
           }
           break;
+        }
           
-        case 'periods.json':
+        case 'periods.json': {
           if (jsonData.periods && jsonData.periods.length > 0) {
             console.log(`  Migrating ${jsonData.periods.length} periods`);
             // Map column names to match database schema
@@ -139,8 +142,9 @@ async function migrateData() {
             }
           }
           break;
+        }
           
-        case 'settings.json':
+        case 'settings.json': {
           console.log(`  Migrating settings`);
           const { error: settingsError } = await supabase.from('settings').insert({
             id: 'main',
@@ -154,8 +158,9 @@ async function migrateData() {
             console.log(`  Successfully migrated settings`);
           }
           break;
+        }
           
-        case 'push_subscriptions.json':
+        case 'push_subscriptions.json': {
           if (jsonData.subs && jsonData.subs.length > 0) {
             console.log(`  Migrating ${jsonData.subs.length} push subscriptions`);
             // Map subs to push_subscriptions format
@@ -176,8 +181,9 @@ async function migrateData() {
             }
           }
           break;
+        }
           
-        case 'gi.json':
+        case 'gi.json': {
           if (jsonData.sales && jsonData.sales.length > 0) {
             console.log(`  Migrating ${jsonData.sales.length} gi records`);
             // Map column names to match database schema
@@ -203,6 +209,7 @@ async function migrateData() {
             }
           }
           break;
+        }
           
         default:
           console.log(`  Skipping unknown table: ${name}`);

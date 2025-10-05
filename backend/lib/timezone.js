@@ -33,7 +33,7 @@ function parseDateTime(input) {
   const str = String(input).trim();
   
   // Se è già ISO con timezone (Z o offset)
-  if (/[Zz]|[+\-]\d{2}:\d{2}$/.test(str)) {
+  if (/[Zz]|[+-]\d{2}:\d{2}$/.test(str)) {
     const d = new Date(str);
     return isNaN(d) ? new Date(NaN) : d;
   }
