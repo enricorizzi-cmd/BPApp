@@ -2344,9 +2344,9 @@ function viewAppointments(){
         '<b>Elenco appuntamenti</b>'+
         '<div class="row" style="margin-top:8px;align-items:flex-end;gap:12px;flex-wrap:wrap">'+
           '<div><label>Vista</label>'+
-            '<select id="af_type"><option value="sett">Settimana</option><option value="mese">Mese</option></select>'+
+            '<select id="af_type"><option value="tutti">Tutti</option><option value="mese">Mese</option><option value="sett">Settimana</option></select>'+
           '</div>'+
-          '<div id="af_week_wrap"><label>Settimana ISO</label>'+
+          '<div id="af_week_wrap" style="display:none"><label>Settimana ISO</label>'+
             '<input id="af_week" type="number" min="1" max="53" value="'+isoWeekNum(new Date())+'"></div>'+
           '<div id="af_month_wrap" style="display:none"><label>Mese</label>'+
             '<select id="af_month">'+
@@ -2643,6 +2643,10 @@ function deleteA(){
   // --------- filtro lista (settimana/mese + prev/next) ----------
   function boundsForList(){
     const t=document.getElementById('af_type').value;
+    if(t==='tutti'){
+      // Mostra tutti gli appuntamenti senza filtri di data
+      return {s: new Date(2000, 0, 1), e: new Date(2100, 11, 31, 23, 59, 59, 999)};
+    }
     const y=parseInt(document.getElementById('af_year').value,10);
     if(t==='sett'){
       const w=Math.max(1, Math.min(53, parseInt(document.getElementById('af_week').value||isoWeekNum(new Date()),10)));
