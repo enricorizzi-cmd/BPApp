@@ -1,18 +1,13 @@
 const express = require('express');
+const { parseDateTime, toUTCString, minutesBetween, addMinutes, isValidDateTime } = require('../lib/timezone');
 
 module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCreateClientByName, genId }){
   const router = express.Router();
 
   // ---- helpers ----
   function parseDateSmart(s){
-    if(!s) return new Date(NaN);
-    const d = new Date(s);
-    if(!isNaN(d)) return d;
-    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
-    if(m) return new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], 0, 0);
-    return new Date(NaN);
+    return parseDateTime(s);
   }
-  function minutesBetween(a,b){ return Math.max(1, Math.round((b - a)/60000)); }
   const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
   const toStr = (v) => String(v);
   const toType = (v) => String(v || 'manuale');
@@ -44,10 +39,10 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       endNew = endCandidate;
       minutes = minutesBetween(startNew, endNew);
     } else if (durProvided && isFinite(minutes) && minutes > 0) {
-      endNew = new Date(startNew.getTime() + minutes * 60000);
+      endNew = addMinutes(startNew, minutes);
     } else {
       // keep same duration relative to new start
-      endNew = new Date(startNew.getTime() + (durOld > 0 ? durOld : 90) * 60000);
+      endNew = addMinutes(startNew, durOld > 0 ? durOld : 90);
       minutes = minutesBetween(startNew, endNew);
     }
     return { startNew, endNew, minutes };
@@ -142,6 +137,7 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
         return res.status(400).json({ error:'missing fields' });
       }
     }
+    
     const start = parseDateSmart(body.start);
     if(isNaN(start)) return res.status(400).json({ error:'invalid start' });
 
@@ -156,7 +152,7 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     }
     if(!end){
       if(!isFinite(minutes) || minutes<=0){ minutes = defaultMinutesForType(body.type); }
-      end = new Date(start.getTime() + minutes*60000);
+      end = addMinutes(start, minutes);
     }
 
     const c = await findOrCreateClientByName(body.client, !!body.nncf, { id:req.user.id, name:(req.user.name||'') });
@@ -167,8 +163,8 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       client: String(body.client),
       clientId: c.id,
       type: String(body.type||'manuale'),
-      start: start.toISOString(),
-      end: end.toISOString(),
+      start: toUTCString(start),
+      end: toUTCString(end),
       durationMinutes: minutes,
       vss: Number(body.vss||0),
       vsdPersonal: Number(body.vsdPersonal||0),

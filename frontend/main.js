@@ -38,6 +38,7 @@ import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
 import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
 import { $1, $all, getQuery } from "./src/query.js";
 import "./lib/ics-single.js";
+import "./lib/timezone.js";
 window.Chart = Chart;
 ;(function () {
   'use strict';
@@ -2667,13 +2668,13 @@ function deleteA(){
 
   // --------- rendering lista ----------
   function cardHTML(a){
-    const s = new Date(a.start);
-    let e = a.end ? new Date(a.end) : null;
+    const s = BPTimezone.parseUTCString(a.start);
+    let e = a.end ? BPTimezone.parseUTCString(a.end) : null;
     if(!(e instanceof Date) || isNaN(e) || e < s){
       const dur = isFinite(a.durationMinutes) ? Number(a.durationMinutes) : defDurByType(a.type||'vendita');
-      e = new Date(s.getTime() + dur*60000);
+      e = BPTimezone.addMinutes(s, dur);
     }
-    const when = dmy(s)+' '+('0'+s.getHours()).slice(-2)+':'+('0'+s.getMinutes()).slice(-2)+'–'+('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
+    const when = BPTimezone.toLocalDisplay(s).split(' ')[0] + ' ' + BPTimezone.timeHMLocal(s) + '–' + BPTimezone.timeHMLocal(e);
     var line2;
     var tt = String(a.type||'').toLowerCase();
     if(tt.indexOf('mbs')>-1){ line2 = 'VSD ind '+fmtEuro(a.vsdIndiretto||0); }

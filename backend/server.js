@@ -28,6 +28,7 @@ const storage = usePgStorage ? require("./lib/storage-pg") : require("./lib/stor
 const { init: initStore, readJSON, writeJSON } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinutes, timeRangesOverlap } = require('./lib/timezone');
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
 const logger = require("./lib/logger");
@@ -117,8 +118,7 @@ function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
 function ymd(d){
-  const x = new Date(d);
-  return `${x.getFullYear()}-${pad2(x.getMonth()+1)}-${pad2(x.getDate())}`;
+  return ymdUTC(d);
 }
 function toLocalInputValue(d){
   const x = new Date(d);
@@ -126,10 +126,7 @@ function toLocalInputValue(d){
   return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`;
 }
 function fromLocalInputValue(s){ // "YYYY-MM-DDTHH:MM" -> Date (locale)
-  const [date,time='00:00'] = String(s).split('T');
-  const [Y,M,D] = date.split('-').map(Number);
-  const [h,m]   = time.split(':').map(Number);
-  return new Date(Y, M-1, D, h, m, 0, 0);
+  return parseDateTime(s);
 }
 
 async function sendEmail(to, subject, text){
@@ -158,7 +155,7 @@ function computeEndLocal(startLocalStr, type, minutes){
     else if(type==="giornata") dur = 570;
     else dur = 60;
   }
-  const end = new Date(start.getTime()+dur*60000);
+  const end = addMinutes(start, dur);
   return toLocalInputValue(end);
 }
 function overlapsAny(pStart, pEnd, rStart, rEnd){
@@ -829,18 +826,23 @@ app.get("/api/availability", auth, async (req,res)=>{
   ];
   function computeSlots(apps){
     function freeMinutesForBlock(date, b){
-      const dayKey = ymd(date);
+      const dayKey = ymdUTC(date);
       const blockStart = b.startH*60 + b.startM;
       const blockEnd   = b.endH*60 + b.endM;
       for(const a of apps){
         const startStr = String(a.start||'');
         if(startStr.slice(0,10) !== dayKey) continue;
-        const endStr = String(a.end || a.start);
-        const [aSH,aSM] = startStr.slice(11,16).split(':').map(Number);
-        const [aEH,aEM] = endStr.slice(11,16).split(':').map(Number);
-        const aStart = aSH*60 + aSM;
-        const aEnd   = aEH*60 + aEM;
-        const overlap = Math.max(0, Math.min(aEnd, blockEnd) - Math.max(aStart, blockStart));
+        
+        // Parse appointment times as UTC and convert to local time for comparison
+        const appStart = parseDateTime(a.start);
+        const appEnd = parseDateTime(a.end || a.start);
+        if(isNaN(appStart) || isNaN(appEnd)) continue;
+        
+        // Convert UTC appointment times to local time for comparison with blocks
+        const aStartLocal = appStart.getHours() * 60 + appStart.getMinutes();
+        const aEndLocal = appEnd.getHours() * 60 + appEnd.getMinutes();
+        
+        const overlap = Math.max(0, Math.min(aEndLocal, blockEnd) - Math.max(aStartLocal, blockStart));
         if(overlap > 0) return 0;
       }
       return blockEnd - blockStart;
@@ -853,7 +855,7 @@ app.get("/api/availability", auth, async (req,res)=>{
       for(const b of blocks){
         const free = freeMinutesForBlock(d,b);
         if(free >= 240){
-          const dateKey = ymd(d);
+          const dateKey = ymdUTC(d);
           const start = `${dateKey}T${pad2(b.startH)}:${pad2(b.startM)}`;
           const end   = `${dateKey}T${pad2(b.endH)}:${pad2(b.endM)}`;
           out.push({ date: dateKey, start, end, part: b.part });
@@ -872,7 +874,7 @@ app.get("/api/availability", auth, async (req,res)=>{
     let allSlots = [];
     const details = [];
     // Calcola chiave "oggi" per filtrare gli slot da oggi in poi (coerente con la UI)
-    const todayKey = ymd(new Date());
+    const todayKey = ymdUTC(new Date());
     for(const u of (usersDb.users||[])){
       const apps = allApps.filter(a => a.userId === u.id);
       const { slots, summary } = computeSlots(apps);

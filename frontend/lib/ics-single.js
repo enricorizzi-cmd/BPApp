@@ -5,7 +5,7 @@
      BP.ICS.downloadIcsForAppointment(appt)
    appt atteso:
      { id, client, start, end, type, notes, vss, vsdPersonal }
-     start/end: "YYYY-MM-DDTHH:MM" (locale)
+     start/end: ISO string UTC dal backend
 */
 // logger is loaded globally via index.html
 
@@ -18,14 +18,14 @@
     return n < 10 ? "0" + n : "" + n;
   }
 
-  // Stringa data -> "YYYYMMDDTHHMMSSZ" (UTC), robusta con ISO + timezone
+  // Stringa UTC -> "YYYYMMDDTHHMMSSZ" (UTC), robusta con ISO + timezone
   function toIcsUtc(str) {
     if (!str) return "";
     // Se contiene 'Z' o offset +HH:MM/-HH:MM, è già ISO con timezone
     if (/[Zz]|[+\-]\d{2}:\d{2}$/.test(String(str))) {
      return new Date(str).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z").slice(0,15)+"Z";
     }
-   // Altrimenti: "YYYY-MM-DDTHH:MM" locale
+   // Altrimenti: "YYYY-MM-DDTHH:MM" locale - converti a UTC
     const [date, time="00:00"] = String(str).split("T");
     const [Y,M,D] = date.split("-").map(Number);
     const [h,m]   = time.split(":").map(Number);
