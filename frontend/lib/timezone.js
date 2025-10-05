@@ -159,19 +159,20 @@ function isValidDateTime(input) {
 
 // Export per uso in moduli ES6
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    parseUTCString,
-    toLocalDisplay,
-    toLocalInputValue,
-    fromLocalInputValue,
-    ymdLocal,
-    timeHMLocal,
-    minutesBetween,
-    addMinutes,
-    formatDuration,
-    toICSUTC,
-    isValidDateTime
-  };
+module.exports = {
+  parseUTCString,
+  toLocalDisplay,
+  toLocalInputValue,
+  fromLocalInputValue,
+  ymdLocal,
+  ymdUTC,
+  timeHMLocal,
+  minutesBetween,
+  addMinutes,
+  formatDuration,
+  toICSUTC,
+  isValidDateTime
+};
 }
 
 // Export globale per uso diretto nel browser
@@ -182,6 +183,7 @@ if (typeof window !== 'undefined') {
     toLocalInputValue,
     fromLocalInputValue,
     ymdLocal,
+    ymdUTC,
     timeHMLocal,
     minutesBetween,
     addMinutes,
