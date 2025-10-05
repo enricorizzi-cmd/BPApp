@@ -1474,7 +1474,12 @@ function viewCalendar(){
             out.telefonate += Number(a.telefonate||0);
             out.appFissati += Number(a.appFissati||0);
             out.nncf       += (a.nncf?1:0);
-            out.count      += 1;
+            
+            // Conta solo le tipologie vendita, mezza giornata e giornata intera
+            var type = String(a.type||'').toLowerCase();
+            if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
+              out.count += 1;
+            }
           }
         }
         return out;
@@ -1516,7 +1521,13 @@ function viewCalendar(){
         map[key].appFissati += Number(a.appFissati||0);
         map[key].nncf += (a.nncf?1:0);
         map[key].mins += Number(a.durationMinutes||0);
-        map[key].count += 1;
+        
+        // Conta solo le tipologie vendita, mezza giornata e giornata intera
+        var type = String(a.type||'').toLowerCase();
+        if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
+          map[key].count += 1;
+        }
+        
         map[key].items.push(a);
       }
 
@@ -1938,7 +1949,14 @@ function viewPeriods(){
           agg.VSDIndiretto+=Number(a.vsdIndiretto||0);
           agg.Telefonate+=Number(a.telefonate||0);
           agg.AppFissati+=Number(a.appFissati||0);
-          if(a.nncf){ agg.AppFatti+=1; agg.NNCF+=1; }
+          
+          // Conta AppFatti solo per le tipologie vendita, mezza giornata e giornata intera
+          var type = String(a.type||'').toLowerCase();
+          if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
+            agg.AppFatti+=1;
+          }
+          
+          if(a.nncf){ agg.NNCF+=1; }
         }
       }
       if(CONS_MODE){
