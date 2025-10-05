@@ -1454,8 +1454,8 @@ function viewCalendar(){
       }
       
       consSel.innerHTML = h;
-      // Admin vede "Tutti" di default, altri utenti vedono se stessi
-      consSel.value = (me.role === 'admin') ? 'all' : me.id;
+      // Tutti vedono se stessi di default, admin può cambiare
+      consSel.value = me.id;
     }).catch(function(){
       consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     });
@@ -1493,8 +1493,11 @@ function viewCalendar(){
             out.appFissati += Number(a.appFissati||0);
             out.nncf       += (a.nncf?1:0);
             
-            // Conta tutti gli appuntamenti per coerenza con il calcolo degli slot
-            out.count += 1;
+            // Conta solo vendita+mezza+giornata per le somme indicatori
+            var type = String(a.type||'').toLowerCase();
+            if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
+              out.count += 1;
+            }
           }
         }
         return out;
@@ -1529,7 +1532,7 @@ function viewCalendar(){
         if(s<from || s>to) continue;
         // Usa data locale per coerenza con calendario locale
         var key = ymd(s);
-        if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
+        if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,salesCount:0,items:[]};
         map[key].vss += Number(a.vss||0);
         map[key].vsd += Number(a.vsdPersonal||0);
         map[key].vsdI += Number(a.vsdIndiretto||0);
@@ -1538,8 +1541,14 @@ function viewCalendar(){
         map[key].nncf += (a.nncf?1:0);
         map[key].mins += Number(a.durationMinutes||0);
         
-        // Conta tutti gli appuntamenti per coerenza con il calcolo degli slot
+        // Conta tutti gli appuntamenti per i colori (coerenza con slot)
         map[key].count += 1;
+        
+        // Conta solo vendita+mezza+giornata per le somme indicatori
+        var type = String(a.type||'').toLowerCase();
+        if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
+          map[key].salesCount += 1;
+        }
         
         map[key].items.push(a);
       }
@@ -1601,7 +1610,7 @@ function viewCalendar(){
               if(v.telefonate>0){ lines += '<div class="small">Tel '+fmtInt(v.telefonate)+'</div>'; nLines++; }
               if(v.appFissati>0){ lines += '<div class="small">AppFiss '+fmtInt(v.appFissati)+'</div>'; nLines++; }
               if(v.nncf>0){ lines += '<div class="small">NNCF '+fmtInt(v.nncf)+'</div>'; nLines++; }
-              if(v.count>0){lines += '<div class="small">App. '+fmtInt(v.count)+'</div>'; nLines++; }
+              if(v.salesCount>0){lines += '<div class="small">App. '+fmtInt(v.salesCount)+'</div>'; nLines++; }
               if(hasSlot4h){ lines += '<div class="tag" style="margin-top:4px">slot ≥4h</div>'; nLines++; }
             }
 
