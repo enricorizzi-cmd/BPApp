@@ -1189,11 +1189,8 @@ app.get("/api/availability", auth, async (req,res)=>{
         const startStr = String(a.start||'');
         if(startStr.slice(0,10) !== dayKey) continue;
         
-        // Filtra appuntamenti che occupano slot lavorativi
-        const type = String(a.type||'').toLowerCase();
-        if(!(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1 || type.indexOf('mbs') > -1)) {
-          continue;
-        }
+        // Qualsiasi appuntamento occupa gli slot se interseca gli orari lavorativi
+        // Non importa la tipologia, solo l'orario di sovrapposizione
         
         // Parse appointment times as UTC and convert to local time for comparison
         const appStart = parseDateTime(a.start);
