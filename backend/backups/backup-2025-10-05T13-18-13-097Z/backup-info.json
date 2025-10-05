@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-10-05T13:18:15.843Z",
+  "supabaseUrl": "https://bzvdbmofetujylvgcmqx.supabase.co",
+  "tables": [
+    "users",
+    "appointments",
+    "clients",
+    "periods",
+    "settings",
+    "push_subscriptions",
+    "gi",
+    "audit_log"
+  ],
+  "kvRecords": 7,
+  "description": "Complete backup before migration to normalized tables"
+}

@@ -23,8 +23,16 @@ const helmet = require("helmet");
 const compression = require("compression");
 const fs = require("fs-extra");
 const path = require("path");
+const useSupabaseStorage = process.env.BP_STORAGE === 'supabase' || !!process.env.SUPABASE_URL;
 const usePgStorage = process.env.BP_STORAGE === 'pg' || !!process.env.PG_URL;
-const storage = usePgStorage ? require("./lib/storage-pg") : require("./lib/storage");
+let storage;
+if (useSupabaseStorage) {
+  storage = require("./lib/storage-supabase");
+} else if (usePgStorage) {
+  storage = require("./lib/storage-pg");
+} else {
+  storage = require("./lib/storage");
+}
 const { init: initStore, readJSON, writeJSON } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");

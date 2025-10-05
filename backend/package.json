@@ -16,11 +16,12 @@
         "vapid:gen": "node -e \"const w=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+w.publicKey+'\\nVAPID_PRIVATE_KEY='+w.privateKey)\""
     },
     "dependencies": {
+        "@supabase/supabase-js": "^2.58.0",
         "bcryptjs": "^2.4.3",
         "better-sqlite3": "^9.4.0",
         "compression": "^1.7.4",
         "cors": "^2.8.5",
-        "dotenv": "^17.2.1",
+        "dotenv": "^17.2.3",
         "express": "^4.21.2",
         "fs-extra": "^11.3.1",
         "helmet": "^7.1.0",
