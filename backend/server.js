@@ -33,7 +33,7 @@ if (useSupabaseStorage) {
 } else {
   storage = require("./lib/storage");
 }
-const { init: initStore, readJSON, writeJSON } = storage;
+const { init: initStore, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinutes, timeRangesOverlap } = require('./lib/timezone');
@@ -670,7 +670,7 @@ async function findOrCreateClientByName(name, nncf, user){
   return c;
 }
 
-const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, computeEndLocal, findOrCreateClientByName, genId });
+const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, todayISO, VAPID_PUBLIC_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);

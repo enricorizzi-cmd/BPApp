@@ -1,7 +1,7 @@
 const express = require('express');
 const { parseDateTime, toUTCString, minutesBetween, addMinutes, isValidDateTime } = require('../lib/timezone');
 
-module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCreateClientByName, genId }){
+module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId }){
   const router = express.Router();
 
   // ---- helpers ----
@@ -128,7 +128,24 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if(!it.createdAt) it.createdAt = new Date().toISOString();
     it.updatedAt = new Date().toISOString();
 
-    await writeJSON('appointments.json', db);
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      // Supabase: aggiornamento singolo
+      const mappedUpdates = {
+        ...it,
+        userid: it.userId,
+        start_time: it.start,
+        end_time: it.end,
+        userId: undefined,
+        start: undefined,
+        end: undefined
+      };
+      await updateRecord('appointments', it.id, mappedUpdates);
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON('appointments.json', db);
+    }
+    
     return res.json({ ok:true, id: it.id, clientId: it.clientId });
   }
 
@@ -185,8 +202,26 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
       createdAt: nowIso,
       updatedAt: nowIso
     };
-    db.appointments.push(row);
-    await writeJSON('appointments.json', db);
+    
+    // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof insertRecord === 'function') {
+      // Supabase: inserimento singolo
+      const mappedRow = {
+        ...row,
+        userid: row.userId,
+        start_time: row.start,
+        end_time: row.end,
+        userId: undefined,
+        start: undefined,
+        end: undefined
+      };
+      await insertRecord('appointments', mappedRow);
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      db.appointments.push(row);
+      await writeJSON('appointments.json', db);
+    }
+    
     return res.json({ ok:true, id: row.id, clientId: row.clientId });
   }
 
@@ -222,8 +257,16 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     const it = (db.appointments||[]).find(a => a.id===id);
     if(!it) return res.status(404).json({ error:'not found' });
     if(req.user.role!=='admin' && it.userId!==req.user.id) return res.status(403).json({ error:'forbidden' });
-    db.appointments = (db.appointments||[]).filter(a => a.id!==id);
-    await writeJSON('appointments.json', db);
+    // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof deleteRecord === 'function') {
+      // Supabase: eliminazione singola
+      await deleteRecord('appointments', id);
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      db.appointments = (db.appointments||[]).filter(a => a.id!==id);
+      await writeJSON('appointments.json', db);
+    }
+    
     return res.json({ ok:true });
   }
 
