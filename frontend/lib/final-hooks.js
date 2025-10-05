@@ -448,7 +448,7 @@ window.pipelineNo  = pipelineNo;
         const gid = await createGIFromAppt(appt, v);
         close();
         if (gid){ try{ document.dispatchEvent(new CustomEvent('gi:created',{ detail:{ id: gid } })); }catch(_){ } }
-        if (typeof window.coachSay==='function') coachSay('medium');
+        // Coach gestito da coach.js tramite eventi
         gotoGIAndOpenBuilder(gid);
       }catch(e){ logger.error(e); toast('Errore salvataggio VSS'); }
     };
@@ -1611,9 +1611,9 @@ function showClientAppointments(card){
     const list = (j&&j.appointments)||[];
     const key = name.toLowerCase();
     const arr = list.filter(a => String(a.clientId||'')===id || String(a.client||'').trim().toLowerCase()===key);
-    arr.sort((a,b)=> new Date(b.start) - new Date(a.start));
+    arr.sort((a,b)=> BPTimezone.parseUTCString(b.start) - BPTimezone.parseUTCString(a.start));
     const rows = arr.map(a=>{
-      const d = new Date(a.start);
+      const d = BPTimezone.parseUTCString(a.start);
       const dd = ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
       const ind=[];
       if(Number(a.vss)>0) ind.push('VSS '+Number(a.vss).toLocaleString('it-IT')+'€');
@@ -1972,14 +1972,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     const txt=pool[Math.floor(Math.random()*pool.length)];
     return txt.replace(/{{\s*name\s*}}/gi,name);
   }
-  function coachSay(level){
-    const el=document.createElement('div'); el.className='bp-coach'; el.textContent=pickPhrase(level||'medium');
-    coachHost.appendChild(el);
-    setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-4px)'; },2200);
-    setTimeout(()=>{ el.remove(); },2420);
-  }
-  // Esponi API globale coerente e alias BP.Coach.say
-  window.coachSay = window.coachSay || coachSay;
+  // Sistema coach legacy rimosso - usa BP.Coach.say da coach.js
   try{
     window.BP = window.BP || {};
     window.BP.Coach = window.BP.Coach || {};
@@ -2154,22 +2147,22 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     window.showUndo(label, action.undo, action.ttl||5000);
   };
 
-  // === Coach + Undo su delete ===
+  // Event listener coach legacy rimossi - usa BP.Coach.say da coach.js
   window.wireCoachUndoHaptics = function(){
 function __clearPeriodsCache(){ try{ if (window.__periodsCache) { Object.keys(window.__periodsCache).forEach(function(k){ delete window.__periodsCache[k]; }); } delete window.periods; }catch(_){} }
-document.addEventListener('bp:saved',         function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  __clearPeriodsCache(); });
-document.addEventListener('bp:deleted',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); __clearPeriodsCache(); });
-document.addEventListener('appt:saved',       function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-document.addEventListener('ics:exported',     function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
-document.addEventListener('report:composed',  function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-document.addEventListener('client:converted', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
-document.addEventListener('gi:created',       function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
-document.addEventListener('payments:defined', function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-document.addEventListener('user:profile-updated', function(){ if(window.coachSay) coachSay('low'); hapticImpact('light'); });
-document.addEventListener('appt:created',     function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-document.addEventListener('undo:performed',   function(){ if(window.coachSay) coachSay('low');    hapticImpact('light');  });
-document.addEventListener('kpi:goal-80',      function(){ if(window.coachSay) coachSay('medium'); hapticImpact('medium'); });
-document.addEventListener('kpi:goal-reached', function(){ if(window.coachSay) coachSay('high');   hapticImpact('heavy');  });
+document.addEventListener('bp:saved',         function(){ hapticImpact('heavy');  __clearPeriodsCache(); });
+document.addEventListener('bp:deleted',       function(){ hapticImpact('medium'); __clearPeriodsCache(); });
+document.addEventListener('appt:saved',       function(){ hapticImpact('medium'); });
+document.addEventListener('ics:exported',     function(){ hapticImpact('light');  });
+document.addEventListener('report:composed',  function(){ hapticImpact('medium'); });
+document.addEventListener('client:converted', function(){ hapticImpact('heavy');  });
+document.addEventListener('gi:created',       function(){ hapticImpact('heavy');  });
+document.addEventListener('payments:defined', function(){ hapticImpact('medium'); });
+document.addEventListener('user:profile-updated', function(){ hapticImpact('light'); });
+document.addEventListener('appt:created',     function(){ hapticImpact('medium'); });
+document.addEventListener('undo:performed',   function(){ hapticImpact('light');  });
+document.addEventListener('kpi:goal-80',      function(){ hapticImpact('medium'); });
+document.addEventListener('kpi:goal-reached', function(){ hapticImpact('heavy');  });
 
 // Global delegate: trigger coach on generic close buttons (low intensity)
 // Matches: [data-close], ids/classes containing "close", aria-label "Chiudi"/"Close", or text content 'Chiudi'/'Close'.
@@ -2182,7 +2175,7 @@ document.addEventListener('click', function(ev){
          (el.id||'').toLowerCase().includes('close') ||
          (el.className||'').toLowerCase().includes('close') ||
          (/^\s*(chiudi|close)\s*$/i).test(el.textContent||''))){
-        if(window.coachSay) coachSay('low'); hapticImpact('light');
+        hapticImpact('light');
         break;
       }
       el = el.parentElement;
@@ -2282,7 +2275,7 @@ if (typeof viewGI !== 'undefined') expose('viewGI', viewGI);
   if (typeof ensureTeamUserSelect   !== 'undefined') expose('ensureTeamUserSelect',   ensureTeamUserSelect);
   if (typeof attachICSButtons       !== 'undefined') expose('attachICSButtons',       attachICSButtons);
   if (typeof addSaveAndExport       !== 'undefined') expose('addSaveAndExport',       addSaveAndExport);
-  if (typeof coachSay               !== 'undefined') expose('coachSay',               coachSay);
+  // Coach legacy rimosso
 
   // <<< QUI quelle che ora ti risultano "undefined" in console >>>
   if (typeof ensureClientFilters    !== 'undefined') expose('ensureClientFilters',    ensureClientFilters);
@@ -2347,9 +2340,9 @@ onceReady(async ()=>{
     const k='bpCoachGreetedDate';
     const today=(new Date()).toISOString().slice(0,10);
     const last=localStorage.getItem(k)||'';
-    if (last!==today && typeof window.coachSay==='function'){
+    if (last!==today && typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function'){
       localStorage.setItem(k,today);
-      coachSay('low');
+      window.BP.Coach.say('generic', { intensity: 'low' });
     }
   }catch(_){ }
   mo.observe(document.body,{childList:true,subtree:true});

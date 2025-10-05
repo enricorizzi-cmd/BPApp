@@ -1112,11 +1112,11 @@ function cardAppt(x){
       var host = document.getElementById('nextApps'); if(!host) return;
       var now = new Date();
       var list = apps.filter(function(a){
-        var st = new Date(a.start).getTime();
+        var st = BPTimezone.parseUTCString(a.start).getTime();
         var ok = st >= now.getTime();
         var okUser = cons ? (String(a.userId||a.uid||'')===String(cons)) : true;
         return ok && okUser;
-      }).sort(function(a,b){ return new Date(a.start)-new Date(b.start); }).slice(0,4);
+      }).sort(function(a,b){ return BPTimezone.parseUTCString(a.start)-BPTimezone.parseUTCString(b.start); }).slice(0,4);
 
       host.innerHTML = list.length ? grid3(list.map(cardAppt).join(''))
                                    : '<div class="muted">Nessun prossimo appuntamento</div>';
@@ -1466,7 +1466,7 @@ function viewCalendar(){
         var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0};
         for(var i=0;i<apps.length;i++){
           var a = apps[i];
-          var t = new Date(a.start);
+          var t = BPTimezone.parseUTCString(a.start);
           if(t>=s && t<=e){
             out.vss        += Number(a.vss||0);
             out.vsd        += Number(a.vsdPersonal||0);
@@ -1505,7 +1505,7 @@ function viewCalendar(){
       // indicizza per giorno (solo mese corrente, per rendering celle)
       var map = {};
       for(var i=0;i<apps.length;i++){
-        var a=apps[i]; var s=new Date(a.start);
+        var a=apps[i]; var s=BPTimezone.parseUTCString(a.start);
         if(s<from || s>to) continue;
         var key = ymd(s);
         if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,items:[]};
@@ -1612,7 +1612,7 @@ function viewCalendar(){
         el.addEventListener('click', function(){
           var dateStr = el.getAttribute('data-day');
           var items = (map[dateStr] && map[dateStr].items) ? map[dateStr].items.slice() : [];
-          items.sort(function(a,b){ return new Date(a.start)-new Date(b.start); });
+          items.sort(function(a,b){ return BPTimezone.parseUTCString(a.start)-BPTimezone.parseUTCString(b.start); });
           var box = document.getElementById('cal_day_box');
           var h='<b>Appuntamenti del '+dateStr.split('-').reverse().join('/')+'</b>';
           if(!items.length){ h += '<div class="muted" style="margin-top:6px">Nessun appuntamento</div>'; }
@@ -1931,7 +1931,7 @@ function viewPeriods(){
     GET('/api/appointments').then(function(r){
       var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
-      for(var i=0;i<list.length;i++){ var a=list[i], d=new Date(a.start);
+      for(var i=0;i<list.length;i++){ var a=list[i], d=BPTimezone.parseUTCString(a.start);
         if(d>=sD && d<=eD){
           agg.VSS+=Number(a.vss||0);
           agg.VSDPersonale+=Number(a.vsdPersonal||0);
@@ -2374,7 +2374,12 @@ function viewAppointments(){
   function dmy(d){var x=new Date(d); return ('0'+x.getDate()).slice(-2)+'/'+('0'+(x.getMonth()+1)).slice(-2)+'/'+x.getFullYear();}
   function hm(d){var x=new Date(d); return ('0'+x.getHours()).slice(-2)+':'+('0'+x.getMinutes()).slice(-2);}
   function localInputToISO(val){ if(!val) return ''; const d=new Date(val); return isNaN(d)?'':d.toISOString(); }
-  function isoToLocalInput(iso){ if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); }
+  function isoToLocalInput(iso){ 
+    if(!iso) return ''; 
+    const d = BPTimezone.parseUTCString(iso); 
+    if(isNaN(d)) return ''; 
+    return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); 
+  }
   function defDurByType(t){
     t = String(t||'').toLowerCase();
     if(t.indexOf('mezza')>-1) return 240;
@@ -2520,8 +2525,8 @@ function viewAppointments(){
     document.getElementById('a_client').value=a.client||'';
     document.getElementById('a_start').value=isoToLocalInput(a.start);
 
-    const s = new Date(a.start);
-    let e = a.end ? new Date(a.end) : null;
+    const s = BPTimezone.parseUTCString(a.start);
+    let e = a.end ? BPTimezone.parseUTCString(a.end) : null;
     let dur = Number(a.durationMinutes);
     if(e instanceof Date && !isNaN(e) && e >= s){
       dur = Math.max(1, Math.round((e - s)/60000));
@@ -2709,12 +2714,14 @@ function deleteA(){
     GET('/api/appointments').then(r=>{
       const list=(r&&r.appointments)||[];
       const b=boundsForList(); const s=b.s.getTime(), e=b.e.getTime();
-      const filtered=list.filter(a=>{ const t=new Date(a.start).getTime(); return t>=s && t<=e; })
-                         .sort((a,b)=> new Date(a.start)-new Date(b.start));
+      const filtered=list.filter(a=>{ 
+        const t=BPTimezone.parseUTCString(a.start).getTime(); 
+        return t>=s && t<=e; 
+      }).sort((a,b)=> BPTimezone.parseUTCString(a.start) - BPTimezone.parseUTCString(b.start));
 
       const now=new Date();
-      const fut = filtered.filter(a=> new Date(a.start)>=now);
-      const past= filtered.filter(a=> new Date(a.start)< now);
+      const fut = filtered.filter(a=> BPTimezone.parseUTCString(a.start)>=now);
+      const past= filtered.filter(a=> BPTimezone.parseUTCString(a.start)<now);
 
       const host=document.getElementById('a_list');
       let html='';
