@@ -760,9 +760,20 @@ function viewHome(){
         var users=(r&&r.users)||[];
         var sel=document.getElementById('dash_cons');
         if(!sel) return;
-        sel.innerHTML = '<option value="">Tutti</option>'+users.map(function(u){
-          return '<option value="'+htmlEscape(String(u.id))+'">'+htmlEscape(u.name||u.email||('User #'+u.id))+'</option>';
-        }).join('');
+        var me = getUser() || {};
+        var h = '';
+        
+        // Solo admin può vedere "Tutti" e altri utenti
+        if(me.role === 'admin') {
+          h += '<option value="">Tutti</option>';
+          h += users.map(function(u){
+            return '<option value="'+htmlEscape(String(u.id))+'">'+htmlEscape(u.name||u.email||('User #'+u.id))+'</option>';
+          }).join('');
+        }
+        
+        sel.innerHTML = h;
+        // Tutti vedono se stessi di default (o vuoto se admin)
+        sel.value = (me.role === 'admin') ? '' : me.id;
       }).catch(function(){});
     })();
   }
@@ -1103,7 +1114,7 @@ function cardAppt(x){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  Promise.all([ GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')), GET('/api/periods'+__qsDash) ]).then(function(arr){
+  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash) ]).then(function(arr){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
 
@@ -1431,14 +1442,20 @@ function viewCalendar(){
     consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     GET('/api/users').then(function(r){
       var list = r.users || [];
-      var h = '<option value="all">Tutti</option>';
-      for(var i=0;i<list.length;i++){
-        var u = list[i];
-        h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
+      var h = '';
+      
+      // Solo admin può vedere "Tutti" e altri utenti
+      if(me.role === 'admin') {
+        h += '<option value="all">Tutti</option>';
+        for(var i=0;i<list.length;i++){
+          var u = list[i];
+          h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
+        }
       }
+      
       consSel.innerHTML = h;
-      // Admin vede "Tutti" di default, consultant vede solo se stesso
-      consSel.value = (me.role === 'admin') ? 'all' : me.id;
+      // Tutti vedono se stessi di default, admin può cambiare
+      consSel.value = me.id;
     }).catch(function(){
       consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     });
@@ -1446,7 +1463,7 @@ function viewCalendar(){
   if(consSel) populateConsultants();
 
   function renderMonth(y, m, filters, consultant){
-    var baseApps = '/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '');
+    var baseApps = '/api/appointments';
     var baseAvail = '/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
     if(consultant==='all'){ baseApps += '?global=1'; baseAvail += '&global=1'; }
     else if(consultant && consultant!==getUser().id){ baseApps += '?user='+consultant; baseAvail += '&user='+consultant; }
@@ -1942,7 +1959,7 @@ function viewPeriods(){
   // === Import da agenda ===
   function doImportAgenda(){
     var s=startH.value, e=endH.value; if(!s||!e){toast('Seleziona il periodo');return;}
-    GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(function(r){
+    GET('/api/appointments').then(function(r){
       var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
       for(var i=0;i<list.length;i++){ var a=list[i], d=BPTimezone.parseUTCString(a.start);
@@ -2736,7 +2753,7 @@ function deleteA(){
       '</div>';
   }
   function listA(){
-    GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(r=>{
+    GET('/api/appointments').then(r=>{
       const list=(r&&r.appointments)||[];
       const b=boundsForList(); const s=b.s.getTime(), e=b.e.getTime();
       const filtered=list.filter(a=>{ 
@@ -2821,7 +2838,7 @@ function deleteA(){
   try{
     const aid=load('bp_edit_aid', null);
     if(aid){
-      GET('/api/appointments' + (getUser() && getUser().role === 'admin' ? '?global=1' : '')).then(r=>{
+      GET('/api/appointments').then(r=>{
         const list=(r&&r.appointments)||[];
         const it=list.find(a=> String(a.id)===String(aid));
         if(it){ fillForm(it); window.scrollTo({top:0, behavior:'smooth'}); }
@@ -3076,15 +3093,26 @@ function viewClients(){
       const users=(r&&r.users)||[];
       const selF=document.getElementById('cl_f_cons');
       const selN=document.getElementById('cl_new_owner');
+      const me = getUser() || {};
       if(selF){
-        selF.innerHTML='<option value="">Tutti</option>'+users.map(function(u){
-          return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
-        }).join('');
+        var hF = '';
+        // Solo admin può vedere "Tutti" e altri utenti
+        if(me.role === 'admin') {
+          hF += '<option value="">Tutti</option>';
+          hF += users.map(function(u){
+            return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
+          }).join('');
+        }
+        selF.innerHTML = hF;
+        selF.value = (me.role === 'admin') ? '' : me.id;
       }
       if(selN){
-        selN.innerHTML='<option value="">—</option>'+users.map(function(u){
+        var hN = '<option value="">—</option>';
+        hN += users.map(function(u){
           return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
         }).join('');
+        selN.innerHTML = hN;
+        selN.value = me.id; // Default al proprio utente per creazione
       }
     }).catch(function(err){ logger.error(err); });
   }
