@@ -54,6 +54,8 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if (s.includes('formaz')) return 570;
     if (s.includes('mbs')) return 570;
     if (s.includes('sottoprod')) return 240;
+    if (s.includes('riunione')) return 60;
+    if (s.includes('impegni personali')) return 60;
     if (s.includes('vend'))  return 90;
     return 90; // fallback
   }
@@ -131,7 +133,7 @@ module.exports = function({ auth, readJSON, writeJSON, computeEndLocal, findOrCr
     if(!body.start) return res.status(400).json({ error:'missing fields' });
     if(!body.client){
       const t = String(body.type||'').toLowerCase();
-      if(t==='formazione' || t==='mbs' || t==='sottoprodotti'){
+      if(t==='formazione' || t==='mbs' || t==='sottoprodotti' || t==='riunione' || t==='impegni personali'){
         body.client = body.type;
       } else {
         return res.status(400).json({ error:'missing fields' });

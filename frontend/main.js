@@ -1049,6 +1049,8 @@ function defDurByType(t){
   if (t.indexOf('formaz') > -1) return 570;
   if (t.indexOf('mbs')    > -1) return 570;
   if (t.indexOf('sottoprod') > -1) return 240;
+  if (t.indexOf('riunione') > -1) return 60;
+  if (t.indexOf('impegni personali') > -1) return 60;
   if (t.indexOf('vend')   > -1) return 90;  // vendita
   return 90;                                  // fallback
 }
@@ -2321,6 +2323,8 @@ function viewAppointments(){
               '<button type="button" id="t_form"    class="seg">Formazione</button>'+
               '<button type="button" id="t_mbs"     class="seg">MBS</button>'+
               '<button type="button" id="t_sotto"   class="seg">Sottoprodotti</button>'+
+              '<button type="button" id="t_riunione" class="seg">Riunione</button>'+
+              '<button type="button" id="t_impegni"  class="seg">Impegni personali</button>'+
             '</div>'+
             '<input id="a_type" type="hidden" value="vendita">'+
           '</div>'+
@@ -2378,6 +2382,8 @@ function viewAppointments(){
     if(t.indexOf('formaz')>-1) return 570;
     if(t.indexOf('mbs')>-1) return 570;
     if(t.indexOf('sottoprod')>-1) return 240;
+    if(t.indexOf('riunione')>-1) return 60;
+    if(t.indexOf('impegni personali')>-1) return 60;
     return 90; // vendita (default)
   }
 
@@ -2398,7 +2404,9 @@ function viewAppointments(){
   const segForm = document.getElementById('t_form');
   const segMbs  = document.getElementById('t_mbs');
   const segSotto= document.getElementById('t_sotto');
-  const allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto];
+  const segRiunione = document.getElementById('t_riunione');
+  const segImpegni = document.getElementById('t_impegni');
+  const allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
   function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
@@ -2426,7 +2434,7 @@ function viewAppointments(){
       nncfBtn.setAttribute('aria-pressed','false');
       nncfBtn.classList.remove('active');
     }
-    if(clientInput.value==='Formazione' || clientInput.value==='MBS' || clientInput.value==='Sottoprodotti') clientInput.value='';
+    if(clientInput.value==='Formazione' || clientInput.value==='MBS' || clientInput.value==='Sottoprodotti' || clientInput.value==='Riunione' || clientInput.value==='Impegni personali') clientInput.value='';
 
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
     else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
@@ -2434,6 +2442,8 @@ function viewAppointments(){
     else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientInput.value='Formazione'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
     else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientInput.value='MBS'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
     else if(btn===segSotto){ typeHidden.value='sottoprodotti'; setDur(240); clientInput.value='Sottoprodotti'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowTel.style.display=''; rowApp.style.display=''; nncfBtn.style.display='none'; }
+    else if(btn===segRiunione){ typeHidden.value='riunione'; setDur(60); clientInput.value='Riunione'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+    else if(btn===segImpegni){ typeHidden.value='impegni personali'; setDur(60); clientInput.value='Impegni personali'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
   }
   function setDur(min){
     const dEl=document.getElementById('a_dur');
@@ -2503,6 +2513,8 @@ function viewAppointments(){
     else if(t.indexOf('formaz')>-1) selectSeg(segForm);
     else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
     else if(t.indexOf('sottoprod')>-1) selectSeg(segSotto);
+    else if(t.indexOf('riunione')>-1) selectSeg(segRiunione);
+    else if(t.indexOf('impegni personali')>-1) selectSeg(segImpegni);
     else selectSeg(segSale);
 
     document.getElementById('a_client').value=a.client||'';
@@ -2680,6 +2692,8 @@ function deleteA(){
     if(tt.indexOf('mbs')>-1){ line2 = 'VSD ind '+fmtEuro(a.vsdIndiretto||0); }
     else if(tt.indexOf('sottoprod')>-1){ line2 = 'Tel '+fmtInt(a.telefonate||0)+' · AppFissati '+fmtInt(a.appFissati||0); }
     else if(tt.indexOf('formaz')>-1){ line2 = ''; }
+    else if(tt.indexOf('riunione')>-1){ line2 = ''; }
+    else if(tt.indexOf('impegni personali')>-1){ line2 = ''; }
     else { line2 = 'VSS '+fmtEuro(a.vss||0)+' · VSD '+fmtEuro(a.vsdPersonal||0)+' · NNCF '+(a.nncf?'✅':'—'); }
     return ''+
       '<div class="card" data-aid="'+htmlEscape(String(a.id||''))+'" style="flex:1 1 320px;cursor:pointer">'+

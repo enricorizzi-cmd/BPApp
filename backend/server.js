@@ -153,6 +153,8 @@ function computeEndLocal(startLocalStr, type, minutes){
     if(type==="vendita") dur = 90;
     else if(type==="mezza-giornata") dur = 240;
     else if(type==="giornata") dur = 570;
+    else if(type==="riunione") dur = 60;
+    else if(type==="impegni personali") dur = 60;
     else dur = 60;
   }
   const end = addMinutes(start, dur);
