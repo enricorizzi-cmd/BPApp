@@ -1497,6 +1497,9 @@ function viewCalendar(){
             var type = String(a.type||'').toLowerCase();
             if(type.indexOf('vend') > -1 || type.indexOf('mezza') > -1 || type.indexOf('giorn') > -1) {
               out.count += 1;
+              console.log('Contato appuntamento:', type, 'per', a.client);
+            } else {
+              console.log('NON contato appuntamento:', type, 'per', a.client);
             }
           }
         }
