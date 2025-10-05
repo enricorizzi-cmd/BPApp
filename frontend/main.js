@@ -774,8 +774,8 @@ function viewHome(){
         }
         
         sel.innerHTML = h;
-        // Tutti vedono se stessi di default (o vuoto se admin)
-        sel.value = (me.role === 'admin') ? '' : me.id;
+        // Tutti vedono se stessi di default, admin può cambiare
+        sel.value = me.id;
       }).catch(function(){});
     })();
   }
@@ -1116,9 +1116,10 @@ function cardAppt(x){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash) ]).then(function(arr){
+  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash), GET('/api/periods') ]).then(function(arr){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
+    var allPers = (arr[2] && arr[2].periods)   || [];
 
     // ===== PROSSIMI APPUNTAMENTI (prossimi 4) =====
     (function renderNext(){
@@ -1221,8 +1222,8 @@ function cardAppt(x){
         return {start:startOfYear(d),end:endOfYear(d)};
       }
       
-      // Filtra periodi per consulente selezionato
-      var pFiltered = pers.filter(function(p){
+      // Filtra periodi per consulente selezionato (usa allPers per avere tutti i periodi)
+      var pFiltered = allPers.filter(function(p){
         if(cons && String(p.userId||p.uid||'') !== String(cons)) return false;
         return true;
       });
