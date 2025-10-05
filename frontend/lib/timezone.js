@@ -150,6 +150,20 @@ function toICSUTC(date) {
 }
 
 /**
+ * Estrae YYYY-MM-DD in UTC da Date
+ */
+function ymdUTC(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '';
+  
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const year = date.getUTCFullYear();
+  const month = pad(date.getUTCMonth() + 1);
+  const day = pad(date.getUTCDate());
+  
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Valida che una stringa sia un formato data/ora valido
  */
 function isValidDateTime(input) {
