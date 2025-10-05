@@ -3896,6 +3896,9 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
         h += '<option value="'+u.id+'">'+htmlEscape(u.name||('User '+u.id))+'</option>';
       }
       sel.innerHTML = h;
+      // Imposta default sull'utente loggato
+      var me = getUser() || {};
+      sel.value = me.id || '__all';
     });
   }
 
@@ -4048,6 +4051,9 @@ appEl.innerHTML = topbarHTML() + `
         const s=$('gi_cons'); if(!s) return;
         s.innerHTML = '<option value="">Tutti</option>'+users.map(u =>
           '<option value="'+esc(String(u.id))+'">'+esc(u.name)+'</option>').join('');
+        // Imposta default sull'utente loggato
+        var me = getUser() || {};
+        s.value = me.id || '';
       });
     });
   }
