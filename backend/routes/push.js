@@ -66,7 +66,36 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       const filtered = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
       filtered.push({ userId: req.user.id, subscription: sub });
       db.subscriptions = filtered;
-      await writeJSON('push_subscriptions.json', db);
+      
+      // Usa operazioni Supabase invece di writeJSON per evitare sovrascrittura
+      if (typeof insertRecord === 'function' && typeof updateRecord === 'function') {
+        try {
+          const mappedSub = {
+            userid: req.user.id,
+            endpoint: ep,
+            p256dh: sub.keys.p256dh,
+            auth: sub.keys.auth,
+            createdat: new Date().toISOString(),
+            lastseen: new Date().toISOString()
+          };
+          
+          // Controlla se esiste già una subscription con questo endpoint
+          const existingSub = db.subs.find(s => s.endpoint === ep);
+          if(existingSub) {
+            await updateRecord('push_subscriptions', existingSub.id, mappedSub);
+          } else {
+            mappedSub.id = require('nanoid').nanoid();
+            await insertRecord('push_subscriptions', mappedSub);
+          }
+        } catch (error) {
+          console.error('Error with push subscription:', error);
+          // Fallback al metodo tradizionale se Supabase fallisce
+          await writeJSON('push_subscriptions.json', db);
+        }
+      } else {
+        // SQLite locale: usa il metodo tradizionale
+        await writeJSON('push_subscriptions.json', db);
+      }
       res.json({ ok:true });
     }catch(e){ res.status(500).json({ error:'fail' }); }
   });
@@ -76,9 +105,26 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       const ep = req.body && req.body.endpoint;
       if(!ep) return res.status(400).json({ error:'missing endpoint' });
       const db = await (async ()=>{ try{ return await readJSON('push_subscriptions.json'); }catch(_){ return { subs: [], subscriptions: [] }; } })();
+      
+      // Trova la subscription da eliminare
+      const subToDelete = (db.subs||[]).find(s => s.endpoint === ep);
+      
       db.subs = (db.subs||[]).filter(s => s.endpoint !== ep);
       db.subscriptions = (db.subscriptions||[]).filter(s => !(s.subscription && s.subscription.endpoint===ep));
-      await writeJSON('push_subscriptions.json', db);
+      
+      // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+      if (typeof deleteRecord === 'function' && subToDelete) {
+        try {
+          await deleteRecord('push_subscriptions', subToDelete.id);
+        } catch (error) {
+          console.error('Error deleting push subscription:', error);
+          // Fallback al metodo tradizionale se Supabase fallisce
+          await writeJSON('push_subscriptions.json', db);
+        }
+      } else {
+        // SQLite locale: usa il metodo tradizionale
+        await writeJSON('push_subscriptions.json', db);
+      }
       res.json({ ok:true });
     }catch(e){ res.status(500).json({ error:'fail' }); }
   });

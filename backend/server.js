@@ -612,7 +612,27 @@ app.post("/api/clients", auth, async (req,res)=>{
     const isAdmin = (req.user.role === "admin");
     const r = _applyClientUpdate(c, body, isAdmin);
     if(r.error) return res.status(r.error.code).json({ error:r.error.msg });
-    await writeJSON("clients.json", db);
+    
+    // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof updateRecord === 'function') {
+      try {
+        const mappedUpdates = {
+          name: c.name,
+          status: c.status,
+          consultantid: c.consultantId,
+          consultantname: c.consultantName,
+          updatedat: new Date().toISOString()
+        };
+        await updateRecord('clients', c.id, mappedUpdates);
+      } catch (error) {
+        console.error('Error updating client:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("clients.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("clients.json", db);
+    }
     return res.json({ ok:true, id:c.id });
   }
 
@@ -620,15 +640,38 @@ app.post("/api/clients", auth, async (req,res)=>{
   if(!name || !String(name).trim()) return res.status(400).json({ error:"missing name" });
   const exists = db.clients.find(x => (x.name||"").toLowerCase() === String(name).toLowerCase());
   if(!exists){
-    db.clients.push({
+    const newClient = {
       id: genId(),
       name: String(name),
       status: "attivo",
       consultantId: req.user.id,
       consultantName: req.user.name || "unknown",
       createdAt: todayISO()
-    });
-    await writeJSON("clients.json", db);
+    };
+    db.clients.push(newClient);
+    
+    // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
+    if (typeof insertRecord === 'function') {
+      try {
+        const mappedClient = {
+          id: newClient.id,
+          name: newClient.name,
+          status: newClient.status,
+          consultantid: newClient.consultantId,
+          consultantname: newClient.consultantName,
+          createdat: newClient.createdAt,
+          updatedat: newClient.createdAt
+        };
+        await insertRecord('clients', mappedClient);
+      } catch (error) {
+        console.error('Error inserting client:', error);
+        // Fallback al metodo tradizionale se Supabase fallisce
+        await writeJSON("clients.json", db);
+      }
+    } else {
+      // SQLite locale: usa il metodo tradizionale
+      await writeJSON("clients.json", db);
+    }
   }
   return res.json({ ok:true });
 });
@@ -639,7 +682,20 @@ app.delete("/api/clients", auth, async (req,res)=>{
   const i = (db.clients||[]).findIndex(x => x.id === id);
   if(i===-1) return res.status(404).json({ error:"not found" });
   db.clients.splice(i,1);
-  await writeJSON("clients.json", db);
+  
+  // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
+  if (typeof deleteRecord === 'function') {
+    try {
+      await deleteRecord('clients', id);
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      // Fallback al metodo tradizionale se Supabase fallisce
+      await writeJSON("clients.json", db);
+    }
+  } else {
+    // SQLite locale: usa il metodo tradizionale
+    await writeJSON("clients.json", db);
+  }
   res.json({ ok:true });
 });
 
