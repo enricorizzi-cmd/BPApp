@@ -2953,49 +2953,370 @@ function viewAppointments(){
   document.title = 'Battle Plan – Appuntamenti';
   setActiveSidebarItem('viewAppointments');
 
-  // --------- STILI: NNCF uguale ai 3 bottoni (seg/active) ----------
+  // Add modern Appointments CSS
   if(!document.getElementById('appts_css')){
     const st=document.createElement('style');
     st.id='appts_css';
     st.textContent = `
-      .appt-type .seg, #a_nncf.seg{
-        padding:8px 12px;border:1px solid #bcd7ff;border-radius:12px;
-        background:#eef5ff;color:#1463ff;cursor:pointer;user-select:none;
-        transition:.15s;
+      /* ============== MODERN APPOINTMENTS DESIGN ============== */
+      .appointments-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
       }
-      .appt-type .seg.active, #a_nncf.seg.active{
-        background:var(--accent);color:#fff;border-color:var(--accent);
-        box-shadow:0 0 0 2px rgba(20,99,255,.08) inset;
+      
+      /* Modern Appointments Cards */
+      .appt-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
       }
-      .appt-type > div{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-      .appt-row-end-dur{display:flex;gap:8px;align-items:flex-end}
-      #a_desc{width:100%;min-height:3.2em}
-      #a_list .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+      
+      .appt-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        transform: translateY(-2px);
+      }
+      
+      .appt-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 16px 16px 0 0;
+      }
+      
+      .appt-card b {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        padding-left: 12px;
+      }
+      
+      .appt-card b::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 16px;
+        background: linear-gradient(180deg, var(--accent), var(--accent2));
+        border-radius: 2px;
+      }
+      
+      /* Modern Form Layout */
+      .appt-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+      
+      .appt-form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .appt-form-group label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .appt-form-group input, .appt-form-group select, .appt-form-group textarea {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .appt-form-group input:focus, .appt-form-group select:focus, .appt-form-group textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      /* Modern Segment Buttons */
+      .appt-type .seg, #a_nncf.seg {
+        padding: 8px 12px;
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 13px;
+      }
+      
+      .appt-type .seg:hover, #a_nncf.seg:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+        transform: translateY(-1px);
+      }
+      
+      .appt-type .seg.active, #a_nncf.seg.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+        transform: translateY(-1px);
+      }
+      
+      .appt-type > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      
+      /* Modern Buttons */
+      .appt-button {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 16px;
+        color: var(--text);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      
+      .appt-button:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      
+      .appt-button.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+      }
+      
+      .appt-button.primary:hover {
+        box-shadow: 0 6px 16px rgba(93,211,255,.4);
+        transform: translateY(-2px);
+      }
+      
+      .appt-button.danger {
+        background: rgba(220,53,69,.1);
+        border-color: rgba(220,53,69,.3);
+        color: #dc3545;
+      }
+      
+      .appt-button.danger:hover {
+        background: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+      }
+      
+      /* Modern Grid for Appointments List */
+      .appt-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        margin-top: 16px;
+      }
+      
+      .appt-item {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+      
+      .appt-item:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(93,211,255,.1);
+        transform: translateY(-2px);
+      }
+      
+      /* Filter Controls */
+      .appt-filters {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      
+      .appt-filters .appt-form-group {
+        min-width: 120px;
+      }
+      
+      .appt-filters .right {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+      }
+      
+      /* Action Buttons Container */
+      .appt-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      /* Client Input with NNCF Button */
+      .appt-client-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      
+      .appt-client-group input {
+        flex: 1;
+      }
+      
+      /* Duration and End Time Group */
+      .appt-row-end-dur {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+      }
+      
+      /* Description Textarea */
+      #a_desc {
+        width: 100%;
+        min-height: 3.2em;
+        resize: vertical;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .appointments-wrap {
+          padding: 0 16px;
+          margin-top: calc(56px + env(safe-area-inset-top) + 16px);
+        }
+        
+        .appt-card {
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+        
+        .appt-form-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        
+        .appt-grid {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        
+        .appt-filters {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+        }
+        
+        .appt-filters .right {
+          margin-left: 0;
+          justify-content: space-between;
+        }
+        
+        .appt-actions {
+          gap: 8px;
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .appt-actions .right {
+          margin-left: 0;
+          width: 100%;
+        }
+        
+        .appt-actions .right button {
+          width: 100%;
+        }
+        
+        .appt-type > div {
+          gap: 6px;
+        }
+        
+        .appt-type .seg {
+          padding: 6px 10px;
+          font-size: 12px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .appointments-wrap {
+          padding: 0 12px;
+        }
+        
+        .appt-card {
+          padding: 12px;
+        }
+        
+        .appt-form-grid {
+          gap: 8px;
+        }
+        
+        .appt-row-end-dur {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
     `;
     document.head.appendChild(st);
   }
 
   appEl.innerHTML = topbarHTML()+
-    '<div class="wrap">'+
-      '<div class="card">'+
+    '<div class="appointments-wrap">'+
+      '<div class="appt-card">'+
         '<b id="a_form_title">Nuovo appuntamento</b>'+
-        '<div class="row" style="margin-top:8px;align-items:flex-end;gap:12px;flex-wrap:wrap">'+
-          '<div style="min-width:320px"><label>Cliente *</label>'+
-            '<div style="display:flex;gap:8px;align-items:center">'+
-              '<input id="a_client" list="clientList" placeholder="Denominazione" style="flex:1">'+
+        '<div class="appt-form-grid">'+
+          '<div class="appt-form-group" style="grid-column: 1 / -1;">'+
+            '<label>Cliente *</label>'+
+            '<div class="appt-client-group">'+
+              '<input id="a_client" list="clientList" placeholder="Denominazione">'+
               '<datalist id="clientList"></datalist>'+
               '<button id="a_nncf" class="seg" data-active="0" aria-pressed="false">NNCF</button>'+
             '</div>'+
           '</div>'+
-          '<div><label>Data/ora inizio</label><input id="a_start" type="datetime-local"></div>'+
-          '<div class="appt-row-end-dur">'+
-            '<div><label>Ora fine</label><input id="a_end" type="time"></div>'+
-            '<div><label>Durata (min)</label><input id="a_dur" type="number" placeholder="60" min="1" style="width:80px"></div>'+
+          '<div class="appt-form-group"><label>Data/ora inizio</label><input id="a_start" type="datetime-local"></div>'+
+          '<div class="appt-form-group">'+
+            '<label>Ora fine</label><input id="a_end" type="time">'+
           '</div>'+
+          '<div class="appt-form-group"><label>Durata (min)</label><input id="a_dur" type="number" placeholder="60" min="1" style="width:80px"></div>'+
         '</div>'+
-        '<div style="margin-top:8px"><label>Descrizione appuntamento</label><textarea id="a_desc" rows="2" style="width:100%;min-height:3.2em"></textarea></div>'+
-        '<div class="row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">'+
-          '<div class="appt-type">'+
+        '<div class="appt-form-group" style="margin-top:16px;"><label>Descrizione appuntamento</label><textarea id="a_desc" rows="2"></textarea></div>'+
+        '<div class="appt-form-grid" style="margin-top:16px;">'+
+          '<div class="appt-form-group appt-type">'+
             '<label>Tipo</label>'+
             '<div>'+
               '<button type="button" id="t_vendita" class="seg">Vendita</button>'+
@@ -3009,27 +3330,27 @@ function viewAppointments(){
             '</div>'+
             '<input id="a_type" type="hidden" value="vendita">'+
           '</div>'+
-          '<div id="row_vss"><label>VSS</label><input id="a_vss" type="number" step="1" placeholder="0"></div>'+
-          '<div id="row_vsd_p"><label>VSD personale</label><input id="a_vsd" type="number" step="1" placeholder="0"></div>'+
-          '<div id="row_vsd_i" style="display:none"><label>VSD indiretto</label><input id="a_vsd_i" type="number" step="1" placeholder="0"></div>'+
-          '<div id="row_tel" style="display:none"><label>Telefonate</label><input id="a_tel" type="number" step="1" placeholder="0"></div>'+
-          '<div id="row_app" style="display:none"><label>Appunt. fissati</label><input id="a_app" type="number" step="1" placeholder="0"></div>'+
+          '<div class="appt-form-group" id="row_vss"><label>VSS</label><input id="a_vss" type="number" step="1" placeholder="0"></div>'+
+          '<div class="appt-form-group" id="row_vsd_p"><label>VSD personale</label><input id="a_vsd" type="number" step="1" placeholder="0"></div>'+
+          '<div class="appt-form-group" id="row_vsd_i" style="display:none"><label>VSD indiretto</label><input id="a_vsd_i" type="number" step="1" placeholder="0"></div>'+
+          '<div class="appt-form-group" id="row_tel" style="display:none"><label>Telefonate</label><input id="a_tel" type="number" step="1" placeholder="0"></div>'+
+          '<div class="appt-form-group" id="row_app" style="display:none"><label>Appunt. fissati</label><input id="a_app" type="number" step="1" placeholder="0"></div>'+
         '</div>'+
-        '<div class="row" style="margin-top:8px;gap:8px;align-items:center">'+
-          '<div><button id="btnSaveA">Salva</button></div>'+
-          '<div><button id="btnSaveExportA" class="ghost">Salva ed esporta</button></div>'+
-          '<div class="right" style="margin-left:auto"><button id="btnDeleteA" class="danger" style="display:none">Elimina</button></div>'+
+        '<div class="appt-actions">'+
+          '<div><button id="btnSaveA" class="appt-button primary">Salva</button></div>'+
+          '<div><button id="btnSaveExportA" class="appt-button">Salva ed esporta</button></div>'+
+          '<div class="right"><button id="btnDeleteA" class="appt-button danger" style="display:none">Elimina</button></div>'+
         '</div>'+
       '</div>'+
-      '<div class="card">'+
+      '<div class="appt-card">'+
         '<b>Elenco appuntamenti</b>'+
-        '<div class="row" style="margin-top:8px;align-items:flex-end;gap:12px;flex-wrap:wrap">'+
-          '<div><label>Vista</label>'+
+        '<div class="appt-filters">'+
+          '<div class="appt-form-group"><label>Vista</label>'+
             '<select id="af_type"><option value="sett">Settimana</option><option value="tutti">Tutti</option><option value="mese">Mese</option></select>'+
           '</div>'+
-          '<div id="af_week_wrap"><label>Settimana ISO</label>'+
+          '<div class="appt-form-group" id="af_week_wrap"><label>Settimana ISO</label>'+
             '<input id="af_week" type="number" min="1" max="53" value="'+isoWeekNum(new Date())+'"></div>'+
-          '<div id="af_month_wrap" style="display:none"><label>Mese</label>'+
+          '<div class="appt-form-group" id="af_month_wrap" style="display:none"><label>Mese</label>'+
             '<select id="af_month">'+
               '<option value="1">Gennaio</option><option value="2">Febbraio</option><option value="3">Marzo</option>'+
               '<option value="4">Aprile</option><option value="5">Maggio</option><option value="6">Giugno</option>'+
@@ -3037,13 +3358,13 @@ function viewAppointments(){
               '<option value="10">Ottobre</option><option value="11">Novembre</option><option value="12">Dicembre</option>'+
             '</select>'+
           '</div>'+
-          '<div><label>Anno</label><input id="af_year" type="number" min="2000" max="2100" value="'+(new Date().getFullYear())+'"></div>'+
-          '<div class="right" style="margin-left:auto;display:flex;gap:8px">'+
-            '<button id="af_prev" class="ghost">◀</button>'+
-            '<button id="af_next" class="ghost">▶</button>'+
+          '<div class="appt-form-group"><label>Anno</label><input id="af_year" type="number" min="2000" max="2100" value="'+(new Date().getFullYear())+'"></div>'+
+          '<div class="right">'+
+            '<button id="af_prev" class="appt-button">◀</button>'+
+            '<button id="af_next" class="appt-button">▶</button>'+
           '</div>'+
         '</div>'+
-        '<div id="a_list" style="margin-top:8px"></div>'+
+        '<div id="a_list" class="appt-grid"></div>'+
       '</div>'+
     '</div>';
 
