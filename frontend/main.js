@@ -4035,17 +4035,6 @@ appEl.innerHTML = topbarHTML() + `
       </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="gi-card">
-      <div class="gi-card-header">
-        <h2 class="gi-card-title">Filtri</h2>
-      </div>
-      <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
-        ${isAdmin ? `<div><label>Consulente</label><select id="gi_cons"><option value="">Tutti</option></select></div>` : ''}
-      </div>
-      ${unifiedFiltersHTML("gi")}
-    </div>
-
     <!-- Sales Table -->
     <div class="gi-card">
       <div class="gi-card-header">
@@ -4303,10 +4292,8 @@ appEl.innerHTML = topbarHTML() + `
   }
 
   function load(){
-    const r = readRange();
-    const el = $('gi_cons');
-    const uid = el ? el.value : String(getUser().id);
-    const qs = '?from='+encodeURIComponent(r.from)+'&to='+encodeURIComponent(r.to)+(uid?('&userId='+encodeURIComponent(uid)):'');
+    // Carica tutti i dati GI senza filtri
+    const qs = '?from=1900-01-01&to=2999-12-31';
     
     // Add loading state
     const cards = document.querySelectorAll('.gi-card');
@@ -4725,24 +4712,13 @@ appEl.innerHTML = topbarHTML() + `
     });
   }
 
-  bindUnifiedFilters('gi', ()=>{ haptic('light'); load(); });
-  var selGi = $('gi_cons');
-  if(selGi) selGi.onchange = ()=>{ haptic('light'); load(); };
-
   const gSel = $('gi-forecast-granularity');
   if(gSel) gSel.onchange = ()=>{ haptic('light'); renderForecast(); };
   const cSel = $('gi-forecast-consultant');
   if(cSel) cSel.onchange = ()=>{ haptic('light'); renderForecast(); };
 
-  // Carica i dati con gestione errori migliorata
-  loadClients().then(() => {
-    console.log('Clients loaded, loading GI data...');
-    load();
-  }).catch(e => {
-    console.error('Error loading clients:', e);
-    // Carica comunque i dati GI anche se i clienti falliscono
-    load();
-  });
+  // Carica i dati GI direttamente
+  load();
 }
 window.viewGI = window.viewGI || viewGI;
 
