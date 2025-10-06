@@ -4384,9 +4384,9 @@ appEl.innerHTML = topbarHTML() + `
     const html =
     '<div class="modal"><div class="card gi-modal">'+
       '<style>'+
-        '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px}'+
-        '@media (max-width:768px){ .gi-modal{min-width:95vw;max-width:95vw;padding:16px;max-height:95vh} .gi-grid{display:block;gap:12px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:8px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .acconto-type-selector{flex-direction:column !important;gap:6px !important} .gi-foot{flex-direction:column !important;gap:12px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:8px !important} .pilltabs label{width:100% !important;justify-content:center !important} .gi-rlist{max-height:200px !important} }'+
-        '@media (max-width:480px){ .gi-modal{padding:12px} .gi-section{margin-top:16px !important;padding-top:16px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .mrow label{min-width:0 !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important} .mrow.mini{flex-direction:row !important;justify-content:center !important} .mrow.mini button{width:100% !important;max-width:300px !important} .gi-totals{flex-direction:column !important;gap:8px !important;text-align:center !important} }'+
+        '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px;margin:20px auto;position:relative;transform:translateY(0);transition:all 0.3s ease}'+
+        '@media (max-width:768px){ .gi-modal{min-width:98vw;max-width:98vw;width:98vw;padding:16px;max-height:96vh;margin:10px auto;border-radius:16px} .gi-grid{display:block;gap:16px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:12px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:12px !important} .acconto-type-selector{flex-direction:column !important;gap:8px !important} .gi-foot{flex-direction:column !important;gap:16px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:10px !important} .pilltabs label{width:100% !important;justify-content:center !important;padding:14px 20px !important;font-size:15px !important} .gi-rlist{max-height:250px !important} .client-dropdown{width:100% !important} }'+
+        '@media (max-width:480px){ .gi-modal{padding:12px;min-width:100vw;max-width:100vw;width:100vw;height:100vh;max-height:100vh;margin:0;border-radius:0;position:fixed;top:0;left:0;z-index:9999} .gi-section{margin-top:20px !important;padding-top:20px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow label{min-width:0 !important;font-size:14px !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important;padding:14px 16px !important;font-size:16px !important;border-radius:12px !important} .mrow.mini{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow.mini button{width:100% !important;max-width:none !important;padding:14px 20px !important;font-size:15px !important} .gi-totals{flex-direction:column !important;gap:12px !important;text-align:center !important;padding:16px !important} .gi-foot button{padding:16px 24px !important;font-size:16px !important;border-radius:12px !important} .pilltabs label{padding:16px 20px !important;font-size:16px !important} }'+
         '.gi-grid{display:flex; gap:16px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
         /* Keep inputs constrained to their columns to avoid overflow */
         '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease}'+
@@ -4439,6 +4439,19 @@ appEl.innerHTML = topbarHTML() + `
         '.acconto-check{transition:opacity 0.2s ease}'+
         '.mrow.mini button{background:rgba(93,211,255,.1);border:1px solid rgba(93,211,255,.3);color:var(--accent);border-radius:8px;padding:8px 16px;font-weight:500;transition:all 0.2s ease;cursor:pointer}'+
         '.mrow.mini button:hover{background:rgba(93,211,255,.2);border-color:var(--accent);transform:translateY(-1px)}'+
+        /* Mobile-specific improvements */
+        '@media (max-width: 480px) {'+
+          '.gi-modal .gi-section b{font-size:18px !important;margin-bottom:12px !important}'+
+          '.gi-modal .gi-col label{font-size:14px !important;margin-bottom:6px !important}'+
+          '.gi-modal .client-dropdown-input{font-size:16px !important;padding:14px 16px !important}'+
+          '.gi-modal .client-dropdown-list{max-height:60vh !important;border-radius:12px !important}'+
+          '.gi-modal .gi-r{padding:12px 0 !important;flex-wrap:wrap !important;gap:8px !important}'+
+          '.gi-modal .gi-r input{min-width:120px !important;flex:1 !important}'+
+          '.gi-modal .gi-r button{padding:8px 12px !important;font-size:14px !important}'+
+          '.gi-modal .pilltabs input[type="radio"]{transform:scale(1.2) !important}'+
+          '.gi-modal .acconto-toggle{padding:16px !important;border-radius:12px !important;font-size:15px !important}'+
+          '.gi-modal .acconto-type-option{padding:12px 16px !important;border-radius:8px !important;font-size:14px !important}'+
+        '}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
