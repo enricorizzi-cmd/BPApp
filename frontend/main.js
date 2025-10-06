@@ -4914,35 +4914,171 @@ function viewReport(){
   document.title = 'Battle Plan – Report';
   setActiveSidebarItem('viewReport');
 
-  // Add CSS for pill buttons with better contrast
+  // Add CSS for modern report design matching GI & Scadenzario
   if(!document.getElementById('report_pill_css')){
     const st=document.createElement('style');
     st.id='report_pill_css';
     st.textContent = `
+      /* Modern pill buttons matching GI design */
       .pill {
-        background: #f8f9fa;
-        color: #495057;
-        border: 2px solid #dee2e6;
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        border: 1px solid var(--hair2);
         border-radius: 999px;
-        padding: 8px 14px;
+        padding: 10px 16px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
         opacity: 1;
+        font-size: 14px;
       }
       .pill:hover {
         border-color: var(--accent);
-        background: #e3f2fd;
+        background: rgba(93,211,255,.1);
         color: var(--accent);
+        transform: translateY(-1px);
       }
       .pill.active {
-        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
         color: #fff;
         border-color: var(--accent);
-        box-shadow: 0 4px 12px rgba(93,211,255,.4);
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
         opacity: 1;
         font-weight: 600;
         transform: translateY(-1px);
+      }
+      
+      /* Modern card design for report sections */
+      .report-card {
+        background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.1);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .report-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 16px 16px 0 0;
+      }
+      
+      .report-card b {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        padding-left: 12px;
+      }
+      
+      .report-card b::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 20px;
+        background: linear-gradient(180deg, var(--accent), var(--accent2));
+        border-radius: 2px;
+      }
+      
+      /* Modern input styling */
+      .report-card input, .report-card textarea {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.2s ease;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      .report-card input:focus, .report-card textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .report-card label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      /* Modern button styling */
+      .report-card .ghost {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 16px;
+        color: var(--text);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      
+      .report-card .ghost:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      
+      /* Pill container styling */
+      .pill-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+      }
+      
+      /* Action buttons container */
+      .report-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .report-card {
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+        
+        .pill-container {
+          gap: 8px;
+        }
+        
+        .pill {
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+        
+        .report-actions {
+          gap: 8px;
+        }
       }
     `;
     document.head.appendChild(st);
@@ -4952,9 +5088,9 @@ function viewReport(){
     '<div class="wrap">'+
 
       // --- TOGGLES PERIODI ---
-      '<div class="card">'+
+      '<div class="report-card">'+
         '<b>Sezioni da includere</b>'+
-        '<div id="rep_toggles" class="row" style="margin-top:8px; gap:8px; flex-wrap:wrap">'+
+        '<div id="rep_toggles" class="pill-container">'+
           '<button class="pill" data-type="mensile" id="tog_mese">Mese</button>'+
           '<button class="pill" data-type="trimestrale" id="tog_trimestre">Trimestre</button>'+
           '<button class="pill" data-type="semestrale" id="tog_semestre">Semestre</button>'+
@@ -4963,9 +5099,9 @@ function viewReport(){
       '</div>'+
 
       // --- INDICATORI AGGIUNTIVI ---
-      '<div class="card">'+
+      '<div class="report-card">'+
         '<b>Indicatori aggiuntivi</b>'+
-        '<div id="rep_indicators" class="row" style="margin-top:8px; gap:8px; flex-wrap:wrap">'+
+        '<div id="rep_indicators" class="pill-container">'+
           '<button class="pill" data-key="Telefonate" id="ind_Telefonate">Telefonate</button>'+
           '<button class="pill" data-key="AppFissati" id="ind_AppFissati">AppFissati</button>'+
           '<button class="pill" data-key="AppFatti" id="ind_AppFatti">AppFatti</button>'+
@@ -4977,20 +5113,19 @@ function viewReport(){
       '</div>'+
 
       // --- CORPO REPORT ---
-      '<div class="card">'+
+      '<div class="report-card">'+
         '<b>Report</b>'+
-        '<div class="row" style="margin-top:8px">'+
+        '<div class="row" style="margin-top:16px">'+
           '<div style="min-width:320px"><label>Oggetto email</label><input id="report_subject" placeholder="Report BP"></div>'+
         '</div>'+
-        '<div class="row" style="margin-top:8px; flex-wrap:wrap">'+
+        '<div class="row" style="margin-top:16px; flex-wrap:wrap">'+
           '<div style="flex:1 1 100%; min-width:0"><label>Corpo email</label>'+
             '<textarea id="report_body" rows="12" placeholder="Testo del report…"' +
               ' style="width:100%; box-sizing:border-box; overflow:auto; resize:vertical; max-height:70vh; white-space:pre-wrap; word-break:break-word"></textarea>'+
           '</div>'+
         '</div>'+
-        '<div class="row" id="report-actions" style="gap:8px;margin-top:8px;flex-wrap:wrap">'+
+        '<div class="report-actions" id="report-actions">'+
           '<button class="ghost" id="rep_copy">Copia report</button>'+
-          '<span style="flex:0 0 8px"></span>'+
           '<button class="ghost" id="rep_gmail_web">Gmail Web</button>'+
           '<button class="ghost" id="rep_gmail_app">Gmail App</button>'+
         '</div>'+
