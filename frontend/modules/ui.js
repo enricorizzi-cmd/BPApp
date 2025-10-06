@@ -26,7 +26,52 @@ export function topbarHTML(){
       '</div>'+
     '</div>';
 
-  return ''+
+  // Menu items con icone
+  const menuItems = [
+    { icon: '🏠', text: 'Dashboard', onclick: 'viewHome()' },
+    { icon: '📅', text: 'Calendario', onclick: 'viewCalendar()' },
+    { icon: '📊', text: 'BP', onclick: 'viewPeriods()' },
+    { icon: '👥', text: 'Appuntamenti', onclick: 'viewAppointments()' },
+    { icon: '🏆', text: 'Classifiche', onclick: 'viewLeaderboard()' },
+    { icon: '💰', text: 'Provvigioni', onclick: 'viewCommissions()' },
+    { icon: '🛒', text: 'Vendite e Riordini', onclick: 'viewVendite()' },
+    { icon: '📋', text: 'GI & Scadenzario', onclick: 'viewGI()' },
+    { icon: '📈', text: 'Report', onclick: 'viewReport()' },
+    { icon: '👤', text: 'Clienti', onclick: 'viewClients()' },
+    { icon: '👥', text: 'Squadra', onclick: 'viewTeam()' }
+  ];
+  
+  if (isAdmin) {
+    menuItems.push({ icon: '⚙️', text: 'Utenti', onclick: 'viewUsers()' });
+  }
+
+  // Sidebar per desktop
+  const sidebar = `
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">BATTLE PLAN</div>
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Comprimi/Espandi sidebar">
+          <span class="sidebar-toggle-icon">◀</span>
+        </button>
+      </div>
+      <div class="sidebar-xp">${xpBadge}</div>
+      <nav class="sidebar-nav">
+        ${menuItems.map(item => `
+          <button class="sidebar-item" onclick="${item.onclick}" title="${item.text}">
+            <span class="sidebar-icon">${item.icon}</span>
+            <span class="sidebar-text">${item.text}</span>
+          </button>
+        `).join('')}
+        <button class="sidebar-item sidebar-logout" onclick="logout()" title="Logout">
+          <span class="sidebar-icon">🚪</span>
+          <span class="sidebar-text">Logout</span>
+        </button>
+      </nav>
+    </div>
+  `;
+
+  // Topbar per mobile (mantenuta)
+  const topbar = ''+
     '<div class="topbar">'+
       '<div class="brand">'+
         '<button class="hamb" id="hamb" aria-label="Apri menu" aria-controls="drawer" aria-expanded="false"><span></span><span></span><span></span></button>'+
@@ -40,7 +85,7 @@ export function topbarHTML(){
   '<button class="ghost" onclick="viewLeaderboard()">Classifiche</button>'+
   '<button class="ghost" onclick="viewCommissions()">Provvigioni</button>'+
   '<button class="ghost" onclick="viewVendite()">Vendite e Riordini</button>'+
-  '<button class="ghost" onclick="viewGI()">GI &amp; Scadenzario</button>'+  // <-- aggiunto
+  '<button class="ghost" onclick="viewGI()">GI &amp; Scadenzario</button>'+
   '<button class="ghost" onclick="viewReport()">Report</button>'+
   '<button class="ghost" onclick="viewClients()">Clienti</button>'+
   '<button class="ghost" onclick="viewTeam()">Squadra</button>'+
@@ -48,16 +93,184 @@ export function topbarHTML(){
   '<button onclick="logout()">Logout</button>'+
 '</div>'+
 
-    '</div>'+drawer;
+    '</div>';
+
+  return sidebar + topbar + drawer;
 }
 
 export function renderTopbar(){
   if(!getUser()) return;
 
-  // CSS: più contrasto ai bottoni topbar SOLO su desktop; mobile lasciato com'è
-  if(!document.getElementById('bp_nav_contrast_css')){
+  // CSS: sidebar per desktop + contrasto topbar mobile
+  if(!document.getElementById('bp_sidebar_css')){
     const css = `
-      @media (min-width: 1024px){
+      /* Sidebar per desktop */
+      @media (min-width: 1024px) {
+        .sidebar {
+          position: fixed;
+          left: 0;
+          top: 0;
+          height: 100vh;
+          width: 280px;
+          background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+          border-right: 1px solid var(--hair2);
+          backdrop-filter: blur(10px);
+          z-index: 1000;
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .sidebar.collapsed {
+          width: 80px;
+        }
+        
+        .sidebar-header {
+          padding: 20px;
+          border-bottom: 1px solid var(--hair2);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .sidebar-logo {
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--text);
+          transition: opacity 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-logo {
+          opacity: 0;
+        }
+        
+        .sidebar-toggle {
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 8px;
+          padding: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          color: var(--text);
+        }
+        
+        .sidebar-toggle:hover {
+          background: rgba(255,255,255,.1);
+          border-color: var(--accent);
+        }
+        
+        .sidebar-toggle-icon {
+          transition: transform 0.3s ease;
+          font-size: 12px;
+        }
+        
+        .sidebar.collapsed .sidebar-toggle-icon {
+          transform: rotate(180deg);
+        }
+        
+        .sidebar-xp {
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--hair2);
+          text-align: center;
+          transition: opacity 0.3s ease;
+        }
+        
+        .sidebar.collapsed .sidebar-xp {
+          opacity: 0;
+        }
+        
+        .sidebar-nav {
+          flex: 1;
+          padding: 16px 0;
+          overflow-y: auto;
+        }
+        
+        .sidebar-item {
+          width: 100%;
+          padding: 12px 20px;
+          background: transparent;
+          border: none;
+          color: var(--text);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          text-align: left;
+          font-size: 14px;
+        }
+        
+        .sidebar-item:hover {
+          background: rgba(93,211,255,.1);
+          color: var(--accent);
+        }
+        
+        .sidebar-icon {
+          font-size: 18px;
+          width: 24px;
+          text-align: center;
+          flex-shrink: 0;
+        }
+        
+        .sidebar-text {
+          transition: opacity 0.3s ease;
+          white-space: nowrap;
+        }
+        
+        .sidebar.collapsed .sidebar-text {
+          opacity: 0;
+        }
+        
+        .sidebar-logout {
+          border-top: 1px solid var(--hair2);
+          margin-top: auto;
+          background: rgba(255,92,92,.05);
+        }
+        
+        .sidebar-logout:hover {
+          background: rgba(255,92,92,.1);
+          color: var(--danger);
+        }
+        
+        /* Nascondi topbar su desktop */
+        .topbar {
+          display: none;
+        }
+        
+        /* Aggiusta contenuto principale */
+        body.sidebar-expanded {
+          margin-left: 280px;
+          transition: margin-left 0.3s ease;
+        }
+        
+        body.sidebar-collapsed {
+          margin-left: 80px;
+          transition: margin-left 0.3s ease;
+        }
+        
+        /* Aggiusta app container */
+        #app {
+          margin-left: 0;
+        }
+      }
+      
+      /* Mobile: nascondi sidebar, mostra topbar */
+      @media (max-width: 1023px) {
+        .sidebar {
+          display: none;
+        }
+        
+        .topbar {
+          display: flex;
+        }
+        
+        body {
+          margin-left: 0;
+        }
+      }
+      
+      /* Contrasto topbar mobile */
+      @media (max-width: 1023px) {
         .topbar .nav .ghost{
           background: rgba(255,255,255,.06);
           border: 1px solid rgba(255,255,255,.18);
@@ -67,7 +280,7 @@ export function renderTopbar(){
         }
       }
     `;
-    const st=document.createElement('style'); st.id='bp_nav_contrast_css'; st.textContent=css;
+    const st=document.createElement('style'); st.id='bp_sidebar_css'; st.textContent=css;
     document.head.appendChild(st);
   }
 
@@ -119,6 +332,15 @@ export function renderTopbar(){
     });
   }
 
+  // Toggle sidebar per desktop
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  if(sidebarToggle){
+    sidebarToggle.onclick = function(){ toggleSidebar(); };
+  }
+
+  // Inizializza stato sidebar
+  initSidebarState();
+
   // Chiudi con ESC
   document.removeEventListener('keydown', onEscCloseDrawer, false);
   document.addEventListener('keydown', onEscCloseDrawer, false);
@@ -145,3 +367,44 @@ export function toggleDrawer(force){
 
 let _tbTimer=null;
 export function rerenderTopbarSoon(){ clearTimeout(_tbTimer); _tbTimer=setTimeout(renderTopbar,60); }
+
+// Toggle sidebar per desktop
+export function toggleSidebar(force){
+  const sidebar = document.getElementById('sidebar');
+  if(!sidebar) return;
+  
+  const willCollapse = (typeof force==='boolean') ? force : !sidebar.classList.contains('collapsed');
+  sidebar.classList.toggle('collapsed', willCollapse);
+  
+  // Aggiorna classi body per il margin
+  if (window.innerWidth >= 1024) {
+    document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+    document.body.classList.add(willCollapse ? 'sidebar-collapsed' : 'sidebar-expanded');
+  }
+  
+  // Salva stato in localStorage
+  try {
+    localStorage.setItem('bp_sidebar_collapsed', String(willCollapse));
+  } catch(e) {
+    // Ignora errori localStorage
+  }
+}
+
+// Inizializza stato sidebar da localStorage
+export function initSidebarState(){
+  try {
+    const collapsed = localStorage.getItem('bp_sidebar_collapsed') === 'true';
+    const sidebar = document.getElementById('sidebar');
+    if(sidebar) {
+      sidebar.classList.toggle('collapsed', collapsed);
+      
+      // Inizializza classi body
+      if (window.innerWidth >= 1024) {
+        document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+        document.body.classList.add(collapsed ? 'sidebar-collapsed' : 'sidebar-expanded');
+      }
+    }
+  } catch(e) {
+    // Ignora errori localStorage
+  }
+}
