@@ -3332,6 +3332,14 @@ function viewAppointments(){
         color: var(--text);
       }
       
+      .appt-card .client-option-consultant {
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 2px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
       .appt-card .client-option-status {
         font-size: 12px;
         color: var(--muted);
@@ -3579,12 +3587,14 @@ function viewAppointments(){
         
         const status = client.status || 'attivo';
         const statusColor = status === 'attivo' ? 'var(--success)' : 'var(--muted)';
+        const consultant = client.consultantName || '';
         
         return `
           <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}">
             <div class="client-option-icon">${initials}</div>
             <div class="client-option-text">
               <div class="client-option-name">${htmlEscape(client.name || '')}</div>
+              ${consultant ? `<div class="client-option-consultant">${htmlEscape(consultant)}</div>` : ''}
               <div class="client-option-status" style="color: ${statusColor}">${status}</div>
             </div>
           </div>
@@ -5615,6 +5625,7 @@ appEl.innerHTML = topbarHTML() + `
         '.client-option-icon{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}'+
         '.client-option-text{flex:1;font-size:14px}'+
         '.client-option-name{font-weight:500;margin-bottom:2px;color:var(--text)}'+
+        '.client-option-consultant{font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:500;opacity:0.8}'+
         '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
         '.gi-section{border-top:1px solid var(--hair2); padding-top:20px; margin-top:24px;position:relative}'+
         '.gi-section::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg, var(--accent), var(--accent2));border-radius:1px}'+
@@ -5771,11 +5782,13 @@ appEl.innerHTML = topbarHTML() + `
         options.innerHTML = clients.map(client => {
           const initials = String(client.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
           const status = client.status || 'lead';
+          const consultant = client.consultantName || '';
           return `
             <div class="client-option" data-id="${esc(client.id)}" data-name="${esc(client.name)}">
               <div class="client-option-icon">${initials}</div>
               <div class="client-option-text">
                 <div class="client-option-name">${esc(client.name)}</div>
+                ${consultant ? `<div class="client-option-consultant">${esc(consultant)}</div>` : ''}
                 <div class="client-option-status">${esc(status)}</div>
               </div>
             </div>
