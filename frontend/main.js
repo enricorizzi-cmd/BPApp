@@ -4830,8 +4830,12 @@ appEl.innerHTML = topbarHTML() + `
     // Event listeners semplici e funzionanti
     ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
       .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
-    $('gi_client_select').addEventListener('change', updateTotals);
-    updateTotals();
+    
+    const giClientSelect = $('gi_client_select');
+    if (giClientSelect) giClientSelect.addEventListener('change', updateTotals);
+    
+    // Inizializza totali dopo che il DOM è pronto
+    setTimeout(updateTotals, 100);
     
     
     // Inizializza stato acconto
@@ -4841,9 +4845,6 @@ appEl.innerHTML = topbarHTML() + `
     $('acc_note').value = dep ? esc(dep.note||'Acconto') : 'Acconto';
     
     // Aggiorna UI iniziale
-    updateAccontoState();
-    updateAccontoUI();
-    updateAccontoCalculation();
 
     if (defaultMode==='rate'){
       const n = rest.length || 12;
@@ -4898,9 +4899,14 @@ appEl.innerHTML = topbarHTML() + `
       const vss = Math.max(0, Number($('m_vss').value||0));
       const sched = collectSchedule();
       const tot = Math.round(sched.reduce((a,r)=>a+Number(r.amount||0),0));
-      $('tot_prog').textContent = 'Programmato: '+fmtEuro(tot);
-      $('tot_chk').textContent  = 'Totale VSS: '+fmtEuro(vss) + (tot===vss ? ' OK' : ' (manca '+fmtEuro(vss-tot)+')');
-      $('m_save').disabled = (tot!==vss) || !($('gi_client_select').value);
+      
+      const totProg = $('tot_prog');
+      const totChk = $('tot_chk');
+      const mSave = $('m_save');
+      
+      if (totProg) totProg.textContent = 'Programmato: '+fmtEuro(tot);
+      if (totChk) totChk.textContent = 'Totale VSS: '+fmtEuro(vss) + (tot===vss ? ' OK' : ' (manca '+fmtEuro(vss-tot)+')');
+      if (mSave) mSave.disabled = (tot!==vss) || !($('gi_client_select').value);
     }
 
     // Event listeners per aggiornamento totali - VERSIONE SEMPLICE
