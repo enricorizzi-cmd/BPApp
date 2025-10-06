@@ -4392,23 +4392,24 @@ appEl.innerHTML = topbarHTML() + `
         '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease}'+
         '.gi-col input:focus, .gi-col select:focus, .gi-col textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
         '.gi-col label{font-weight:600;color:var(--accent);margin-bottom:8px;display:block;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}'+
-        /* Client dropdown styles */
+        /* Client dropdown styles - uniformi al resto del form */
         '.client-dropdown{position:relative;width:100%}'+
-        '.client-dropdown-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease;cursor:pointer;display:flex;justify-content:space-between;align-items:center}'+
+        '.client-dropdown-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text)}'+
         '.client-dropdown-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
-        '.client-dropdown-arrow{transition:transform 0.2s ease;color:var(--muted)}'+
+        '.client-dropdown-arrow{transition:transform 0.2s ease;color:var(--muted);font-size:12px}'+
         '.client-dropdown.open .client-dropdown-arrow{transform:rotate(180deg)}'+
-        '.client-dropdown-list{position:absolute;top:100%;left:0;right:0;background:rgba(20,20,20,.95);border:1px solid var(--hair2);border-radius:12px;max-height:300px;overflow-y:auto;z-index:1000;margin-top:4px;box-shadow:0 10px 30px rgba(0,0,0,.3)}'+
+        '.client-dropdown-list{position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,.08);border:1px solid var(--hair2);border-radius:12px;max-height:300px;overflow-y:auto;z-index:1000;margin-top:4px;box-shadow:0 20px 60px rgba(0,0,0,.3);backdrop-filter:blur(10px)}'+
         '.client-dropdown-search{padding:12px;border-bottom:1px solid var(--hair2);background:rgba(255,255,255,.03)}'+
-        '.client-dropdown-search input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;color:var(--text)}'+
+        '.client-dropdown-search input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px}'+
+        '.client-dropdown-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
         '.client-dropdown-options{max-height:250px;overflow-y:auto}'+
-        '.client-option{padding:12px 16px;cursor:pointer;transition:all 0.2s ease;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:12px}'+
+        '.client-option{padding:12px 16px;cursor:pointer;transition:all 0.2s ease;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:12px;color:var(--text)}'+
         '.client-option:hover{background:rgba(93,211,255,.1);color:var(--accent)}'+
         '.client-option:last-child{border-bottom:none}'+
         '.client-option.selected{background:rgba(93,211,255,.15);color:var(--accent);font-weight:600}'+
         '.client-option-icon{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}'+
         '.client-option-text{flex:1;font-size:14px}'+
-        '.client-option-name{font-weight:500;margin-bottom:2px}'+
+        '.client-option-name{font-weight:500;margin-bottom:2px;color:var(--text)}'+
         '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
         '.gi-section{border-top:1px solid var(--hair2); padding-top:20px; margin-top:24px;position:relative}'+
         '.gi-section::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg, var(--accent), var(--accent2));border-radius:1px}'+
@@ -4528,7 +4529,7 @@ appEl.innerHTML = topbarHTML() + `
     function close(){ document.documentElement.style.overflow=prev; hideOverlay(); }
 
     // riempi dropdown clienti personalizzato
-    (function fillClients(){
+    (async function fillClients(){
       const input = $('gi_client_input');
       const display = $('gi_client_display');
       const hidden = $('gi_client_select');
@@ -4537,6 +4538,18 @@ appEl.innerHTML = topbarHTML() + `
       const search = $('gi_client_search');
       
       if (!input || !display || !hidden || !list || !options || !search) return;
+      
+      // Carica clienti dal database se non già caricati
+      if (_clients.length === 0) {
+        try {
+          const response = await GET('/api/clients');
+          _clients = (response && response.clients) || [];
+        } catch (error) {
+          console.error('Errore caricamento clienti:', error);
+          options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+          return;
+        }
+      }
       
       // Ordina clienti alfabeticamente
       const sortedClients = [..._clients].sort((a, b) => 
