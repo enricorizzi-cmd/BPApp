@@ -32,7 +32,7 @@ import "./lib/push-client.js";
 import "./lib/timezone.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
-import { renderTopbar, rerenderTopbarSoon, toggleDrawer, topbarHTML } from "./modules/ui.js";
+import { renderTopbar, rerenderTopbarSoon, toggleDrawer, topbarHTML, setActiveSidebarItem } from "./modules/ui.js";
 import { fmtEuro, fmtInt, htmlEscape } from "./modules/utils.js";
 import { DEL, GET, POST } from "./src/api.js";
 import { del, getToken, getUser, load, logout, save, setToken, setUser } from "./src/auth.js";
@@ -645,6 +645,7 @@ function labelsForBuckets(type, buckets){
 function viewHome(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Dashboard';
+  setActiveSidebarItem('viewHome');
   const isAdmin = getUser().role==='admin';
   var dashConsHTML = isAdmin ? '<div><label>Consulente</label><select id="dash_cons"><option value="">Tutti</option></select></div>' : '';
 
@@ -1327,6 +1328,7 @@ function cardAppt(x){
 function viewCalendar(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Calendario';
+  setActiveSidebarItem('viewCalendar');
   const isAdmin = getUser().role==='admin';
 
   // Orari in locale coerenti con dashboard/appuntamenti
@@ -1853,6 +1855,7 @@ function viewCalendar(){
 function viewPeriods(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – BP';
+  setActiveSidebarItem('viewPeriods');
 
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
@@ -2368,6 +2371,7 @@ function viewPeriods(){
 function viewAppointments(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Appuntamenti';
+  setActiveSidebarItem('viewAppointments');
 
   // --------- STILI: NNCF uguale ai 3 bottoni (seg/active) ----------
   if(!document.getElementById('appts_css')){
@@ -2917,6 +2921,7 @@ function deleteA(){
 function viewLeaderboard(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Classifiche';
+  setActiveSidebarItem('viewLeaderboard');
 
   appEl.innerHTML = topbarHTML() + (
     '<div class="wrap">'+
@@ -3076,6 +3081,7 @@ function viewLeaderboard(){
 function viewClients(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Clienti';
+  setActiveSidebarItem('viewClients');
   const isAdmin = getUser().role==='admin';
   const newConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_new_owner"><option value="">—</option></select></div>' : '';
   const filterConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_f_cons"><option value="">Tutti</option></select></div>' : '';
@@ -3248,6 +3254,7 @@ function viewClients(){
 function viewTeam(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Squadra';
+  setActiveSidebarItem('viewTeam');
   const isAdmin = getUser().role==='admin';
 
   // markup
@@ -3694,6 +3701,7 @@ function viewTeam(){
 // ===== PROVVIGIONI =====
 function viewCommissions(){
   if(!getUser()) return viewLogin();
+  setActiveSidebarItem('viewCommissions');
   var isAdmin = getUser().role==='admin';
   document.title = 'Battle Plan – Provvigioni';
 
@@ -3958,6 +3966,7 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
 function viewVendite(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Vendite e Riordini';
+  setActiveSidebarItem('viewVendite');
   const isAdmin = getUser().role==='admin';
 
   appEl.innerHTML = topbarHTML()+`
@@ -3998,11 +4007,12 @@ function viewVendite(){
 function viewGI(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – GI & Scadenzario';
+  setActiveSidebarItem('viewGI');
   const isAdmin = getUser().role==='admin';
 
 appEl.innerHTML = topbarHTML() + `
   <div class="wrap">
-    
+
     <!-- Hero Section -->
     <div class="gi-card" style="background: linear-gradient(135deg, rgba(93,211,255,.12), rgba(141,123,255,.08)); border: 1px solid rgba(93,211,255,.3);">
       <div class="gi-card-header">
@@ -4011,15 +4021,15 @@ appEl.innerHTML = topbarHTML() + `
           <button class="ghost" id="gi_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
             <span style="margin-right: 8px;">+</span>Nuova vendita
           </button>
-        </div>
       </div>
-      
+    </div>
+
       <!-- Stats Grid -->
       <div class="gi-stats-grid">
         <div class="gi-stat-card">
           <div class="gi-stat-value" id="gi-total-sales">-</div>
           <div class="gi-stat-label">Vendite Totali</div>
-        </div>
+      </div>
         <div class="gi-stat-card">
           <div class="gi-stat-value" id="gi-total-amount">-</div>
           <div class="gi-stat-label">Valore Totale</div>
@@ -4070,15 +4080,15 @@ appEl.innerHTML = topbarHTML() + `
         <h2 class="gi-card-title">Forecast Incassi</h2>
         <div class="gi-card-actions">
           <div class="row" style="align-items:flex-end;gap:16px;flex-wrap:wrap">
-            <div><label>Granularità</label><select id="gi-forecast-granularity">
-              <option value="settimanale">settimanale</option>
-              <option value="mensile" selected>mensile</option>
-              <option value="trimestrale">trimestrale</option>
-              <option value="semestrale">semestrale</option>
-              <option value="annuale">annuale</option>
-            </select></div>
-            ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
-          </div>
+        <div><label>Granularità</label><select id="gi-forecast-granularity">
+          <option value="settimanale">settimanale</option>
+          <option value="mensile" selected>mensile</option>
+          <option value="trimestrale">trimestrale</option>
+          <option value="semestrale">semestrale</option>
+          <option value="annuale">annuale</option>
+        </select></div>
+        ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
+      </div>
         </div>
       </div>
       
@@ -4902,6 +4912,7 @@ window.viewGI = window.viewGI || viewGI;
 function viewReport(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Report';
+  setActiveSidebarItem('viewReport');
 
   // Add CSS for pill buttons with better contrast
   if(!document.getElementById('report_pill_css')){
@@ -5278,6 +5289,7 @@ document.dispatchEvent(new Event('report:composed'));
 function viewUsers(){
   var me=getUser(); if(!me) return viewLogin();
   document.title = 'Battle Plan – Utenti';
+  setActiveSidebarItem('viewUsers');
 
   // Tutti possono accedere alla scheda utenti
   appEl.innerHTML = topbarHTML()+

@@ -245,12 +245,12 @@ export function renderTopbar(){
         }
         
         /* Aggiusta contenuto principale */
-        body.sidebar-expanded #app {
+        body.sidebar-expanded {
           margin-left: 280px;
           transition: margin-left 0.3s ease;
         }
         
-        body.sidebar-collapsed #app {
+        body.sidebar-collapsed {
           margin-left: 80px;
           transition: margin-left 0.3s ease;
         }
