@@ -3236,10 +3236,20 @@ function viewAppointments(){
         font-size: 14px;
         flex: 1;
         cursor: text;
+        pointer-events: auto;
       }
       
       .appt-card .client-dropdown-input input::placeholder {
         color: var(--muted);
+      }
+      
+      .appt-card .client-dropdown-arrow {
+        transition: transform 0.2s ease;
+        color: var(--muted);
+        font-size: 12px;
+        cursor: pointer;
+        pointer-events: auto;
+        margin-left: 8px;
       }
       
       .appt-card .client-dropdown-input:focus {
@@ -3624,6 +3634,20 @@ function viewAppointments(){
     
     // Event listeners
     input.addEventListener('click', (e) => {
+      // Solo se non si clicca sull'input o sulla freccia
+      if (e.target === display || e.target.classList.contains('client-dropdown-arrow')) {
+        e.stopPropagation();
+        list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        input.classList.toggle('open', list.style.display === 'block');
+        if (list.style.display === 'block') {
+          search.focus();
+        }
+      }
+    });
+    
+    // Gestione click sulla freccia
+    const arrow = input.querySelector('.client-dropdown-arrow');
+    arrow.addEventListener('click', (e) => {
       e.stopPropagation();
       list.style.display = list.style.display === 'none' ? 'block' : 'none';
       input.classList.toggle('open', list.style.display === 'block');
@@ -3647,7 +3671,6 @@ function viewAppointments(){
       // Apri dropdown quando si fa focus sul campo
       list.style.display = 'block';
       input.classList.add('open');
-      search.focus();
     });
     
     search.addEventListener('input', (e) => {
