@@ -4752,6 +4752,7 @@ appEl.innerHTML = topbarHTML() + `
           const arr = host._data || [];
           arr.splice(i,1);
           renderManual(arr);
+          updateTotals(); // Aggiorna totali dopo eliminazione
         };
       });
       
@@ -4877,7 +4878,10 @@ appEl.innerHTML = topbarHTML() + `
     
     // Event listener per checkbox
     if (accEnable) {
-      accEnable.addEventListener('change', updateAccontoUI);
+      accEnable.addEventListener('change', () => {
+        updateAccontoUI();
+        updateTotals(); // Aggiorna totali
+      });
     }
     
     // Event listeners per radio buttons
@@ -4885,6 +4889,7 @@ appEl.innerHTML = topbarHTML() + `
       radio.addEventListener('change', () => {
         updateRadioButtons();
         updateAccontoCalculation();
+        updateTotals(); // Aggiorna totali
       });
     });
     
@@ -4896,6 +4901,7 @@ appEl.innerHTML = topbarHTML() + `
           input.checked = true;
           updateRadioButtons();
           updateAccontoCalculation();
+          updateTotals(); // Aggiorna totali
         }
       });
     });
@@ -4929,6 +4935,7 @@ appEl.innerHTML = topbarHTML() + `
       accValue.addEventListener('input', () => {
         updateAccontoState();
         updateAccontoCalculation();
+        updateTotals(); // Aggiorna totali
       });
     }
     
@@ -4979,6 +4986,7 @@ appEl.innerHTML = topbarHTML() + `
         kind: 'manual'
       });
       renderManual(arr);
+      updateTotals(); // Aggiorna totali dopo aggiunta scaglione
     };
     $('m_close').onclick = close;
 
@@ -5022,13 +5030,26 @@ appEl.innerHTML = topbarHTML() + `
       $('m_save').disabled = (tot!==vss) || !($('gi_client_select').value);
     }
 
+    // Event listeners per aggiornamento totali
     ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
       .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
     $('gi_client_select').addEventListener('change', updateTotals);
     
-    // Event listeners per scaglioni manuali
+    // Event listeners per scaglioni manuali - più completo
     document.addEventListener('input', (e) => {
-      if (e.target.matches('#mn_list input[name="mn_amount"], #mn_list input[name="mn_date"]')) {
+      if (e.target.matches('#mn_list input[data-k="amount"], #mn_list input[data-k="dueDate"], #mn_list input[data-k="note"]')) {
+        updateTotals();
+      }
+    });
+    
+    // Event listeners per cambio modalità pagamento
+    document.querySelectorAll('input[name="pmode"]').forEach(radio => {
+      radio.addEventListener('change', updateTotals);
+    });
+    
+    // Event listeners per rateale
+    document.addEventListener('input', (e) => {
+      if (e.target.matches('#rt_n, #rt_freq, #rt_first')) {
         updateTotals();
       }
     });
