@@ -3201,6 +3201,143 @@ function viewAppointments(){
         flex: 1;
       }
       
+      /* Client dropdown styles - uniformi al resto del form */
+      .appt-card .client-dropdown {
+        position: relative;
+        width: 100%;
+      }
+      
+      .appt-card .client-dropdown-input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .appt-card .client-dropdown-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      .appt-card .client-dropdown-arrow {
+        transition: transform 0.2s ease;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      
+      .appt-card .client-dropdown.open .client-dropdown-arrow {
+        transform: rotate(180deg);
+      }
+      
+      .appt-card .client-dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,.08);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        backdrop-filter: blur(10px);
+      }
+      
+      .appt-card .client-dropdown-search {
+        padding: 12px;
+        border-bottom: 1px solid var(--hair2);
+        background: rgba(255,255,255,.03);
+      }
+      
+      .appt-card .client-dropdown-search input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .appt-card .client-dropdown-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      .appt-card .client-dropdown-options {
+        max-height: 250px;
+        overflow-y: auto;
+      }
+      
+      .appt-card .client-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+      }
+      
+      .appt-card .client-option:hover {
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+      }
+      
+      .appt-card .client-option:last-child {
+        border-bottom: none;
+      }
+      
+      .appt-card .client-option.selected {
+        background: rgba(93,211,255,.15);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      
+      .appt-card .client-option-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      
+      .appt-card .client-option-text {
+        flex: 1;
+        font-size: 14px;
+      }
+      
+      .appt-card .client-option-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+        color: var(--text);
+      }
+      
+      .appt-card .client-option-status {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: capitalize;
+      }
+      
       /* Duration and End Time Group */
       .appt-row-end-dur {
         display: flex;
@@ -3303,8 +3440,21 @@ function viewAppointments(){
           '<div class="appt-form-group" style="grid-column: 1 / -1;">'+
             '<label>Cliente *</label>'+
             '<div class="appt-client-group">'+
-              '<input id="a_client" list="clientList" placeholder="Denominazione">'+
-              '<datalist id="clientList"></datalist>'+
+              '<div class="client-dropdown" style="flex: 1;">'+
+                '<div class="client-dropdown-input" id="a_client_input">'+
+                  '<span id="a_client_display">— seleziona cliente —</span>'+
+                  '<span class="client-dropdown-arrow">▼</span>'+
+                '</div>'+
+                '<input type="hidden" id="a_client_select" value="">'+
+                '<div class="client-dropdown-list" id="a_client_list" style="display:none">'+
+                  '<div class="client-dropdown-search">'+
+                    '<input type="text" id="a_client_search" placeholder="Cerca cliente..." autocomplete="off">'+
+                  '</div>'+
+                  '<div class="client-dropdown-options" id="a_client_options">'+
+                    '<div style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>'+
+                  '</div>'+
+                '</div>'+
+              '</div>'+
               '<button id="a_nncf" class="seg" data-active="0" aria-pressed="false">NNCF</button>'+
             '</div>'+
           '</div>'+
@@ -3369,6 +3519,154 @@ function viewAppointments(){
     '</div>';
 
   renderTopbar();
+
+  // --------- Client Dropdown Logic ----------
+  (async function fillAppointmentClients(){
+    const input = document.getElementById('a_client_input');
+    const display = document.getElementById('a_client_display');
+    const hidden = document.getElementById('a_client_select');
+    const list = document.getElementById('a_client_list');
+    const options = document.getElementById('a_client_options');
+    const search = document.getElementById('a_client_search');
+    
+    if (!input || !display || !hidden || !list || !options || !search) return;
+    
+    // Carica clienti dal database se non già caricati
+    if (window._clients && window._clients.length === 0) {
+      try {
+        const response = await GET('/api/clients');
+        window._clients = (response && response.clients) || [];
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+        return;
+      }
+    }
+    
+    // Usa i clienti già caricati o carica se necessario
+    let clients = window._clients || [];
+    if (clients.length === 0) {
+      try {
+        const response = await GET('/api/clients');
+        clients = (response && response.clients) || [];
+        window._clients = clients;
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+        return;
+      }
+    }
+    
+    // Ordina clienti alfabeticamente
+    const sortedClients = [...clients].sort((a, b) => 
+      String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
+    );
+    
+    // Funzione per renderizzare le opzioni
+    function renderOptions(clientsToShow = sortedClients) {
+      if (clientsToShow.length === 0) {
+        options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
+        return;
+      }
+      
+      options.innerHTML = clientsToShow.map(client => {
+        const initials = (client.name || '')
+          .split(' ')
+          .map(word => word.charAt(0))
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
+        
+        const status = client.status || 'attivo';
+        const statusColor = status === 'attivo' ? 'var(--success)' : 'var(--muted)';
+        
+        return `
+          <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}">
+            <div class="client-option-icon">${initials}</div>
+            <div class="client-option-text">
+              <div class="client-option-name">${htmlEscape(client.name || '')}</div>
+              <div class="client-option-status" style="color: ${statusColor}">${status}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Renderizza le opzioni iniziali
+    renderOptions();
+    
+    // Event listeners
+    input.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+      input.classList.toggle('open', list.style.display === 'block');
+      if (list.style.display === 'block') {
+        search.focus();
+      }
+    });
+    
+    search.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      if (!query) {
+        renderOptions();
+        return;
+      }
+      
+      const filtered = sortedClients.filter(client => 
+        String(client.name || '').toLowerCase().includes(query)
+      );
+      renderOptions(filtered);
+    });
+    
+    // Chiudi dropdown quando si clicca fuori
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !list.contains(e.target)) {
+        list.style.display = 'none';
+        input.classList.remove('open');
+      }
+    });
+    
+    // Selezione cliente
+    options.addEventListener('click', (e) => {
+      const option = e.target.closest('.client-option');
+      if (!option) return;
+      
+      const clientId = option.dataset.clientId;
+      const clientName = option.dataset.clientName;
+      
+      // Aggiorna display e hidden input
+      display.textContent = clientName;
+      hidden.value = clientId;
+      
+      // Chiudi dropdown
+      list.style.display = 'none';
+      input.classList.remove('open');
+      
+      // Rimuovi selezione precedente e seleziona nuovo
+      options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
+      option.classList.add('selected');
+      
+      // Trigger change event per compatibilità
+      const changeEvent = new Event('change', { bubbles: true });
+      hidden.dispatchEvent(changeEvent);
+    });
+    
+    // Gestione keyboard
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
+      }
+    });
+    
+    search.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        list.style.display = 'none';
+        input.classList.remove('open');
+        input.focus();
+      }
+    });
+  })();
 
   // --------- helpers ----------
   function htmlEscape(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]);}
@@ -3481,19 +3779,13 @@ function viewAppointments(){
   document.getElementById('a_dur').addEventListener('input', updateEndFromDur);
   document.getElementById('a_end').addEventListener('change', updateDurFromEnd);
 
-  // --------- clients datalist ----------
-  GET('/api/clients').then(r=>{
-    const list=(r&&r.clients)||[];
-    const dl=document.getElementById('clientList'); if(!dl) return;
-    dl.innerHTML=list.map(c=>'<option value="'+htmlEscape(c.name)+'"></option>').join('');
-  });
-
   // --------- form state ----------
   let editId=null;
   function resetForm(){
     editId=null;
     document.getElementById('a_form_title').textContent='Nuovo appuntamento';
-    document.getElementById('a_client').value='';
+    document.getElementById('a_client_display').textContent='— seleziona cliente —';
+    document.getElementById('a_client_select').value='';
     document.getElementById('a_start').value='';
     document.getElementById('a_end').value='';
     document.getElementById('a_dur').value='';
@@ -3503,7 +3795,6 @@ function viewAppointments(){
     document.getElementById('a_tel').value='';
     document.getElementById('a_app').value='';
     document.getElementById('a_desc').value='';
-    document.getElementById('a_client').disabled=false;
     nncfBtn.style.display='';
     nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false');
     nncfBtn.classList.remove('active');
@@ -3524,7 +3815,8 @@ function viewAppointments(){
     else if(t.indexOf('impegni personali')>-1) selectSeg(segImpegni);
     else selectSeg(segSale);
 
-    document.getElementById('a_client').value=a.client||'';
+    document.getElementById('a_client_display').textContent=a.client||'— seleziona cliente —';
+    document.getElementById('a_client_select').value=a.clientId||'';
     document.getElementById('a_start').value=isoToLocalInput(a.start);
 
     const s = BPTimezone.parseUTCString(a.start);
@@ -3555,9 +3847,10 @@ function viewAppointments(){
 
   // --------- save / delete ----------
   function collectForm(){
-    let client=(document.getElementById('a_client').value||'').trim();
+    let client=(document.getElementById('a_client_display').textContent||'').trim();
+    const clientId=document.getElementById('a_client_select').value;
     const typeVal=document.getElementById('a_type').value;
-    if(!client){
+    if(!client || client === '— seleziona cliente —'){
       const tl=String(typeVal||'').toLowerCase();
       if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ client=typeVal; }
       else { toast('Cliente obbligatorio'); return null; }
@@ -3588,6 +3881,7 @@ function viewAppointments(){
     return {
       id: editId || undefined,
       client: client,
+      clientId: clientId,
       start: localInputToISO(startLocal),
       end: endISO,
       durationMinutes: dur,
