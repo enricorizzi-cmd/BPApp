@@ -32,7 +32,7 @@ import "./lib/push-client.js";
 import "./lib/timezone.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
-import { renderTopbar, rerenderTopbarSoon, toggleDrawer, topbarHTML, setActiveSidebarItem } from "./modules/ui.js";
+import { renderTopbar, rerenderTopbarSoon, setActiveSidebarItem, toggleDrawer, topbarHTML } from "./modules/ui.js";
 import { fmtEuro, fmtInt, htmlEscape } from "./modules/utils.js";
 import { DEL, GET, POST } from "./src/api.js";
 import { del, getToken, getUser, load, logout, save, setToken, setUser } from "./src/auth.js";
