@@ -17,6 +17,12 @@ services:
         value: "20"
       - key: TZ
         value: Europe/Rome
+      - key: BP_STORAGE
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
       - key: BP_JWT_SECRET
         sync: false
       - key: CORS_ORIGIN
