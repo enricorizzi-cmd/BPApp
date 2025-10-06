@@ -649,9 +649,240 @@ function viewHome(){
   const isAdmin = getUser().role==='admin';
   var dashConsHTML = isAdmin ? '<div><label>Consulente</label><select id="dash_cons"><option value="">Tutti</option></select></div>' : '';
 
+  // Add modern dashboard CSS
+  if(!document.getElementById('dashboard_modern_css')){
+    const st=document.createElement('style');
+    st.id='dashboard_modern_css';
+    st.textContent = `
+      /* Modern Dashboard Design */
+      .dashboard-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+      
+      /* Modern KPI Cards */
+      .kpi-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 20px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0,0,0,.1);
+      }
+      
+      .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 20px 20px 0 0;
+      }
+      
+      .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px rgba(0,0,0,.15);
+        border-color: var(--accent);
+      }
+      
+      /* KPI Card Header */
+      .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      
+      .kpi-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .kpi-icon {
+        font-size: 18px;
+        opacity: 0.8;
+      }
+      
+      .kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1;
+        text-shadow: 0 2px 4px rgba(0,0,0,.1);
+      }
+      
+      /* KPI Chart Container */
+      .kpi-chart {
+        height: 90px;
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255,255,255,.02);
+        border: 1px solid var(--hair2);
+      }
+      
+      /* Modern Grid Layout */
+      .dashboard-grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        margin-bottom: 32px;
+      }
+      
+      @media (max-width: 768px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        
+        .kpi-card {
+          padding: 20px;
+        }
+        
+        .kpi-value {
+          font-size: 24px;
+        }
+      }
+      
+      /* Modern Filter Card */
+      .filter-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      }
+      
+      .filter-card b {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        padding-left: 12px;
+      }
+      
+      .filter-card b::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 16px;
+        background: linear-gradient(180deg, var(--accent), var(--accent2));
+        border-radius: 2px;
+      }
+      
+      /* Modern Section Cards */
+      .section-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        transition: all 0.2s ease;
+      }
+      
+      .section-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      }
+      
+      .section-card b {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        padding-left: 12px;
+      }
+      
+      .section-card b::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 16px;
+        background: linear-gradient(180deg, var(--accent), var(--accent2));
+        border-radius: 2px;
+      }
+      
+      /* Accordion Header */
+      .accordion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 8px 0;
+        transition: all 0.2s ease;
+      }
+      
+      .accordion-header:hover {
+        color: var(--accent);
+      }
+      
+      .accordion-chevron {
+        transition: transform 0.2s ease;
+        font-size: 14px;
+        color: var(--accent);
+      }
+      
+      .accordion-content {
+        margin-top: 16px;
+        display: none;
+      }
+      
+      .accordion-content.open {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+      
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 480px) {
+        .dashboard-wrap {
+          padding: 0 16px;
+        }
+        
+        .kpi-card {
+          padding: 16px;
+        }
+        
+        .filter-card, .section-card {
+          padding: 16px;
+        }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
   appEl.innerHTML = topbarHTML()+
-    '<div class="wrap">'+
-      '<div class="card">'+
+    '<div class="dashboard-wrap">'+
+      '<div class="filter-card">'+
         '<b>Filtro</b>'+
         '<div class="row uf-row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">'+
           '<div>'+
@@ -666,54 +897,61 @@ function viewHome(){
         unifiedFiltersHTML("dash")+
       '</div>'+
 
-      '<div class="grid" id="kpiGrid">'+
-        '<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>VSS</b><span id="kpi_vss" class="big">—</span>'+
+      '<div class="dashboard-grid" id="kpiGrid">'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">💰</span>VSS</div>'+
+            '<span id="kpi_vss" class="kpi-value">—</span>'+
           '</div>'+
-          '<canvas id="d_mini_vss" width="320" height="90"></canvas>'+
+          '<div class="kpi-chart"><canvas id="d_mini_vss" width="320" height="90"></canvas></div>'+
         '</div>'+
-'<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>VSD personale</b><span id="kpi_vsd" class="big">—</span>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">👤</span>VSD personale</div>'+
+            '<span id="kpi_vsd" class="kpi-value">—</span>'+
           '</div>'+
-          '<canvas id="d_mini_vsdpersonale" width="320" height="90"></canvas>'+
+          '<div class="kpi-chart"><canvas id="d_mini_vsdpersonale" width="320" height="90"></canvas></div>'+
         '</div>'+
-        '<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>VSD indiretto</b><span id="kpi_vsd_ind" class="big">—</span>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">🌐</span>VSD indiretto</div>'+
+            '<span id="kpi_vsd_ind" class="kpi-value">—</span>'+
           '</div>'+
-          '<canvas id="d_mini_vsdindiretto" width="320" height="90"></canvas>'+
-        '</div>'+        '<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>GI</b><span id="kpi_gi" class="big">—</span>'+
-          '</div>'+
-          '<canvas id="d_mini_gi" width="320" height="90"></canvas>'+
+          '<div class="kpi-chart"><canvas id="d_mini_vsdindiretto" width="320" height="90"></canvas></div>'+
         '</div>'+
-        '<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>NNCF</b><span id="kpi_nncf" class="big">—</span>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">📊</span>GI</div>'+
+            '<span id="kpi_gi" class="kpi-value">—</span>'+
           '</div>'+
-          '<canvas id="d_mini_nncf" width="320" height="90"></canvas>'+
+          '<div class="kpi-chart"><canvas id="d_mini_gi" width="320" height="90"></canvas></div>'+
         '</div>'+
-        '<div class="card">'+
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'+
-            '<b>Tot Provvigioni</b><span id="kpi_provv" class="big">—</span>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">📈</span>NNCF</div>'+
+            '<span id="kpi_nncf" class="kpi-value">—</span>'+
           '</div>'+
-          '<canvas id="d_mini_provv" width="320" height="90"></canvas>'+
+          '<div class="kpi-chart"><canvas id="d_mini_nncf" width="320" height="90"></canvas></div>'+
+        '</div>'+
+        '<div class="kpi-card">'+
+          '<div class="kpi-header">'+
+            '<div class="kpi-title"><span class="kpi-icon">💎</span>Tot Provvigioni</div>'+
+            '<span id="kpi_provv" class="kpi-value">—</span>'+
+          '</div>'+
+          '<div class="kpi-chart"><canvas id="d_mini_provv" width="320" height="90"></canvas></div>'+
         '</div>'+
       '</div>'+
 
-      '<div class="card">'+
+      '<div class="section-card">'+
         '<b>Ultimi appuntamenti inseriti</b>'+
         '<div id="lastApps" class="row" style="margin-top:8px"></div>'+
       '</div>'+
 
-      '<div class="card">'+
-        '<div id="dash_bp_sent_head" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-          '<b>BP inviati (periodi in essere)</b><span id="dash_bp_sent_chev" class="chev">▸</span>'+
+      '<div class="section-card">'+
+        '<div id="dash_bp_sent_head" class="accordion-header">'+
+          '<b>BP inviati (periodi in essere)</b><span id="dash_bp_sent_chev" class="accordion-chevron">▸</span>'+
         '</div>'+
-        '<div id="dash_bp_sent" class="row" style="margin-top:8px;display:none"></div>'+
+        '<div id="dash_bp_sent" class="accordion-content" style="margin-top:8px"></div>'+
       '</div>'+
     '</div>';
 
@@ -1284,9 +1522,16 @@ function cardAppt(x){
       var chev = document.getElementById('dash_bp_sent_chev');
       if(head && chev) {
         head.onclick = function(){ 
-          var vis = (dashBPSentEl.style.display !== 'none'); 
-          dashBPSentEl.style.display = vis ? 'none' : ''; 
-          chev.textContent = vis ? '▸' : '▾'; 
+          var isOpen = dashBPSentEl.classList.contains('open');
+          if(isOpen) {
+            dashBPSentEl.classList.remove('open');
+            chev.textContent = '▸';
+            chev.style.transform = 'rotate(0deg)';
+          } else {
+            dashBPSentEl.classList.add('open');
+            chev.textContent = '▾';
+            chev.style.transform = 'rotate(90deg)';
+          }
         };
       }
     })();
