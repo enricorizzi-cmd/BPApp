@@ -3087,6 +3087,12 @@ function viewAppointments(){
         transform: translateY(-1px);
       }
       
+      .appt-type .seg:disabled, #a_nncf.seg:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      
       .appt-type > div {
         display: flex;
         flex-wrap: wrap;
@@ -3588,7 +3594,7 @@ function viewAppointments(){
         const consultant = client.consultantName || '';
         
         return `
-          <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}">
+          <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}" data-client-status="${client.status || 'attivo'}">
             <div class="client-option-icon">${initials}</div>
             <div class="client-option-text">
               <div class="client-option-name">${htmlEscape(client.name || '')}</div>
@@ -3640,6 +3646,7 @@ function viewAppointments(){
       
       const clientId = option.dataset.clientId;
       const clientName = option.dataset.clientName;
+      const clientStatus = option.dataset.clientStatus;
       
       // Aggiorna display e hidden input
       display.textContent = clientName;
@@ -3652,6 +3659,23 @@ function viewAppointments(){
       // Rimuovi selezione precedente e seleziona nuovo
       options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
       option.classList.add('selected');
+      
+      // Gestisci flag NNCF basato sullo stato del cliente
+      const nncfBtn = document.getElementById('a_nncf');
+      if (clientStatus === 'attivo') {
+        // Cliente attivo: disabilita NNCF e resetta
+        nncfBtn.setAttribute('data-active', '0');
+        nncfBtn.setAttribute('aria-pressed', 'false');
+        nncfBtn.classList.remove('active');
+        nncfBtn.disabled = true;
+        nncfBtn.style.opacity = '0.5';
+        nncfBtn.style.cursor = 'not-allowed';
+      } else {
+        // Cliente potenziale o altro: abilita NNCF
+        nncfBtn.disabled = false;
+        nncfBtn.style.opacity = '1';
+        nncfBtn.style.cursor = 'pointer';
+      }
       
       // Trigger change event per compatibilità
       const changeEvent = new Event('change', { bubbles: true });
@@ -3805,6 +3829,10 @@ function viewAppointments(){
     nncfBtn.style.display='';
     nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false');
     nncfBtn.classList.remove('active');
+    // Riabilita il pulsante NNCF quando si resetta il form
+    nncfBtn.disabled = false;
+    nncfBtn.style.opacity = '1';
+    nncfBtn.style.cursor = 'pointer';
     selectSeg(segSale);
     document.getElementById('btnDeleteA').style.display='none';
   }
@@ -3824,6 +3852,28 @@ function viewAppointments(){
 
     document.getElementById('a_client_display').textContent=a.client||'— seleziona cliente —';
     document.getElementById('a_client_select').value=a.clientId||'';
+    
+    // Gestisci pulsante NNCF basato sul cliente esistente
+    if (a.clientId) {
+      // Trova il cliente nell'elenco per verificare il suo stato
+      const client = sortedClients.find(c => c.id === a.clientId);
+      if (client && client.status === 'attivo') {
+        // Cliente attivo: disabilita NNCF
+        nncfBtn.disabled = true;
+        nncfBtn.style.opacity = '0.5';
+        nncfBtn.style.cursor = 'not-allowed';
+      } else {
+        // Cliente potenziale o altro: abilita NNCF
+        nncfBtn.disabled = false;
+        nncfBtn.style.opacity = '1';
+        nncfBtn.style.cursor = 'pointer';
+      }
+    } else {
+      // Nessun cliente selezionato: abilita NNCF
+      nncfBtn.disabled = false;
+      nncfBtn.style.opacity = '1';
+      nncfBtn.style.cursor = 'pointer';
+    }
     document.getElementById('a_start').value=isoToLocalInput(a.start);
 
     const s = BPTimezone.parseUTCString(a.start);
