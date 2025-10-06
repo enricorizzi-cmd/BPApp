@@ -4821,114 +4821,18 @@ appEl.innerHTML = topbarHTML() + `
       
       if (shouldEnable && !accEnable.checked) {
         accEnable.checked = true;
-        updateAccontoUI();
       } else if (!shouldEnable && accEnable.checked) {
         accEnable.checked = false;
-        updateAccontoUI();
       }
     }
     
-    function updateAccontoUI() {
-      const isEnabled = accEnable.checked;
-      if (accContent) {
-        accContent.style.opacity = isEnabled ? '1' : '0.4';
-        accContent.style.pointerEvents = isEnabled ? 'auto' : 'none';
-      }
-      if (accCheck) {
-        accCheck.style.opacity = isEnabled ? '1' : '0';
-      }
-      if (accToggle) {
-        accToggle.style.borderColor = isEnabled ? 'var(--accent)' : 'var(--hair2)';
-        accToggle.style.background = isEnabled ? 'rgba(93,211,255,.05)' : 'rgba(255,255,255,.03)';
-      }
-      
-      // Aggiorna radio buttons
-      updateRadioButtons();
-    }
     
-    function updateRadioButtons() {
-      const isEnabled = accEnable.checked;
-      const selectedType = document.querySelector('input[name="acc_type"]:checked')?.value;
-      
-      document.querySelectorAll('.acconto-type-option').forEach(option => {
-        const radio = option.querySelector('.acconto-radio');
-        const dot = option.querySelector('.acconto-radio-dot');
-        const input = option.querySelector('input[type="radio"]');
-        
-        if (radio && dot && input) {
-          const isSelected = input.checked;
-          radio.style.borderColor = isSelected ? 'var(--accent)' : 'var(--hair2)';
-          radio.style.background = isSelected ? 'rgba(93,211,255,.1)' : 'rgba(255,255,255,.05)';
-          dot.style.opacity = isSelected ? '1' : '0';
-          
-          option.style.borderColor = isSelected ? 'var(--accent)' : 'var(--hair2)';
-          option.style.background = isSelected ? 'rgba(93,211,255,.05)' : 'rgba(255,255,255,.03)';
-        }
-      });
-    }
+    // Event listeners semplici e funzionanti
+    ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
+      .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
+    $('gi_client_select').addEventListener('change', updateTotals);
+    updateTotals();
     
-    // Event listeners per auto-flag
-    [accValue, accDate, accNote].forEach(input => {
-      if (input) {
-        input.addEventListener('input', updateAccontoState);
-        input.addEventListener('change', updateAccontoState);
-      }
-    });
-    
-    // Event listener per checkbox
-    if (accEnable) {
-      accEnable.addEventListener('change', updateAccontoUI);
-    }
-    
-    // Event listeners per radio buttons
-    document.querySelectorAll('input[name="acc_type"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        updateRadioButtons();
-        updateAccontoCalculation();
-      });
-    });
-    
-    // Event listeners per click sui label
-    document.querySelectorAll('.acconto-type-option').forEach(option => {
-      option.addEventListener('click', () => {
-        const input = option.querySelector('input[type="radio"]');
-        if (input) {
-          input.checked = true;
-          updateRadioButtons();
-          updateAccontoCalculation();
-        }
-      });
-    });
-    
-    // Calcolo automatico acconto - VERSIONE SEMPLICE
-    function updateAccontoCalculation() {
-      const vssTotal = Number($('m_vss').value || 0);
-      const accType = document.querySelector('input[name="acc_type"]:checked')?.value;
-      const accValue = $('acc_value');
-      
-      if (accType === 'perc' && vssTotal > 0) {
-        const perc = Number(accValue.value || 0);
-        const calculatedAmount = Math.round((vssTotal * perc) / 100);
-        // Mostra il calcolo nel placeholder
-        accValue.placeholder = `${perc}% = ${fmtEuro(calculatedAmount)}`;
-      } else {
-        accValue.placeholder = '0';
-      }
-    }
-    
-    // Event listener per cambio VSS totale
-    const mVss = $('m_vss');
-    if (mVss) {
-      mVss.addEventListener('input', updateAccontoCalculation);
-    }
-    
-    // Event listener per cambio valore acconto
-    if (accValue) {
-      accValue.addEventListener('input', () => {
-        updateAccontoState();
-        updateAccontoCalculation();
-      });
-    }
     
     // Inizializza stato acconto
     $('acc_type').value = dep && dep._fromPerc ? 'perc' : 'abs';
@@ -4954,28 +4858,7 @@ appEl.innerHTML = topbarHTML() + `
     $('mn_add').onclick = ()=>{
       const host=$('mn_list');
       const arr = host._data || [];
-      
-      // Calcola data intelligente per il nuovo scaglione
-      let nextDate = new Date();
-      if (arr.length > 0) {
-        // Se ci sono già scaglioni, usa l'ultima data + 1 mese
-        const lastScaglione = arr[arr.length - 1];
-        const lastDate = new Date(lastScaglione.dueDate);
-        nextDate = new Date(lastDate);
-        nextDate.setMonth(nextDate.getMonth() + 1);
-      } else {
-        // Se è il primo scaglione, usa la data di vendita + 1 mese
-        const saleDate = new Date($('m_date').value || today);
-        nextDate = new Date(saleDate);
-        nextDate.setMonth(nextDate.getMonth() + 1);
-      }
-      
-      arr.push({ 
-        dueDate: nextDate.toISOString(), 
-        amount: 0, 
-        note: `Scaglione ${arr.length + 1}`, 
-        kind: 'manual'
-      });
+      arr.push({ dueDate: new Date().toISOString(), amount: 0, note: '' , kind:'manual'});
       renderManual(arr);
     };
     $('m_close').onclick = close;
