@@ -4188,14 +4188,16 @@ appEl.innerHTML = topbarHTML() + `
   }
 
   function rowHTML(x){
-    const payments = x.paymentPlan || [];
+    const payments = x.schedule || [];
     const hasPayments = payments.length > 0;
-    const allPaid = hasPayments && payments.every(p => p.paid);
-    const somePaid = hasPayments && payments.some(p => p.paid);
-    const hasOverdue = hasPayments && payments.some(p => !p.paid && new Date(p.dueDate) < new Date());
+    // Per ora consideriamo tutti i pagamenti come "in attesa" se esistono
+    // TODO: Implementare logica di stato pagamenti quando sarà disponibile il campo paid
+    const allPaid = false; // hasPayments && payments.every(p => p.paid);
+    const somePaid = false; // hasPayments && payments.some(p => p.paid);
+    const hasOverdue = hasPayments && payments.some(p => new Date(p.dueDate) < new Date());
     
     let statusClass = 'pending';
-    let statusText = 'In sospeso';
+    let statusText = 'In attesa';
     
     if (allPaid) {
       statusClass = 'completed';
@@ -4206,6 +4208,9 @@ appEl.innerHTML = topbarHTML() + `
     } else if (somePaid) {
       statusClass = 'pending';
       statusText = 'Parziale';
+    } else if (hasPayments) {
+      statusClass = 'pending';
+      statusText = 'In attesa';
     }
     
     return '<tr data-id="'+esc(String(x.id))+'">'+
@@ -4326,13 +4331,19 @@ appEl.innerHTML = topbarHTML() + `
   function updateStats(rows) {
     const totalSales = rows.length;
     const totalAmount = rows.reduce((sum, row) => sum + (Number(row.vssTotal) || 0), 0);
+    
+    // Calcola pagamenti in attesa (vendite con schedule ma senza campo paid)
     const pendingPayments = rows.filter(row => {
-      const payments = row.paymentPlan || [];
-      return payments.some(p => !p.paid);
+      const payments = row.schedule || [];
+      return payments.length > 0; // Tutte le vendite con pagamenti sono "in attesa" per ora
     }).length;
+    
+    // Calcola pagamenti completati (per ora 0, da implementare quando sarà disponibile il campo paid)
     const completedPayments = rows.filter(row => {
-      const payments = row.paymentPlan || [];
-      return payments.length > 0 && payments.every(p => p.paid);
+      const payments = row.schedule || [];
+      // TODO: Implementare quando sarà disponibile il campo paid
+      // return payments.length > 0 && payments.every(p => p.paid);
+      return false; // Per ora sempre 0
     }).length;
     
     // Debug logging per verificare i dati
@@ -4341,7 +4352,8 @@ appEl.innerHTML = topbarHTML() + `
       totalAmount,
       pendingPayments,
       completedPayments,
-      sampleRow: rows[0]
+      sampleRow: rows[0],
+      sampleSchedule: rows[0]?.schedule || []
     });
     
     // Verifica che gli elementi DOM esistano prima di valorizzarli
