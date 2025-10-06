@@ -3225,6 +3225,16 @@ function viewAppointments(){
         cursor: text;
       }
       
+      .appt-card .client-dropdown-input input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text);
+        font-size: 14px;
+        pointer-events: auto;
+      }
+      
       .appt-card .client-dropdown-input:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(93,211,255,.1);
@@ -3232,7 +3242,15 @@ function viewAppointments(){
         outline: none;
       }
       
+      .appt-card .client-dropdown-input input:focus {
+        outline: none;
+      }
+      
       .appt-card .client-dropdown-input::placeholder {
+        color: var(--muted);
+      }
+      
+      .appt-card .client-dropdown-input input::placeholder {
         color: var(--muted);
       }
       
@@ -3611,7 +3629,8 @@ function viewAppointments(){
       e.stopPropagation();
       // Apri sempre l'elenco quando clicchi sul campo
       list.style.display = 'block';
-      search.focus();
+      // NON fare focus sul search, lascia il focus sul campo principale
+      // search.focus();
     });
     
     // Gestione input diretto nel campo cliente
@@ -3711,7 +3730,8 @@ function viewAppointments(){
         e.preventDefault();
         // Apri l'elenco se non è già aperto
         list.style.display = 'block';
-        search.focus();
+        // NON fare focus sul search, mantieni focus sul campo principale
+        // search.focus();
       }
     });
     
