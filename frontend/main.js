@@ -2119,25 +2119,331 @@ function viewPeriods(){
   document.title = 'Battle Plan – BP';
   setActiveSidebarItem('viewPeriods');
 
+  // Add modern BP CSS
+  if(!document.getElementById('bp_modern_css')){
+    const st=document.createElement('style');
+    st.id='bp_modern_css';
+    st.textContent = `
+      /* ============== MODERN BP DESIGN ============== */
+      .bp-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
+      }
+      
+      /* Modern BP Cards */
+      .bp-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .bp-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        transform: translateY(-2px);
+      }
+      
+      .bp-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 16px 16px 0 0;
+      }
+      
+      .bp-card b {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+        display: block;
+        position: relative;
+        padding-left: 12px;
+      }
+      
+      .bp-card b::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 16px;
+        background: linear-gradient(180deg, var(--accent), var(--accent2));
+        border-radius: 2px;
+      }
+      
+      /* Modern Form Layout */
+      .bp-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+      
+      .bp-form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .bp-form-group label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .bp-form-group input, .bp-form-group select {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .bp-form-group input:focus, .bp-form-group select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      /* Modern Buttons */
+      .bp-button {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 16px;
+        color: var(--text);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      
+      .bp-button:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      
+      .bp-button.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+      }
+      
+      .bp-button.primary:hover {
+        box-shadow: 0 6px 16px rgba(93,211,255,.4);
+        transform: translateY(-2px);
+      }
+      
+      /* Modern Grid for BP Items */
+      .bp-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        margin-top: 16px;
+      }
+      
+      .bp-item {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+      
+      .bp-item:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(93,211,255,.1);
+        transform: translateY(-2px);
+      }
+      
+      /* Accordion Header */
+      .bp-accordion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        padding: 12px 0;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+      }
+      
+      .bp-accordion-header:hover {
+        background: rgba(93,211,255,.05);
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+      
+      .bp-accordion-chevron {
+        transition: transform 0.2s ease;
+        font-size: 14px;
+        color: var(--accent);
+      }
+      
+      .bp-accordion-content {
+        margin-top: 16px;
+        display: none;
+      }
+      
+      .bp-accordion-content.open {
+        display: block;
+        animation: slideDown 0.3s ease;
+      }
+      
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* Status Labels */
+      .bp-status {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .bp-status.suggested {
+        background: rgba(39,174,96,.2);
+        color: #27ae60;
+        border: 1px solid rgba(39,174,96,.3);
+      }
+      
+      .bp-status.sent {
+        background: rgba(93,211,255,.2);
+        color: var(--accent);
+        border: 1px solid rgba(93,211,255,.3);
+      }
+      
+      /* Mode Indicator */
+      .bp-mode-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      
+      .bp-mode-indicator.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      
+      /* Action Buttons Container */
+      .bp-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .bp-wrap {
+          padding: 0 16px;
+          margin-top: calc(56px + env(safe-area-inset-top) + 16px);
+        }
+        
+        .bp-card {
+          padding: 16px;
+          margin-bottom: 16px;
+        }
+        
+        .bp-form-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        
+        .bp-grid {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        
+        .bp-actions {
+          gap: 8px;
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .bp-actions .right {
+          margin-left: 0;
+          width: 100%;
+        }
+        
+        .bp-actions .right button {
+          width: 100%;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .bp-wrap {
+          padding: 0 12px;
+        }
+        
+        .bp-card {
+          padding: 12px;
+        }
+        
+        .bp-form-grid {
+          gap: 8px;
+        }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
   appEl.innerHTML = topbarHTML()+
-    '<div class="wrap">'+
+    '<div class="bp-wrap">'+
 
       // — SUGGERITI / DA INVIARE —
-      '<div class="card"><b>Da inviare</b><div id="bp_to_send" class="grid" style="margin-top:8px"></div></div>'+
+      '<div class="bp-card"><b>Da inviare</b><div id="bp_to_send" class="bp-grid"></div></div>'+
 
       // — BP INVIATI (periodi in essere) COLLASSABILE —
-      '<div class="card" id="bp_sent_box" style="margin-top:8px">'+
-        '<div id="bp_sent_head" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-          '<b>BP inviati (periodi in essere)</b><span id="bp_sent_chev" class="chev">▸</span>'+
+      '<div class="bp-card" id="bp_sent_box">'+
+        '<div id="bp_sent_head" class="bp-accordion-header">'+
+          '<b>BP inviati (periodi in essere)</b><span id="bp_sent_chev" class="bp-accordion-chevron">▸</span>'+
         '</div>'+
-        '<div id="bp_sent" class="row" style="margin-top:8px;display:none"></div>'+
+        '<div id="bp_sent" class="bp-accordion-content"></div>'+
       '</div>'+
 
       // — FORM CREA / AGGIORNA —
-      '<div class="card" style="margin-top:8px">'+
+      '<div class="bp-card">'+
         '<b>Crea/Aggiorna BP</b>'+
-        '<div class="row" style="margin-top:8px">'+
-          '<div><label>Tipo</label><select id="p_type">'+
+        '<div class="bp-form-grid">'+
+          '<div class="bp-form-group"><label>Tipo</label><select id="p_type">'+
             '<option value="settimanale">Settimanale (lun–dom)</option>'+
             '<option value="mensile">Mensile</option>'+
             '<option value="trimestrale">Trimestrale</option>'+
@@ -2145,32 +2451,32 @@ function viewPeriods(){
             '<option value="annuale">Annuale</option>'+
           '</select></div>'+
 
-          '<div id="wrap_week" style="display:none"><label>Settimana ISO (1–53)</label><input type="number" id="p_week" min="1" max="53" value="'+isoWeekNum(new Date())+'"></div>'+
-          '<div id="wrap_month" style="display:none"><label>Mese</label><select id="p_month">'+
+          '<div class="bp-form-group" id="wrap_week" style="display:none"><label>Settimana ISO (1–53)</label><input type="number" id="p_week" min="1" max="53" value="'+isoWeekNum(new Date())+'"></div>'+
+          '<div class="bp-form-group" id="wrap_month" style="display:none"><label>Mese</label><select id="p_month">'+
             '<option value="1">Gennaio</option><option value="2">Febbraio</option><option value="3">Marzo</option>'+
             '<option value="4">Aprile</option><option value="5">Maggio</option><option value="6">Giugno</option>'+
             '<option value="7">Luglio</option><option value="8">Agosto</option><option value="9">Settembre</option>'+
             '<option value="10">Ottobre</option><option value="11">Novembre</option><option value="12">Dicembre</option>'+
           '</select></div>'+
-          '<div id="wrap_quarter" style="display:none"><label>Trimestre</label><select id="p_quarter"><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="4">T4</option></select></div>'+
-          '<div id="wrap_semester" style="display:none"><label>Semestre</label><select id="p_sem"><option value="1">1° semestre</option><option value="2">2° semestre</option></select></div>'+
-          '<div><label>Anno</label><input type="number" id="p_year" min="2000" max="2100" value="'+(new Date().getFullYear())+'"></div>'+
+          '<div class="bp-form-group" id="wrap_quarter" style="display:none"><label>Trimestre</label><select id="p_quarter"><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="4">T4</option></select></div>'+
+          '<div class="bp-form-group" id="wrap_semester" style="display:none"><label>Semestre</label><select id="p_sem"><option value="1">1° semestre</option><option value="2">2° semestre</option></select></div>'+
+          '<div class="bp-form-group"><label>Anno</label><input type="number" id="p_year" min="2000" max="2100" value="'+(new Date().getFullYear())+'"></div>'+
         '</div>'+
 
-        '<div class="row"><div class="small muted">Modalità: <b id="p_mode_lbl">Previsionale</b> · <button class="ghost" id="btnImport" style="padding:4px 8px">Importa da agenda</button></div></div>'+
-        '<div class="row" style="align-items:center"><div class="small"><b>Periodo selezionato:</b> <span id="p_label" class="neon">—</span></div><input type="hidden" id="p_start"><input type="hidden" id="p_end"></div>'+
+        '<div class="bp-mode-indicator" style="margin-top:16px"><span>Modalità:</span><b id="p_mode_lbl">Previsionale</b><button class="bp-button" id="btnImport" style="padding:4px 8px;margin-left:8px">Importa da agenda</button></div>'+
+        '<div style="margin-top:12px"><div class="small"><b>Periodo selezionato:</b> <span id="p_label" class="neon">—</span></div><input type="hidden" id="p_start"><input type="hidden" id="p_end"></div>'+
 
-        '<div class="row small" style="margin-top:6px;opacity:.9"><div><b>Previsionale</b></div><div><b>Consuntivo</b></div><div><b>Avanzamento</b></div></div>'+
-        '<div class="row" id="p_rows" style="margin-top:4px"></div>'+
+        '<div style="margin-top:16px;opacity:.9"><div class="small"><b>Previsionale</b></div><div class="small"><b>Consuntivo</b></div><div class="small"><b>Avanzamento</b></div></div>'+
+        '<div id="p_rows" style="margin-top:8px"></div>'+
 
-        '<div class="row" style="margin-top:8px;align-items:center;gap:8px;justify-content:space-between">'+
+        '<div class="bp-actions">'+
           '<div id="p_delete_zone"></div>'+
-          '<div class="right"><button id="btnSaveP">Salva BP</button></div>'+
+          '<div class="right"><button id="btnSaveP" class="bp-button primary">Salva BP</button></div>'+
         '</div>'+
       '</div>'+
 
       // — ELENCO COMPLETO BP —
-      '<div class="card"><b>BP salvati</b><div id="p_list" class="row" style="margin-top:8px"></div></div>'+
+      '<div class="bp-card"><b>BP salvati</b><div id="p_list" class="bp-grid"></div></div>'+
     '</div>';
   renderTopbar();
 
@@ -2606,7 +2912,19 @@ function viewPeriods(){
     if(!contSend.children.length){ contSend.innerHTML='<div class="muted">Nessun suggerimento attivo in questo momento</div>'; }
 
     var head=document.getElementById('bp_sent_head'), chev=document.getElementById('bp_sent_chev');
-    head.onclick=function(){ var box=document.getElementById('bp_sent'); var vis=(box.style.display!=='none'); box.style.display=vis?'none':''; chev.textContent=vis?'▸':'▾'; };
+    head.onclick=function(){ 
+      var box=document.getElementById('bp_sent'); 
+      var isOpen = box.classList.contains('open');
+      if(isOpen) {
+        box.classList.remove('open');
+        chev.textContent = '▸';
+        chev.style.transform = 'rotate(0deg)';
+      } else {
+        box.classList.add('open');
+        chev.textContent = '▾';
+        chev.style.transform = 'rotate(90deg)';
+      }
+    };
   }
 
   // === wiring/init ===
