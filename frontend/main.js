@@ -4385,7 +4385,7 @@ appEl.innerHTML = topbarHTML() + `
     '<div class="modal"><div class="card gi-modal">'+
       '<style>'+
         '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px;margin:20px auto;position:relative;transform:translateY(0);transition:all 0.3s ease}'+
-        '@media (max-width:768px){ .gi-modal{min-width:98vw;max-width:98vw;width:98vw;padding:16px;max-height:96vh;margin:10px auto;border-radius:16px} .gi-grid{display:block;gap:16px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:12px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:12px !important} .acconto-type-selector{flex-direction:column !important;gap:8px !important} .gi-foot{flex-direction:column !important;gap:16px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:10px !important} .pilltabs label{width:100% !important;justify-content:center !important;padding:14px 20px !important;font-size:15px !important} .gi-rlist{max-height:250px !important} .client-dropdown{width:100% !important} }'+
+        '@media (max-width:768px){ .gi-modal{min-width:98vw;max-width:98vw;width:98vw;padding:16px;max-height:96vh;margin:10px auto;border-radius:16px} .gi-grid{display:block;gap:16px} .gi-col{width:100%;min-width:0} .gi-foot{flex-direction:column !important;gap:16px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:10px !important} .pilltabs label{width:100% !important;justify-content:center !important;padding:14px 20px !important;font-size:15px !important} }'+
         '@media (max-width:480px){ .gi-modal{padding:12px;min-width:100vw;max-width:100vw;width:100vw;height:100vh;max-height:100vh;margin:0;border-radius:0;position:fixed;top:0;left:0;z-index:9999} .gi-section{margin-top:20px !important;padding-top:20px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow label{min-width:0 !important;font-size:14px !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important;padding:14px 16px !important;font-size:16px !important;border-radius:12px !important} .mrow.mini{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow.mini button{width:100% !important;max-width:none !important;padding:14px 20px !important;font-size:15px !important} .gi-totals{flex-direction:column !important;gap:12px !important;text-align:center !important;padding:16px !important} .gi-foot button{padding:16px 24px !important;font-size:16px !important;border-radius:12px !important} .pilltabs label{padding:16px 20px !important;font-size:16px !important} }'+
         '.gi-grid{display:flex; gap:16px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
         /* Keep inputs constrained to their columns to avoid overflow */
@@ -4422,36 +4422,6 @@ appEl.innerHTML = topbarHTML() + `
         '.gi-totals div{font-weight:600;color:var(--accent)}'+
         '.gi-totals div:first-child{font-size:14px;margin-bottom:4px}'+
         '.gi-totals div:last-child{font-size:16px}'+
-        '.client-dropdown.open .client-dropdown-arrow{transform:translateY(-50%) rotate(180deg)}'+
-        '.client-option{padding:10px 16px;cursor:pointer;transition:all 0.2s ease;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:8px}'+
-        '.client-option:hover{background:rgba(93,211,255,.1);color:var(--accent)}'+
-        '.client-option:last-child{border-bottom:none}'+
-        '.client-option.selected{background:rgba(93,211,255,.15);color:var(--accent);font-weight:600}'+
-        '.client-option-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}'+
-        '.client-option-text{flex:1;font-size:14px}'+
-        '.client-option-name{font-weight:500;margin-bottom:2px}'+
-        '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
-        '.acconto-toggle:hover{background:rgba(93,211,255,.08);border-color:var(--accent);transform:translateY(-1px)}'+
-        '.acconto-type-option:hover{background:rgba(93,211,255,.08);border-color:var(--accent);transform:translateY(-1px)}'+
-        '.acconto-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
-        '.acconto-radio{transition:all 0.2s ease}'+
-        '.acconto-radio-dot{transition:opacity 0.2s ease}'+
-        '.acconto-check{transition:opacity 0.2s ease}'+
-        '.mrow.mini button{background:rgba(93,211,255,.1);border:1px solid rgba(93,211,255,.3);color:var(--accent);border-radius:8px;padding:8px 16px;font-weight:500;transition:all 0.2s ease;cursor:pointer}'+
-        '.mrow.mini button:hover{background:rgba(93,211,255,.2);border-color:var(--accent);transform:translateY(-1px)}'+
-        /* Mobile-specific improvements */
-        '@media (max-width: 480px) {'+
-          '.gi-modal .gi-section b{font-size:18px !important;margin-bottom:12px !important}'+
-          '.gi-modal .gi-col label{font-size:14px !important;margin-bottom:6px !important}'+
-          '.gi-modal .client-dropdown-input{font-size:16px !important;padding:14px 16px !important}'+
-          '.gi-modal .client-dropdown-list{max-height:60vh !important;border-radius:12px !important}'+
-          '.gi-modal .gi-r{padding:12px 0 !important;flex-wrap:wrap !important;gap:8px !important}'+
-          '.gi-modal .gi-r input{min-width:120px !important;flex:1 !important}'+
-          '.gi-modal .gi-r button{padding:8px 12px !important;font-size:14px !important}'+
-          '.gi-modal .pilltabs input[type="radio"]{transform:scale(1.2) !important}'+
-          '.gi-modal .acconto-toggle{padding:16px !important;border-radius:12px !important;font-size:15px !important}'+
-          '.gi-modal .acconto-type-option{padding:12px 16px !important;border-radius:8px !important;font-size:14px !important}'+
-        '}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
@@ -4465,21 +4435,7 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-grid">'+
         '<div class="gi-col"><label>Data</label><input id="m_date" type="date" value="'+esc(ymd(it.date||today))+'"></div>'+
-        '<div class="gi-col"><label>Cliente</label>'+
-          '<div class="client-dropdown" style="position:relative">'+
-            '<input type="text" id="gi_client_input" placeholder="— seleziona cliente —" readonly style="cursor:pointer;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease;position:relative">'+
-            '<div class="client-dropdown-arrow" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);transition:transform 0.2s ease">▼</div>'+
-            '<div class="client-dropdown-list" id="gi_client_list" style="position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--hair2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:300px;overflow-y:auto;z-index:1000;display:none;margin-top:4px">'+
-              '<div class="client-search" style="padding:12px;border-bottom:1px solid var(--hair)">'+
-                '<input type="text" id="gi_client_search" placeholder="Cerca cliente..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;font-size:14px">'+
-              '</div>'+
-              '<div class="client-options" id="gi_client_options" style="padding:8px 0">'+
-                '<div class="client-loading" style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>'+
-              '</div>'+
-            '</div>'+
-            '<input type="hidden" id="gi_client_select" value="">'+
-          '</div>'+
-        '</div>'+
+        '<div class="gi-col"><label>Cliente</label><select id="gi_client_select"><option value="">Caricamento…</option></select></div>'+
         '<div class="gi-col"><label>Totale VSS</label><input id="m_vss" type="number" step="1" value="'+esc(Number(it.vssTotal||0))+'"></div>'+
       '</div>'+
 
@@ -4487,56 +4443,13 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-section">'+
         '<b>Acconto</b>'+
-        '<div class="acconto-container" style="margin-top:16px">'+
-          '<div class="acconto-toggle-section" style="margin-bottom:20px">'+
-            '<label class="acconto-toggle" style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;position:relative">'+
-              '<div style="width:24px;height:24px;border:2px solid var(--hair2);border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;background:rgba(255,255,255,.05)">'+
-                '<div class="acconto-check" style="width:12px;height:12px;background:var(--accent);border-radius:3px;opacity:'+(dep?'1':'0')+';transition:opacity 0.2s ease"></div>'+
-              '</div>'+
-              '<div style="flex:1">'+
-                '<div style="font-weight:600;color:var(--text);margin-bottom:4px">💰 Abilita Acconto</div>'+
-                '<div style="font-size:12px;color:var(--muted)">Definisci un pagamento anticipato per questa vendita</div>'+
-              '</div>'+
-              '<input id="acc_enable" type="checkbox" '+(dep?'checked':'')+' style="position:absolute;opacity:0;pointer-events:none">'+
-            '</label>'+
-          '</div>'+
-          '<div class="acconto-content" style="opacity:'+(dep?'1':'0.4')+';transition:opacity 0.3s ease;pointer-events:'+(dep?'auto':'none')+'">'+
-            '<div class="acconto-type-section" style="margin-bottom:20px">'+
-              '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">Tipo di acconto</div>'+
-              '<div class="acconto-type-selector" style="display:flex;gap:12px">'+
-                '<label class="acconto-type-option" style="flex:1;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;text-align:center;position:relative">'+
-                  '<input type="radio" name="acc_type" value="abs" '+(dep && !dep._fromPerc ? 'checked' : '')+' style="position:absolute;opacity:0;pointer-events:none">'+
-                  '<div class="acconto-radio" style="width:20px;height:20px;border:2px solid var(--hair2);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease">'+
-                    '<div class="acconto-radio-dot" style="width:8px;height:8px;background:var(--accent);border-radius:50%;opacity:'+(dep && !dep._fromPerc ? '1' : '0')+';transition:opacity 0.2s ease"></div>'+
-                  '</div>'+
-                  '<div style="font-weight:600;color:var(--text);margin-bottom:4px">€ Valore Assoluto</div>'+
-                  '<div style="font-size:12px;color:var(--muted)">Importo fisso in euro</div>'+
-                '</label>'+
-                '<label class="acconto-type-option" style="flex:1;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;text-align:center;position:relative">'+
-                  '<input type="radio" name="acc_type" value="perc" '+(dep && dep._fromPerc ? 'checked' : '')+' style="position:absolute;opacity:0;pointer-events:none">'+
-                  '<div class="acconto-radio" style="width:20px;height:20px;border:2px solid var(--hair2);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease">'+
-                    '<div class="acconto-radio-dot" style="width:8px;height:8px;background:var(--accent);border-radius:50%;opacity:'+(dep && dep._fromPerc ? '1' : '0')+';transition:opacity 0.2s ease"></div>'+
-                  '</div>'+
-                  '<div style="font-weight:600;color:var(--text);margin-bottom:4px">% Percentuale</div>'+
-                  '<div style="font-size:12px;color:var(--muted)">Percentuale sul totale VSS</div>'+
-                '</label>'+
-              '</div>'+
-            '</div>'+
-            '<div class="acconto-fields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">'+
-              '<div>'+
-                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Valore</label>'+
-                '<input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'" placeholder="0" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
-              '</div>'+
-              '<div>'+
-                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Scadenza</label>'+
-                '<input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
-              '</div>'+
-              '<div>'+
-                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Nota</label>'+
-                '<input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
-              '</div>'+
-            '</div>'+
-          '</div>'+
+        '<div class="mrow mini" style="margin-top:6px">'+
+          '<label><input id="acc_enable" type="checkbox" '+(dep?'checked':'')+'> Abilita</label>'+
+          '<label>Tipo</label>'+
+          '<select id="acc_type"><option value="abs">Valore assoluto</option><option value="perc">Percentuale</option></select>'+
+          '<label>Valore</label><input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'">'+
+          '<label>Scadenza</label><input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'">'+
+          '<label>Nota</label><input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'">'+
         '</div>'+
       '</div>'+
 
@@ -4580,122 +4493,16 @@ appEl.innerHTML = topbarHTML() + `
     const prev = document.documentElement.style.overflow; document.documentElement.style.overflow='hidden';
     function close(){ document.documentElement.style.overflow=prev; hideOverlay(); }
 
-    // carica clienti dal database e riempi dropdown ricercabile
-    (async function fillClients(){
-      try {
-        // Carica clienti dal database se non già caricati
-        if (_clients.length === 0) {
-          const response = await GET('/api/clients');
-          _clients = (response && response.clients) || [];
-        }
-        
-        // Ordina clienti alfabeticamente
-        _clients.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' }));
-        
-        const input = $('gi_client_input');
-        const hidden = $('gi_client_select');
-        const list = $('gi_client_list');
-        const options = $('gi_client_options');
-        const search = $('gi_client_search');
-        
-        if (!input || !hidden || !list || !options || !search) return;
-        
-        // Funzione per renderizzare le opzioni
-        function renderOptions(clients = _clients) {
-          if (clients.length === 0) {
-            options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
-            return;
-          }
-          
-          options.innerHTML = clients.map(client => {
-            const initials = String(client.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            const status = client.status || 'lead';
-            return `
-              <div class="client-option" data-id="${esc(client.id)}" data-name="${esc(client.name)}">
-                <div class="client-option-icon">${initials}</div>
-                <div class="client-option-text">
-                  <div class="client-option-name">${esc(client.name)}</div>
-                  <div class="client-option-status">${esc(status)}</div>
-                </div>
-              </div>
-            `;
-          }).join('');
-          
-          // Aggiungi event listeners alle opzioni
-          options.querySelectorAll('.client-option').forEach(option => {
-            option.addEventListener('click', () => {
-              const id = option.getAttribute('data-id');
-              const name = option.getAttribute('data-name');
-              
-              hidden.value = id;
-              input.value = name;
-              list.style.display = 'none';
-              input.parentElement.classList.remove('open');
-              
-              // Rimuovi selezione precedente e seleziona corrente
-              options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
-              option.classList.add('selected');
-            });
-          });
-        }
-        
-        // Event listener per aprire/chiudere dropdown
-        input.addEventListener('click', () => {
-          const isOpen = list.style.display === 'block';
-          list.style.display = isOpen ? 'none' : 'block';
-          input.parentElement.classList.toggle('open', !isOpen);
-          
-          if (!isOpen) {
-            search.focus();
-            renderOptions();
-          }
-        });
-        
-        // Event listener per ricerca
-        search.addEventListener('input', (e) => {
-          const query = e.target.value.toLowerCase().trim();
-          if (!query) {
-            renderOptions();
-            return;
-          }
-          
-          const filtered = _clients.filter(client => 
-            String(client.name || '').toLowerCase().includes(query) ||
-            String(client.status || '').toLowerCase().includes(query)
-          );
-          renderOptions(filtered);
-        });
-        
-        // Chiudi dropdown quando si clicca fuori
-        document.addEventListener('click', (e) => {
-          if (!input.parentElement.contains(e.target)) {
-            list.style.display = 'none';
-            input.parentElement.classList.remove('open');
-          }
-        });
-        
-        // Imposta valore iniziale se presente
-        const cid = (it.clientId||it.client_id||'');
-        if (cid) {
-          const client = _clients.find(c => String(c.id) === String(cid));
-          if (client) {
-            hidden.value = String(cid);
-            input.value = client.name;
-          }
-        } else if (it.clientName) {
-          const found = _clients.find(c => String(c.name).trim().toLowerCase() === String(it.clientName).trim().toLowerCase());
-          if (found) {
-            hidden.value = String(found.id);
-            input.value = found.name;
-          }
-        }
-        
-      } catch (e) {
-        console.error('Errore caricamento clienti:', e);
-        const options = $('gi_client_options');
-        if (options) {
-          options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
-        }
+    // riempi select clienti
+    (function fillClients(){
+      const sel = $('gi_client_select');
+      sel.innerHTML = '<option value="">— seleziona cliente —</option>' +
+        _clients.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
+      const cid = (it.clientId||it.client_id||'');
+      if (cid) sel.value = String(cid);
+      if (!sel.value && it.clientName){
+        const found = _clients.find(c => String(c.name).trim().toLowerCase() === String(it.clientName).trim().toLowerCase());
+        if (found) sel.value = String(found.id);
       }
     })();
 
@@ -4751,14 +4558,12 @@ appEl.innerHTML = topbarHTML() + `
         const row = document.createElement('div');
         row.className='gi-r';
         row.innerHTML =
-          '<input type="date" data-k="dueDate" value="'+esc(ymd(r.dueDate))+'" style="min-width:160px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
-          '<input type="number" step="1" data-k="amount" value="'+esc(Number(r.amount||0))+'" placeholder="0" style="width:120px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
-          '<input type="text" data-k="note"   value="'+esc(r.note||'')+'" placeholder="nota" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
-          '<button class="ghost" data-del="'+idx+'" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);color:var(--danger);border-radius:6px;padding:4px 8px;cursor:pointer;transition:all 0.2s ease;min-width:32px">✕</button>';
+          '<input type="date" data-k="dueDate" value="'+esc(ymd(r.dueDate))+'">'+
+          '<input type="number" step="1" data-k="amount" value="'+esc(Number(r.amount||0))+'" style="width:120px">'+
+          '<input type="text" data-k="note"   value="'+esc(r.note||'')+'" placeholder="nota" style="flex:1">'+
+          '<button class="ghost" data-del="'+idx+'">✕</button>';
         host.appendChild(row);
       });
-      
-      // Event listeners per eliminazione
       host.querySelectorAll('[data-del]').forEach(b=>{
         b.onclick = ()=>{
           const i = Number(b.getAttribute('data-del'));
@@ -4767,8 +4572,6 @@ appEl.innerHTML = topbarHTML() + `
           renderManual(arr);
         };
       });
-      
-      // Event listeners per input con auto-data
       host.oninput = ()=>{
         const arr = host._data || [];
         const rows = Array.from(host.children);
@@ -4783,31 +4586,6 @@ appEl.innerHTML = topbarHTML() + `
         });
         updateTotals();
       };
-      
-      // Auto-data per scaglioni successivi
-      host.addEventListener('change', (e) => {
-        if (e.target.getAttribute('data-k') === 'dueDate') {
-          const changedRow = e.target.closest('.gi-r');
-          const rowIndex = Array.from(host.children).indexOf(changedRow);
-          const nextRow = host.children[rowIndex + 1];
-          
-          if (nextRow) {
-            const nextDateInput = nextRow.querySelector('[data-k="dueDate"]');
-            if (nextDateInput && !nextDateInput.value) {
-              // Auto-compila con mese successivo
-              const currentDate = new Date(e.target.value);
-              const nextMonth = new Date(currentDate);
-              nextMonth.setMonth(nextMonth.getMonth() + 1);
-              nextDateInput.value = ymd(nextMonth);
-              
-              // Trigger update
-              const event = new Event('input', { bubbles: true });
-              nextDateInput.dispatchEvent(event);
-            }
-          }
-        }
-      });
-      
       host._data = list;
       updateTotals();
     }
@@ -4816,48 +4594,10 @@ appEl.innerHTML = topbarHTML() + `
     $('m_vss').value  = esc(Number(it.vssTotal||0));
     $('m_srv').value  = esc(it.services||'');
 
-    // Gestione acconto migliorata
-    const accEnable = $('acc_enable');
-    const accValue = $('acc_value');
-    const accDate = $('acc_date');
-    const accNote = $('acc_note');
-    const accContent = document.querySelector('.acconto-content');
-    const accToggle = document.querySelector('.acconto-toggle');
-    const accCheck = document.querySelector('.acconto-check');
-    
-    // Auto-flag acconto quando si compila un campo
-    function updateAccontoState() {
-      const hasValue = Number(accValue.value || 0) > 0;
-      const hasDate = accDate.value;
-      const hasNote = accNote.value.trim();
-      const shouldEnable = hasValue || hasDate || hasNote;
-      
-      if (shouldEnable && !accEnable.checked) {
-        accEnable.checked = true;
-      } else if (!shouldEnable && accEnable.checked) {
-        accEnable.checked = false;
-      }
-    }
-    
-    
-    // Event listeners semplici e funzionanti
-    ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
-      .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
-    
-    const giClientSelect = $('gi_client_select');
-    if (giClientSelect) giClientSelect.addEventListener('change', updateTotals);
-    
-    // Inizializza totali dopo che il DOM è pronto
-    setTimeout(updateTotals, 100);
-    
-    
-    // Inizializza stato acconto
     $('acc_type').value = dep && dep._fromPerc ? 'perc' : 'abs';
     $('acc_value').value= dep ? (dep._fromPerc ? dep._rawPerc : dep.amount) : 0;
     $('acc_date').value = dep ? esc(ymd(dep.dueDate)) : esc(ymd(it.date||today));
     $('acc_note').value = dep ? esc(dep.note||'Acconto') : 'Acconto';
-    
-    // Aggiorna UI iniziale
 
     if (defaultMode==='rate'){
       const n = rest.length || 12;
@@ -4912,28 +4652,14 @@ appEl.innerHTML = topbarHTML() + `
       const vss = Math.max(0, Number($('m_vss').value||0));
       const sched = collectSchedule();
       const tot = Math.round(sched.reduce((a,r)=>a+Number(r.amount||0),0));
-      
-      const totProg = $('tot_prog');
-      const totChk = $('tot_chk');
-      const mSave = $('m_save');
-      
-      if (totProg) totProg.textContent = 'Programmato: '+fmtEuro(tot);
-      if (totChk) totChk.textContent = 'Totale VSS: '+fmtEuro(vss) + (tot===vss ? ' OK' : ' (manca '+fmtEuro(vss-tot)+')');
-      if (mSave) mSave.disabled = (tot!==vss) || !($('gi_client_select').value);
+      $('tot_prog').textContent = 'Programmato: '+fmtEuro(tot);
+      $('tot_chk').textContent  = 'Totale VSS: '+fmtEuro(vss) + (tot===vss ? ' OK' : ' (manca '+fmtEuro(vss-tot)+')');
+      $('m_save').disabled = (tot!==vss) || !($('gi_client_select').value);
     }
 
-    // Event listeners per aggiornamento totali - VERSIONE SEMPLICE
     ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
       .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
     $('gi_client_select').addEventListener('change', updateTotals);
-    
-    // Event listeners per scaglioni manuali
-    document.addEventListener('input', (e) => {
-      if (e.target.matches('#mn_list input[data-k="amount"], #mn_list input[data-k="dueDate"], #mn_list input[data-k="note"]')) {
-        updateTotals();
-      }
-    });
-    
     updateTotals();
 
     $('m_save').onclick = ()=>{
