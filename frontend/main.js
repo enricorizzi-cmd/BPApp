@@ -3585,8 +3585,6 @@ function viewAppointments(){
           .toUpperCase()
           .slice(0, 2);
         
-        const status = client.status || 'attivo';
-        const statusColor = status === 'attivo' ? 'var(--success)' : 'var(--muted)';
         const consultant = client.consultantName || '';
         
         return `
@@ -3595,7 +3593,6 @@ function viewAppointments(){
             <div class="client-option-text">
               <div class="client-option-name">${htmlEscape(client.name || '')}</div>
               ${consultant ? `<div class="client-option-consultant">${htmlEscape(consultant)}</div>` : ''}
-              <div class="client-option-status" style="color: ${statusColor}">${status}</div>
             </div>
           </div>
         `;
@@ -5781,7 +5778,6 @@ appEl.innerHTML = topbarHTML() + `
         
         options.innerHTML = clients.map(client => {
           const initials = String(client.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-          const status = client.status || 'lead';
           const consultant = client.consultantName || '';
           return `
             <div class="client-option" data-id="${esc(client.id)}" data-name="${esc(client.name)}">
@@ -5789,7 +5785,6 @@ appEl.innerHTML = topbarHTML() + `
               <div class="client-option-text">
                 <div class="client-option-name">${esc(client.name)}</div>
                 ${consultant ? `<div class="client-option-consultant">${esc(consultant)}</div>` : ''}
-                <div class="client-option-status">${esc(status)}</div>
               </div>
             </div>
           `;
