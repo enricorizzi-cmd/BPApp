@@ -4430,6 +4430,10 @@ appEl.innerHTML = topbarHTML() + `
         '.client-option-text{flex:1;font-size:14px}'+
         '.client-option-name{font-weight:500;margin-bottom:2px}'+
         '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
+        '.acconto-toggle:hover{background:rgba(93,211,255,.1);border-color:var(--accent)}'+
+        '.acconto-type-option:hover{background:rgba(93,211,255,.1);border-color:var(--accent)}'+
+        '.acconto-type-option:has(input:checked){background:linear-gradient(135deg, var(--accent), var(--accent2));border-color:var(--accent);color:#fff}'+
+        '.acconto-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(93,211,255,.1)}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
@@ -4465,13 +4469,37 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-section">'+
         '<b>Acconto</b>'+
-        '<div class="mrow mini" style="margin-top:6px">'+
-          '<label><input id="acc_enable" type="checkbox" '+(dep?'checked':'')+'> Abilita</label>'+
-          '<label>Tipo</label>'+
-          '<select id="acc_type"><option value="abs">Valore assoluto</option><option value="perc">Percentuale</option></select>'+
-          '<label>Valore</label><input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'">'+
-          '<label>Scadenza</label><input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'">'+
-          '<label>Nota</label><input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'">'+
+        '<div class="acconto-container" style="margin-top:12px">'+
+          '<div class="acconto-header" style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
+            '<label class="acconto-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--hair2);border-radius:8px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
+              '<input id="acc_enable" type="checkbox" '+(dep?'checked':'')+' style="accent-color:var(--accent)">'+
+              '<span style="font-weight:500;color:var(--text)">💰 Abilita Acconto</span>'+
+            '</label>'+
+            '<div class="acconto-type-selector" style="display:flex;gap:8px;opacity:'+(dep?'1':'0.5')+';transition:opacity 0.2s ease">'+
+              '<label class="acconto-type-option" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid var(--hair2);border-radius:6px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
+                '<input type="radio" name="acc_type" value="abs" '+(dep && !dep._fromPerc ? 'checked' : '')+' style="accent-color:var(--accent)">'+
+                '<span style="font-size:13px">€ Valore assoluto</span>'+
+              '</label>'+
+              '<label class="acconto-type-option" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid var(--hair2);border-radius:6px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
+                '<input type="radio" name="acc_type" value="perc" '+(dep && dep._fromPerc ? 'checked' : '')+' style="accent-color:var(--accent)">'+
+                '<span style="font-size:13px">% Percentuale</span>'+
+              '</label>'+
+            '</div>'+
+          '</div>'+
+          '<div class="acconto-fields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;opacity:'+(dep?'1':'0.5')+';transition:opacity 0.2s ease">'+
+            '<div>'+
+              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Valore</label>'+
+              '<input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'" placeholder="0" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
+            '</div>'+
+            '<div>'+
+              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Scadenza</label>'+
+              '<input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
+            '</div>'+
+            '<div>'+
+              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Nota</label>'+
+              '<input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
+            '</div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
 
@@ -4686,12 +4714,14 @@ appEl.innerHTML = topbarHTML() + `
         const row = document.createElement('div');
         row.className='gi-r';
         row.innerHTML =
-          '<input type="date" data-k="dueDate" value="'+esc(ymd(r.dueDate))+'">'+
-          '<input type="number" step="1" data-k="amount" value="'+esc(Number(r.amount||0))+'" style="width:120px">'+
-          '<input type="text" data-k="note"   value="'+esc(r.note||'')+'" placeholder="nota" style="flex:1">'+
-          '<button class="ghost" data-del="'+idx+'">✕</button>';
+          '<input type="date" data-k="dueDate" value="'+esc(ymd(r.dueDate))+'" style="min-width:160px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
+          '<input type="number" step="1" data-k="amount" value="'+esc(Number(r.amount||0))+'" placeholder="0" style="width:120px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
+          '<input type="text" data-k="note"   value="'+esc(r.note||'')+'" placeholder="nota" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px">'+
+          '<button class="ghost" data-del="'+idx+'" style="background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);color:var(--danger);border-radius:6px;padding:4px 8px;cursor:pointer;transition:all 0.2s ease;min-width:32px">✕</button>';
         host.appendChild(row);
       });
+      
+      // Event listeners per eliminazione
       host.querySelectorAll('[data-del]').forEach(b=>{
         b.onclick = ()=>{
           const i = Number(b.getAttribute('data-del'));
@@ -4700,6 +4730,8 @@ appEl.innerHTML = topbarHTML() + `
           renderManual(arr);
         };
       });
+      
+      // Event listeners per input con auto-data
       host.oninput = ()=>{
         const arr = host._data || [];
         const rows = Array.from(host.children);
@@ -4714,6 +4746,31 @@ appEl.innerHTML = topbarHTML() + `
         });
         updateTotals();
       };
+      
+      // Auto-data per scaglioni successivi
+      host.addEventListener('change', (e) => {
+        if (e.target.getAttribute('data-k') === 'dueDate') {
+          const changedRow = e.target.closest('.gi-r');
+          const rowIndex = Array.from(host.children).indexOf(changedRow);
+          const nextRow = host.children[rowIndex + 1];
+          
+          if (nextRow) {
+            const nextDateInput = nextRow.querySelector('[data-k="dueDate"]');
+            if (nextDateInput && !nextDateInput.value) {
+              // Auto-compila con mese successivo
+              const currentDate = new Date(e.target.value);
+              const nextMonth = new Date(currentDate);
+              nextMonth.setMonth(nextMonth.getMonth() + 1);
+              nextDateInput.value = ymd(nextMonth);
+              
+              // Trigger update
+              const event = new Event('input', { bubbles: true });
+              nextDateInput.dispatchEvent(event);
+            }
+          }
+        }
+      });
+      
       host._data = list;
       updateTotals();
     }
@@ -4722,10 +4779,58 @@ appEl.innerHTML = topbarHTML() + `
     $('m_vss').value  = esc(Number(it.vssTotal||0));
     $('m_srv').value  = esc(it.services||'');
 
+    // Gestione acconto migliorata
+    const accEnable = $('acc_enable');
+    const accValue = $('acc_value');
+    const accDate = $('acc_date');
+    const accNote = $('acc_note');
+    const accTypeSelector = document.querySelector('.acconto-type-selector');
+    const accFields = document.querySelector('.acconto-fields');
+    
+    // Auto-flag acconto quando si compila un campo
+    function updateAccontoState() {
+      const hasValue = Number(accValue.value || 0) > 0;
+      const hasDate = accDate.value;
+      const hasNote = accNote.value.trim();
+      const shouldEnable = hasValue || hasDate || hasNote;
+      
+      if (shouldEnable && !accEnable.checked) {
+        accEnable.checked = true;
+        updateAccontoUI();
+      } else if (!shouldEnable && accEnable.checked) {
+        accEnable.checked = false;
+        updateAccontoUI();
+      }
+    }
+    
+    function updateAccontoUI() {
+      const isEnabled = accEnable.checked;
+      if (accTypeSelector) accTypeSelector.style.opacity = isEnabled ? '1' : '0.5';
+      if (accFields) accFields.style.opacity = isEnabled ? '1' : '0.5';
+    }
+    
+    // Event listeners per auto-flag
+    [accValue, accDate, accNote].forEach(input => {
+      if (input) {
+        input.addEventListener('input', updateAccontoState);
+        input.addEventListener('change', updateAccontoState);
+      }
+    });
+    
+    // Event listener per checkbox
+    if (accEnable) {
+      accEnable.addEventListener('change', updateAccontoUI);
+    }
+    
+    // Inizializza stato acconto
     $('acc_type').value = dep && dep._fromPerc ? 'perc' : 'abs';
     $('acc_value').value= dep ? (dep._fromPerc ? dep._rawPerc : dep.amount) : 0;
     $('acc_date').value = dep ? esc(ymd(dep.dueDate)) : esc(ymd(it.date||today));
     $('acc_note').value = dep ? esc(dep.note||'Acconto') : 'Acconto';
+    
+    // Aggiorna UI iniziale
+    updateAccontoState();
+    updateAccontoUI();
 
     if (defaultMode==='rate'){
       const n = rest.length || 12;
@@ -4740,7 +4845,28 @@ appEl.innerHTML = topbarHTML() + `
     $('mn_add').onclick = ()=>{
       const host=$('mn_list');
       const arr = host._data || [];
-      arr.push({ dueDate: new Date().toISOString(), amount: 0, note: '' , kind:'manual'});
+      
+      // Calcola data intelligente per il nuovo scaglione
+      let nextDate = new Date();
+      if (arr.length > 0) {
+        // Se ci sono già scaglioni, usa l'ultima data + 1 mese
+        const lastScaglione = arr[arr.length - 1];
+        const lastDate = new Date(lastScaglione.dueDate);
+        nextDate = new Date(lastDate);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      } else {
+        // Se è il primo scaglione, usa la data di vendita + 1 mese
+        const saleDate = new Date($('m_date').value || today);
+        nextDate = new Date(saleDate);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+      }
+      
+      arr.push({ 
+        dueDate: nextDate.toISOString(), 
+        amount: 0, 
+        note: `Scaglione ${arr.length + 1}`, 
+        kind: 'manual'
+      });
       renderManual(arr);
     };
     $('m_close').onclick = close;
