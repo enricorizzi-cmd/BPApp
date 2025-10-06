@@ -4752,7 +4752,6 @@ appEl.innerHTML = topbarHTML() + `
           const arr = host._data || [];
           arr.splice(i,1);
           renderManual(arr);
-          updateTotals(); // Aggiorna totali dopo eliminazione
         };
       });
       
@@ -4878,10 +4877,7 @@ appEl.innerHTML = topbarHTML() + `
     
     // Event listener per checkbox
     if (accEnable) {
-      accEnable.addEventListener('change', () => {
-        updateAccontoUI();
-        updateTotals(); // Aggiorna totali
-      });
+      accEnable.addEventListener('change', updateAccontoUI);
     }
     
     // Event listeners per radio buttons
@@ -4889,7 +4885,6 @@ appEl.innerHTML = topbarHTML() + `
       radio.addEventListener('change', () => {
         updateRadioButtons();
         updateAccontoCalculation();
-        updateTotals(); // Aggiorna totali
       });
     });
     
@@ -4901,12 +4896,11 @@ appEl.innerHTML = topbarHTML() + `
           input.checked = true;
           updateRadioButtons();
           updateAccontoCalculation();
-          updateTotals(); // Aggiorna totali
         }
       });
     });
     
-    // Calcolo automatico acconto
+    // Calcolo automatico acconto - VERSIONE SEMPLICE
     function updateAccontoCalculation() {
       const vssTotal = Number($('m_vss').value || 0);
       const accType = document.querySelector('input[name="acc_type"]:checked')?.value;
@@ -4915,13 +4909,11 @@ appEl.innerHTML = topbarHTML() + `
       if (accType === 'perc' && vssTotal > 0) {
         const perc = Number(accValue.value || 0);
         const calculatedAmount = Math.round((vssTotal * perc) / 100);
-        // Aggiorna il placeholder per mostrare il calcolo
+        // Mostra il calcolo nel placeholder
         accValue.placeholder = `${perc}% = ${fmtEuro(calculatedAmount)}`;
       } else {
         accValue.placeholder = '0';
       }
-      
-      updateTotals();
     }
     
     // Event listener per cambio VSS totale
@@ -4935,7 +4927,6 @@ appEl.innerHTML = topbarHTML() + `
       accValue.addEventListener('input', () => {
         updateAccontoState();
         updateAccontoCalculation();
-        updateTotals(); // Aggiorna totali
       });
     }
     
@@ -4986,7 +4977,6 @@ appEl.innerHTML = topbarHTML() + `
         kind: 'manual'
       });
       renderManual(arr);
-      updateTotals(); // Aggiorna totali dopo aggiunta scaglione
     };
     $('m_close').onclick = close;
 
@@ -5030,26 +5020,14 @@ appEl.innerHTML = topbarHTML() + `
       $('m_save').disabled = (tot!==vss) || !($('gi_client_select').value);
     }
 
-    // Event listeners per aggiornamento totali
+    // Event listeners per aggiornamento totali - VERSIONE SEMPLICE
     ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
       .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
     $('gi_client_select').addEventListener('change', updateTotals);
     
-    // Event listeners per scaglioni manuali - più completo
+    // Event listeners per scaglioni manuali
     document.addEventListener('input', (e) => {
       if (e.target.matches('#mn_list input[data-k="amount"], #mn_list input[data-k="dueDate"], #mn_list input[data-k="note"]')) {
-        updateTotals();
-      }
-    });
-    
-    // Event listeners per cambio modalità pagamento
-    document.querySelectorAll('input[name="pmode"]').forEach(radio => {
-      radio.addEventListener('change', updateTotals);
-    });
-    
-    // Event listeners per rateale
-    document.addEventListener('input', (e) => {
-      if (e.target.matches('#rt_n, #rt_freq, #rt_first')) {
         updateTotals();
       }
     });
