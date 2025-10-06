@@ -3790,7 +3790,8 @@ function viewAppointments(){
   function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
-    const clientInput = document.getElementById('a_client');
+    const clientDisplay = document.getElementById('a_client_display');
+    const clientSelect = document.getElementById('a_client_select');
     const rowVss  = document.getElementById('row_vss');
     const rowVsdP = document.getElementById('row_vsd_p');
     const rowVsdI = document.getElementById('row_vsd_i');
@@ -3807,23 +3808,26 @@ function viewAppointments(){
     rowVsdI.style.display='none';
     rowTel.style.display='none';
     rowApp.style.display='none';
-    clientInput.disabled=false;
+    clientDisplay.disabled=false;
     nncfBtn.style.display='';
     if(!keepNncf){
       nncfBtn.setAttribute('data-active','0');
       nncfBtn.setAttribute('aria-pressed','false');
       nncfBtn.classList.remove('active');
     }
-    if(clientInput.value==='Formazione' || clientInput.value==='MBS' || clientInput.value==='Sottoprodotti' || clientInput.value==='Riunione' || clientInput.value==='Impegni personali') clientInput.value='';
+    if(clientDisplay.value==='Formazione' || clientDisplay.value==='MBS' || clientDisplay.value==='Sottoprodotti' || clientDisplay.value==='Riunione' || clientDisplay.value==='Impegni personali') {
+      clientDisplay.value='';
+      clientSelect.value='';
+    }
 
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
     else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
     else if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
-    else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientInput.value='Formazione'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
-    else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientInput.value='MBS'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
-    else if(btn===segSotto){ typeHidden.value='sottoprodotti'; setDur(240); clientInput.value='Sottoprodotti'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowTel.style.display=''; rowApp.style.display=''; nncfBtn.style.display='none'; }
-    else if(btn===segRiunione){ typeHidden.value='riunione'; setDur(60); clientInput.value='Riunione'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
-    else if(btn===segImpegni){ typeHidden.value='impegni personali'; setDur(60); clientInput.value='Impegni personali'; clientInput.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+    else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientDisplay.value='Formazione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+    else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientDisplay.value='MBS'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
+    else if(btn===segSotto){ typeHidden.value='sottoprodotti'; setDur(240); clientDisplay.value='Sottoprodotti'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowTel.style.display=''; rowApp.style.display=''; nncfBtn.style.display='none'; }
+    else if(btn===segRiunione){ typeHidden.value='riunione'; setDur(60); clientDisplay.value='Riunione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+    else if(btn===segImpegni){ typeHidden.value='impegni personali'; setDur(60); clientDisplay.value='Impegni personali'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
   }
   function setDur(min){
     const dEl=document.getElementById('a_dur');
