@@ -3220,12 +3220,26 @@ function viewAppointments(){
         border-radius: 8px;
         padding: 10px 12px;
         transition: all 0.2s ease;
-        cursor: pointer;
+        cursor: text;
         display: flex;
         justify-content: space-between;
         align-items: center;
         color: var(--text);
         font-size: 14px;
+      }
+      
+      .appt-card .client-dropdown-input input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text);
+        font-size: 14px;
+        flex: 1;
+        cursor: text;
+      }
+      
+      .appt-card .client-dropdown-input input::placeholder {
+        color: var(--muted);
       }
       
       .appt-card .client-dropdown-input:focus {
@@ -3249,7 +3263,7 @@ function viewAppointments(){
         top: 100%;
         left: 0;
         right: 0;
-        background: rgba(255,255,255,.08);
+        background: var(--card);
         border: 1px solid var(--hair2);
         border-radius: 8px;
         max-height: 300px;
@@ -3456,7 +3470,7 @@ function viewAppointments(){
             '<div class="appt-client-group">'+
               '<div class="client-dropdown" style="flex: 1;">'+
                 '<div class="client-dropdown-input" id="a_client_input">'+
-                  '<span id="a_client_display">— seleziona cliente —</span>'+
+                  '<input type="text" id="a_client_display" placeholder="— seleziona cliente —" autocomplete="off">'+
                   '<span class="client-dropdown-arrow">▼</span>'+
                 '</div>'+
                 '<input type="hidden" id="a_client_select" value="">'+
@@ -3618,6 +3632,24 @@ function viewAppointments(){
       }
     });
     
+    // Gestione input diretto nel campo cliente
+    display.addEventListener('input', (e) => {
+      // Quando l'utente scrive direttamente, pulisci la selezione
+      hidden.value = '';
+      // Riabilita NNCF quando si scrive direttamente
+      const nncfBtn = document.getElementById('a_nncf');
+      nncfBtn.disabled = false;
+      nncfBtn.style.opacity = '1';
+      nncfBtn.style.cursor = 'pointer';
+    });
+    
+    display.addEventListener('focus', (e) => {
+      // Apri dropdown quando si fa focus sul campo
+      list.style.display = 'block';
+      input.classList.add('open');
+      search.focus();
+    });
+    
     search.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase().trim();
       if (!query) {
@@ -3649,7 +3681,7 @@ function viewAppointments(){
       const clientStatus = option.dataset.clientStatus;
       
       // Aggiorna display e hidden input
-      display.textContent = clientName;
+      display.value = clientName;
       hidden.value = clientId;
       
       // Chiudi dropdown
@@ -3815,7 +3847,7 @@ function viewAppointments(){
   function resetForm(){
     editId=null;
     document.getElementById('a_form_title').textContent='Nuovo appuntamento';
-    document.getElementById('a_client_display').textContent='— seleziona cliente —';
+    document.getElementById('a_client_display').value='';
     document.getElementById('a_client_select').value='';
     document.getElementById('a_start').value='';
     document.getElementById('a_end').value='';
@@ -3850,7 +3882,7 @@ function viewAppointments(){
     else if(t.indexOf('impegni personali')>-1) selectSeg(segImpegni);
     else selectSeg(segSale);
 
-    document.getElementById('a_client_display').textContent=a.client||'— seleziona cliente —';
+    document.getElementById('a_client_display').value=a.client||'';
     document.getElementById('a_client_select').value=a.clientId||'';
     
     // Gestisci pulsante NNCF basato sul cliente esistente
@@ -3904,10 +3936,10 @@ function viewAppointments(){
 
   // --------- save / delete ----------
   function collectForm(){
-    let client=(document.getElementById('a_client_display').textContent||'').trim();
+    let client=(document.getElementById('a_client_display').value||'').trim();
     const clientId=document.getElementById('a_client_select').value;
     const typeVal=document.getElementById('a_type').value;
-    if(!client || client === '— seleziona cliente —'){
+    if(!client){
       const tl=String(typeVal||'').toLowerCase();
       if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ client=typeVal; }
       else { toast('Cliente obbligatorio'); return null; }
