@@ -4385,8 +4385,8 @@ appEl.innerHTML = topbarHTML() + `
     '<div class="modal"><div class="card gi-modal">'+
       '<style>'+
         '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px}'+
-        '@media (max-width:768px){ .gi-modal{min-width:95vw;max-width:95vw;padding:16px;max-height:95vh} .gi-grid{display:block;gap:12px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:8px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .acconto-type-selector{flex-direction:column !important;gap:6px !important} .gi-foot{flex-direction:column !important;gap:12px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} }'+
-        '@media (max-width:480px){ .gi-modal{padding:12px} .gi-section{margin-top:16px !important;padding-top:16px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .mrow label{min-width:0 !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important} }'+
+        '@media (max-width:768px){ .gi-modal{min-width:95vw;max-width:95vw;padding:16px;max-height:95vh} .gi-grid{display:block;gap:12px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:8px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .acconto-type-selector{flex-direction:column !important;gap:6px !important} .gi-foot{flex-direction:column !important;gap:12px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:8px !important} .pilltabs label{width:100% !important;justify-content:center !important} .gi-rlist{max-height:200px !important} }'+
+        '@media (max-width:480px){ .gi-modal{padding:12px} .gi-section{margin-top:16px !important;padding-top:16px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .mrow label{min-width:0 !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important} .mrow.mini{flex-direction:row !important;justify-content:center !important} .mrow.mini button{width:100% !important;max-width:300px !important} .gi-totals{flex-direction:column !important;gap:8px !important;text-align:center !important} }'+
         '.gi-grid{display:flex; gap:16px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
         /* Keep inputs constrained to their columns to avoid overflow */
         '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease}'+
@@ -4437,6 +4437,8 @@ appEl.innerHTML = topbarHTML() + `
         '.acconto-radio{transition:all 0.2s ease}'+
         '.acconto-radio-dot{transition:opacity 0.2s ease}'+
         '.acconto-check{transition:opacity 0.2s ease}'+
+        '.mrow.mini button{background:rgba(93,211,255,.1);border:1px solid rgba(93,211,255,.3);color:var(--accent);border-radius:8px;padding:8px 16px;font-weight:500;transition:all 0.2s ease;cursor:pointer}'+
+        '.mrow.mini button:hover{background:rgba(93,211,255,.2);border-color:var(--accent);transform:translateY(-1px)}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
@@ -4880,7 +4882,10 @@ appEl.innerHTML = topbarHTML() + `
     
     // Event listeners per radio buttons
     document.querySelectorAll('input[name="acc_type"]').forEach(radio => {
-      radio.addEventListener('change', updateRadioButtons);
+      radio.addEventListener('change', () => {
+        updateRadioButtons();
+        updateAccontoCalculation();
+      });
     });
     
     // Event listeners per click sui label
@@ -4890,9 +4895,42 @@ appEl.innerHTML = topbarHTML() + `
         if (input) {
           input.checked = true;
           updateRadioButtons();
+          updateAccontoCalculation();
         }
       });
     });
+    
+    // Calcolo automatico acconto
+    function updateAccontoCalculation() {
+      const vssTotal = Number($('m_vss').value || 0);
+      const accType = document.querySelector('input[name="acc_type"]:checked')?.value;
+      const accValue = $('acc_value');
+      
+      if (accType === 'perc' && vssTotal > 0) {
+        const perc = Number(accValue.value || 0);
+        const calculatedAmount = Math.round((vssTotal * perc) / 100);
+        // Aggiorna il placeholder per mostrare il calcolo
+        accValue.placeholder = `${perc}% = ${fmtEuro(calculatedAmount)}`;
+      } else {
+        accValue.placeholder = '0';
+      }
+      
+      updateTotals();
+    }
+    
+    // Event listener per cambio VSS totale
+    const mVss = $('m_vss');
+    if (mVss) {
+      mVss.addEventListener('input', updateAccontoCalculation);
+    }
+    
+    // Event listener per cambio valore acconto
+    if (accValue) {
+      accValue.addEventListener('input', () => {
+        updateAccontoState();
+        updateAccontoCalculation();
+      });
+    }
     
     // Inizializza stato acconto
     $('acc_type').value = dep && dep._fromPerc ? 'perc' : 'abs';
@@ -4903,6 +4941,7 @@ appEl.innerHTML = topbarHTML() + `
     // Aggiorna UI iniziale
     updateAccontoState();
     updateAccontoUI();
+    updateAccontoCalculation();
 
     if (defaultMode==='rate'){
       const n = rest.length || 12;
@@ -4986,6 +5025,14 @@ appEl.innerHTML = topbarHTML() + `
     ['m_vss','acc_enable','acc_type','acc_value','acc_date','rt_n','rt_freq','rt_first']
       .forEach(id=>{ const el=$(id); if(el) el.addEventListener('input', updateTotals); });
     $('gi_client_select').addEventListener('change', updateTotals);
+    
+    // Event listeners per scaglioni manuali
+    document.addEventListener('input', (e) => {
+      if (e.target.matches('#mn_list input[name="mn_amount"], #mn_list input[name="mn_date"]')) {
+        updateTotals();
+      }
+    });
+    
     updateTotals();
 
     $('m_save').onclick = ()=>{
