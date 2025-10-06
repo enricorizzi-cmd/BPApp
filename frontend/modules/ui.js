@@ -112,9 +112,8 @@ export function renderTopbar(){
           top: 0;
           height: 100vh;
           width: 280px;
-          background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+          background: var(--card);
           border-right: 1px solid var(--hair2);
-          backdrop-filter: blur(10px);
           z-index: 1000;
           transition: all 0.3s ease;
           display: flex;
@@ -145,7 +144,7 @@ export function renderTopbar(){
         }
         
         .sidebar-toggle {
-          background: rgba(255,255,255,.05);
+          background: var(--card-soft);
           border: 1px solid var(--hair2);
           border-radius: 8px;
           padding: 8px;
@@ -155,8 +154,9 @@ export function renderTopbar(){
         }
         
         .sidebar-toggle:hover {
-          background: rgba(255,255,255,.1);
+          background: var(--accent);
           border-color: var(--accent);
+          color: #fff;
         }
         
         .sidebar-toggle-icon {
@@ -198,11 +198,18 @@ export function renderTopbar(){
           gap: 12px;
           text-align: left;
           font-size: 14px;
+          border-radius: 0;
         }
         
         .sidebar-item:hover {
-          background: rgba(93,211,255,.1);
-          color: var(--accent);
+          background: var(--accent);
+          color: #fff;
+        }
+        
+        .sidebar-item.active {
+          background: var(--accent);
+          color: #fff;
+          font-weight: 600;
         }
         
         .sidebar-icon {
@@ -224,12 +231,12 @@ export function renderTopbar(){
         .sidebar-logout {
           border-top: 1px solid var(--hair2);
           margin-top: auto;
-          background: rgba(255,92,92,.05);
+          background: transparent;
         }
         
         .sidebar-logout:hover {
-          background: rgba(255,92,92,.1);
-          color: var(--danger);
+          background: var(--danger);
+          color: #fff;
         }
         
         /* Nascondi topbar su desktop */
@@ -238,19 +245,14 @@ export function renderTopbar(){
         }
         
         /* Aggiusta contenuto principale */
-        body.sidebar-expanded {
+        body.sidebar-expanded #app {
           margin-left: 280px;
           transition: margin-left 0.3s ease;
         }
         
-        body.sidebar-collapsed {
+        body.sidebar-collapsed #app {
           margin-left: 80px;
           transition: margin-left 0.3s ease;
-        }
-        
-        /* Aggiusta app container */
-        #app {
-          margin-left: 0;
         }
       }
       
@@ -341,6 +343,19 @@ export function renderTopbar(){
   // Inizializza stato sidebar
   initSidebarState();
 
+  // Listener per resize window
+  window.addEventListener('resize', () => {
+    if (window.innerWidth < 1024) {
+      // Su mobile rimuovi classi sidebar
+      document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+    } else {
+      // Su desktop ripristina stato sidebar
+      const collapsed = localStorage.getItem('bp_sidebar_collapsed') === 'true';
+      document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
+      document.body.classList.add(collapsed ? 'sidebar-collapsed' : 'sidebar-expanded');
+    }
+  });
+
   // Chiudi con ESC
   document.removeEventListener('keydown', onEscCloseDrawer, false);
   document.addEventListener('keydown', onEscCloseDrawer, false);
@@ -380,6 +395,9 @@ export function toggleSidebar(force){
   if (window.innerWidth >= 1024) {
     document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
     document.body.classList.add(willCollapse ? 'sidebar-collapsed' : 'sidebar-expanded');
+  } else {
+    // Su mobile rimuovi le classi
+    document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
   }
   
   // Salva stato in localStorage
@@ -402,9 +420,29 @@ export function initSidebarState(){
       if (window.innerWidth >= 1024) {
         document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
         document.body.classList.add(collapsed ? 'sidebar-collapsed' : 'sidebar-expanded');
+      } else {
+        // Su mobile rimuovi le classi
+        document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
       }
     }
   } catch(e) {
     // Ignora errori localStorage
+  }
+}
+
+// Evidenzia voce attiva nella sidebar
+export function setActiveSidebarItem(viewName){
+  const sidebar = document.getElementById('sidebar');
+  if(!sidebar) return;
+  
+  // Rimuovi classe active da tutti gli item
+  sidebar.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.remove('active');
+  });
+  
+  // Aggiungi classe active all'item corrente
+  const activeItem = sidebar.querySelector(`[onclick*="${viewName}"]`);
+  if(activeItem) {
+    activeItem.classList.add('active');
   }
 }
