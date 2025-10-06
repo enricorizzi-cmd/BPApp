@@ -4421,6 +4421,15 @@ appEl.innerHTML = topbarHTML() + `
         '.gi-totals div{font-weight:600;color:var(--accent)}'+
         '.gi-totals div:first-child{font-size:14px;margin-bottom:4px}'+
         '.gi-totals div:last-child{font-size:16px}'+
+        '.client-dropdown.open .client-dropdown-arrow{transform:translateY(-50%) rotate(180deg)}'+
+        '.client-option{padding:10px 16px;cursor:pointer;transition:all 0.2s ease;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:8px}'+
+        '.client-option:hover{background:rgba(93,211,255,.1);color:var(--accent)}'+
+        '.client-option:last-child{border-bottom:none}'+
+        '.client-option.selected{background:rgba(93,211,255,.15);color:var(--accent);font-weight:600}'+
+        '.client-option-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}'+
+        '.client-option-text{flex:1;font-size:14px}'+
+        '.client-option-name{font-weight:500;margin-bottom:2px}'+
+        '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
@@ -4434,7 +4443,21 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-grid">'+
         '<div class="gi-col"><label>Data</label><input id="m_date" type="date" value="'+esc(ymd(it.date||today))+'"></div>'+
-        '<div class="gi-col"><label>Cliente</label><select id="gi_client_select"><option value="">Caricamento…</option></select></div>'+
+        '<div class="gi-col"><label>Cliente</label>'+
+          '<div class="client-dropdown" style="position:relative">'+
+            '<input type="text" id="gi_client_input" placeholder="— seleziona cliente —" readonly style="cursor:pointer;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease;position:relative">'+
+            '<div class="client-dropdown-arrow" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted);transition:transform 0.2s ease">▼</div>'+
+            '<div class="client-dropdown-list" id="gi_client_list" style="position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--hair2);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.2);max-height:300px;overflow-y:auto;z-index:1000;display:none;margin-top:4px">'+
+              '<div class="client-search" style="padding:12px;border-bottom:1px solid var(--hair)">'+
+                '<input type="text" id="gi_client_search" placeholder="Cerca cliente..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;font-size:14px">'+
+              '</div>'+
+              '<div class="client-options" id="gi_client_options" style="padding:8px 0">'+
+                '<div class="client-loading" style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>'+
+              '</div>'+
+            '</div>'+
+            '<input type="hidden" id="gi_client_select" value="">'+
+          '</div>'+
+        '</div>'+
         '<div class="gi-col"><label>Totale VSS</label><input id="m_vss" type="number" step="1" value="'+esc(Number(it.vssTotal||0))+'"></div>'+
       '</div>'+
 
@@ -4492,16 +4515,122 @@ appEl.innerHTML = topbarHTML() + `
     const prev = document.documentElement.style.overflow; document.documentElement.style.overflow='hidden';
     function close(){ document.documentElement.style.overflow=prev; hideOverlay(); }
 
-    // riempi select clienti
-    (function fillClients(){
-      const sel = $('gi_client_select');
-      sel.innerHTML = '<option value="">— seleziona cliente —</option>' +
-        _clients.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('');
-      const cid = (it.clientId||it.client_id||'');
-      if (cid) sel.value = String(cid);
-      if (!sel.value && it.clientName){
-        const found = _clients.find(c => String(c.name).trim().toLowerCase() === String(it.clientName).trim().toLowerCase());
-        if (found) sel.value = String(found.id);
+    // carica clienti dal database e riempi dropdown ricercabile
+    (async function fillClients(){
+      try {
+        // Carica clienti dal database se non già caricati
+        if (_clients.length === 0) {
+          const response = await GET('/api/clients');
+          _clients = (response && response.clients) || [];
+        }
+        
+        // Ordina clienti alfabeticamente
+        _clients.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' }));
+        
+        const input = $('gi_client_input');
+        const hidden = $('gi_client_select');
+        const list = $('gi_client_list');
+        const options = $('gi_client_options');
+        const search = $('gi_client_search');
+        
+        if (!input || !hidden || !list || !options || !search) return;
+        
+        // Funzione per renderizzare le opzioni
+        function renderOptions(clients = _clients) {
+          if (clients.length === 0) {
+            options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
+            return;
+          }
+          
+          options.innerHTML = clients.map(client => {
+            const initials = String(client.name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            const status = client.status || 'lead';
+            return `
+              <div class="client-option" data-id="${esc(client.id)}" data-name="${esc(client.name)}">
+                <div class="client-option-icon">${initials}</div>
+                <div class="client-option-text">
+                  <div class="client-option-name">${esc(client.name)}</div>
+                  <div class="client-option-status">${esc(status)}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+          
+          // Aggiungi event listeners alle opzioni
+          options.querySelectorAll('.client-option').forEach(option => {
+            option.addEventListener('click', () => {
+              const id = option.getAttribute('data-id');
+              const name = option.getAttribute('data-name');
+              
+              hidden.value = id;
+              input.value = name;
+              list.style.display = 'none';
+              input.parentElement.classList.remove('open');
+              
+              // Rimuovi selezione precedente e seleziona corrente
+              options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
+              option.classList.add('selected');
+            });
+          });
+        }
+        
+        // Event listener per aprire/chiudere dropdown
+        input.addEventListener('click', () => {
+          const isOpen = list.style.display === 'block';
+          list.style.display = isOpen ? 'none' : 'block';
+          input.parentElement.classList.toggle('open', !isOpen);
+          
+          if (!isOpen) {
+            search.focus();
+            renderOptions();
+          }
+        });
+        
+        // Event listener per ricerca
+        search.addEventListener('input', (e) => {
+          const query = e.target.value.toLowerCase().trim();
+          if (!query) {
+            renderOptions();
+            return;
+          }
+          
+          const filtered = _clients.filter(client => 
+            String(client.name || '').toLowerCase().includes(query) ||
+            String(client.status || '').toLowerCase().includes(query)
+          );
+          renderOptions(filtered);
+        });
+        
+        // Chiudi dropdown quando si clicca fuori
+        document.addEventListener('click', (e) => {
+          if (!input.parentElement.contains(e.target)) {
+            list.style.display = 'none';
+            input.parentElement.classList.remove('open');
+          }
+        });
+        
+        // Imposta valore iniziale se presente
+        const cid = (it.clientId||it.client_id||'');
+        if (cid) {
+          const client = _clients.find(c => String(c.id) === String(cid));
+          if (client) {
+            hidden.value = String(cid);
+            input.value = client.name;
+          }
+        } else if (it.clientName) {
+          const found = _clients.find(c => String(c.name).trim().toLowerCase() === String(it.clientName).trim().toLowerCase());
+          if (found) {
+            hidden.value = String(found.id);
+            input.value = found.name;
+          }
+        }
+        
+      } catch (e) {
+        console.error('Errore caricamento clienti:', e);
+        const options = $('gi_client_options');
+        if (options) {
+          options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+        }
       }
     })();
 
