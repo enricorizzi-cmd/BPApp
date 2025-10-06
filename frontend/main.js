@@ -3220,42 +3220,20 @@ function viewAppointments(){
         border-radius: 8px;
         padding: 10px 12px;
         transition: all 0.2s ease;
-        cursor: text;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
         color: var(--text);
         font-size: 14px;
-      }
-      
-      .appt-card .client-dropdown-input input {
-        background: transparent;
-        border: none;
-        outline: none;
-        color: var(--text);
-        font-size: 14px;
-        flex: 1;
         cursor: text;
-        pointer-events: auto;
-      }
-      
-      .appt-card .client-dropdown-input input::placeholder {
-        color: var(--muted);
-      }
-      
-      .appt-card .client-dropdown-arrow {
-        transition: transform 0.2s ease;
-        color: var(--muted);
-        font-size: 12px;
-        cursor: pointer;
-        pointer-events: auto;
-        margin-left: 8px;
       }
       
       .appt-card .client-dropdown-input:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(93,211,255,.1);
         background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .appt-card .client-dropdown-input::placeholder {
+        color: var(--muted);
       }
       
       .appt-card .client-dropdown-arrow {
@@ -3479,10 +3457,7 @@ function viewAppointments(){
             '<label>Cliente *</label>'+
             '<div class="appt-client-group">'+
               '<div class="client-dropdown" style="flex: 1;">'+
-                '<div class="client-dropdown-input" id="a_client_input">'+
-                  '<input type="text" id="a_client_display" placeholder="— seleziona cliente —" autocomplete="off">'+
-                  '<span class="client-dropdown-arrow">▼</span>'+
-                '</div>'+
+                '<input type="text" id="a_client_display" placeholder="— seleziona cliente —" autocomplete="off" class="client-dropdown-input">'+
                 '<input type="hidden" id="a_client_select" value="">'+
                 '<div class="client-dropdown-list" id="a_client_list" style="display:none">'+
                   '<div class="client-dropdown-search">'+
@@ -3560,14 +3535,13 @@ function viewAppointments(){
 
   // --------- Client Dropdown Logic ----------
   (async function fillAppointmentClients(){
-    const input = document.getElementById('a_client_input');
     const display = document.getElementById('a_client_display');
     const hidden = document.getElementById('a_client_select');
     const list = document.getElementById('a_client_list');
     const options = document.getElementById('a_client_options');
     const search = document.getElementById('a_client_search');
     
-    if (!input || !display || !hidden || !list || !options || !search) return;
+    if (!display || !hidden || !list || !options || !search) return;
     
     // Carica clienti dal database se non già caricati
     if (window._clients && window._clients.length === 0) {
@@ -3633,24 +3607,9 @@ function viewAppointments(){
     renderOptions();
     
     // Event listeners
-    input.addEventListener('click', (e) => {
-      // Solo se non si clicca sull'input o sulla freccia
-      if (e.target === display || e.target.classList.contains('client-dropdown-arrow')) {
-        e.stopPropagation();
-        list.style.display = list.style.display === 'none' ? 'block' : 'none';
-        input.classList.toggle('open', list.style.display === 'block');
-        if (list.style.display === 'block') {
-          search.focus();
-        }
-      }
-    });
-    
-    // Gestione click sulla freccia
-    const arrow = input.querySelector('.client-dropdown-arrow');
-    arrow.addEventListener('click', (e) => {
+    display.addEventListener('click', (e) => {
       e.stopPropagation();
       list.style.display = list.style.display === 'none' ? 'block' : 'none';
-      input.classList.toggle('open', list.style.display === 'block');
       if (list.style.display === 'block') {
         search.focus();
       }
@@ -3670,7 +3629,6 @@ function viewAppointments(){
     display.addEventListener('focus', (e) => {
       // Apri dropdown quando si fa focus sul campo
       list.style.display = 'block';
-      input.classList.add('open');
     });
     
     search.addEventListener('input', (e) => {
@@ -3688,9 +3646,8 @@ function viewAppointments(){
     
     // Chiudi dropdown quando si clicca fuori
     document.addEventListener('click', (e) => {
-      if (!input.contains(e.target) && !list.contains(e.target)) {
+      if (!display.contains(e.target) && !list.contains(e.target)) {
         list.style.display = 'none';
-        input.classList.remove('open');
       }
     });
     
@@ -3709,7 +3666,6 @@ function viewAppointments(){
       
       // Chiudi dropdown
       list.style.display = 'none';
-      input.classList.remove('open');
       
       // Rimuovi selezione precedente e seleziona nuovo
       options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
@@ -3738,18 +3694,17 @@ function viewAppointments(){
     });
     
     // Gestione keyboard
-    input.addEventListener('keydown', (e) => {
+    display.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        input.click();
+        display.click();
       }
     });
     
     search.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         list.style.display = 'none';
-        input.classList.remove('open');
-        input.focus();
+        display.focus();
       }
     });
   })();
