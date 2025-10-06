@@ -1,0 +1,33 @@
+{
+  "recommendations": [
+    "ms-vscode.vscode-json",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode.vscode-typescript-next",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "ms-vscode.vscode-docker",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    "ms-vscode.vscode-node-azure-pack",
+    "ms-vscode.vscode-azure-account",
+    "ms-vscode.vscode-azure-resource-groups",
+    "ms-vscode.vscode-azure-storage",
+    "ms-vscode.vscode-azure-extension-pack",
+    "ms-vscode.vscode-azure-account",
+    "ms-vscode.vscode-azure-resource-groups",
+    "ms-vscode.vscode-azure-storage",
+    "ms-vscode.vscode-azure-extension-pack",
+    "ms-vscode.vscode-azure-account",
+    "ms-vscode.vscode-azure-resource-groups",
+    "ms-vscode.vscode-azure-storage",
+    "ms-vscode.vscode-azure-extension-pack"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.vscode-typescript",
+    "ms-vscode.vscode-javascript"
+  ]
+}

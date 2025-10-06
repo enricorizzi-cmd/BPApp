@@ -1,0 +1,212 @@
+{
+  "cursor.ai.systemPrompt": "🚨 **REGOLA DEFAULT APPLICATA**: WORKFLOW_RULES.md letto e applicato\n\n🤖 **VALIDAZIONE PRE-TASK**: Eseguita automaticamente\n\n🎯 **FILOSOFIA DI LAVORO OBBLIGATORIA**:\n- ZERO TOLERANCE per errori, regressioni o performance degradate\n- MAXIMUM EFFICIENCY in ogni operazione e decisione\n- BULLETPROOF SECURITY per ogni modifica e deploy\n- PROACTIVE MONITORING con alerting automatico\n- AUTOMATED VALIDATION per ogni step critico\n\n📋 **WORKFLOW OBBLIGATORIO PER OGNI TASK**:\n\n🛡️ **FASE 0: PRE-SICUREZZA E VALIDAZIONE**\n1. BACKUP AUTOMATICO PRE-TASK\n2. ANALISI IMPATTO SICUREZZA\n\n📊 **FASE 1: ANALISI E PIANIFICAZIONE AVANZATA**\n1. COMPRENSIONE COMPLETA E VALIDAZIONE\n2. CREAZIONE TODO LIST OTTIMIZZATA\n3. ANALISI SISTEMATICA E PERFORMANCE\n\n🔧 **FASE 2: IMPLEMENTAZIONE METODICA E SICURA**\n1. APPROCCIO ITERATIVO CON VALIDAZIONE\n2. MODIFICHE SICURE E PERFORMANTI\n3. VERIFICA CONTINUA E MONITORAGGIO\n\n✅ **FASE 3: COMPLETAMENTO, VALIDAZIONE E DOCUMENTAZIONE**\n1. TEST FINALE COMPLETO\n2. COMMIT E DEPLOY SICURI\n3. DOCUMENTAZIONE COMPLETA E MONITORAGGIO\n\n⚠️ **REGOLE RIGIDE - MAI VIOLARE**:\n- SEMPRE leggere WORKFLOW_RULES.md all'inizio\n- SEMPRE eseguire validazione pre-task\n- SEMPRE usare TODO per task complessi\n- SEMPRE validare sicurezza con MCP tools\n- SEMPRE monitorare deploy in tempo reale\n- MAI modificare senza backup\n- MAI deployare senza monitoraggio\n- MAI ignorare alert di sicurezza\n\n🏆 **OBIETTIVI FINALI**:\n- ZERO DOWNTIME - Sistema sempre disponibile\n- ZERO DATA LOSS - Integrità dati garantita\n- ZERO SECURITY BREACHES - Sicurezza massima\n- MAXIMUM PERFORMANCE - Ottimizzazione continua\n- AUTOMATED RECOVERY - Resilienza automatica\n\n📝 **TEMPLATE DI RISPOSTA OBBLIGATORIO**:\nIniziare sempre con: '🚨 REGOLA DEFAULT APPLICATA: WORKFLOW_RULES.md letto e applicato'\nUsare emoji e sezioni strutturate\nAggiornare TODO dopo ogni completamento\nFornire riassunto completo alla fine",
+  
+  "cursor.ai.model": "claude-3.5-sonnet",
+  "cursor.ai.temperature": 0.1,
+  "cursor.ai.maxTokens": 4000,
+  "cursor.ai.enableCodebaseIndexing": true,
+  "cursor.ai.enableSemanticSearch": true,
+  "cursor.ai.autoSave": true,
+  "cursor.ai.autoCommit": false,
+  "cursor.ai.enableLinting": true,
+  "cursor.ai.enableTesting": true,
+  "cursor.ai.enableSecurityScan": true,
+  "cursor.ai.enablePerformanceMonitoring": true,
+  
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.trimAutoWhitespace": true,
+  "editor.rulers": [80, 120],
+  "editor.wordWrap": "wordWrapColumn",
+  "editor.wordWrapColumn": 120,
+  
+  "eslint.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.format.enable": true,
+  "eslint.lintTask.enable": true,
+  
+  "prettier.enable": true,
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "prettier.trailingComma": "es5",
+  "prettier.printWidth": 120,
+  "prettier.tabWidth": 2,
+  
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+  
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell"
+    }
+  },
+  
+  "workbench.colorTheme": "Default Dark+",
+  "workbench.iconTheme": "vs-seti",
+  "workbench.startupEditor": "welcomePage",
+  
+  "explorer.confirmDelete": true,
+  "explorer.confirmDragAndDrop": true,
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true
+  },
+  
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "javascript.preferences.importModuleSpecifier": "relative",
+  
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  
+  "breadcrumbs.enabled": true,
+  "breadcrumbs.showFiles": true,
+  "breadcrumbs.showSymbols": true,
+  
+  "problems.decorations.enabled": true,
+  "problems.showCurrentInStatus": true,
+  
+  "editor.minimap.enabled": true,
+  "editor.minimap.maxColumn": 120,
+  "editor.minimap.showSlider": "always",
+  
+  "editor.suggestSelection": "first",
+  "editor.acceptSuggestionOnCommitCharacter": false,
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.wordBasedSuggestions": "matchingDocuments",
+  
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  
+  "editor.parameterHints.enabled": true,
+  "editor.hover.enabled": true,
+  "editor.hover.delay": 300,
+  
+  "editor.linkedEditing": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": true,
+  
+  "editor.inlineSuggest.enabled": true,
+  "editor.suggest.preview": true,
+  "editor.suggest.showStatusBar": true,
+  
+  "debug.console.fontSize": 14,
+  "debug.console.lineHeight": 18,
+  
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.lineHeight": 1.2,
+  
+  "window.zoomLevel": 0,
+  "window.restoreWindows": "all",
+  
+  "security.workspace.trust.enabled": true,
+  "security.workspace.trust.untrustedFiles": "prompt",
+  
+  "extensions.ignoreRecommendations": false,
+  "extensions.autoUpdate": true,
+  
+  "telemetry.telemetryLevel": "off",
+  "workbench.enableExperiments": false,
+  
+  "cursor.workspace.rules": [
+    "Always read WORKFLOW_RULES.md before starting any task",
+    "Always create TODO list for complex tasks (3+ steps)",
+    "Always validate security and performance impact",
+    "Always use MCP tools for cloud operations",
+    "Always monitor deploy in real-time",
+    "Never modify files without reading content first",
+    "Never commit without testing and validation",
+    "Never deploy without monitoring setup"
+  ],
+  
+  "cursor.workspace.priorities": [
+    "Security and data integrity",
+    "Performance optimization",
+    "Code quality and maintainability",
+    "User experience and functionality",
+    "Documentation and monitoring"
+  ],
+  
+  "cursor.workspace.architecture": {
+    "frontend": "Vite + Vanilla JS",
+    "backend": "Node.js + Express",
+    "database": "Supabase PostgreSQL",
+    "deployment": "Render.com",
+    "versioning": "GitHub",
+    "monitoring": "Render Metrics + Supabase Logs"
+  },
+  
+  "cursor.workspace.mcpTools": {
+    "render": [
+      "mcp_renderdim_list_services",
+      "mcp_renderdim_get_metrics",
+      "mcp_renderdim_list_logs",
+      "mcp_renderdim_get_deploy"
+    ],
+    "supabase": [
+      "mcp_supabasedim_execute_sql",
+      "mcp_supabasedim_apply_migration",
+      "mcp_supabasedim_get_logs",
+      "mcp_supabasedim_get_advisors"
+    ],
+    "github": [
+      "mcp_github_get_file_contents",
+      "mcp_github_create_or_update_file",
+      "mcp_github_list_commits"
+    ]
+  },
+  
+  "cursor.workspace.monitoring": {
+    "performance": {
+      "cpuUsage": "< 80%",
+      "memoryUsage": "< 85%",
+      "httpLatency": "< 500ms",
+      "errorRate": "< 1%"
+    },
+    "security": {
+      "failedAuth": "< 5/min",
+      "sqlInjection": "0",
+      "xssAttempts": "0",
+      "rateLimitTriggers": "< 10/min"
+    },
+    "business": {
+      "activeUsers": "baseline ± 20%",
+      "apiCalls": "baseline ± 30%",
+      "dbQueries": "< 1000/min",
+      "storageUsage": "< 90%"
+    }
+  }
+}

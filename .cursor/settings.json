@@ -1,0 +1,84 @@
+{
+  "cursor.ai.systemPrompt": "🚨 **REGOLA DEFAULT APPLICATA**: WORKFLOW_RULES.md letto e applicato\n\n🤖 **VALIDAZIONE PRE-TASK**: Eseguita automaticamente\n\n🎯 **FILOSOFIA DI LAVORO OBBLIGATORIA**:\n- ZERO TOLERANCE per errori, regressioni o performance degradate\n- MAXIMUM EFFICIENCY in ogni operazione e decisione\n- BULLETPROOF SECURITY per ogni modifica e deploy\n- PROACTIVE MONITORING con alerting automatico\n- AUTOMATED VALIDATION per ogni step critico\n\n📋 **WORKFLOW OBBLIGATORIO PER OGNI TASK**:\n\n🛡️ **FASE 0: PRE-SICUREZZA E VALIDAZIONE**\n1. BACKUP AUTOMATICO PRE-TASK\n2. ANALISI IMPATTO SICUREZZA\n\n📊 **FASE 1: ANALISI E PIANIFICAZIONE AVANZATA**\n1. COMPRENSIONE COMPLETA E VALIDAZIONE\n2. CREAZIONE TODO LIST OTTIMIZZATA\n3. ANALISI SISTEMATICA E PERFORMANCE\n\n🔧 **FASE 2: IMPLEMENTAZIONE METODICA E SICURA**\n1. APPROCCIO ITERATIVO CON VALIDAZIONE\n2. MODIFICHE SICURE E PERFORMANTI\n3. VERIFICA CONTINUA E MONITORAGGIO\n\n✅ **FASE 3: COMPLETAMENTO, VALIDAZIONE E DOCUMENTAZIONE**\n1. TEST FINALE COMPLETO\n2. COMMIT E DEPLOY SICURI\n3. DOCUMENTAZIONE COMPLETA E MONITORAGGIO\n\n⚠️ **REGOLE RIGIDE - MAI VIOLARE**:\n- SEMPRE leggere WORKFLOW_RULES.md all'inizio\n- SEMPRE eseguire validazione pre-task\n- SEMPRE usare TODO per task complessi\n- SEMPRE validare sicurezza con MCP tools\n- SEMPRE monitorare deploy in tempo reale\n- MAI modificare senza backup\n- MAI deployare senza monitoraggio\n- MAI ignorare alert di sicurezza\n\n🏆 **OBIETTIVI FINALI**:\n- ZERO DOWNTIME - Sistema sempre disponibile\n- ZERO DATA LOSS - Integrità dati garantita\n- ZERO SECURITY BREACHES - Sicurezza massima\n- MAXIMUM PERFORMANCE - Ottimizzazione continua\n- AUTOMATED RECOVERY - Resilienza automatica\n\n📝 **TEMPLATE DI RISPOSTA OBBLIGATORIO**:\nIniziare sempre con: '🚨 REGOLA DEFAULT APPLICATA: WORKFLOW_RULES.md letto e applicato'\nUsare emoji e sezioni strutturate\nAggiornare TODO dopo ogni completamento\nFornire riassunto completo alla fine",
+  
+  "cursor.ai.model": "claude-3.5-sonnet",
+  "cursor.ai.temperature": 0.1,
+  "cursor.ai.maxTokens": 4000,
+  "cursor.ai.enableCodebaseIndexing": true,
+  "cursor.ai.enableSemanticSearch": true,
+  "cursor.ai.autoSave": true,
+  "cursor.ai.autoCommit": false,
+  "cursor.ai.enableLinting": true,
+  "cursor.ai.enableTesting": true,
+  "cursor.ai.enableSecurityScan": true,
+  "cursor.ai.enablePerformanceMonitoring": true,
+  
+  "cursor.workspace.rules": [
+    "Always read WORKFLOW_RULES.md before starting any task",
+    "Always create TODO list for complex tasks (3+ steps)",
+    "Always validate security and performance impact",
+    "Always use MCP tools for cloud operations",
+    "Always monitor deploy in real-time",
+    "Never modify files without reading content first",
+    "Never commit without testing and validation",
+    "Never deploy without monitoring setup"
+  ],
+  
+  "cursor.workspace.priorities": [
+    "Security and data integrity",
+    "Performance optimization",
+    "Code quality and maintainability",
+    "User experience and functionality",
+    "Documentation and monitoring"
+  ],
+  
+  "cursor.workspace.architecture": {
+    "frontend": "Vite + Vanilla JS",
+    "backend": "Node.js + Express",
+    "database": "Supabase PostgreSQL",
+    "deployment": "Render.com",
+    "versioning": "GitHub",
+    "monitoring": "Render Metrics + Supabase Logs"
+  },
+  
+  "cursor.workspace.mcpTools": {
+    "render": [
+      "mcp_renderdim_list_services",
+      "mcp_renderdim_get_metrics",
+      "mcp_renderdim_list_logs",
+      "mcp_renderdim_get_deploy"
+    ],
+    "supabase": [
+      "mcp_supabasedim_execute_sql",
+      "mcp_supabasedim_apply_migration",
+      "mcp_supabasedim_get_logs",
+      "mcp_supabasedim_get_advisors"
+    ],
+    "github": [
+      "mcp_github_get_file_contents",
+      "mcp_github_create_or_update_file",
+      "mcp_github_list_commits"
+    ]
+  },
+  
+  "cursor.workspace.monitoring": {
+    "performance": {
+      "cpuUsage": "< 80%",
+      "memoryUsage": "< 85%",
+      "httpLatency": "< 500ms",
+      "errorRate": "< 1%"
+    },
+    "security": {
+      "failedAuth": "< 5/min",
+      "sqlInjection": "0",
+      "xssAttempts": "0",
+      "rateLimitTriggers": "< 10/min"
+    },
+    "business": {
+      "activeUsers": "baseline ± 20%",
+      "apiCalls": "baseline ± 30%",
+      "dbQueries": "< 1000/min",
+      "storageUsage": "< 90%"
+    }
+  }
+}

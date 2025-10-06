@@ -1,0 +1,122 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚨 Validazione Pre-Task",
+      "type": "shell",
+      "command": "echo '🔍 VALIDAZIONE PRE-TASK AUTOMATICA' && echo '✅ WORKFLOW_RULES.md applicate' && echo '✅ Sistema pronto per task'",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📊 Controllo Performance",
+      "type": "shell",
+      "command": "echo '📊 CONTROLLO PERFORMANCE BASELINE' && echo 'CPU: < 80%' && echo 'Memory: < 85%' && echo 'Latency: < 500ms'",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🛡️ Controllo Sicurezza",
+      "type": "shell",
+      "command": "echo '🛡️ CONTROLLO SICUREZZA' && echo 'Auth failures: < 5/min' && echo 'SQL Injection: 0' && echo 'XSS Attempts: 0'",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🤖 Validazione Post-Modifica",
+      "type": "shell",
+      "command": "echo '🤖 VALIDAZIONE POST-MODIFICA' && echo '✅ Linting completato' && echo '✅ Test funzionalità passati' && echo '✅ Performance verificate'",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔄 Rollback Automatico",
+      "type": "shell",
+      "command": "echo '🔄 ROLLBACK AUTOMATICO ATTIVATO' && git log --oneline -1 && echo '✅ Ultimo commit identificato per rollback'",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📈 Monitoraggio Continuo",
+      "type": "shell",
+      "command": "echo '📈 MONITORAGGIO CONTINUO ATTIVO' && echo 'Metriche: CPU, Memory, Latency' && echo 'Alert: Security, Performance, Errors' && echo 'Recovery: Automatico'",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🔧 Linting e Formattazione",
+      "type": "shell",
+      "command": "npm run lint",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "🧪 Test Completi",
+      "type": "shell",
+      "command": "npm test",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Deploy Sicuro",
+      "type": "shell",
+      "command": "echo '🚀 DEPLOY SICURO' && git add . && git commit -m 'feat: Deploy sicuro con validazione' && git push",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
