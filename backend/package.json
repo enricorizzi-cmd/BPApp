@@ -13,7 +13,10 @@
         "migrate": "node migrate.js",
         "test": "node --test",
         "push:periods:pg": "node tools/push-periods-to-pg.js",
-        "vapid:gen": "node -e \"const w=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+w.publicKey+'\\nVAPID_PRIVATE_KEY='+w.privateKey)\""
+        "vapid:gen": "node -e \"const w=require('web-push').generateVAPIDKeys();console.log('VAPID_PUBLIC_KEY='+w.publicKey+'\\nVAPID_PRIVATE_KEY='+w.privateKey)\"",
+        "backup-env": "node scripts/backup-render-env.js",
+        "validate-env": "node scripts/validate-render-env.js",
+        "recover-env": "node scripts/recover-render-env.js"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.58.0",

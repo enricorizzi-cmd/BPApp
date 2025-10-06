@@ -11,34 +11,34 @@
 */
 /* global logger */
 import Chart from 'chart.js/auto';
-import "./lib/globals-polyfills.js";
 import "./lib/auth-fetch-shim.js";
 import "./lib/bp-hooks-core.js";
+import "./lib/client-status.js";
+import "./lib/clients-helpers.js";
+import "./lib/globals-polyfills.js";
+import "./lib/haptics.js";
+import "./lib/ics-sanitize.js";
+import "./lib/ics.js";
 import "./lib/logger.js";
 import "./lib/phrases.js";
-import "./lib/haptics.js";
-import "./lib/undo.js";
-import "./lib/clients-helpers.js";
 import "./lib/targets.js";
-import "./lib/ics.js";
-import "./lib/client-status.js";
 import "./lib/telemetry.js";
-import "./lib/ics-sanitize.js";
+import "./lib/undo.js";
 // Ensure post-sale/NNCF banners are registered before final-hooks tries to init them
-import "./src/postSaleBanners.js";
 import "./lib/final-hooks.js";
+import "./lib/ics-single.js";
 import "./lib/leaderboard-hooks.js";
 import "./lib/push-client.js";
-import { save, load, del, setToken, getToken, setUser, getUser, logout } from "./src/auth.js";
-import { api, GET, POST, DEL } from "./src/api.js";
-import { pad2, dmy, ymd, timeHM, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isoWeekNum, startOfQuarter, endOfQuarter, startOfSemester, endOfSemester, startOfYear, endOfYear, startOfIsoWeek, weekBoundsOf, nextWeekBounds, prevWeekBounds, nextMonthBounds, prevMonthBounds, nextQuarterBounds, prevQuarterBounds, nextSemesterBounds, prevSemesterBounds, nextYearBounds, prevYearBounds, formatPeriodLabel } from "./src/dateUtils.js";
-import { toast, celebrate } from "./modules/notifications.js";
-import { showAddToHomePrompt } from "./modules/installPrompt.js";
-import { htmlEscape, fmtEuro, fmtInt, domFromHTML } from "./modules/utils.js";
-import { topbarHTML, renderTopbar, toggleDrawer, rerenderTopbarSoon } from "./modules/ui.js";
-import { $1, $all, getQuery } from "./src/query.js";
-import "./lib/ics-single.js";
 import "./lib/timezone.js";
+import { showAddToHomePrompt } from "./modules/installPrompt.js";
+import { celebrate, toast } from "./modules/notifications.js";
+import { renderTopbar, rerenderTopbarSoon, toggleDrawer, topbarHTML } from "./modules/ui.js";
+import { fmtEuro, fmtInt, htmlEscape } from "./modules/utils.js";
+import { DEL, GET, POST } from "./src/api.js";
+import { del, getToken, getUser, load, logout, save, setToken, setUser } from "./src/auth.js";
+import { dmy, endOfMonth, endOfQuarter, endOfSemester, endOfYear, formatPeriodLabel, isoWeekNum, nextMonthBounds, nextQuarterBounds, nextSemesterBounds, nextWeekBounds, nextYearBounds, pad2, startOfMonth, startOfQuarter, startOfSemester, startOfWeek, startOfYear, timeHM, weekBoundsOf, ymd } from "./src/dateUtils.js";
+import "./src/postSaleBanners.js";
+import { $1, $all } from "./src/query.js";
 window.Chart = Chart;
 ;(function () {
   'use strict';
@@ -4002,22 +4002,62 @@ function viewGI(){
 
 appEl.innerHTML = topbarHTML() + `
   <div class="wrap">
+    
+    <!-- Hero Section -->
+    <div class="gi-card" style="background: linear-gradient(135deg, rgba(93,211,255,.12), rgba(141,123,255,.08)); border: 1px solid rgba(93,211,255,.3);">
+      <div class="gi-card-header">
+        <h1 class="gi-card-title">GI & Scadenzario</h1>
+        <div class="gi-card-actions">
+          <button class="ghost" id="gi_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+            <span style="margin-right: 8px;">+</span>Nuova vendita
+          </button>
+        </div>
+      </div>
+      
+      <!-- Stats Grid -->
+      <div class="gi-stats-grid">
+        <div class="gi-stat-card">
+          <div class="gi-stat-value" id="gi-total-sales">-</div>
+          <div class="gi-stat-label">Vendite Totali</div>
+        </div>
+        <div class="gi-stat-card">
+          <div class="gi-stat-value" id="gi-total-amount">-</div>
+          <div class="gi-stat-label">Valore Totale</div>
+        </div>
+        <div class="gi-stat-card">
+          <div class="gi-stat-value" id="gi-pending-payments">-</div>
+          <div class="gi-stat-label">Pagamenti in Sospeso</div>
+        </div>
+        <div class="gi-stat-card">
+          <div class="gi-stat-value" id="gi-completed-payments">-</div>
+          <div class="gi-stat-label">Pagamenti Completati</div>
+        </div>
+      </div>
+    </div>
 
-    <div class="card">
-      <b>Filtro</b>
+    <!-- Filters Section -->
+    <div class="gi-card">
+      <div class="gi-card-header">
+        <h2 class="gi-card-title">Filtri</h2>
+      </div>
       <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
         ${isAdmin ? `<div><label>Consulente</label><select id="gi_cons"><option value="">Tutti</option></select></div>` : ''}
       </div>
       ${unifiedFiltersHTML("gi")}
     </div>
 
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <b>Vendite (GI)</b>
-        <button class="ghost" id="gi_add">Nuova vendita</button>
+    <!-- Sales Table -->
+    <div class="gi-card">
+      <div class="gi-card-header">
+        <h2 class="gi-card-title">Vendite (GI)</h2>
+        <div class="gi-card-actions">
+          <button class="ghost" onclick="refreshGIData()" style="background: rgba(255,255,255,.05);">
+            <span style="margin-right: 6px;">↻</span>Aggiorna
+          </button>
+        </div>
       </div>
-      <div class="table" style="overflow:auto">
-        <table class="simple" style="min-width:980px">
+      <div class="table">
+        <table>
           <thead>
             <tr>
               <th>Data vendita</th>
@@ -4026,6 +4066,7 @@ appEl.innerHTML = topbarHTML() + `
               <th>Servizi</th>
               <th style="text-align:right">Tot. VSS</th>
               <th>Piano pagamenti</th>
+              <th>Stato</th>
               <th></th>
             </tr>
           </thead>
@@ -4034,42 +4075,74 @@ appEl.innerHTML = topbarHTML() + `
       </div>
     </div>
 
-    <div class="card">
-      <b>Forecast incassi</b>
-      <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
-        <div><label>Granularità</label><select id="gi-forecast-granularity">
-          <option value="settimanale">settimanale</option>
-          <option value="mensile" selected>mensile</option>
-          <option value="trimestrale">trimestrale</option>
-          <option value="semestrale">semestrale</option>
-          <option value="annuale">annuale</option>
-        </select></div>
-        ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
+    <!-- Forecast Section -->
+    <div class="gi-card">
+      <div class="gi-card-header">
+        <h2 class="gi-card-title">Forecast Incassi</h2>
+        <div class="gi-card-actions">
+          <div class="row" style="align-items:flex-end;gap:16px;flex-wrap:wrap">
+            <div><label>Granularità</label><select id="gi-forecast-granularity">
+              <option value="settimanale">settimanale</option>
+              <option value="mensile" selected>mensile</option>
+              <option value="trimestrale">trimestrale</option>
+              <option value="semestrale">semestrale</option>
+              <option value="annuale">annuale</option>
+            </select></div>
+            ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
+          </div>
+        </div>
       </div>
-      <div class="table" style="overflow:auto">
-        <table class="simple" style="min-width:580px">
+      
+      <div class="table">
+        <table>
           <thead>
-            <tr><th>Periodo</th><th>Totale</th><th>Dettaglio</th></tr>
+            <tr>
+              <th>Periodo</th>
+              <th style="text-align:right">Totale</th>
+              <th>Dettaglio</th>
+              <th>Stato</th>
+            </tr>
           </thead>
           <tbody id="gi-forecast-future"></tbody>
         </table>
       </div>
-      <details id="gi-forecast-past" style="margin-top:8px">
-        <summary>Incassi passati</summary>
-        <div class="table" style="overflow:auto">
-          <table class="simple" style="min-width:580px">
+      
+      <details id="gi-forecast-past" style="margin-top:20px">
+        <summary style="cursor: pointer; padding: 12px 0; font-weight: 600; color: var(--accent);">
+          <span style="margin-right: 8px;">📊</span>Incassi passati
+        </summary>
+        <div class="table" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Periodo</th>
+                <th style="text-align:right">Totale</th>
+                <th>Dettaglio</th>
+                <th>Stato</th>
+              </tr>
+            </thead>
             <tbody id="gi-forecast-past-body"></tbody>
           </table>
         </div>
       </details>
     </div>
 
-  </div>`;
+  </div>
+  
+  <!-- Floating Action Button -->
+  <button class="fab" id="gi_fab" onclick="document.getElementById('gi_add').click()" title="Nuova vendita">
+    +
+  </button>`;
 
   renderTopbar();
 
   // ========== helpers ==========
   const $ = id => document.getElementById(id);
+  
+  // Add refresh function
+  window.refreshGIData = function() {
+    loadGIData();
+  };
   const esc = s => String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const fmtEuro = n => (Number(n)||0).toLocaleString('it-IT')+'€';
   const ymd = d => { const x=new Date(d); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); };
@@ -4115,13 +4188,34 @@ appEl.innerHTML = topbarHTML() + `
   }
 
   function rowHTML(x){
+    const payments = x.paymentPlan || [];
+    const hasPayments = payments.length > 0;
+    const allPaid = hasPayments && payments.every(p => p.paid);
+    const somePaid = hasPayments && payments.some(p => p.paid);
+    const hasOverdue = hasPayments && payments.some(p => !p.paid && new Date(p.dueDate) < new Date());
+    
+    let statusClass = 'pending';
+    let statusText = 'In sospeso';
+    
+    if (allPaid) {
+      statusClass = 'completed';
+      statusText = 'Completato';
+    } else if (hasOverdue) {
+      statusClass = 'overdue';
+      statusText = 'Scaduto';
+    } else if (somePaid) {
+      statusClass = 'pending';
+      statusText = 'Parziale';
+    }
+    
     return '<tr data-id="'+esc(String(x.id))+'">'+
-      '<td>'+new Date(x.date||x.createdAt).toLocaleDateString('it-IT')+'</td>'+
-      '<td>'+esc(x.clientName||'')+'</td>'+
-      '<td>'+esc(x.consultantName||'')+'</td>'+
-      '<td>'+esc(x.services||'')+'</td>'+
-      '<td style="text-align:right"><b>'+fmtEuro(x.vssTotal||0)+'</b></td>'+
-      '<td>'+paymentSummary(x)+'</td>'+
+      '<td><strong>'+new Date(x.date||x.createdAt).toLocaleDateString('it-IT')+'</strong></td>'+
+      '<td><div style="font-weight: 600;">'+esc(x.clientName||'')+'</div></td>'+
+      '<td><span style="color: var(--muted);">'+esc(x.consultantName||'')+'</span></td>'+
+      '<td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">'+esc(x.services||'')+'</div></td>'+
+      '<td style="text-align:right"><span class="amount">'+fmtEuro(x.vssTotal||0)+'</span></td>'+
+      '<td><div style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">'+paymentSummary(x)+'</div></td>'+
+      '<td><span class="status '+statusClass+'">'+statusText+'</span></td>'+
       '<td class="right"><button class="ghost" data-edit="'+esc(String(x.id))+'">Modifica</button></td>'+
     '</tr>';
   }
@@ -4186,13 +4280,16 @@ appEl.innerHTML = topbarHTML() + `
     Object.keys(agg).sort((a,b)=>a-b).forEach(k => {
       const o = agg[k];
       const det = o.details.map(d=> esc(d.cliente)+' – '+fmtEuro(d.amount)).join('<br>');
-      const row = '<tr><td>'+esc(o.label)+'</td><td style="text-align:right"><b>'+fmtEuro(o.total)+'</b></td><td>'+det+'</td></tr>';
-      if(Number(k) < nowKey) pastRows.push(row); else futureRows.push(row);
+      const isPast = Number(k) < nowKey;
+      const statusClass = isPast ? 'completed' : 'pending';
+      const statusText = isPast ? 'Completato' : 'In attesa';
+      const row = '<tr><td><strong>'+esc(o.label)+'</strong></td><td style="text-align:right"><span class="amount">'+fmtEuro(o.total)+'</span></td><td>'+det+'</td><td><span class="status '+statusClass+'">'+statusText+'</span></td></tr>';
+      if(isPast) pastRows.push(row); else futureRows.push(row);
     });
     const futEl = $('gi-forecast-future');
     const pastEl = $('gi-forecast-past-body');
-    if(futEl) futEl.innerHTML = futureRows.join('') || '<tr><td colspan="3" class="muted">Nessun dato</td></tr>';
-    if(pastEl) pastEl.innerHTML = pastRows.join('') || '<tr><td colspan="3" class="muted">Nessun dato</td></tr>';
+    if(futEl) futEl.innerHTML = futureRows.join('') || '<tr><td colspan="4" class="muted" style="text-align: center; padding: 40px;">Nessun dato futuro</td></tr>';
+    if(pastEl) pastEl.innerHTML = pastRows.join('') || '<tr><td colspan="4" class="muted" style="text-align: center; padding: 40px;">Nessun dato passato</td></tr>';
   }
 
   function load(){
@@ -4200,16 +4297,48 @@ appEl.innerHTML = topbarHTML() + `
     const el = $('gi_cons');
     const uid = el ? el.value : String(getUser().id);
     const qs = '?from='+encodeURIComponent(r.from)+'&to='+encodeURIComponent(r.to)+(uid?('&userId='+encodeURIComponent(uid)):'');
+    
+    // Add loading state
+    const cards = document.querySelectorAll('.gi-card');
+    cards.forEach(card => card.classList.add('gi-loading'));
+    
     GET('/api/gi'+qs).then(j=>{
       let rows=(j&&j.sales)||[];
       rows.sort((a,b)=> (+new Date(b.date||b.createdAt||0))-(+new Date(a.date||a.createdAt||0))); // più recenti in alto
       salesData = rows;
       $('gi_rows').innerHTML = rows.length ? rows.map(rowHTML).join('') :
-        '<tr><td colspan="7" class="muted">Nessuna vendita</td></tr>';
+        '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
       bindRowActions();
       populateForecastConsultants(rows);
       renderForecast();
-    }).catch(e=>{ logger.error(e); toast('Errore caricamento GI'); });
+      updateStats(rows);
+      
+      // Remove loading state
+      cards.forEach(card => card.classList.remove('gi-loading'));
+    }).catch(e=>{ 
+      logger.error(e); 
+      toast('Errore caricamento GI');
+      // Remove loading state on error
+      cards.forEach(card => card.classList.remove('gi-loading'));
+    });
+  }
+  
+  function updateStats(rows) {
+    const totalSales = rows.length;
+    const totalAmount = rows.reduce((sum, row) => sum + (Number(row.totalVSS) || 0), 0);
+    const pendingPayments = rows.filter(row => {
+      const payments = row.paymentPlan || [];
+      return payments.some(p => !p.paid);
+    }).length;
+    const completedPayments = rows.filter(row => {
+      const payments = row.paymentPlan || [];
+      return payments.length > 0 && payments.every(p => p.paid);
+    }).length;
+    
+    $('gi-total-sales').textContent = totalSales;
+    $('gi-total-amount').textContent = fmtEuro(totalAmount);
+    $('gi-pending-payments').textContent = pendingPayments;
+    $('gi-completed-payments').textContent = completedPayments;
   }
 
   // ========= MODALE (nuovo / modifica) =========

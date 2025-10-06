@@ -23,6 +23,85 @@ const helmet = require("helmet");
 const compression = require("compression");
 const fs = require("fs-extra");
 const path = require("path");
+// Validazione variabili ambiente critiche
+function validateEnvironment() {
+  const errors = [];
+  const warnings = [];
+  
+  // Variabili obbligatorie
+  if (!process.env.BP_JWT_SECRET) {
+    errors.push('BP_JWT_SECRET mancante - CRITICO per autenticazione');
+  }
+  
+  if (!process.env.SUPABASE_URL) {
+    errors.push('SUPABASE_URL mancante - CRITICO per database');
+  }
+  
+  if (!process.env.SUPABASE_ANON_KEY) {
+    errors.push('SUPABASE_ANON_KEY mancante - CRITICO per database');
+  }
+  
+  // Variabili raccomandate
+  if (!process.env.CORS_ORIGIN) {
+    warnings.push('CORS_ORIGIN mancante - Potrebbero esserci problemi CORS');
+  }
+  
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    warnings.push('VAPID keys mancanti - Push notifications non funzioneranno');
+  }
+  
+  if (!process.env.SMTP_URL) {
+    warnings.push('SMTP_URL mancante - Email non funzioneranno');
+  }
+  
+  // Log risultati
+  if (errors.length > 0) {
+    console.error('🚨 ERRORI VARIABILI AMBIENTE CRITICI:');
+    errors.forEach(error => console.error(`   ❌ ${error}`));
+    console.error('💥 L\'applicazione potrebbe non funzionare correttamente!');
+  }
+  
+  if (warnings.length > 0) {
+    console.warn('⚠️  AVVISI VARIABILI AMBIENTE:');
+    warnings.forEach(warning => console.warn(`   ⚠️  ${warning}`));
+  }
+  
+  if (errors.length === 0 && warnings.length === 0) {
+    console.log('✅ Tutte le variabili ambiente configurate correttamente');
+  }
+  
+  return errors.length === 0;
+}
+
+// Esegui validazione all'avvio
+const envValid = validateEnvironment();
+
+// Endpoint per validazione ambiente (solo in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/env-check', (req, res) => {
+    const errors = [];
+    const warnings = [];
+    
+    // Controlla variabili critiche
+    if (!process.env.BP_JWT_SECRET) errors.push('BP_JWT_SECRET');
+    if (!process.env.SUPABASE_URL) errors.push('SUPABASE_URL');
+    if (!process.env.SUPABASE_ANON_KEY) errors.push('SUPABASE_ANON_KEY');
+    
+    // Controlla variabili raccomandate
+    if (!process.env.CORS_ORIGIN) warnings.push('CORS_ORIGIN');
+    if (!process.env.VAPID_PUBLIC_KEY) warnings.push('VAPID_PUBLIC_KEY');
+    if (!process.env.VAPID_PRIVATE_KEY) warnings.push('VAPID_PRIVATE_KEY');
+    if (!process.env.SMTP_URL) warnings.push('SMTP_URL');
+    
+    res.json({
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      timestamp: new Date().toISOString()
+    });
+  });
+}
+
 const useSupabaseStorage = process.env.BP_STORAGE === 'supabase' || !!process.env.SUPABASE_URL;
 const usePgStorage = process.env.BP_STORAGE === 'pg' || !!process.env.PG_URL;
 let storage;
