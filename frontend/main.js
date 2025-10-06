@@ -4190,27 +4190,32 @@ appEl.innerHTML = topbarHTML() + `
   function rowHTML(x){
     const payments = x.schedule || [];
     const hasPayments = payments.length > 0;
-    // Per ora consideriamo tutti i pagamenti come "in attesa" se esistono
-    // TODO: Implementare logica di stato pagamenti quando sarà disponibile il campo paid
-    const allPaid = false; // hasPayments && payments.every(p => p.paid);
-    const somePaid = false; // hasPayments && payments.some(p => p.paid);
-    const hasOverdue = hasPayments && payments.some(p => new Date(p.dueDate) < new Date());
     
     let statusClass = 'pending';
-    let statusText = 'In attesa';
+    let statusText = 'Da Avviare';
     
-    if (allPaid) {
-      statusClass = 'completed';
-      statusText = 'Completato';
-    } else if (hasOverdue) {
-      statusClass = 'overdue';
-      statusText = 'Scaduto';
-    } else if (somePaid) {
-      statusClass = 'pending';
-      statusText = 'Parziale';
-    } else if (hasPayments) {
-      statusClass = 'pending';
-      statusText = 'In attesa';
+    if (hasPayments) {
+      const now = new Date();
+      const sortedPayments = payments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      const firstPayment = sortedPayments[0];
+      const lastPayment = sortedPayments[sortedPayments.length - 1];
+      
+      const firstDueDate = new Date(firstPayment.dueDate);
+      const lastDueDate = new Date(lastPayment.dueDate);
+      
+      if (firstDueDate > now) {
+        // Prima scadenza ancora da superare
+        statusClass = 'pending';
+        statusText = 'Da Avviare';
+      } else if (lastDueDate <= now) {
+        // Tutte le scadenze superate
+        statusClass = 'completed';
+        statusText = 'Saldato';
+      } else {
+        // Almeno una scadenza superata ma non tutte
+        statusClass = 'started';
+        statusText = 'Avviato';
+      }
     }
     
     return '<tr data-id="'+esc(String(x.id))+'">'+
@@ -4332,26 +4337,33 @@ appEl.innerHTML = topbarHTML() + `
     const totalSales = rows.length;
     const totalAmount = rows.reduce((sum, row) => sum + (Number(row.vssTotal) || 0), 0);
     
-    // Calcola pagamenti in attesa (vendite con schedule ma senza campo paid)
-    const pendingPayments = rows.filter(row => {
-      const payments = row.schedule || [];
-      return payments.length > 0; // Tutte le vendite con pagamenti sono "in attesa" per ora
-    }).length;
+    // Calcola valore totale pagamenti in attesa (da forecast futuro)
+    let pendingAmount = 0;
+    let completedAmount = 0;
     
-    // Calcola pagamenti completati (per ora 0, da implementare quando sarà disponibile il campo paid)
-    const completedPayments = rows.filter(row => {
+    rows.forEach(row => {
       const payments = row.schedule || [];
-      // TODO: Implementare quando sarà disponibile il campo paid
-      // return payments.length > 0 && payments.every(p => p.paid);
-      return false; // Per ora sempre 0
-    }).length;
+      payments.forEach(payment => {
+        const dueDate = new Date(payment.dueDate);
+        const now = new Date();
+        const amount = Number(payment.amount || 0);
+        
+        if (dueDate > now) {
+          // Pagamento futuro = in attesa
+          pendingAmount += amount;
+        } else {
+          // Pagamento passato = completato
+          completedAmount += amount;
+        }
+      });
+    });
     
     // Debug logging per verificare i dati
     console.log('GI Stats Debug:', {
       totalSales,
       totalAmount,
-      pendingPayments,
-      completedPayments,
+      pendingAmount,
+      completedAmount,
       sampleRow: rows[0],
       sampleSchedule: rows[0]?.schedule || []
     });
@@ -4368,8 +4380,8 @@ appEl.innerHTML = topbarHTML() + `
     
     if (elements['gi-total-sales']) elements['gi-total-sales'].textContent = totalSales;
     if (elements['gi-total-amount']) elements['gi-total-amount'].textContent = fmtEuro(totalAmount);
-    if (elements['gi-pending-payments']) elements['gi-pending-payments'].textContent = pendingPayments;
-    if (elements['gi-completed-payments']) elements['gi-completed-payments'].textContent = completedPayments;
+    if (elements['gi-pending-payments']) elements['gi-pending-payments'].textContent = fmtEuro(pendingAmount);
+    if (elements['gi-completed-payments']) elements['gi-completed-payments'].textContent = fmtEuro(completedAmount);
   }
 
   // ========= MODALE (nuovo / modifica) =========
