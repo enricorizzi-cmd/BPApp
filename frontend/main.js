@@ -659,6 +659,7 @@ function viewHome(){
         max-width: 1200px;
         margin: 0 auto;
         padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
       }
       
       /* Modern KPI Cards */
@@ -682,6 +683,17 @@ function viewHome(){
         right: 0;
         height: 4px;
         background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 20px 20px 0 0;
+      }
+      
+      .kpi-card::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--hair2);
         border-radius: 20px 20px 0 0;
       }
       
@@ -752,6 +764,11 @@ function viewHome(){
         
         .kpi-value {
           font-size: 24px;
+        }
+        
+        .dashboard-wrap {
+          margin-top: calc(56px + env(safe-area-inset-top) + 16px);
+          padding: 0 16px;
         }
       }
       
