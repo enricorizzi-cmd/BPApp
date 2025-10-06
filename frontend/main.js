@@ -4325,7 +4325,7 @@ appEl.innerHTML = topbarHTML() + `
   
   function updateStats(rows) {
     const totalSales = rows.length;
-    const totalAmount = rows.reduce((sum, row) => sum + (Number(row.totalVSS) || 0), 0);
+    const totalAmount = rows.reduce((sum, row) => sum + (Number(row.vssTotal) || 0), 0);
     const pendingPayments = rows.filter(row => {
       const payments = row.paymentPlan || [];
       return payments.some(p => !p.paid);
@@ -4335,10 +4335,29 @@ appEl.innerHTML = topbarHTML() + `
       return payments.length > 0 && payments.every(p => p.paid);
     }).length;
     
-    $('gi-total-sales').textContent = totalSales;
-    $('gi-total-amount').textContent = fmtEuro(totalAmount);
-    $('gi-pending-payments').textContent = pendingPayments;
-    $('gi-completed-payments').textContent = completedPayments;
+    // Debug logging per verificare i dati
+    console.log('GI Stats Debug:', {
+      totalSales,
+      totalAmount,
+      pendingPayments,
+      completedPayments,
+      sampleRow: rows[0]
+    });
+    
+    // Verifica che gli elementi DOM esistano prima di valorizzarli
+    const elements = {
+      'gi-total-sales': $('gi-total-sales'),
+      'gi-total-amount': $('gi-total-amount'),
+      'gi-pending-payments': $('gi-pending-payments'),
+      'gi-completed-payments': $('gi-completed-payments')
+    };
+    
+    console.log('GI DOM Elements:', elements);
+    
+    if (elements['gi-total-sales']) elements['gi-total-sales'].textContent = totalSales;
+    if (elements['gi-total-amount']) elements['gi-total-amount'].textContent = fmtEuro(totalAmount);
+    if (elements['gi-pending-payments']) elements['gi-pending-payments'].textContent = pendingPayments;
+    if (elements['gi-completed-payments']) elements['gi-completed-payments'].textContent = completedPayments;
   }
 
   // ========= MODALE (nuovo / modifica) =========
@@ -4691,7 +4710,15 @@ appEl.innerHTML = topbarHTML() + `
   const cSel = $('gi-forecast-consultant');
   if(cSel) cSel.onchange = ()=>{ haptic('light'); renderForecast(); };
 
-  loadClients().then(load);
+  // Carica i dati con gestione errori migliorata
+  loadClients().then(() => {
+    console.log('Clients loaded, loading GI data...');
+    load();
+  }).catch(e => {
+    console.error('Error loading clients:', e);
+    // Carica comunque i dati GI anche se i clienti falliscono
+    load();
+  });
 }
 window.viewGI = window.viewGI || viewGI;
 
