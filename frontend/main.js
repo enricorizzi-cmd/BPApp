@@ -4384,8 +4384,9 @@ appEl.innerHTML = topbarHTML() + `
     const html =
     '<div class="modal"><div class="card gi-modal">'+
       '<style>'+
-        '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1)}'+
-        '@media (max-width:740px){ .gi-grid{display:block} .gi-col{width:100%} .gi-modal{min-width:96vw} }'+
+        '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px}'+
+        '@media (max-width:768px){ .gi-modal{min-width:95vw;max-width:95vw;padding:16px;max-height:95vh} .gi-grid{display:block;gap:12px} .gi-col{width:100%;min-width:0} .acconto-fields{grid-template-columns:1fr !important;gap:8px !important} .acconto-header{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .acconto-type-selector{flex-direction:column !important;gap:6px !important} .gi-foot{flex-direction:column !important;gap:12px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} }'+
+        '@media (max-width:480px){ .gi-modal{padding:12px} .gi-section{margin-top:16px !important;padding-top:16px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:8px !important} .mrow label{min-width:0 !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important} }'+
         '.gi-grid{display:flex; gap:16px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
         /* Keep inputs constrained to their columns to avoid overflow */
         '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease}'+
@@ -4430,10 +4431,12 @@ appEl.innerHTML = topbarHTML() + `
         '.client-option-text{flex:1;font-size:14px}'+
         '.client-option-name{font-weight:500;margin-bottom:2px}'+
         '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
-        '.acconto-toggle:hover{background:rgba(93,211,255,.1);border-color:var(--accent)}'+
-        '.acconto-type-option:hover{background:rgba(93,211,255,.1);border-color:var(--accent)}'+
-        '.acconto-type-option:has(input:checked){background:linear-gradient(135deg, var(--accent), var(--accent2));border-color:var(--accent);color:#fff}'+
-        '.acconto-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(93,211,255,.1)}'+
+        '.acconto-toggle:hover{background:rgba(93,211,255,.08);border-color:var(--accent);transform:translateY(-1px)}'+
+        '.acconto-type-option:hover{background:rgba(93,211,255,.08);border-color:var(--accent);transform:translateY(-1px)}'+
+        '.acconto-fields input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
+        '.acconto-radio{transition:all 0.2s ease}'+
+        '.acconto-radio-dot{transition:opacity 0.2s ease}'+
+        '.acconto-check{transition:opacity 0.2s ease}'+
       '</style>'+
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
         '<div style="display:flex;align-items:center;gap:12px">'+
@@ -4469,35 +4472,54 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-section">'+
         '<b>Acconto</b>'+
-        '<div class="acconto-container" style="margin-top:12px">'+
-          '<div class="acconto-header" style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'+
-            '<label class="acconto-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--hair2);border-radius:8px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
-              '<input id="acc_enable" type="checkbox" '+(dep?'checked':'')+' style="accent-color:var(--accent)">'+
-              '<span style="font-weight:500;color:var(--text)">💰 Abilita Acconto</span>'+
+        '<div class="acconto-container" style="margin-top:16px">'+
+          '<div class="acconto-toggle-section" style="margin-bottom:20px">'+
+            '<label class="acconto-toggle" style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;position:relative">'+
+              '<div style="width:24px;height:24px;border:2px solid var(--hair2);border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;background:rgba(255,255,255,.05)">'+
+                '<div class="acconto-check" style="width:12px;height:12px;background:var(--accent);border-radius:3px;opacity:'+(dep?'1':'0')+';transition:opacity 0.2s ease"></div>'+
+              '</div>'+
+              '<div style="flex:1">'+
+                '<div style="font-weight:600;color:var(--text);margin-bottom:4px">💰 Abilita Acconto</div>'+
+                '<div style="font-size:12px;color:var(--muted)">Definisci un pagamento anticipato per questa vendita</div>'+
+              '</div>'+
+              '<input id="acc_enable" type="checkbox" '+(dep?'checked':'')+' style="position:absolute;opacity:0;pointer-events:none">'+
             '</label>'+
-            '<div class="acconto-type-selector" style="display:flex;gap:8px;opacity:'+(dep?'1':'0.5')+';transition:opacity 0.2s ease">'+
-              '<label class="acconto-type-option" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid var(--hair2);border-radius:6px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
-                '<input type="radio" name="acc_type" value="abs" '+(dep && !dep._fromPerc ? 'checked' : '')+' style="accent-color:var(--accent)">'+
-                '<span style="font-size:13px">€ Valore assoluto</span>'+
-              '</label>'+
-              '<label class="acconto-type-option" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid var(--hair2);border-radius:6px;background:rgba(255,255,255,.03);transition:all 0.2s ease">'+
-                '<input type="radio" name="acc_type" value="perc" '+(dep && dep._fromPerc ? 'checked' : '')+' style="accent-color:var(--accent)">'+
-                '<span style="font-size:13px">% Percentuale</span>'+
-              '</label>'+
-            '</div>'+
           '</div>'+
-          '<div class="acconto-fields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;opacity:'+(dep?'1':'0.5')+';transition:opacity 0.2s ease">'+
-            '<div>'+
-              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Valore</label>'+
-              '<input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'" placeholder="0" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
+          '<div class="acconto-content" style="opacity:'+(dep?'1':'0.4')+';transition:opacity 0.3s ease;pointer-events:'+(dep?'auto':'none')+'">'+
+            '<div class="acconto-type-section" style="margin-bottom:20px">'+
+              '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">Tipo di acconto</div>'+
+              '<div class="acconto-type-selector" style="display:flex;gap:12px">'+
+                '<label class="acconto-type-option" style="flex:1;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;text-align:center;position:relative">'+
+                  '<input type="radio" name="acc_type" value="abs" '+(dep && !dep._fromPerc ? 'checked' : '')+' style="position:absolute;opacity:0;pointer-events:none">'+
+                  '<div class="acconto-radio" style="width:20px;height:20px;border:2px solid var(--hair2);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease">'+
+                    '<div class="acconto-radio-dot" style="width:8px;height:8px;background:var(--accent);border-radius:50%;opacity:'+(dep && !dep._fromPerc ? '1' : '0')+';transition:opacity 0.2s ease"></div>'+
+                  '</div>'+
+                  '<div style="font-weight:600;color:var(--text);margin-bottom:4px">€ Valore Assoluto</div>'+
+                  '<div style="font-size:12px;color:var(--muted)">Importo fisso in euro</div>'+
+                '</label>'+
+                '<label class="acconto-type-option" style="flex:1;cursor:pointer;padding:16px;border:2px solid var(--hair2);border-radius:12px;background:rgba(255,255,255,.03);transition:all 0.2s ease;text-align:center;position:relative">'+
+                  '<input type="radio" name="acc_type" value="perc" '+(dep && dep._fromPerc ? 'checked' : '')+' style="position:absolute;opacity:0;pointer-events:none">'+
+                  '<div class="acconto-radio" style="width:20px;height:20px;border:2px solid var(--hair2);border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease">'+
+                    '<div class="acconto-radio-dot" style="width:8px;height:8px;background:var(--accent);border-radius:50%;opacity:'+(dep && dep._fromPerc ? '1' : '0')+';transition:opacity 0.2s ease"></div>'+
+                  '</div>'+
+                  '<div style="font-weight:600;color:var(--text);margin-bottom:4px">% Percentuale</div>'+
+                  '<div style="font-size:12px;color:var(--muted)">Percentuale sul totale VSS</div>'+
+                '</label>'+
+              '</div>'+
             '</div>'+
-            '<div>'+
-              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Scadenza</label>'+
-              '<input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
-            '</div>'+
-            '<div>'+
-              '<label style="font-size:12px;color:var(--muted);margin-bottom:4px;display:block">Nota</label>'+
-              '<input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px">'+
+            '<div class="acconto-fields" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">'+
+              '<div>'+
+                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Valore</label>'+
+                '<input id="acc_value" type="number" step="1" value="'+(dep? esc(Number(dep._fromPerc ? dep._rawPerc : dep.amount)) : '0')+'" placeholder="0" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
+              '</div>'+
+              '<div>'+
+                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Scadenza</label>'+
+                '<input id="acc_date" type="date" value="'+esc(dep? ymd(dep.dueDate) : ymd(it.date||today))+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
+              '</div>'+
+              '<div>'+
+                '<label style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:0.5px">Nota</label>'+
+                '<input id="acc_note" placeholder="es. Acconto" value="'+esc(dep? (dep.note||'Acconto') : 'Acconto')+'" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;font-size:16px;transition:all 0.2s ease">'+
+              '</div>'+
             '</div>'+
           '</div>'+
         '</div>'+
@@ -4784,8 +4806,9 @@ appEl.innerHTML = topbarHTML() + `
     const accValue = $('acc_value');
     const accDate = $('acc_date');
     const accNote = $('acc_note');
-    const accTypeSelector = document.querySelector('.acconto-type-selector');
-    const accFields = document.querySelector('.acconto-fields');
+    const accContent = document.querySelector('.acconto-content');
+    const accToggle = document.querySelector('.acconto-toggle');
+    const accCheck = document.querySelector('.acconto-check');
     
     // Auto-flag acconto quando si compila un campo
     function updateAccontoState() {
@@ -4805,8 +4828,41 @@ appEl.innerHTML = topbarHTML() + `
     
     function updateAccontoUI() {
       const isEnabled = accEnable.checked;
-      if (accTypeSelector) accTypeSelector.style.opacity = isEnabled ? '1' : '0.5';
-      if (accFields) accFields.style.opacity = isEnabled ? '1' : '0.5';
+      if (accContent) {
+        accContent.style.opacity = isEnabled ? '1' : '0.4';
+        accContent.style.pointerEvents = isEnabled ? 'auto' : 'none';
+      }
+      if (accCheck) {
+        accCheck.style.opacity = isEnabled ? '1' : '0';
+      }
+      if (accToggle) {
+        accToggle.style.borderColor = isEnabled ? 'var(--accent)' : 'var(--hair2)';
+        accToggle.style.background = isEnabled ? 'rgba(93,211,255,.05)' : 'rgba(255,255,255,.03)';
+      }
+      
+      // Aggiorna radio buttons
+      updateRadioButtons();
+    }
+    
+    function updateRadioButtons() {
+      const isEnabled = accEnable.checked;
+      const selectedType = document.querySelector('input[name="acc_type"]:checked')?.value;
+      
+      document.querySelectorAll('.acconto-type-option').forEach(option => {
+        const radio = option.querySelector('.acconto-radio');
+        const dot = option.querySelector('.acconto-radio-dot');
+        const input = option.querySelector('input[type="radio"]');
+        
+        if (radio && dot && input) {
+          const isSelected = input.checked;
+          radio.style.borderColor = isSelected ? 'var(--accent)' : 'var(--hair2)';
+          radio.style.background = isSelected ? 'rgba(93,211,255,.1)' : 'rgba(255,255,255,.05)';
+          dot.style.opacity = isSelected ? '1' : '0';
+          
+          option.style.borderColor = isSelected ? 'var(--accent)' : 'var(--hair2)';
+          option.style.background = isSelected ? 'rgba(93,211,255,.05)' : 'rgba(255,255,255,.03)';
+        }
+      });
     }
     
     // Event listeners per auto-flag
@@ -4821,6 +4877,22 @@ appEl.innerHTML = topbarHTML() + `
     if (accEnable) {
       accEnable.addEventListener('change', updateAccontoUI);
     }
+    
+    // Event listeners per radio buttons
+    document.querySelectorAll('input[name="acc_type"]').forEach(radio => {
+      radio.addEventListener('change', updateRadioButtons);
+    });
+    
+    // Event listeners per click sui label
+    document.querySelectorAll('.acconto-type-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const input = option.querySelector('input[type="radio"]');
+        if (input) {
+          input.checked = true;
+          updateRadioButtons();
+        }
+      });
+    });
     
     // Inizializza stato acconto
     $('acc_type').value = dep && dep._fromPerc ? 'perc' : 'abs';
