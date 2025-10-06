@@ -3609,10 +3609,9 @@ function viewAppointments(){
     // Event listeners
     display.addEventListener('click', (e) => {
       e.stopPropagation();
-      list.style.display = list.style.display === 'none' ? 'block' : 'none';
-      if (list.style.display === 'block') {
-        search.focus();
-      }
+      // Apri sempre l'elenco quando clicchi sul campo
+      list.style.display = 'block';
+      search.focus();
     });
     
     // Gestione input diretto nel campo cliente
@@ -3624,11 +3623,23 @@ function viewAppointments(){
       nncfBtn.disabled = false;
       nncfBtn.style.opacity = '1';
       nncfBtn.style.cursor = 'pointer';
+      // Mantieni l'elenco aperto
+      list.style.display = 'block';
     });
     
     display.addEventListener('focus', (e) => {
       // Apri dropdown quando si fa focus sul campo
       list.style.display = 'block';
+    });
+    
+    display.addEventListener('blur', (e) => {
+      // Non chiudere subito, aspetta un po' per permettere click su opzioni
+      setTimeout(() => {
+        // Chiudi solo se non c'è focus su nessun elemento del dropdown
+        if (!list.contains(document.activeElement) && document.activeElement !== display) {
+          list.style.display = 'none';
+        }
+      }, 150);
     });
     
     search.addEventListener('input', (e) => {
@@ -3646,6 +3657,7 @@ function viewAppointments(){
     
     // Chiudi dropdown quando si clicca fuori
     document.addEventListener('click', (e) => {
+      // Chiudi solo se il click è completamente fuori dal campo e dal dropdown
       if (!display.contains(e.target) && !list.contains(e.target)) {
         list.style.display = 'none';
       }
@@ -3664,8 +3676,8 @@ function viewAppointments(){
       display.value = clientName;
       hidden.value = clientId;
       
-      // Chiudi dropdown
-      list.style.display = 'none';
+      // NON chiudere l'elenco, lascialo aperto
+      // list.style.display = 'none';
       
       // Rimuovi selezione precedente e seleziona nuovo
       options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
@@ -3695,9 +3707,11 @@ function viewAppointments(){
     
     // Gestione keyboard
     display.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        display.click();
+        // Apri l'elenco se non è già aperto
+        list.style.display = 'block';
+        search.focus();
       }
     });
     
