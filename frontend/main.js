@@ -7309,6 +7309,7 @@ function viewSettings(){
   bindSettingsEvents();
   injectSettingsCSS();
 }
+window.viewSettings = viewSettings;
 
 // Inietta CSS per le impostazioni
 function injectSettingsCSS() {
