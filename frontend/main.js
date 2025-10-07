@@ -1404,7 +1404,7 @@ function cardAppt(x){
           console.log('Dashboard found appointment:', a);
           if(a) {
             console.log('Dashboard: Switching to appointments view and calling fillForm');
-            viewAppointments();
+          viewAppointments();
             // Piccolo delay per assicurarsi che la sezione sia caricata
             setTimeout(() => {
               console.log('Dashboard: Calling fillForm after delay');
@@ -1464,7 +1464,7 @@ function cardAppt(x){
           console.log('Dashboard found appointment:', a);
           if(a) {
             console.log('Dashboard: Switching to appointments view and calling fillForm');
-            viewAppointments();
+          viewAppointments();
             // Piccolo delay per assicurarsi che la sezione sia caricata
             setTimeout(() => {
               console.log('Dashboard: Calling fillForm after delay');
@@ -2246,7 +2246,7 @@ function viewCalendar(){
               console.log('Calendar found appointment:', a);
               if(a) {
                 console.log('Calendar: Switching to appointments view and calling fillForm');
-                viewAppointments();
+              viewAppointments();
                 // Piccolo delay per assicurarsi che la sezione sia caricata
                 setTimeout(() => {
                   console.log('Calendar: Calling fillForm after delay');
@@ -3997,7 +3997,7 @@ function viewAppointments(){
     }
     
     // Ordina clienti alfabeticamente
-    const sortedClients = [...clients].sort((a, b) => 
+    sortedClients = [...clients].sort((a, b) => 
       String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
     );
     
@@ -4177,7 +4177,7 @@ function viewAppointments(){
   }
 
   // --------- NNCF toggle ----------
-  const nncfBtn = document.getElementById('a_nncf');
+  nncfBtn = document.getElementById('a_nncf');
   nncfBtn.addEventListener('click', ()=> {
     const on = nncfBtn.getAttribute('data-active')!=='1';
     nncfBtn.setAttribute('data-active', on?'1':'0');
@@ -4187,15 +4187,15 @@ function viewAppointments(){
   });
 
   // --------- segment buttons ----------
-  const segSale = document.getElementById('t_vendita');
-  const segHalf = document.getElementById('t_mezza');
-  const segFull = document.getElementById('t_full');
-  const segForm = document.getElementById('t_form');
-  const segMbs  = document.getElementById('t_mbs');
-  const segSotto= document.getElementById('t_sotto');
-  const segRiunione = document.getElementById('t_riunione');
-  const segImpegni = document.getElementById('t_impegni');
-  const allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
+  segSale = document.getElementById('t_vendita');
+  segHalf = document.getElementById('t_mezza');
+  segFull = document.getElementById('t_full');
+  segForm = document.getElementById('t_form');
+  segMbs  = document.getElementById('t_mbs');
+  segSotto= document.getElementById('t_sotto');
+  segRiunione = document.getElementById('t_riunione');
+  segImpegni = document.getElementById('t_impegni');
+  allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
   function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
@@ -4238,37 +4238,15 @@ function viewAppointments(){
     else if(btn===segRiunione){ typeHidden.value='riunione'; setDur(60); clientDisplay.value='Riunione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
     else if(btn===segImpegni){ typeHidden.value='impegni personali'; setDur(60); clientDisplay.value='Impegni personali'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
   }
-  function setDur(min){
-    const dEl=document.getElementById('a_dur');
-    dEl.value=String(min);
-    updateEndFromDur();
-  }
+  // setDur, updateEndFromDur, updateDurFromEnd ora sono definite globalmente
   allSegs.forEach(b=> b.addEventListener('click', (e)=>{ e.preventDefault(); selectSeg(b); }));
   selectSeg(segSale);
-
-  // --------- sync start/end/dur ----------
-  function updateEndFromDur(){
-    const sVal=document.getElementById('a_start').value;
-    const m = parseInt(document.getElementById('a_dur').value||'0',10);
-    if(!sVal || !isFinite(m) || m<=0){ document.getElementById('a_end').value=''; return; }
-    const s=new Date(sVal); const e=new Date(s.getTime()+m*60000);
-    document.getElementById('a_end').value=('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
-  }
-  function updateDurFromEnd(){
-    const sVal=document.getElementById('a_start').value;
-    const t=document.getElementById('a_end').value; if(!sVal||!t) return;
-    const s=new Date(sVal); const p=t.split(':'); if(p.length<2) return;
-    const e=new Date(s); e.setHours(parseInt(p[0],10)||0, parseInt(p[1],10)||0,0,0);
-    if(e < s) e.setDate(e.getDate()+1);
-    let mins=Math.round((e-s)/60000);
-    document.getElementById('a_dur').value=String(Math.max(1,mins));
-  }
   document.getElementById('a_start').addEventListener('change', updateEndFromDur);
   document.getElementById('a_dur').addEventListener('input', updateEndFromDur);
   document.getElementById('a_end').addEventListener('change', updateDurFromEnd);
 
   // --------- form state ----------
-  let editId=null;
+  // editId ora è definita globalmente
   function resetForm(){
     editId=null;
     document.getElementById('a_form_title').textContent='Nuovo appuntamento';
@@ -4522,7 +4500,7 @@ function deleteA(){
       const allCards = document.querySelectorAll('#a_list .card[data-aid]');
       console.log('Setting up card click listeners for', allCards.length, 'cards');
       allCards.forEach((card, index)=>{
-        const id=card.getAttribute('data-aid');
+          const id=card.getAttribute('data-aid');
         console.log(`Card ${index}: ID=${id}, HTML=`, card.outerHTML.substring(0, 100));
         card.addEventListener('click', ()=>{
           console.log('Card clicked! ID:', id);
@@ -4567,6 +4545,76 @@ function deleteA(){
 }
 
 // ===== GLOBAL FUNCTIONS =====
+// Variabili globali per appuntamenti
+let editId = null;
+let sortedClients = [];
+let nncfBtn = null;
+let segSale = null;
+let segHalf = null;
+let segFull = null;
+let segForm = null;
+let segMbs = null;
+let segSotto = null;
+let segRiunione = null;
+let segImpegni = null;
+let allSegs = [];
+
+// Funzione selectSeg spostata fuori da viewAppointments per renderla globale
+function selectSeg(btn, keepNncf=false){
+  allSegs.forEach(b=>b.classList.toggle('active', b===btn));
+  const typeHidden = document.getElementById('a_type');
+  const clientDisplay = document.getElementById('a_client_display');
+  const clientSelect = document.getElementById('a_client_select');
+  const rowVss  = document.getElementById('row_vss');
+  const rowVsdP = document.getElementById('row_vsd_p');
+  const rowVsdI = document.getElementById('row_vsd_i');
+  const rowTel  = document.getElementById('row_tel');
+  const rowApp  = document.getElementById('row_app');
+
+  // Reset campi quando si cambia tipo
+  if(!keepNncf){
+    nncfBtn.setAttribute('data-active','0'); nncfBtn.setAttribute('aria-pressed','false');
+    nncfBtn.classList.remove('active');
+  }
+  clientDisplay.disabled=false; clientDisplay.value=''; clientSelect.value='';
+  rowVss.style.display=''; rowVsdP.style.display=''; rowVsdI.style.display='none'; rowTel.style.display='none'; rowApp.style.display='none';
+  nncfBtn.style.display='';
+
+  if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
+  else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
+  else if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
+  else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientDisplay.value='Formazione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+  else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientDisplay.value='MBS'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
+  else if(btn===segSotto){ typeHidden.value='sottoprodotti'; setDur(240); clientDisplay.value='Sottoprodotti'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowTel.style.display=''; rowApp.style.display=''; nncfBtn.style.display='none'; }
+  else if(btn===segRiunione){ typeHidden.value='riunione'; setDur(60); clientDisplay.value='Riunione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+  else if(btn===segImpegni){ typeHidden.value='impegni personali'; setDur(60); clientDisplay.value='Impegni personali'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
+}
+
+// Funzioni di utilità spostate fuori da viewAppointments per renderle globali
+function setDur(min){
+  const dEl=document.getElementById('a_dur');
+  dEl.value=String(min);
+  updateEndFromDur();
+}
+
+function updateEndFromDur(){
+  const sVal=document.getElementById('a_start').value;
+  const m = parseInt(document.getElementById('a_dur').value||'0',10);
+  if(!sVal || !isFinite(m) || m<=0){ document.getElementById('a_end').value=''; return; }
+  const s=new Date(sVal); const e=new Date(s.getTime()+m*60000);
+  document.getElementById('a_end').value=('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
+}
+
+function updateDurFromEnd(){
+  const sVal=document.getElementById('a_start').value;
+  const t=document.getElementById('a_end').value; if(!sVal||!t) return;
+  const s=new Date(sVal); const p=t.split(':'); if(p.length<2) return;
+  const e=new Date(s); e.setHours(parseInt(p[0],10)||0, parseInt(p[1],10)||0,0,0);
+  if(e < s) e.setDate(e.getDate()+1);
+  let mins=Math.round((e-s)/60000);
+  document.getElementById('a_dur').value=String(Math.max(1,mins));
+}
+
 // Spostata fuori da viewAppointments per renderla globale
 function fillForm(a){
   console.log('=== fillForm called ===');
