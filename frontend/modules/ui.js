@@ -472,7 +472,7 @@ export function toggleSidebar(force){
   // Salva stato in localStorage
   try {
     localStorage.setItem('bp_sidebar_collapsed', String(willCollapse));
-  } catch(e) {
+  } catch {
     // Ignora errori localStorage
   }
 }
@@ -494,7 +494,7 @@ export function initSidebarState(){
         document.body.classList.remove('sidebar-expanded', 'sidebar-collapsed');
       }
     }
-  } catch(e) {
+  } catch {
     // Ignora errori localStorage
   }
 }
