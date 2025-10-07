@@ -1694,6 +1694,135 @@ function viewCalendar(){
         /* Allow buttons to shrink within grid cells */
         #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
       }
+      
+      /* Modern Results Grid */
+      .cal-results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-top: 8px;
+      }
+      
+      .cal-result-pill {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        text-align: center;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+      
+      .cal-result-pill:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(93,211,255,.1);
+        transform: translateY(-2px);
+      }
+      
+      .cal-result-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      
+      .cal-result-value {
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      
+      @media (max-width: 768px) {
+        .cal-results-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        
+        .cal-result-pill {
+          padding: 10px 12px;
+        }
+        
+        .cal-result-label {
+          font-size: 10px;
+        }
+        
+        .cal-result-value {
+          font-size: 13px;
+        }
+      }
+      
+      /* BP Form Grid - Responsive layout for indicators */
+      #p_rows {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+      
+      #p_rows .row {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+      
+      #p_rows .row:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(93,211,255,.1);
+        transform: translateY(-2px);
+      }
+      
+      #p_rows .row > div {
+        margin-bottom: 12px;
+      }
+      
+      #p_rows .row > div:last-child {
+        margin-bottom: 0;
+      }
+      
+      #p_rows .row label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: block;
+      }
+      
+      #p_rows .row input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+      
+      #p_rows .row input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      #p_rows .row input::placeholder {
+        color: var(--muted);
+      }
+      
+      @media (max-width: 768px) {
+        #p_rows {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+      }
     `;
     var st = document.createElement('style');
     st.id = 'cal_dynamic_css';
@@ -1805,17 +1934,38 @@ function viewCalendar(){
         var host = document.getElementById('cal_results'); if(!host) return;
         var right = weekly ? '<div class="right"><button id="res_reset" class="ghost">Torna al mese</button></div>' : '';
         host.innerHTML =
-          '<div style="display:flex;justify-content:space-between;align-items:center">'+
-            '<b>Risultati · '+label+'</b>'+ right +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+            '<b style="color:var(--text);font-size:16px">Risultati · '+label+'</b>'+ right +
           '</div>'+
-          '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">'+
-            '<span class="chip small">VSS <b>'+fmtEuro(tot.vss)+'</b></span>'+
-            '<span class="chip small">VSD <b>'+fmtEuro(tot.vsd)+'</b></span>'+
-            '<span class="chip small">VSD ind <b>'+fmtEuro(tot.vsdI)+'</b></span>'+
-            '<span class="chip small">Tel <b>'+fmtInt(tot.telefonate)+'</b></span>'+
-            '<span class="chip small">AppFiss <b>'+fmtInt(tot.appFissati)+'</b></span>'+
-            '<span class="chip small">NNCF <b>'+fmtInt(tot.nncf)+'</b></span>'+
-            '<span class="chip small">N. app <b>'+fmtInt(tot.count)+'</b></span>'+
+          '<div class="cal-results-grid">'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">VSS</div>'+
+              '<div class="cal-result-value">'+fmtEuro(tot.vss)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">VSD</div>'+
+              '<div class="cal-result-value">'+fmtEuro(tot.vsd)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">VSD ind</div>'+
+              '<div class="cal-result-value">'+fmtEuro(tot.vsdI)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">Tel</div>'+
+              '<div class="cal-result-value">'+fmtInt(tot.telefonate)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">AppFiss</div>'+
+              '<div class="cal-result-value">'+fmtInt(tot.appFissati)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">NNCF</div>'+
+              '<div class="cal-result-value">'+fmtInt(tot.nncf)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">N. app</div>'+
+              '<div class="cal-result-value">'+fmtInt(tot.count)+'</div>'+
+            '</div>'+
           '</div>';
         host.style.display='block';
         if(weekly){
