@@ -119,9 +119,9 @@ function injectCompanyLogoCSS() {
       }
       
       .company-logo {
-        max-width: 120px;
-        max-height: 60px;
-        width: auto;
+        width: 100%;
+        max-width: 200px;
+        max-height: 80px;
         height: auto;
         object-fit: contain;
         border-radius: 8px;
