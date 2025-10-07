@@ -1033,7 +1033,7 @@ async function findOrCreateClientByName(name, nncf, user){
 
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
-const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO });
+const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
@@ -1085,12 +1085,24 @@ function _gradeOf(userId, usersDb){
   const u = (usersDb.users||[]).find(x => String(x.id) === String(userId));
   return (u && u.grade==='senior') ? 'senior' : 'junior';
 }
-function _computeProvvigioniForBag(bag, grade){
+async function _computeProvvigioniForBag(bag, grade){
   if (!bag) return;
   const gi  = Number(bag.GI || 0);
   const vsdP= Number(bag.VSDPersonale || 0);
-  const rateGi   = 0.15;
-  const rateVsdP = (grade==='senior') ? 0.25 : 0.20;
+  
+  // Carica settings da Supabase
+  let settings = {};
+  try {
+    const { data, error } = await supabase.from('settings').select('data').eq('id', 'main').single();
+    if (!error && data) settings = data.data || {};
+  } catch (e) {
+    console.warn('[BP] Error loading settings for commissions, using defaults');
+  }
+  
+  const commissions = settings.commissions || {};
+  const rateGi   = Number(commissions.gi || 0.15);
+  const rateVsdP = (grade==='senior') ? Number(commissions.vsdSenior || 0.25) : Number(commissions.vsdJunior || 0.20);
+  
   // se già presenti lascio prevalere i valori inviati (ma ricostruisco Tot se mancante)
   const provvGi  = (bag.ProvvGI!=null)  ? Number(bag.ProvvGI)  : gi  * rateGi;
   const provvVsd = (bag.ProvvVSD!=null) ? Number(bag.ProvvVSD) : vsdP* rateVsdP;
@@ -1102,8 +1114,8 @@ function _computeProvvigioniForBag(bag, grade){
 async function _applyProvvigioni(row){
   const usersDb = await readJSON("users.json");
   const grade   = _gradeOf(row.userId, usersDb);
-  _computeProvvigioniForBag(row.indicatorsPrev, grade);
-  _computeProvvigioniForBag(row.indicatorsCons, grade);
+  await _computeProvvigioniForBag(row.indicatorsPrev, grade);
+  await _computeProvvigioniForBag(row.indicatorsCons, grade);
 }
 
 function _periodKey(p){
@@ -1410,7 +1422,15 @@ app.get("/api/leaderboard_overall", auth, async (req,res)=>{
   const type = typeQ ? _effType(String(typeQ)) : null;
   const usersDb   = await readJSON("users.json");
   const periodsDb = await readJSON("periods.json");
-  const settings  = await readJSON("settings.json");
+  
+  // Carica settings da Supabase
+  let settings = {};
+  try {
+    const { data, error } = await supabase.from('settings').select('data').eq('id', 'main').single();
+    if (!error && data) settings = data.data || {};
+  } catch (e) {
+    console.warn('[BP] Error loading settings for leaderboard, using defaults');
+  }
 
   const DEFAULT_WEI = { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 };
   const wnum = (v)=>{
