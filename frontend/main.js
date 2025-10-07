@@ -4633,8 +4633,9 @@ function deleteA(){
         });
       });
       // Click on the whole card opens it in edit
-      console.log('Setting up card click listeners for', host.querySelectorAll('.card[data-aid]').length, 'cards');
-      host.querySelectorAll('.card[data-aid]').forEach((card, index)=>{
+      const allCards = document.querySelectorAll('#a_list .card[data-aid]');
+      console.log('Setting up card click listeners for', allCards.length, 'cards');
+      allCards.forEach((card, index)=>{
         const id=card.getAttribute('data-aid');
         console.log(`Card ${index}: ID=${id}, HTML=`, card.outerHTML.substring(0, 100));
         card.addEventListener('click', ()=>{
