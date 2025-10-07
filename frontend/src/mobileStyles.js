@@ -5,6 +5,7 @@ export function injectMobileDrawerCSS(){
     .topbar{
       background: rgba(20,24,34,.90) !important;
       border-bottom: 1px solid rgba(255,255,255,.08) !important;
+      z-index: 70 !important; /* Assicura che la topbar sia sopra il drawer */
     }
     .drawer{
       background: rgba(20,24,34,.96) !important;
@@ -29,6 +30,10 @@ export function injectMobileDrawerCSS(){
     .drawer button.ghost{
       background: rgba(255,255,255,.10) !important;
       box-shadow: none !important;
+    }
+    .hamb{
+      z-index: 80 !important; /* Assicura che l'hamburger sia sempre cliccabile */
+      position: relative !important;
     }
   }`;
   const s = document.createElement('style');
