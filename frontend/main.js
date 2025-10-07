@@ -1394,8 +1394,16 @@ function cardAppt(x){
       // click → apri in modifica
       host.querySelectorAll('.lastApp[data-aid]').forEach(function(card){
         card.addEventListener('click', function(){
-          try{ save('bp_edit_aid', card.getAttribute('data-aid')); }catch(_){}
-          viewAppointments();
+          const id = card.getAttribute('data-aid');
+          const a = list.find(z => String(z.id) === String(id));
+          if(a) {
+            viewAppointments();
+            // Piccolo delay per assicurarsi che la sezione sia caricata
+            setTimeout(() => {
+              fillForm(a);
+              window.scrollTo({top: 0, behavior: 'smooth'});
+            }, 100);
+          }
         });
       });
       // export .ics
@@ -1436,8 +1444,16 @@ function cardAppt(x){
       // click → apri in modifica
       host.querySelectorAll('.lastApp[data-aid]').forEach(function(card){
         card.addEventListener('click', function(){
-          try{ save('bp_edit_aid', card.getAttribute('data-aid')); }catch(_){}
-          viewAppointments();
+          const id = card.getAttribute('data-aid');
+          const a = list.find(z => String(z.id) === String(id));
+          if(a) {
+            viewAppointments();
+            // Piccolo delay per assicurarsi che la sezione sia caricata
+            setTimeout(() => {
+              fillForm(a);
+              window.scrollTo({top: 0, behavior: 'smooth'});
+            }, 100);
+          }
         });
       });
       // export .ics
@@ -2200,8 +2216,16 @@ function viewCalendar(){
           box.querySelectorAll('.cal-app').forEach(function(c){
             c.addEventListener('click', function(ev){
               ev.stopPropagation();
-              save('bp_edit_aid', c.getAttribute('data-aid'));
-              viewAppointments();
+              const id = c.getAttribute('data-aid');
+              const a = items.find(z => String(z.id) === String(id));
+              if(a) {
+                viewAppointments();
+                // Piccolo delay per assicurarsi che la sezione sia caricata
+                setTimeout(() => {
+                  fillForm(a);
+                  window.scrollTo({top: 0, behavior: 'smooth'});
+                }, 100);
+              }
             });
           });
 
@@ -4553,16 +4577,7 @@ function deleteA(){
     del('bp_prefill_slot');
   }catch(_){}
 
-  try{
-    const aid=load('bp_edit_aid', null);
-    if(aid){
-      GET('/api/appointments').then(r=>{
-        const list=(r&&r.appointments)||[];
-        const it=list.find(a=> String(a.id)===String(aid));
-        if(it){ fillForm(it); window.scrollTo({top:0, behavior:'smooth'}); }
-      }).finally(()=>{ try{ del('bp_edit_aid'); }catch(_){ } });
-    }
-  }catch(_){}
+  // Logica di modifica appuntamenti ora gestita direttamente nei click handler
 
   document.getElementById('btnSaveA').onclick       = ()=> saveA(false);
   document.getElementById('btnSaveExportA').onclick = ()=> saveA(true);
