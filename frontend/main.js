@@ -2613,6 +2613,140 @@ function viewPeriods(){
           gap: 8px;
         }
       }
+      
+      /* Modern Indicator Cards Layout */
+      #p_rows {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+      }
+      
+      .indicator-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      }
+      
+      .indicator-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        transform: translateY(-2px);
+      }
+      
+      .indicator-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255,255,255,.1);
+      }
+      
+      .indicator-header h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .indicator-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .progress-bar {
+        width: 60px;
+        height: 8px;
+        background: rgba(255,255,255,.12);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+      
+      .progress-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        min-width: 30px;
+        text-align: right;
+      }
+      
+      .indicator-fields {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      
+      .field-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .field-group label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .field-group input {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+      
+      .field-group input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .field-group input::placeholder {
+        color: var(--muted);
+      }
+      
+      @media (max-width: 768px) {
+        #p_rows {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        
+        .indicator-fields {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+        
+        .indicator-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        
+        .indicator-progress {
+          align-self: flex-end;
+        }
+      }
     `;
     document.head.appendChild(st);
   }
@@ -2749,12 +2883,25 @@ function viewPeriods(){
     var rows='';
     for(var i=0;i<ind.length;i++){
       var k=ind[i], money=/^(VSS|VSDPersonale|VSDIndiretto|GI)$/i.test(k);
-      rows+= '<div class="row" data-row="'+k+'">'+
-               '<div data-prev><label>'+k+' (Prev)</label><input type="number" step="1" id="prev_'+k+'" placeholder="'+(money?'€':'n')+'"></div>'+
-               '<div data-cons><label>'+k+' (Cons)</label><input type="number" step="1" id="cons_'+k+'" placeholder="'+(money?'€':'n')+'"></div>'+
-               '<div data-bar class="small">'+
-                 '<div style="height:10px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden"><div id="bar_'+k+'" style="height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div></div>'+
-                 '<div id="pct_'+k+'" class="small muted">0%</div>'+
+      rows+= '<div class="indicator-card" data-row="'+k+'">'+
+               '<div class="indicator-header">'+
+                 '<h4>'+k+'</h4>'+
+                 '<div class="indicator-progress">'+
+                   '<div class="progress-bar">'+
+                     '<div id="bar_'+k+'" class="progress-fill" style="width:0%"></div>'+
+                   '</div>'+
+                   '<span id="pct_'+k+'" class="progress-text">0%</span>'+
+                 '</div>'+
+               '</div>'+
+               '<div class="indicator-fields">'+
+                 '<div class="field-group" data-prev>'+
+                   '<label>Previsionale</label>'+
+                   '<input type="number" step="1" id="prev_'+k+'" placeholder="'+(money?'€':'n')+'">'+
+                 '</div>'+
+                 '<div class="field-group" data-cons>'+
+                   '<label>Consuntivo</label>'+
+                   '<input type="number" step="1" id="cons_'+k+'" placeholder="'+(money?'€':'n')+'">'+
+                 '</div>'+
                '</div>'+
              '</div>';
     }
