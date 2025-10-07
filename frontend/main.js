@@ -7797,6 +7797,7 @@ function sendManualNotification() {
     toast('Errore nell\'invio della notifica');
   });
 }
+window.sendManualNotification = sendManualNotification;
 
 function loadManualNotificationsLog() {
   GET('/api/notifications/manual-log').then(function(r) {
@@ -7854,6 +7855,7 @@ function saveSystemNotification(type) {
     toast('Errore nel salvataggio della notifica sistema');
   });
 }
+window.saveSystemNotification = saveSystemNotification;
 
 function loadUsersForSelection() {
   GET('/api/users').then(function(r) {
