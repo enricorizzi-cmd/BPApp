@@ -1,5 +1,5 @@
 import { getUser } from '../src/auth.js';
-import { injectMobileDrawerCSS, injectMobileLightModeCSS, injectLightBadgesCSS, injectSummaryClickableCSS } from '../src/mobileStyles.js';
+import { injectLightBadgesCSS, injectMobileDrawerCSS, injectMobileLightModeCSS, injectSummaryClickableCSS } from '../src/mobileStyles.js';
 
 export function topbarHTML(){
   const u = getUser();

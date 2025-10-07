@@ -7296,7 +7296,7 @@ function viewSettings(){
                     '<label>Post-Appuntamento:</label>'+
                     '<textarea id="post-appointment-text" rows="2">Hai venduto a {client}? Appuntamento del {date}</textarea>'+
                     '<button class="btn-secondary" onclick="saveSystemNotification(\'post-appointment\')">💾 Salva</button>'+
-                  </div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
