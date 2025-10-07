@@ -4293,121 +4293,7 @@ function viewAppointments(){
     selectSeg(segSale);
     document.getElementById('btnDeleteA').style.display='none';
   }
-  function fillForm(a){
-    console.log('=== fillForm called ===');
-    console.log('Appointment data:', a);
-    console.log('editId before:', editId);
-    try {
-      editId=a.id;
-      console.log('editId after:', editId);
-      
-      // Aggiorna titolo
-      const titleEl = document.getElementById('a_form_title');
-      console.log('Title element found:', !!titleEl);
-      if (titleEl) {
-        titleEl.textContent='Modifica appuntamento';
-        console.log('Title updated to: Modifica appuntamento');
-      }
-      
-      // Seleziona tipo prima di valorizzare i campi
-      var t = String(a.type||'vendita').toLowerCase();
-      try {
-        if(t.indexOf('mezza')>-1) selectSeg(segHalf);
-        else if(t.indexOf('giorn')>-1) selectSeg(segFull);
-        else if(t.indexOf('formaz')>-1) selectSeg(segForm);
-        else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
-        else if(t.indexOf('sottoprod')>-1) selectSeg(segSotto);
-        else if(t.indexOf('riunione')>-1) selectSeg(segRiunione);
-        else if(t.indexOf('impegni personali')>-1) selectSeg(segImpegni);
-        else selectSeg(segSale);
-      } catch(e) {
-        console.error('Error in selectSeg:', e);
-        selectSeg(segSale); // fallback
-      }
-
-      // Popola campi cliente
-      const clientDisplayEl = document.getElementById('a_client_display');
-      const clientSelectEl = document.getElementById('a_client_select');
-      if (clientDisplayEl) clientDisplayEl.value=a.client||'';
-      if (clientSelectEl) clientSelectEl.value=a.clientId||'';
-      
-      // Gestisci pulsante NNCF basato sul cliente esistente
-      if (a.clientId && sortedClients) {
-        const client = sortedClients.find(c => c.id === a.clientId);
-        if (client && client.status === 'attivo') {
-          nncfBtn.disabled = true;
-          nncfBtn.style.opacity = '0.5';
-          nncfBtn.style.cursor = 'not-allowed';
-        } else {
-          nncfBtn.disabled = false;
-          nncfBtn.style.opacity = '1';
-          nncfBtn.style.cursor = 'pointer';
-        }
-      } else {
-        nncfBtn.disabled = false;
-        nncfBtn.style.opacity = '1';
-        nncfBtn.style.cursor = 'pointer';
-      }
-
-      // Popola data/ora
-      const startEl = document.getElementById('a_start');
-      if (startEl) startEl.value=isoToLocalInput(a.start);
-
-      const s = BPTimezone.parseUTCString(a.start);
-      let e = a.end ? BPTimezone.parseUTCString(a.end) : null;
-      let dur = Number(a.durationMinutes);
-      if(e instanceof Date && !isNaN(e) && e >= s){
-        dur = Math.max(1, Math.round((e - s)/60000));
-      } else if(isFinite(dur) && dur > 0){
-        e = new Date(s.getTime() + dur*60000);
-      } else {
-        dur = defDurByType(a.type||'vendita');
-        e = new Date(s.getTime()+dur*60000);
-      }
-      
-      const durEl = document.getElementById('a_dur');
-      const endEl = document.getElementById('a_end');
-      if (durEl) durEl.value = String(dur);
-      if (endEl) endEl.value = ('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
-
-      // Popola indicatori
-      const vssEl = document.getElementById('a_vss');
-      const vsdEl = document.getElementById('a_vsd');
-      const vsdIEl = document.getElementById('a_vsd_i');
-      const telEl = document.getElementById('a_tel');
-      const appEl = document.getElementById('a_app');
-      const descEl = document.getElementById('a_desc');
-      
-      if (vssEl) vssEl.value=a.vss||'';
-      if (vsdEl) vsdEl.value=a.vsdPersonal || a.vsd || '';
-      if (vsdIEl) vsdIEl.value=a.vsdIndiretto || '';
-      if (telEl) telEl.value=a.telefonate || '';
-      if (appEl) appEl.value=a.appFissati || '';
-      if (descEl) descEl.value=a.notes || '';
-      
-      // Gestisci NNCF
-      const on=!!a.nncf;
-      nncfBtn.setAttribute('data-active', on?'1':'0');
-      nncfBtn.setAttribute('aria-pressed', on?'true':'false');
-      nncfBtn.classList.toggle('active', on);
-      
-      // Mostra pulsante elimina
-      const deleteBtn = document.getElementById('btnDeleteA');
-      console.log('Delete button element found:', !!deleteBtn);
-      if (deleteBtn) {
-        deleteBtn.style.display='';
-        console.log('Delete button shown');
-      } else {
-        console.error('Delete button not found!');
-      }
-      
-      console.log('=== fillForm completed successfully ===');
-      
-    } catch(error) {
-      console.error('Error in fillForm:', error);
-      toast('Errore nel caricamento dell\'appuntamento');
-    }
-  }
+  // fillForm ora è definita globalmente fuori da questa funzione
 
   // --------- save / delete ----------
   function collectForm(){
@@ -4678,6 +4564,124 @@ function deleteA(){
 
   GET('/api/clients').then(()=>{});
   listA();
+}
+
+// ===== GLOBAL FUNCTIONS =====
+// Spostata fuori da viewAppointments per renderla globale
+function fillForm(a){
+  console.log('=== fillForm called ===');
+  console.log('Appointment data:', a);
+  console.log('editId before:', editId);
+  try {
+    editId=a.id;
+    console.log('editId after:', editId);
+    
+    // Aggiorna titolo
+    const titleEl = document.getElementById('a_form_title');
+    console.log('Title element found:', !!titleEl);
+    if (titleEl) {
+      titleEl.textContent='Modifica appuntamento';
+      console.log('Title updated to: Modifica appuntamento');
+    }
+    
+    // Seleziona tipo prima di valorizzare i campi
+    var t = String(a.type||'vendita').toLowerCase();
+    try {
+      if(t.indexOf('mezza')>-1) selectSeg(segHalf);
+      else if(t.indexOf('giorn')>-1) selectSeg(segFull);
+      else if(t.indexOf('formaz')>-1) selectSeg(segForm);
+      else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
+      else if(t.indexOf('sottoprod')>-1) selectSeg(segSotto);
+      else if(t.indexOf('riunione')>-1) selectSeg(segRiunione);
+      else if(t.indexOf('impegni personali')>-1) selectSeg(segImpegni);
+      else selectSeg(segSale);
+    } catch(e) {
+      console.error('Error in selectSeg:', e);
+      selectSeg(segSale); // fallback
+    }
+
+    // Popola campi cliente
+    const clientDisplayEl = document.getElementById('a_client_display');
+    const clientSelectEl = document.getElementById('a_client_select');
+    if (clientDisplayEl) clientDisplayEl.value=a.client||'';
+    if (clientSelectEl) clientSelectEl.value=a.clientId||'';
+    
+    // Gestisci pulsante NNCF basato sul cliente esistente
+    if (a.clientId && sortedClients) {
+      const client = sortedClients.find(c => c.id === a.clientId);
+      if (client && client.status === 'attivo') {
+        nncfBtn.disabled = true;
+        nncfBtn.style.opacity = '0.5';
+        nncfBtn.style.cursor = 'not-allowed';
+      } else {
+        nncfBtn.disabled = false;
+        nncfBtn.style.opacity = '1';
+        nncfBtn.style.cursor = 'pointer';
+      }
+    } else {
+      nncfBtn.disabled = false;
+      nncfBtn.style.opacity = '1';
+      nncfBtn.style.cursor = 'pointer';
+    }
+
+    // Popola data/ora
+    const startEl = document.getElementById('a_start');
+    if (startEl) startEl.value=isoToLocalInput(a.start);
+
+    const s = BPTimezone.parseUTCString(a.start);
+    let e = a.end ? BPTimezone.parseUTCString(a.end) : null;
+    let dur = Number(a.durationMinutes);
+    if(e instanceof Date && !isNaN(e) && e >= s){
+      dur = Math.max(1, Math.round((e - s)/60000));
+    } else if(isFinite(dur) && dur > 0){
+      e = new Date(s.getTime() + dur*60000);
+    } else {
+      dur = defDurByType(a.type||'vendita');
+      e = new Date(s.getTime()+dur*60000);
+    }
+    
+    const durEl = document.getElementById('a_dur');
+    const endEl = document.getElementById('a_end');
+    if (durEl) durEl.value = String(dur);
+    if (endEl) endEl.value = ('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
+
+    // Popola indicatori
+    const vssEl = document.getElementById('a_vss');
+    const vsdEl = document.getElementById('a_vsd');
+    const vsdIEl = document.getElementById('a_vsd_i');
+    const telEl = document.getElementById('a_tel');
+    const appEl = document.getElementById('a_app');
+    const descEl = document.getElementById('a_desc');
+    
+    if (vssEl) vssEl.value=a.vss||'';
+    if (vsdEl) vsdEl.value=a.vsdPersonal || a.vsd || '';
+    if (vsdIEl) vsdIEl.value=a.vsdIndiretto || '';
+    if (telEl) telEl.value=a.telefonate || '';
+    if (appEl) appEl.value=a.appFissati || '';
+    if (descEl) descEl.value=a.notes || '';
+    
+    // Gestisci NNCF
+    const on=!!a.nncf;
+    nncfBtn.setAttribute('data-active', on?'1':'0');
+    nncfBtn.setAttribute('aria-pressed', on?'true':'false');
+    nncfBtn.classList.toggle('active', on);
+    
+    // Mostra pulsante elimina
+    const deleteBtn = document.getElementById('btnDeleteA');
+    console.log('Delete button element found:', !!deleteBtn);
+    if (deleteBtn) {
+      deleteBtn.style.display='';
+      console.log('Delete button shown');
+    } else {
+      console.error('Delete button not found!');
+    }
+    
+    console.log('=== fillForm completed successfully ===');
+    
+  } catch(error) {
+    console.error('Error in fillForm:', error);
+    toast('Errore nel caricamento dell\'appuntamento');
+  }
 }
 
 // ===== CLASSIFICHE =====
