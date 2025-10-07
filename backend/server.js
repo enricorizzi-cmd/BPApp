@@ -1033,8 +1033,12 @@ async function findOrCreateClientByName(name, nncf, user){
 
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
+const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO });
+const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // ---------- Periods (BP) ----------
 app.get("/api/periods", auth, async (req,res)=>{

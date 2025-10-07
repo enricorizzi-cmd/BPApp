@@ -22,6 +22,7 @@ export function topbarHTML(){
         '<button class="ghost" onclick="viewClients();toggleDrawer(false)">Clienti</button>'+
         '<button class="ghost" onclick="viewTeam();toggleDrawer(false)">Squadra</button>'+
         (isAdmin? '<button class="ghost" onclick="viewUsers();toggleDrawer(false)">Utenti</button>' : '')+
+        (isAdmin? '<button class="ghost" onclick="viewSettings();toggleDrawer(false)">Impostazioni</button>' : '')+
         '<button onclick="logout()">Logout</button>'+
       '</div>'+
     '</div>';
@@ -43,6 +44,7 @@ export function topbarHTML(){
   
   if (isAdmin) {
     menuItems.push({ icon: '⚙️', text: 'Utenti', onclick: 'viewUsers()' });
+    menuItems.push({ icon: '🔧', text: 'Impostazioni', onclick: 'viewSettings()' });
   }
 
   // Sidebar per desktop
@@ -90,6 +92,7 @@ export function topbarHTML(){
   '<button class="ghost" onclick="viewClients()">Clienti</button>'+
   '<button class="ghost" onclick="viewTeam()">Squadra</button>'+
   (isAdmin? '<button class="ghost" onclick="viewUsers()">Utenti</button>':'' )+
+  (isAdmin? '<button class="ghost" onclick="viewSettings()">Impostazioni</button>':'' )+
   '<button onclick="logout()">Logout</button>'+
 '</div>'+
 

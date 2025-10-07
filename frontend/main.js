@@ -7185,6 +7185,647 @@ document.dispatchEvent(new Event('report:composed'));
 
   init();
 }
+// ===== IMPOSTAZIONI (Solo Admin) =====
+function viewSettings(){
+  var me=getUser(); if(!me) return viewLogin();
+  if(me.role !== 'admin') return viewHome(); // Solo admin possono accedere
+  document.title = 'Battle Plan – Impostazioni';
+  setActiveSidebarItem('viewSettings');
+
+  appEl.innerHTML = topbarHTML()+
+    '<div class="wrap">'+
+      '<div class="card">'+
+        '<h2>🔧 Impostazioni Sistema</h2>'+
+        '<div class="settings-tabs">'+
+          '<button class="settings-tab active" onclick="showSettingsSection(\'classifications\')">🏆 Classifiche</button>'+
+          '<button class="settings-tab" onclick="showSettingsSection(\'commissions\')">💰 Provvigioni</button>'+
+          '<button class="settings-tab" onclick="showSettingsSection(\'notifications\')">📱 Notifiche</button>'+
+        '</div>'+
+        '<div id="settings-content" class="settings-content">'+
+          '<div id="classifications-section" class="settings-section active">'+
+            '<h3>🏆 Impostazioni Classifiche</h3>'+
+            '<div class="settings-grid">'+
+              '<div class="settings-card">'+
+                '<h4>Pesi KPI</h4>'+
+                '<div id="kpi-weights" class="kpi-weights">'+
+                  '<div class="weight-item">'+
+                    '<label>VSS (Vendite Singole):</label>'+
+                    '<input type="number" id="weight_vss" value="1.0" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>VSD (Vendite Doppie):</label>'+
+                    '<input type="number" id="weight_vsd" value="2.0" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>Telefonate:</label>'+
+                    '<input type="number" id="weight_telefonate" value="0.1" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>Appuntamenti Fissati:</label>'+
+                    '<input type="number" id="weight_appuntamenti" value="0.5" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                '</div>'+
+                '<button class="btn-primary" onclick="saveKpiWeights()">💾 Salva Pesi</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div id="commissions-section" class="settings-section">'+
+            '<h3>💰 Impostazioni Provvigioni</h3>'+
+            '<div class="settings-grid">'+
+              '<div class="settings-card">'+
+                '<h4>Provvigioni Senior</h4>'+
+                '<div class="commission-item">'+
+                  '<label>Percentuale VSS:</label>'+
+                  '<input type="number" id="comm_senior_vss" value="5.0" min="0" max="100" step="0.1">%'+
+                '</div>'+
+                '<div class="commission-item">'+
+                  '<label>Percentuale VSD:</label>'+
+                  '<input type="number" id="comm_senior_vsd" value="8.0" min="0" max="100" step="0.1">%'+
+                '</div>'+
+              '</div>'+
+              '<div class="settings-card">'+
+                '<h4>Provvigioni Junior</h4>'+
+                '<div class="commission-item">'+
+                  '<label>Percentuale VSS:</label>'+
+                  '<input type="number" id="comm_junior_vss" value="3.0" min="0" max="100" step="0.1">%'+
+                '</div>'+
+                '<div class="commission-item">'+
+                  '<label>Percentuale VSD:</label>'+
+                  '<input type="number" id="comm_junior_vsd" value="5.0" min="0" max="100" step="0.1">%'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+            '<button class="btn-primary" onclick="saveCommissions()">💾 Salva Provvigioni</button>'+
+          '</div>'+
+          '<div id="notifications-section" class="settings-section">'+
+            '<h3>📱 Gestione Notifiche</h3>'+
+            '<div class="settings-grid">'+
+              '<div class="settings-card">'+
+                '<h4>📤 Invia Notifica Manuale</h4>'+
+                '<div class="notification-compose">'+
+                  '<label>Messaggio:</label>'+
+                  '<textarea id="manual-notification-text" placeholder="Scrivi il messaggio da inviare..." rows="4"></textarea>'+
+                  '<div class="notification-recipients">'+
+                    '<label>Destinatari:</label>'+
+                    '<div class="recipient-options">'+
+                      '<label><input type="radio" name="recipients" value="all" checked> Tutti gli utenti</label>'+
+                      '<label><input type="radio" name="recipients" value="selected"> Utenti selezionati</label>'+
+                    '</div>'+
+                    '<div id="user-selection" class="user-selection" style="display:none;">'+
+                      '<div id="users-checklist" class="users-checklist"></div>'+
+                    '</div>'+
+                  '</div>'+
+                  '<button class="btn-primary" onclick="sendManualNotification()">📤 Invia Notifica</button>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+            '<div class="settings-grid" style="margin-top: 20px;">'+
+              '<div class="settings-card">'+
+                '<h4>📋 Log Notifiche Manuali</h4>'+
+                '<div id="manual-notifications-log" class="notifications-log"></div>'+
+              '</div>'+
+              '<div class="settings-card">'+
+                '<h4>⚙️ Notifiche Sistema</h4>'+
+                '<div id="system-notifications" class="system-notifications">'+
+                  '<div class="system-notification-item">'+
+                    '<label>Weekend Reminder:</label>'+
+                    '<textarea id="weekend-reminder-text" rows="2">Completa il BP della settimana</textarea>'+
+                    '<button class="btn-secondary" onclick="saveSystemNotification(\'weekend-reminder\')">💾 Salva</button>'+
+                  '</div>'+
+                  '<div class="system-notification-item">'+
+                    '<label>Post-Appuntamento:</label>'+
+                    '<textarea id="post-appointment-text" rows="2">Hai venduto a {client}? Appuntamento del {date}</textarea>'+
+                    '<button class="btn-secondary" onclick="saveSystemNotification(\'post-appointment\')">💾 Salva</button>'+
+                  </div>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  renderTopbar();
+  loadSettingsData();
+  bindSettingsEvents();
+  injectSettingsCSS();
+}
+
+// Inietta CSS per le impostazioni
+function injectSettingsCSS() {
+  if (document.getElementById('settings-css')) return; // Già iniettato
+  
+  const css = `
+    <style id="settings-css">
+      .settings-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+      
+      .settings-tab {
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      
+      .settings-tab:hover {
+        background: var(--hover);
+        color: var(--text);
+      }
+      
+      .settings-tab.active {
+        background: var(--accent);
+        color: white;
+      }
+      
+      .settings-content {
+        position: relative;
+      }
+      
+      .settings-section {
+        display: none;
+      }
+      
+      .settings-section.active {
+        display: block;
+      }
+      
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+      
+      .settings-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      
+      .settings-card h4 {
+        margin: 0 0 15px 0;
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .kpi-weights {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      
+      .weight-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+      }
+      
+      .weight-item label {
+        font-weight: 500;
+        color: var(--text);
+      }
+      
+      .weight-item input {
+        width: 80px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--text);
+      }
+      
+      .commission-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        margin-bottom: 10px;
+      }
+      
+      .commission-item label {
+        font-weight: 500;
+        color: var(--text);
+      }
+      
+      .commission-item input {
+        width: 100px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--text);
+      }
+      
+      .notification-compose {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .notification-compose label {
+        font-weight: 500;
+        color: var(--text);
+      }
+      
+      .notification-compose textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg);
+        color: var(--text);
+        resize: vertical;
+        font-family: inherit;
+      }
+      
+      .notification-recipients {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .recipient-options {
+        display: flex;
+        gap: 20px;
+      }
+      
+      .recipient-options label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+      
+      .user-selection {
+        margin-top: 10px;
+        padding: 15px;
+        background: var(--hover);
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      
+      .users-checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .user-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 4px 0;
+      }
+      
+      .notifications-log {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        background: var(--bg);
+      }
+      
+      .notification-log-item {
+        padding: 10px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+      }
+      
+      .notification-log-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+      
+      .notification-log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      
+      .notification-log-recipients {
+        font-size: 12px;
+        color: var(--muted);
+        background: var(--accent);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+      }
+      
+      .notification-log-text {
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      
+      .system-notifications {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .system-notification-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 15px;
+        background: var(--hover);
+        border-radius: 8px;
+      }
+      
+      .system-notification-item label {
+        font-weight: 500;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .system-notification-item textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--text);
+        resize: vertical;
+        font-family: inherit;
+        font-size: 14px;
+      }
+      
+      .btn-primary, .btn-secondary {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
+      
+      .btn-secondary {
+        background: var(--hover);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+      
+      @media (max-width: 768px) {
+        .settings-tabs {
+          flex-wrap: wrap;
+        }
+        
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .weight-item, .commission-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 5px;
+        }
+        
+        .weight-item input, .commission-item input {
+          width: 100%;
+        }
+      }
+    </style>
+  `;
+  
+  document.head.insertAdjacentHTML('beforeend', css);
+}
+
+// Funzioni per gestire le impostazioni
+function showSettingsSection(section) {
+  // Nascondi tutte le sezioni
+  document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  
+  // Mostra la sezione selezionata
+  document.getElementById(section + '-section').classList.add('active');
+  event.target.classList.add('active');
+}
+
+function loadSettingsData() {
+  // Carica dati esistenti per classifiche
+  GET('/api/settings/classifications').then(function(r) {
+    if (r && r.weights) {
+      Object.keys(r.weights).forEach(kpi => {
+        const el = document.getElementById('weight_' + kpi);
+        if (el) el.value = r.weights[kpi];
+      });
+    }
+  }).catch(() => {
+    // Usa valori di default se non ci sono dati
+  });
+  
+  // Carica dati esistenti per provvigioni
+  GET('/api/settings/commissions').then(function(r) {
+    if (r && r.commissions) {
+      Object.keys(r.commissions).forEach(key => {
+        const el = document.getElementById('comm_' + key);
+        if (el) el.value = r.commissions[key];
+      });
+    }
+  }).catch(() => {
+    // Usa valori di default se non ci sono dati
+  });
+  
+  // Carica log notifiche manuali
+  loadManualNotificationsLog();
+  
+  // Carica notifiche sistema
+  loadSystemNotifications();
+  
+  // Carica lista utenti per selezione
+  loadUsersForSelection();
+}
+
+function bindSettingsEvents() {
+  // Gestione selezione destinatari notifiche
+  document.querySelectorAll('input[name="recipients"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const userSelection = document.getElementById('user-selection');
+      if (this.value === 'selected') {
+        userSelection.style.display = 'block';
+      } else {
+        userSelection.style.display = 'none';
+      }
+    });
+  });
+}
+
+function saveKpiWeights() {
+  const weights = {
+    vss: parseFloat(document.getElementById('weight_vss').value) || 1.0,
+    vsd: parseFloat(document.getElementById('weight_vsd').value) || 2.0,
+    telefonate: parseFloat(document.getElementById('weight_telefonate').value) || 0.1,
+    appuntamenti: parseFloat(document.getElementById('weight_appuntamenti').value) || 0.5
+  };
+  
+  POST('/api/settings/classifications', { weights }).then(function(r) {
+    if (r.ok) {
+      toast('Pesi KPI salvati con successo!');
+    } else {
+      toast('Errore nel salvataggio dei pesi KPI');
+    }
+  }).catch(() => {
+    toast('Errore nel salvataggio dei pesi KPI');
+  });
+}
+
+function saveCommissions() {
+  const commissions = {
+    senior_vss: parseFloat(document.getElementById('comm_senior_vss').value) || 5.0,
+    senior_vsd: parseFloat(document.getElementById('comm_senior_vsd').value) || 8.0,
+    junior_vss: parseFloat(document.getElementById('comm_junior_vss').value) || 3.0,
+    junior_vsd: parseFloat(document.getElementById('comm_junior_vsd').value) || 5.0
+  };
+  
+  POST('/api/settings/commissions', { commissions }).then(function(r) {
+    if (r.ok) {
+      toast('Provvigioni salvate con successo!');
+    } else {
+      toast('Errore nel salvataggio delle provvigioni');
+    }
+  }).catch(() => {
+    toast('Errore nel salvataggio delle provvigioni');
+  });
+}
+
+function sendManualNotification() {
+  const text = document.getElementById('manual-notification-text').value.trim();
+  if (!text) {
+    toast('Inserisci un messaggio');
+    return;
+  }
+  
+  const recipients = document.querySelector('input[name="recipients"]:checked').value;
+  const selectedUsers = recipients === 'selected' ? 
+    Array.from(document.querySelectorAll('#users-checklist input:checked')).map(cb => cb.value) : 
+    'all';
+  
+  const payload = {
+    text: text,
+    recipients: selectedUsers,
+    type: 'manual'
+  };
+  
+  POST('/api/notifications/send', payload).then(function(r) {
+    if (r.ok) {
+      toast('Notifica inviata con successo!');
+      document.getElementById('manual-notification-text').value = '';
+      loadManualNotificationsLog();
+    } else {
+      toast('Errore nell\'invio della notifica');
+    }
+  }).catch(() => {
+    toast('Errore nell\'invio della notifica');
+  });
+}
+
+function loadManualNotificationsLog() {
+  GET('/api/notifications/manual-log').then(function(r) {
+    const log = document.getElementById('manual-notifications-log');
+    if (r && r.notifications) {
+      log.innerHTML = r.notifications.map(n => `
+        <div class="notification-log-item">
+          <div class="notification-log-header">
+            <strong>${new Date(n.sentAt).toLocaleString('it-IT')}</strong>
+            <span class="notification-log-recipients">${n.recipients === 'all' ? 'Tutti' : n.recipients.length + ' utenti'}</span>
+          </div>
+          <div class="notification-log-text">${htmlEscape(n.text)}</div>
+        </div>
+      `).join('');
+    } else {
+      log.innerHTML = '<p>Nessuna notifica manuale inviata</p>';
+    }
+  }).catch(() => {
+    document.getElementById('manual-notifications-log').innerHTML = '<p>Errore nel caricamento del log</p>';
+  });
+}
+
+function loadSystemNotifications() {
+  GET('/api/settings/system-notifications').then(function(r) {
+    if (r && r.notifications) {
+      if (r.notifications['weekend-reminder']) {
+        document.getElementById('weekend-reminder-text').value = r.notifications['weekend-reminder'];
+      }
+      if (r.notifications['post-appointment']) {
+        document.getElementById('post-appointment-text').value = r.notifications['post-appointment'];
+      }
+    }
+  }).catch(() => {
+    // Usa valori di default
+  });
+}
+
+function saveSystemNotification(type) {
+  const text = document.getElementById(type + '-text').value.trim();
+  if (!text) {
+    toast('Inserisci un messaggio');
+    return;
+  }
+  
+  POST('/api/settings/system-notifications', { 
+    type: type, 
+    text: text 
+  }).then(function(r) {
+    if (r.ok) {
+      toast('Notifica sistema salvata con successo!');
+    } else {
+      toast('Errore nel salvataggio della notifica sistema');
+    }
+  }).catch(() => {
+    toast('Errore nel salvataggio della notifica sistema');
+  });
+}
+
+function loadUsersForSelection() {
+  GET('/api/users').then(function(r) {
+    const checklist = document.getElementById('users-checklist');
+    if (r && r.users) {
+      checklist.innerHTML = r.users.map(u => `
+        <label class="user-checkbox">
+          <input type="checkbox" value="${u.id}">
+          ${htmlEscape(u.name || u.email)}
+        </label>
+      `).join('');
+    }
+  }).catch(() => {
+    document.getElementById('users-checklist').innerHTML = '<p>Errore nel caricamento degli utenti</p>';
+  });
+}
+
 // ===== UTENTI (Admin e Profilo) =====
 function viewUsers(){
   var me=getUser(); if(!me) return viewLogin();
