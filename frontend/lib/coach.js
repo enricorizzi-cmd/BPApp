@@ -38,9 +38,9 @@
     const PX = (window.BP && window.BP.Phrases) ? window.BP.Phrases : null;
     let pool = [];
     if(PX){
-      if(intensity === "low") pool = PX.low || PX.standard || [];
-      else if(intensity === "high") pool = PX.high || PX.standard || [];
-      else pool = PX.medium || PX.standard || [];
+      if(intensity === "low") pool = PX.lite || PX.standard || [];
+      else if(intensity === "high") pool = PX.mega || PX.grande || [];
+      else pool = PX.mid || PX.rilevante || [];
     }else{
       // fallback minimale
       pool = [
@@ -76,7 +76,7 @@
       else intensity = "low";
     }
     const txt = getPhrase(intensity, name);
-    show(txt, (opts && opts.durationMs) || 2400);
+    show(txt, (opts && opts.durationMs) || 3000);
   }
 
   Coach.say = say;

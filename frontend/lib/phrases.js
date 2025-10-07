@@ -65,5 +65,11 @@ window.BP_PHRASES = (function(){
     return lib.pick(arr === mega ? "mega" : (arr === mid ? "rilevante" : "standard"), name);
   };
 
+  // Collega a BP.Phrases per compatibilità con coach.js
+  if (typeof window !== 'undefined') {
+    window.BP = window.BP || {};
+    window.BP.Phrases = lib;
+  }
+
   return lib;
 })();
