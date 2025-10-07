@@ -7210,19 +7210,47 @@ function viewSettings(){
                 '<div id="kpi-weights" class="kpi-weights">'+
                   '<div class="weight-item">'+
                     '<label>VSS (Vendite Singole):</label>'+
-                    '<input type="number" id="weight_vss" value="1.0" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_VSS" value="1.0" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
-                    '<label>VSD (Vendite Doppie):</label>'+
-                    '<input type="number" id="weight_vsd" value="2.0" min="0" max="10" step="0.1">'+
+                    '<label>VSD Personale:</label>'+
+                    '<input type="number" id="weight_VSDPersonale" value="2.0" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>VSD Indiretto:</label>'+
+                    '<input type="number" id="weight_VSDIndiretto" value="1.5" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>GI (Gestione Indipendente):</label>'+
+                    '<input type="number" id="weight_GI" value="1.8" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>Telefonate:</label>'+
-                    '<input type="number" id="weight_telefonate" value="0.1" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_Telefonate" value="0.1" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>Appuntamenti Fissati:</label>'+
-                    '<input type="number" id="weight_appuntamenti" value="0.5" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_AppFissati" value="0.5" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>Appuntamenti Fatti:</label>'+
+                    '<input type="number" id="weight_AppFatti" value="0.8" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>Corsi Leadership:</label>'+
+                    '<input type="number" id="weight_CorsiLeadership" value="0.3" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>iProfile:</label>'+
+                    '<input type="number" id="weight_iProfile" value="0.2" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>MBS:</label>'+
+                    '<input type="number" id="weight_MBS" value="0.4" min="0" max="10" step="0.1">'+
+                  '</div>'+
+                  '<div class="weight-item">'+
+                    '<label>NNCF:</label>'+
+                    '<input type="number" id="weight_NNCF" value="0.6" min="0" max="10" step="0.1">'+
                   '</div>'+
                 '</div>'+
                 '<button class="btn-primary" onclick="saveKpiWeights()">💾 Salva Pesi</button>'+
@@ -7635,6 +7663,7 @@ function showSettingsSection(section) {
   document.getElementById(section + '-section').classList.add('active');
   event.target.classList.add('active');
 }
+window.showSettingsSection = showSettingsSection;
 
 function loadSettingsData() {
   // Carica dati esistenti per classifiche
@@ -7687,10 +7716,17 @@ function bindSettingsEvents() {
 
 function saveKpiWeights() {
   const weights = {
-    vss: parseFloat(document.getElementById('weight_vss').value) || 1.0,
-    vsd: parseFloat(document.getElementById('weight_vsd').value) || 2.0,
-    telefonate: parseFloat(document.getElementById('weight_telefonate').value) || 0.1,
-    appuntamenti: parseFloat(document.getElementById('weight_appuntamenti').value) || 0.5
+    VSS: parseFloat(document.getElementById('weight_VSS').value) || 1.0,
+    VSDPersonale: parseFloat(document.getElementById('weight_VSDPersonale').value) || 2.0,
+    VSDIndiretto: parseFloat(document.getElementById('weight_VSDIndiretto').value) || 1.5,
+    GI: parseFloat(document.getElementById('weight_GI').value) || 1.8,
+    Telefonate: parseFloat(document.getElementById('weight_Telefonate').value) || 0.1,
+    AppFissati: parseFloat(document.getElementById('weight_AppFissati').value) || 0.5,
+    AppFatti: parseFloat(document.getElementById('weight_AppFatti').value) || 0.8,
+    CorsiLeadership: parseFloat(document.getElementById('weight_CorsiLeadership').value) || 0.3,
+    iProfile: parseFloat(document.getElementById('weight_iProfile').value) || 0.2,
+    MBS: parseFloat(document.getElementById('weight_MBS').value) || 0.4,
+    NNCF: parseFloat(document.getElementById('weight_NNCF').value) || 0.6
   };
   
   POST('/api/settings/classifications', { weights }).then(function(r) {
