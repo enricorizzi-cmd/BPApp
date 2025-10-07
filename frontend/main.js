@@ -1823,6 +1823,48 @@ function viewCalendar(){
           gap: 12px;
         }
       }
+      
+      /* BP Inviati Grid - 4 columns like dashboard */
+      #bp_sent {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 8px;
+      }
+      
+      #bp_sent .card {
+        background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+      
+      #bp_sent .card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(93,211,255,.1);
+        transform: translateY(-2px);
+      }
+      
+      @media (max-width: 1200px) {
+        #bp_sent {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+      
+      @media (max-width: 900px) {
+        #bp_sent {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (max-width: 768px) {
+        #bp_sent {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+      }
     `;
     var st = document.createElement('style');
     st.id = 'cal_dynamic_css';
@@ -3019,7 +3061,7 @@ function viewPeriods(){
     ['settimanale','mensile','trimestrale','semestrale','annuale'].forEach(function(tp){
       var cur=currentBounds(tp,now), bp=findBP(tp,cur.start,cur.end);
       if(bp){
-        var node=domFromHTML('<div class="card" style="flex:1 1 360px">'+
+        var node=domFromHTML('<div class="card">'+
           '<div><b>'+htmlEscape(formatPeriodLabel(tp,cur.start))+'</b></div>'+
           '<div class="small muted">'+dmy(cur.start)+' → '+dmy(cur.end)+'</div>'+
           '<div class="right" style="margin-top:6px">'+
@@ -3297,7 +3339,7 @@ function viewAppointments(){
       .appt-grid {
         display: grid;
         gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         margin-top: 16px;
       }
       
@@ -3552,6 +3594,19 @@ function viewAppointments(){
           gap: 12px;
         }
         
+        .appt-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 8px;
+        }
+      }
+      
+      @media (max-width: 900px) {
+        .appt-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      
+      @media (max-width: 768px) {
         .appt-grid {
           grid-template-columns: 1fr;
           gap: 8px;
