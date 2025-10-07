@@ -387,6 +387,7 @@
 
   async function scan(){
     try{
+      dbg('=== SCAN STARTED ===');
       const r = await GET('/api/appointments');
       const now = Date.now();
       const fromTs = now - LOOKBACK_DAYS*24*60*60*1000;
@@ -457,10 +458,13 @@
   }
 
   window.scanBanners = scan;
+  dbg('=== POST SALE BANNERS INITIALIZED ===');
   // initial scan
   if (document.readyState === 'loading'){
+    dbg('Document loading, waiting for DOMContentLoaded');
     document.addEventListener('DOMContentLoaded', scan, {once:true});
   } else {
+    dbg('Document ready, starting initial scan');
     scan();
   }
   // re-scan when an appointment is saved or tab becomes visible
