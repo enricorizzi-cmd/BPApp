@@ -4153,28 +4153,7 @@ function viewAppointments(){
   })();
 
   // --------- helpers ----------
-  function htmlEscape(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]);}
-  function fmtEuro(n){var v=Number(n)||0; return v.toLocaleString('it-IT')+'€';}
-  function dmy(d){var x=new Date(d); return ('0'+x.getDate()).slice(-2)+'/'+('0'+(x.getMonth()+1)).slice(-2)+'/'+x.getFullYear();}
-  function hm(d){var x=new Date(d); return ('0'+x.getHours()).slice(-2)+':'+('0'+x.getMinutes()).slice(-2);}
-  function localInputToISO(val){ if(!val) return ''; const d=new Date(val); return isNaN(d)?'':d.toISOString(); }
-  function isoToLocalInput(iso){ 
-    if(!iso) return ''; 
-    const d = BPTimezone.parseUTCString(iso); 
-    if(isNaN(d)) return ''; 
-    return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); 
-  }
-  function defDurByType(t){
-    t = String(t||'').toLowerCase();
-    if(t.indexOf('mezza')>-1) return 240;
-    if(t.indexOf('giorn')>-1) return 570;
-    if(t.indexOf('formaz')>-1) return 570;
-    if(t.indexOf('mbs')>-1) return 570;
-    if(t.indexOf('sottoprod')>-1) return 240;
-    if(t.indexOf('riunione')>-1) return 60;
-    if(t.indexOf('impegni personali')>-1) return 60;
-    return 90; // vendita (default)
-  }
+  // htmlEscape, fmtEuro, dmy, hm, localInputToISO, isoToLocalInput, defDurByType ora sono definite globalmente
 
   // --------- NNCF toggle ----------
   nncfBtn = document.getElementById('a_nncf');
@@ -4613,6 +4592,30 @@ function updateDurFromEnd(){
   if(e < s) e.setDate(e.getDate()+1);
   let mins=Math.round((e-s)/60000);
   document.getElementById('a_dur').value=String(Math.max(1,mins));
+}
+
+// Funzioni di utilità per appuntamenti spostate fuori da viewAppointments
+function htmlEscape(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]);}
+function fmtEuro(n){var v=Number(n)||0; return v.toLocaleString('it-IT')+'€';}
+function dmy(d){var x=new Date(d); return ('0'+x.getDate()).slice(-2)+'/'+('0'+(x.getMonth()+1)).slice(-2)+'/'+x.getFullYear();}
+function hm(d){var x=new Date(d); return ('0'+x.getHours()).slice(-2)+':'+('0'+x.getMinutes()).slice(-2);}
+function localInputToISO(val){ if(!val) return ''; const d=new Date(val); return isNaN(d)?'':d.toISOString(); }
+function isoToLocalInput(iso){ 
+  if(!iso) return ''; 
+  const d = BPTimezone.parseUTCString(iso); 
+  if(isNaN(d)) return ''; 
+  return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16); 
+}
+function defDurByType(t){
+  t = String(t||'').toLowerCase();
+  if(t.indexOf('mezza')>-1) return 240;
+  if(t.indexOf('giorn')>-1) return 570;
+  if(t.indexOf('formaz')>-1) return 570;
+  if(t.indexOf('mbs')>-1) return 570;
+  if(t.indexOf('sottoprod')>-1) return 240;
+  if(t.indexOf('riunione')>-1) return 60;
+  if(t.indexOf('impegni personali')>-1) return 60;
+  return 90; // vendita (default)
 }
 
 // Spostata fuori da viewAppointments per renderla globale
