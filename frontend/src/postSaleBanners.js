@@ -64,17 +64,28 @@
   // --- Trigger a Web Push when a banner would appear (once per appt/kind) ---
   async function triggerPush(kind, appt){
     try{
-      if(!POST || !appt || !appt.id) return;
-      if(pushSent(appt.id, kind)) return;
+      dbg('triggerPush called for', kind, appt.id, appt.client);
+      if(!POST || !appt || !appt.id) {
+        dbg('triggerPush early return - missing POST/appt/id');
+        return;
+      }
+      if(pushSent(appt.id, kind)) {
+        dbg('triggerPush early return - already sent');
+        return;
+      }
       const when = new Date(appt.end || appt.start || Date.now()).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       const title = 'Battle Plan';
       const body  = (kind==='nncf')
         ? `Ehi, ${String(appt.client||'')} è diventato cliente? Appuntamento del ${when}`
         : `Allora, hai venduto a ${String(appt.client||'Cliente')}? Appuntamento del ${when}`;
       const payload = { title, body, tag: (kind==='nncf' ? 'bp-nncf' : 'bp-sale'), url: '/' };
+      dbg('Sending push notification:', payload);
       await POST('/api/push/test', { payload });
       markPush(appt.id, kind);
-    }catch(_){ /* ignore */ }
+      dbg('Push notification sent and marked');
+    }catch(e){ 
+      dbg('Error in triggerPush:', e);
+    }
   }
 
   // --- Coda banner (riuso se già definita) ---
@@ -381,17 +392,31 @@
       const fromTs = now - LOOKBACK_DAYS*24*60*60*1000;
       const list = (r && r.appointments) || [];
       list.sort((a,b)=> (+new Date(b.end||b.start||0))-(+new Date(a.end||a.start||0)));
+      
+      dbg('Scanning', list.length, 'appointments');
+      
       list.forEach(appt=>{
         try{
           const end = +new Date(appt.end || appt.start || 0);
-          if (!end || end>now || end<fromTs) return;
+          if (!end || end>now || end<fromTs) {
+            dbg('Skipping appointment - time filter', appt.id, appt.type, new Date(end).toLocaleString());
+            return;
+          }
           
           // Controlla se è passato almeno 1 minuto dalla fine dell'appuntamento
           const bannerDelayMs = BANNER_DELAY_MINUTES * 60 * 1000;
-          if (end > (now - bannerDelayMs)) return;
+          if (end > (now - bannerDelayMs)) {
+            dbg('Skipping appointment - too recent', appt.id, appt.type, 'ended', new Date(end).toLocaleString());
+            return;
+          }
           
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
-          if (!isVendita) return;
+          if (!isVendita) {
+            dbg('Skipping appointment - not vendita', appt.id, appt.type);
+            return;
+          }
+          
+          dbg('Processing vendita appointment', appt.id, appt.type, 'nncf:', appt.nncf);
           
           if (appt.nncf){
             // Controlla stato persistente del banner NNCF
@@ -404,6 +429,7 @@
               return; 
             }
             
+            dbg('Triggering NNCF push and banner for', appt.id);
             triggerPush(KIND_NNCF, appt);
             markPending(appt.id, KIND_NNCF); 
             dbg('mark pending NNCF', appt && appt.id);
@@ -419,6 +445,7 @@
               return; 
             }
             
+            dbg('Triggering SALE push and banner for', appt.id);
             triggerPush(KIND_SALE, appt);
             markPending(appt.id, KIND_SALE); 
             dbg('mark pending SALE', appt && appt.id);
