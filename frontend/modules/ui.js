@@ -80,8 +80,8 @@ export function topbarHTML(){
         '<button class="hamb" id="hamb" aria-label="Apri menu" aria-controls="drawer" aria-expanded="false"><span></span><span></span><span></span></button>'+
         '<div class="logo">BATTLE PLAN</div>'+
       '</div>'+
+      '<img src="/logo-azienda.jpg" alt="Logo Azienda" class="mobile-company-logo">'+
      '<div class="nav right">'+
-       '<img src="/logo-azienda.jpg" alt="Logo Azienda" class="mobile-company-logo">'+
   '<button class="ghost" onclick="viewHome()">Dashboard</button>'+
   '<button class="ghost" onclick="viewCalendar()">Calendario</button>'+
   '<button class="ghost" onclick="viewPeriods()">BP</button>'+
@@ -135,9 +135,9 @@ function injectCompanyLogoCSS() {
         width: auto;
         height: auto;
         object-fit: contain;
-        margin-left: 10px;
+        margin-left: auto;
         border-radius: 4px;
-        order: -1; /* Metti il logo prima dei bottoni */
+        display: none; /* Nascosto di default */
       }
       
       /* Responsive adjustments */
@@ -147,7 +147,7 @@ function injectCompanyLogoCSS() {
         }
         
         .mobile-company-logo {
-          display: block;
+          display: block !important;
         }
       }
       
