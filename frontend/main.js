@@ -33,10 +33,10 @@ import "./lib/timezone.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
 import { renderTopbar, rerenderTopbarSoon, setActiveSidebarItem, toggleDrawer, topbarHTML } from "./modules/ui.js";
-import { fmtEuro, fmtInt, htmlEscape } from "./modules/utils.js";
+import { fmtInt } from "./modules/utils.js";
 import { DEL, GET, POST } from "./src/api.js";
 import { del, getToken, getUser, load, logout, save, setToken, setUser } from "./src/auth.js";
-import { dmy, endOfMonth, endOfQuarter, endOfSemester, endOfYear, formatPeriodLabel, isoWeekNum, nextMonthBounds, nextQuarterBounds, nextSemesterBounds, nextWeekBounds, nextYearBounds, pad2, startOfMonth, startOfQuarter, startOfSemester, startOfWeek, startOfYear, timeHM, weekBoundsOf, ymd } from "./src/dateUtils.js";
+import { endOfMonth, endOfQuarter, endOfSemester, endOfYear, formatPeriodLabel, isoWeekNum, nextMonthBounds, nextQuarterBounds, nextSemesterBounds, nextWeekBounds, nextYearBounds, pad2, startOfMonth, startOfQuarter, startOfSemester, startOfWeek, startOfYear, timeHM, weekBoundsOf, ymd } from "./src/dateUtils.js";
 import "./src/postSaleBanners.js";
 import { $1, $all } from "./src/query.js";
 window.Chart = Chart;
@@ -7316,12 +7316,38 @@ function viewSettings(){
                 '<div id="system-notifications" class="system-notifications">'+
                   '<div class="system-notification-item">'+
                     '<label>Weekend Reminder:</label>'+
-                    '<textarea id="weekend-reminder-text" rows="2">Completa il BP della settimana</textarea>'+
+                    '<div class="notification-config">'+
+                      '<textarea id="weekend-reminder-text" rows="2">Completa il BP della settimana</textarea>'+
+                      '<div class="notification-timing">'+
+                        '<label>Giorni:</label>'+
+                        '<select id="weekend-reminder-days">'+
+                          '<option value="0,6">Sabato e Domenica</option>'+
+                          '<option value="6">Solo Sabato</option>'+
+                          '<option value="0">Solo Domenica</option>'+
+                        '</select>'+
+                        '<label>Ora:</label>'+
+                        '<input type="time" id="weekend-reminder-time" value="12:00">'+
+                      '</div>'+
+                    '</div>'+
                     '<button class="btn-secondary" onclick="saveSystemNotification(\'weekend-reminder\')">💾 Salva</button>'+
                   '</div>'+
                   '<div class="system-notification-item">'+
                     '<label>Post-Appuntamento:</label>'+
-                    '<textarea id="post-appointment-text" rows="2">Hai venduto a {client}? Appuntamento del {date}</textarea>'+
+                    '<div class="notification-config">'+
+                      '<textarea id="post-appointment-text" rows="2">Hai venduto a {client}? Appuntamento del {date}</textarea>'+
+                      '<div class="notification-timing">'+
+                        '<label>Ritardo:</label>'+
+                        '<select id="post-appointment-delay">'+
+                          '<option value="0">Immediato</option>'+
+                          '<option value="30">30 minuti</option>'+
+                          '<option value="60">1 ora</option>'+
+                          '<option value="120">2 ore</option>'+
+                          '<option value="1440">24 ore</option>'+
+                        '</select>'+
+                        '<label>Attiva:</label>'+
+                        '<input type="checkbox" id="post-appointment-enabled" checked>'+
+                      '</div>'+
+                    '</div>'+
                     '<button class="btn-secondary" onclick="saveSystemNotification(\'post-appointment\')">💾 Salva</button>'+
                   '</div>'+
                 '</div>'+
@@ -7562,6 +7588,42 @@ function injectSettingsCSS() {
         color: var(--text);
         font-size: 14px;
         line-height: 1.4;
+      }
+      
+      .notification-config {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .notification-timing {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      
+      .notification-timing label {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      
+      .notification-timing select,
+      .notification-timing input[type="time"],
+      .notification-timing input[type="checkbox"] {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: var(--text);
+        font-size: 12px;
+      }
+      
+      .notification-timing input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
       }
       
       .system-notifications {
@@ -7809,7 +7871,7 @@ function loadManualNotificationsLog() {
             <strong>${new Date(n.sentAt).toLocaleString('it-IT')}</strong>
             <span class="notification-log-recipients">${n.recipients === 'all' ? 'Tutti' : n.recipients.length + ' utenti'}</span>
           </div>
-          <div class="notification-log-text">${htmlEscape(n.text)}</div>
+          <div class="notification-log-text">${n.text}</div>
         </div>
       `).join('');
     } else {
@@ -7823,11 +7885,28 @@ function loadManualNotificationsLog() {
 function loadSystemNotifications() {
   GET('/api/settings/system-notifications').then(function(r) {
     if (r && r.notifications) {
+      // Weekend Reminder
       if (r.notifications['weekend-reminder']) {
-        document.getElementById('weekend-reminder-text').value = r.notifications['weekend-reminder'];
+        const config = r.notifications['weekend-reminder'];
+        if (typeof config === 'string') {
+          document.getElementById('weekend-reminder-text').value = config;
+        } else if (typeof config === 'object') {
+          document.getElementById('weekend-reminder-text').value = config.text || 'Completa il BP della settimana';
+          if (config.days) document.getElementById('weekend-reminder-days').value = config.days;
+          if (config.time) document.getElementById('weekend-reminder-time').value = config.time;
+        }
       }
+      
+      // Post Appointment
       if (r.notifications['post-appointment']) {
-        document.getElementById('post-appointment-text').value = r.notifications['post-appointment'];
+        const config = r.notifications['post-appointment'];
+        if (typeof config === 'string') {
+          document.getElementById('post-appointment-text').value = config;
+        } else if (typeof config === 'object') {
+          document.getElementById('post-appointment-text').value = config.text || 'Hai venduto a {client}? Appuntamento del {date}';
+          if (config.delay !== undefined) document.getElementById('post-appointment-delay').value = config.delay;
+          if (config.enabled !== undefined) document.getElementById('post-appointment-enabled').checked = config.enabled;
+        }
       }
     }
   }).catch(() => {
@@ -7842,9 +7921,27 @@ function saveSystemNotification(type) {
     return;
   }
   
+  let config = { text: text };
+  
+  // Weekend Reminder - aggiungi configurazioni timing
+  if (type === 'weekend-reminder') {
+    const daysEl = document.getElementById('weekend-reminder-days');
+    const timeEl = document.getElementById('weekend-reminder-time');
+    if (daysEl) config.days = daysEl.value;
+    if (timeEl) config.time = timeEl.value;
+  }
+  
+  // Post Appointment - aggiungi configurazioni timing
+  if (type === 'post-appointment') {
+    const delayEl = document.getElementById('post-appointment-delay');
+    const enabledEl = document.getElementById('post-appointment-enabled');
+    if (delayEl) config.delay = parseInt(delayEl.value);
+    if (enabledEl) config.enabled = enabledEl.checked;
+  }
+  
   POST('/api/settings/system-notifications', { 
     type: type, 
-    text: text 
+    config: config 
   }).then(function(r) {
     if (r.ok) {
       toast('Notifica sistema salvata con successo!');

@@ -143,18 +143,34 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // GET - Carica notifiche sistema
   router.get('/system-notifications', auth, async (req, res) => {
     try {
-      const settings = await readJSON('settings.json');
+      const settings = await getSettingsFromSupabase();
       const notifications = settings.systemNotifications || {
-        'weekend-reminder': 'Completa il BP della settimana',
-        'post-appointment': 'Hai venduto a {client}? Appuntamento del {date}'
+        'weekend-reminder': {
+          text: 'Completa il BP della settimana',
+          days: '0,6',
+          time: '12:00'
+        },
+        'post-appointment': {
+          text: 'Hai venduto a {client}? Appuntamento del {date}',
+          delay: 0,
+          enabled: true
+        }
       };
       
       res.json({ notifications });
     } catch (error) {
       console.error('[Settings] Error loading system notifications:', error);
       res.json({ notifications: {
-        'weekend-reminder': 'Completa il BP della settimana',
-        'post-appointment': 'Hai venduto a {client}? Appuntamento del {date}'
+        'weekend-reminder': {
+          text: 'Completa il BP della settimana',
+          days: '0,6',
+          time: '12:00'
+        },
+        'post-appointment': {
+          text: 'Hai venduto a {client}? Appuntamento del {date}',
+          delay: 0,
+          enabled: true
+        }
       }});
     }
   });
@@ -166,24 +182,19 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         return res.status(403).json({ error: 'Admin only' });
       }
       
-      const { type, text } = req.body;
-      if (!type || !text) {
-        return res.status(400).json({ error: 'Type and text required' });
+      const { type, config } = req.body;
+      if (!type || !config) {
+        return res.status(400).json({ error: 'Type and config required' });
       }
       
-      let settings = {};
-      try {
-        settings = await readJSON('settings.json');
-      } catch (e) {
-        settings = {};
-      }
+      let settings = await getSettingsFromSupabase();
       
       if (!settings.systemNotifications) {
         settings.systemNotifications = {};
       }
       
-      settings.systemNotifications[type] = text;
-      await writeJSON('settings.json', settings);
+      settings.systemNotifications[type] = config;
+      await saveSettingsToSupabase(settings);
       
       res.json({ ok: true });
     } catch (error) {
