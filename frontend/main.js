@@ -2616,8 +2616,7 @@ function viewPeriods(){
         '<div class="bp-mode-indicator" style="margin-top:16px"><span>Modalità:</span><b id="p_mode_lbl">Previsionale</b><button class="bp-button" id="btnImport" style="padding:4px 8px;margin-left:8px">Importa da agenda</button></div>'+
         '<div style="margin-top:12px"><div class="small"><b>Periodo selezionato:</b> <span id="p_label" class="neon">—</span></div><input type="hidden" id="p_start"><input type="hidden" id="p_end"></div>'+
 
-        '<div style="margin-top:16px;opacity:.9"><div class="small"><b>Previsionale</b></div><div class="small"><b>Consuntivo</b></div><div class="small"><b>Avanzamento</b></div></div>'+
-        '<div id="p_rows" style="margin-top:8px"></div>'+
+        '<div id="p_rows" style="margin-top:16px"></div>'+
 
         '<div class="bp-actions">'+
           '<div id="p_delete_zone"></div>'+
