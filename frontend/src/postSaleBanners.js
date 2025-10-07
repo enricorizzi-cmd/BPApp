@@ -412,7 +412,7 @@
           
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
           if (!isVendita) {
-            dbg('Skipping appointment - not vendita', appt.id, appt.type);
+            dbg('Skipping appointment - not vendita', appt.id, 'type:', appt.type, 'lowercase:', String(appt.type||'').toLowerCase());
             return;
           }
           
