@@ -7210,11 +7210,11 @@ function viewSettings(){
                 '<div id="kpi-weights" class="kpi-weights">'+
                   '<div class="weight-item">'+
                     '<label>VSS (Vendite Singole):</label>'+
-                    '<input type="number" id="weight_VSS" value="1.0" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_VSS" value="0.25" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>VSD Personale:</label>'+
-                    '<input type="number" id="weight_VSDPersonale" value="2.0" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_VSDPersonale" value="0.25" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>VSD Indiretto:</label>'+
@@ -7222,7 +7222,7 @@ function viewSettings(){
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>GI (Gestione Indipendente):</label>'+
-                    '<input type="number" id="weight_GI" value="1.8" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_GI" value="0.3" min="0" max="10" step="0.1">'+
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>Telefonate:</label>'+
@@ -7250,7 +7250,7 @@ function viewSettings(){
                   '</div>'+
                   '<div class="weight-item">'+
                     '<label>NNCF:</label>'+
-                    '<input type="number" id="weight_NNCF" value="0.6" min="0" max="10" step="0.1">'+
+                    '<input type="number" id="weight_NNCF" value="0.2" min="0" max="10" step="0.1">'+
                   '</div>'+
                 '</div>'+
                 '<button class="btn-primary" onclick="saveKpiWeights()">💾 Salva Pesi</button>'+
@@ -7725,17 +7725,17 @@ function bindSettingsEvents() {
 
 function saveKpiWeights() {
   const weights = {
-    VSS: parseFloat(document.getElementById('weight_VSS').value) || 1.0,
-    VSDPersonale: parseFloat(document.getElementById('weight_VSDPersonale').value) || 2.0,
+    VSS: parseFloat(document.getElementById('weight_VSS').value) || 0.25,
+    VSDPersonale: parseFloat(document.getElementById('weight_VSDPersonale').value) || 0.25,
     VSDIndiretto: parseFloat(document.getElementById('weight_VSDIndiretto').value) || 1.5,
-    GI: parseFloat(document.getElementById('weight_GI').value) || 1.8,
+    GI: parseFloat(document.getElementById('weight_GI').value) || 0.3,
     Telefonate: parseFloat(document.getElementById('weight_Telefonate').value) || 0.1,
     AppFissati: parseFloat(document.getElementById('weight_AppFissati').value) || 0.5,
     AppFatti: parseFloat(document.getElementById('weight_AppFatti').value) || 0.8,
     CorsiLeadership: parseFloat(document.getElementById('weight_CorsiLeadership').value) || 0.3,
     iProfile: parseFloat(document.getElementById('weight_iProfile').value) || 0.2,
     MBS: parseFloat(document.getElementById('weight_MBS').value) || 0.4,
-    NNCF: parseFloat(document.getElementById('weight_NNCF').value) || 0.6
+    NNCF: parseFloat(document.getElementById('weight_NNCF').value) || 0.2
   };
   
   POST('/api/settings/classifications', { weights }).then(function(r) {
