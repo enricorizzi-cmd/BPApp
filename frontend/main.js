@@ -7317,7 +7317,7 @@ function viewSettings(){
                   '<div class="system-notification-item">'+
                     '<label>Weekend Reminder:</label>'+
                     '<div class="notification-config">'+
-                      '<textarea id="weekend-reminder-text" rows="2">Completa il BP della settimana</textarea>'+
+                      '<textarea id="weekend-reminder-text" rows="2">Ricorda di completare Previsionale e Consuntivo della settimana.</textarea>'+
                       '<div class="notification-timing">'+
                         '<label>Giorni:</label>'+
                         '<select id="weekend-reminder-days">'+
@@ -7334,7 +7334,7 @@ function viewSettings(){
                   '<div class="system-notification-item">'+
                     '<label>Post-Appuntamento:</label>'+
                     '<div class="notification-config">'+
-                      '<textarea id="post-appointment-text" rows="2">Hai venduto a {client}? Appuntamento del {date}</textarea>'+
+                      '<textarea id="post-appointment-text" rows="2">Allora, hai venduto a {client}? Appuntamento del {date}</textarea>'+
                       '<div class="notification-timing">'+
                         '<label>Ritardo:</label>'+
                         '<select id="post-appointment-delay">'+
@@ -7349,6 +7349,25 @@ function viewSettings(){
                       '</div>'+
                     '</div>'+
                     '<button class="btn-secondary" onclick="saveSystemNotification(\'post-appointment\')">💾 Salva</button>'+
+                  '</div>'+
+                  '<div class="system-notification-item">'+
+                    '<label>Post-Appuntamento NNCF:</label>'+
+                    '<div class="notification-config">'+
+                      '<textarea id="post-nncf-text" rows="2">Ehi, {client} è diventato cliente? Appuntamento del {date}</textarea>'+
+                      '<div class="notification-timing">'+
+                        '<label>Ritardo:</label>'+
+                        '<select id="post-nncf-delay">'+
+                          '<option value="0">Immediato</option>'+
+                          '<option value="30">30 minuti</option>'+
+                          '<option value="60">1 ora</option>'+
+                          '<option value="120">2 ore</option>'+
+                          '<option value="1440">24 ore</option>'+
+                        '</select>'+
+                        '<label>Attiva:</label>'+
+                        '<input type="checkbox" id="post-nncf-enabled" checked>'+
+                      '</div>'+
+                    '</div>'+
+                    '<button class="btn-secondary" onclick="saveSystemNotification(\'post-nncf\')">💾 Salva</button>'+
                   '</div>'+
                 '</div>'+
               '</div>'+
@@ -7903,9 +7922,21 @@ function loadSystemNotifications() {
         if (typeof config === 'string') {
           document.getElementById('post-appointment-text').value = config;
         } else if (typeof config === 'object') {
-          document.getElementById('post-appointment-text').value = config.text || 'Hai venduto a {client}? Appuntamento del {date}';
+          document.getElementById('post-appointment-text').value = config.text || 'Allora, hai venduto a {client}? Appuntamento del {date}';
           if (config.delay !== undefined) document.getElementById('post-appointment-delay').value = config.delay;
           if (config.enabled !== undefined) document.getElementById('post-appointment-enabled').checked = config.enabled;
+        }
+      }
+      
+      // Post NNCF
+      if (r.notifications['post-nncf']) {
+        const config = r.notifications['post-nncf'];
+        if (typeof config === 'string') {
+          document.getElementById('post-nncf-text').value = config;
+        } else if (typeof config === 'object') {
+          document.getElementById('post-nncf-text').value = config.text || 'Ehi, {client} è diventato cliente? Appuntamento del {date}';
+          if (config.delay !== undefined) document.getElementById('post-nncf-delay').value = config.delay;
+          if (config.enabled !== undefined) document.getElementById('post-nncf-enabled').checked = config.enabled;
         }
       }
     }
@@ -7935,6 +7966,14 @@ function saveSystemNotification(type) {
   if (type === 'post-appointment') {
     const delayEl = document.getElementById('post-appointment-delay');
     const enabledEl = document.getElementById('post-appointment-enabled');
+    if (delayEl) config.delay = parseInt(delayEl.value);
+    if (enabledEl) config.enabled = enabledEl.checked;
+  }
+  
+  // Post NNCF - aggiungi configurazioni timing
+  if (type === 'post-nncf') {
+    const delayEl = document.getElementById('post-nncf-delay');
+    const enabledEl = document.getElementById('post-nncf-enabled');
     if (delayEl) config.delay = parseInt(delayEl.value);
     if (enabledEl) config.enabled = enabledEl.checked;
   }

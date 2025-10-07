@@ -69,8 +69,8 @@
       const when = new Date(appt.end || appt.start || Date.now()).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       const title = 'Battle Plan';
       const body  = (kind==='nncf')
-        ? `È diventato cliente? ${String(appt.client||'')}. Appuntamento del ${when}`
-        : `Hai venduto a ${String(appt.client||'Cliente')}? Appuntamento del ${when}`;
+        ? `Ehi, ${String(appt.client||'')} è diventato cliente? Appuntamento del ${when}`
+        : `Allora, hai venduto a ${String(appt.client||'Cliente')}? Appuntamento del ${when}`;
       const payload = { title, body, tag: (kind==='nncf' ? 'bp-nncf' : 'bp-sale'), url: '/' };
       await POST('/api/push/test', { payload });
       markPush(appt.id, kind);
@@ -296,8 +296,7 @@
       const dateStr = new Date(appt.end || appt.start || Date.now())
         .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
-        `<div class="msg"><b>Allora, hai venduto a ${htmlEscape(appt.client||'Cliente')}?</b>
-           <div class="small muted">Appuntamento del ${htmlEscape(dateStr)}</div></div>
+        `<div class="msg"><b>Allora, hai venduto a ${htmlEscape(appt.client||'Cliente')}? Appuntamento del ${htmlEscape(dateStr)}</b></div>
          <div class="row">
            <button class="ghost" data-act="later">Posticipa</button>
            <button class="ghost" data-act="no">No</button>
@@ -337,8 +336,7 @@
       const dateStr = new Date(appt.end || appt.start || Date.now())
         .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
-        `<div class="msg"><b>È diventato cliente?</b> ${htmlEscape(appt.client||'')}
-           <div class="small muted">Appuntamento del ${htmlEscape(dateStr)}</div></div>
+        `<div class="msg"><b>Ehi, ${htmlEscape(appt.client||'')} è diventato cliente? Appuntamento del ${htmlEscape(dateStr)}</b></div>
          <div class="row">
            <button class="ghost" data-act="later">Posticipa</button>
            <button class="ghost" data-act="no">No</button>

@@ -146,12 +146,17 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       const settings = await getSettingsFromSupabase();
       const notifications = settings.systemNotifications || {
         'weekend-reminder': {
-          text: 'Completa il BP della settimana',
+          text: 'Ricorda di completare Previsionale e Consuntivo della settimana.',
           days: '0,6',
           time: '12:00'
         },
         'post-appointment': {
-          text: 'Hai venduto a {client}? Appuntamento del {date}',
+          text: 'Allora, hai venduto a {client}? Appuntamento del {date}',
+          delay: 0,
+          enabled: true
+        },
+        'post-nncf': {
+          text: 'Ehi, {client} è diventato cliente? Appuntamento del {date}',
           delay: 0,
           enabled: true
         }
@@ -162,12 +167,17 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       console.error('[Settings] Error loading system notifications:', error);
       res.json({ notifications: {
         'weekend-reminder': {
-          text: 'Completa il BP della settimana',
+          text: 'Ricorda di completare Previsionale e Consuntivo della settimana.',
           days: '0,6',
           time: '12:00'
         },
         'post-appointment': {
-          text: 'Hai venduto a {client}? Appuntamento del {date}',
+          text: 'Allora, hai venduto a {client}? Appuntamento del {date}',
+          delay: 0,
+          enabled: true
+        },
+        'post-nncf': {
+          text: 'Ehi, {client} è diventato cliente? Appuntamento del {date}',
           delay: 0,
           enabled: true
         }

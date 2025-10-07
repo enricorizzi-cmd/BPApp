@@ -1934,8 +1934,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     }));
   }
   function _reminderBody(prevOk, consOk){
-    if(!prevOk && !consOk) return "Completa Previsionale e Consuntivo della settimana.";
-    return !prevOk ? "Completa il BP Previsionale della settimana." : "Completa il BP Consuntivo della settimana.";
+    if(!prevOk && !consOk) return "Ricorda di completare Previsionale e Consuntivo della settimana.";
+    return !prevOk ? "Ricorda di completare Previsionale e Consuntivo della settimana." : "Ricorda di completare Previsionale e Consuntivo della settimana.";
   }
 
   // Retrieve saved push subscriptions for a user from JSON storage (normalizes legacy and new shapes)
