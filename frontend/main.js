@@ -3058,7 +3058,6 @@ function viewPeriods(){
           };
           showUndo('BP eliminato', function(){
             return POST('/api/periods', restorePayload).then(function(){
-              try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
               listPeriods();
             });
           }, 5000);
@@ -3087,7 +3086,6 @@ function viewPeriods(){
           var restore = buildUpdatePayloadFromCurrent(consBackup);
           showUndo('Consuntivo eliminato', function(){
             return POST('/api/periods', restore).then(function(){
-              try{ document.dispatchEvent(new Event('bp:saved')); }catch(_){ }
               if(CURRENT_P){ CURRENT_P.indicatorsCons = consBackup; }
               listPeriods(); renderDeleteZone();
             });
@@ -4279,6 +4277,10 @@ function viewAppointments(){
  toast('Appuntamento salvato');
       if (typeof haptics!=='undefined') haptics.try('success');
       document.dispatchEvent(new Event('appt:saved'));
+      // Coach per salvataggio appuntamento
+      if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+        window.BP.Coach.say(wasNew ? 'appointment_created' : 'appointment_updated', { intensity: wasNew ? 'medium' : 'low' });
+      }
       if (wasNew){ try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ } }
       if (exportAfter && window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
         const ok = BP.ICS.downloadIcsForAppointment(payload);
@@ -4912,6 +4914,10 @@ function viewClients(){
       document.getElementById('cl_name').value='';
       listClients();
       celebrate(); window.addXP(5);
+      // Coach per creazione cliente
+      if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+        window.BP.Coach.say('client_created', { intensity: 'medium' });
+      }
     }).catch(function(err){ logger.error(err); toast('Errore creazione cliente'); });
   }
 
@@ -6602,6 +6608,10 @@ appEl.innerHTML = topbarHTML() + `
       };
       Promise.resolve(POST('/api/gi', payload)).then(()=>{
         close(); haptic('light'); load();
+        // Coach per salvataggio scheda GI
+        if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+          window.BP.Coach.say('gi_saved', { intensity: 'medium' });
+        }
       }).catch(e=>{ logger.error(e); toast('Errore salvataggio'); });
     };
 

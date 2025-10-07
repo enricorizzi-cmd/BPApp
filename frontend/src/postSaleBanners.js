@@ -323,6 +323,10 @@
         clearPending(appt.id, KIND_SALE);
         close();
         await markBannerAnswered(appt.id, KIND_SALE, 'yes');
+        // Coach per risposta positiva al banner vendita
+        if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+          window.BP.Coach.say('client_converted', { intensity: 'high' });
+        }
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
@@ -366,6 +370,10 @@
         try{
           await updateClientStatusByName(appt.client, 'attivo');
         }catch(_){}
+        // Coach per conversione cliente da NNCF
+        if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+          window.BP.Coach.say('client_converted', { intensity: 'high' });
+        }
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
