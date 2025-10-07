@@ -5,7 +5,6 @@ export function topbarHTML(){
   const u = getUser();
   if(!u) return '';
   const isAdmin = (u.role==='admin');
-  const xpBadge = '<span class="badge">Lvl '+(window.level?window.level():'' )+' · XP '+(window.getXP?window.getXP():'' )+'</span>';
 
   const drawer =
     '<div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Menu">'+
@@ -56,7 +55,9 @@ export function topbarHTML(){
           <span class="sidebar-toggle-icon">◀</span>
         </button>
       </div>
-      <div class="sidebar-xp">${xpBadge}</div>
+      <div class="sidebar-logo-container">
+        <img src="/logo-azienda.jpg" alt="Logo Azienda" class="company-logo">
+      </div>
       <nav class="sidebar-nav">
         ${menuItems.map(item => `
           <button class="sidebar-item" onclick="${item.onclick}" title="${item.text}">
@@ -78,8 +79,9 @@ export function topbarHTML(){
       '<div class="brand">'+
         '<button class="hamb" id="hamb" aria-label="Apri menu" aria-controls="drawer" aria-expanded="false"><span></span><span></span><span></span></button>'+
         '<div class="logo">BATTLE PLAN</div>'+
+        '<img src="/logo-azienda.jpg" alt="Logo Azienda" class="mobile-company-logo">'+
       '</div>'+
-     '<div class="nav right">'+ xpBadge +
+     '<div class="nav right">'+
   '<button class="ghost" onclick="viewHome()">Dashboard</button>'+
   '<button class="ghost" onclick="viewCalendar()">Calendario</button>'+
   '<button class="ghost" onclick="viewPeriods()">BP</button>'+
@@ -101,8 +103,71 @@ export function topbarHTML(){
   return sidebar + topbar + drawer;
 }
 
+// Inietta CSS per il logo aziendale
+function injectCompanyLogoCSS() {
+  if (document.getElementById('company-logo-css')) return; // Già iniettato
+  
+  const css = `
+    <style id="company-logo-css">
+      /* Logo aziendale nella sidebar desktop */
+      .sidebar-logo-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px 10px;
+        margin-bottom: 10px;
+      }
+      
+      .company-logo {
+        max-width: 120px;
+        max-height: 60px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Logo aziendale nella topbar mobile */
+      .mobile-company-logo {
+        max-width: 40px;
+        max-height: 30px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        margin-left: 10px;
+        border-radius: 4px;
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .sidebar-logo-container {
+          display: none; /* Nascondi nella sidebar mobile */
+        }
+        
+        .mobile-company-logo {
+          display: block;
+        }
+      }
+      
+      @media (min-width: 769px) {
+        .mobile-company-logo {
+          display: none; /* Nascondi nella topbar desktop */
+        }
+        
+        .sidebar-logo-container {
+          display: flex;
+        }
+      }
+    </style>
+  `;
+  
+  document.head.insertAdjacentHTML('beforeend', css);
+}
+
 export function renderTopbar(){
   if(!getUser()) return;
+  injectCompanyLogoCSS();
 
   // CSS: sidebar per desktop + contrasto topbar mobile
   if(!document.getElementById('bp_sidebar_css')){
