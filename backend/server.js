@@ -139,6 +139,13 @@ if (process.env.NODE_ENV === 'production' && JWT_SECRET === DEFAULT_JWT_SECRET) 
 let webpush = null;
 try { webpush = require("web-push"); } catch(_){ /* opzionale */ }
 
+// Log configurazione VAPID per debug
+if (webpush) {
+  console.log('[BP] Web-push module loaded successfully');
+} else {
+  console.warn('[BP] Web-push module not available - push notifications disabled');
+}
+
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 16);
 
 // ---------- Config ----------
@@ -153,6 +160,16 @@ const VAPID_SUBJECT     = process.env.VAPID_SUBJECT || "mailto:admin@example.com
 
 if (webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+  console.log('[BP] VAPID keys configured successfully');
+  console.log('[BP] VAPID Subject:', VAPID_SUBJECT);
+  console.log('[BP] VAPID Public Key:', VAPID_PUBLIC_KEY.substring(0, 20) + '...');
+} else {
+  console.warn('[BP] VAPID keys not configured - push notifications disabled');
+  console.warn('[BP] Missing:', {
+    webpush: !!webpush,
+    VAPID_PUBLIC_KEY: !!VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY: !!VAPID_PRIVATE_KEY
+  });
 }
 
 // ---------- App ----------
@@ -1641,21 +1658,81 @@ app.delete("/api/gi", auth, async (req,res)=>{
 // ---------- Web Push: publicKey + subscribe (compat + versione nuova) ----------
 // push publicKey/subscribe gestite nel router /api/push/*
 
+// endpoint di diagnostica push notifications
+app.get("/api/push/status", auth, async (req,res)=>{
+  try{
+    const status = {
+      configured: !!(webpush && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY),
+      webpush: !!webpush,
+      vapid_public: !!VAPID_PUBLIC_KEY,
+      vapid_private: !!VAPID_PRIVATE_KEY,
+      vapid_subject: VAPID_SUBJECT,
+      user_subscriptions: 0
+    };
+    
+    // count user subscriptions
+    try{
+      const db = await readJSON("push_subscriptions.json");
+      const userSubs = (db.subs || db.subscriptions || []).filter(s => String(s.userId||'') === String(req.user.id));
+      status.user_subscriptions = userSubs.length;
+    }catch(_){}
+    
+    res.json(status);
+  }catch(e){ 
+    console.error('[BP] Push status error:', e);
+    res.status(500).json({ error:"fail" }); 
+  }
+});
+
 // test push notification to current user
 app.post("/api/push/test", auth, async (req,res)=>{
   try{
-    if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return res.status(500).json({ error:"not_configured" });
+    console.log('[BP] Push test requested by user:', req.user.id);
+    
+    if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+      console.error('[BP] Push test failed - not configured');
+      return res.status(500).json({ error:"not_configured" });
+    }
+    
     // read subscriptions from KV storage (supports SQLite/PG adapters)
     let subs = [];
     try{
       const db = await readJSON("push_subscriptions.json");
       const list = (db.subs || db.subscriptions || []).filter(s => String(s.userId||'') === String(req.user.id));
       subs = list.map(s => s.subscription || { endpoint: s.endpoint, keys: (s.keys||{}) }).filter(x => x && x.endpoint);
-    }catch(_){ subs = []; }
+      console.log('[BP] Found subscriptions for user:', subs.length);
+    }catch(e){ 
+      console.error('[BP] Error reading subscriptions:', e);
+      subs = []; 
+    }
+    
     const payload = (req.body && req.body.payload) || { title:"BP Test", body:"Notifica di prova", url:"/" };
-    await Promise.all(subs.map(s=> webpush.sendNotification(s, JSON.stringify(payload)).catch(()=>{})));
-    res.json({ ok:true, sent: subs.length });
-  }catch(e){ res.status(500).json({ error:"fail" }); }
+    console.log('[BP] Sending test notification:', payload);
+    
+    const results = await Promise.all(subs.map(async (s, index) => {
+      try {
+        const result = await webpush.sendNotification(s, JSON.stringify(payload));
+        console.log(`[BP] Notification ${index + 1} sent successfully`);
+        return { success: true, index };
+      } catch (error) {
+        console.error(`[BP] Notification ${index + 1} failed:`, error.message);
+        return { success: false, index, error: error.message };
+      }
+    }));
+    
+    const successful = results.filter(r => r.success).length;
+    console.log('[BP] Test completed:', successful, 'successful,', results.length - successful, 'failed');
+    
+    res.json({ 
+      ok: true, 
+      sent: successful, 
+      total: subs.length,
+      results: results
+    });
+  }catch(e){ 
+    console.error('[BP] Push test error:', e);
+    res.status(500).json({ error:"fail" }); 
+  }
 });
 
 // ---------- Audit client error (opzionale) ----------

@@ -41,29 +41,66 @@
 
   async function subscribe(){
     try{
+      console.log('[BP] Starting subscription process...');
       const reg = await navigator.serviceWorker.ready;
+      console.log('[BP] Service Worker ready');
+      
       let sub = await reg.pushManager.getSubscription();
+      console.log('[BP] Existing subscription:', !!sub);
+      
       if(!sub){
+        console.log('[BP] No existing subscription, creating new one...');
         const r = await fetch('/api/push/publicKey');
         const j = await r.json();
         const key = j.publicKey || j.key || '';
-        if(!key) return;
+        console.log('[BP] Public key received:', !!key);
+        
+        if(!key) {
+          console.error('[BP] No public key received from server');
+          return;
+        }
+        
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(key)
         });
+        console.log('[BP] New subscription created');
       }
+      
+      console.log('[BP] Sending subscription to server...');
       await sendSubscription(sub.toJSON());
-    }catch(e){ logger.warn('[BP] push subscribe fail', e); }
+      console.log('[BP] Subscription sent successfully');
+    }catch(e){ 
+      console.error('[BP] Push subscribe failed:', e);
+      logger.warn('[BP] push subscribe fail', e); 
+    }
   }
 
   async function init(){
-    if(Notification.permission === 'granted') return subscribe();
+    console.log('[BP] Push client initializing...');
+    console.log('[BP] Notification permission:', Notification.permission);
+    
+    if(Notification.permission === 'granted') {
+      console.log('[BP] Permission already granted, subscribing...');
+      return subscribe();
+    }
+    
     if(Notification.permission === 'default'){
+      console.log('[BP] Requesting notification permission...');
       try{
         const p = await Notification.requestPermission();
-        if(p === 'granted') return subscribe();
-      }catch(_){ }
+        console.log('[BP] Permission result:', p);
+        if(p === 'granted') {
+          console.log('[BP] Permission granted, subscribing...');
+          return subscribe();
+        } else {
+          console.warn('[BP] Notification permission denied');
+        }
+      }catch(e){ 
+        console.error('[BP] Error requesting permission:', e);
+      }
+    } else {
+      console.warn('[BP] Notification permission denied by user');
     }
   }
 
