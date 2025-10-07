@@ -1392,17 +1392,27 @@ function cardAppt(x){
                                    : '<div class="muted">Nessun prossimo appuntamento</div>';
 
       // click → apri in modifica
-      host.querySelectorAll('.lastApp[data-aid]').forEach(function(card){
+      console.log('Dashboard: Setting up .lastApp click listeners for', host.querySelectorAll('.lastApp[data-aid]').length, 'cards');
+      host.querySelectorAll('.lastApp[data-aid]').forEach(function(card, index){
+        const id = card.getAttribute('data-aid');
+        console.log(`Dashboard Card ${index}: ID=${id}`);
         card.addEventListener('click', function(){
-          const id = card.getAttribute('data-aid');
+          console.log('Dashboard card clicked! ID:', id);
+          console.log('Dashboard list length:', list.length);
+          console.log('Dashboard list data:', list.map(a => ({id: a.id, client: a.client})));
           const a = list.find(z => String(z.id) === String(id));
+          console.log('Dashboard found appointment:', a);
           if(a) {
-          viewAppointments();
+            console.log('Dashboard: Switching to appointments view and calling fillForm');
+            viewAppointments();
             // Piccolo delay per assicurarsi che la sezione sia caricata
             setTimeout(() => {
+              console.log('Dashboard: Calling fillForm after delay');
               fillForm(a);
               window.scrollTo({top: 0, behavior: 'smooth'});
             }, 100);
+          } else {
+            console.error('Dashboard: Appointment not found! ID:', id, 'Available IDs:', list.map(a => a.id));
           }
         });
       });
@@ -1442,17 +1452,27 @@ function cardAppt(x){
                                    : '<div class="muted">Nessun appuntamento</div>';
 
       // click → apri in modifica
-      host.querySelectorAll('.lastApp[data-aid]').forEach(function(card){
+      console.log('Dashboard: Setting up .lastApp click listeners for', host.querySelectorAll('.lastApp[data-aid]').length, 'cards');
+      host.querySelectorAll('.lastApp[data-aid]').forEach(function(card, index){
+        const id = card.getAttribute('data-aid');
+        console.log(`Dashboard Card ${index}: ID=${id}`);
         card.addEventListener('click', function(){
-          const id = card.getAttribute('data-aid');
+          console.log('Dashboard card clicked! ID:', id);
+          console.log('Dashboard list length:', list.length);
+          console.log('Dashboard list data:', list.map(a => ({id: a.id, client: a.client})));
           const a = list.find(z => String(z.id) === String(id));
+          console.log('Dashboard found appointment:', a);
           if(a) {
-          viewAppointments();
+            console.log('Dashboard: Switching to appointments view and calling fillForm');
+            viewAppointments();
             // Piccolo delay per assicurarsi che la sezione sia caricata
             setTimeout(() => {
+              console.log('Dashboard: Calling fillForm after delay');
               fillForm(a);
               window.scrollTo({top: 0, behavior: 'smooth'});
             }, 100);
+          } else {
+            console.error('Dashboard: Appointment not found! ID:', id, 'Available IDs:', list.map(a => a.id));
           }
         });
       });
@@ -2213,18 +2233,28 @@ function viewCalendar(){
 
           box.style.display='block'; box.innerHTML = h;
 
-          box.querySelectorAll('.cal-app').forEach(function(c){
+          console.log('Calendar: Setting up .cal-app click listeners for', box.querySelectorAll('.cal-app').length, 'cards');
+          box.querySelectorAll('.cal-app').forEach(function(c, index){
+            const id = c.getAttribute('data-aid');
+            console.log(`Calendar Card ${index}: ID=${id}`);
             c.addEventListener('click', function(ev){
               ev.stopPropagation();
-              const id = c.getAttribute('data-aid');
+              console.log('Calendar card clicked! ID:', id);
+              console.log('Calendar items length:', items.length);
+              console.log('Calendar items data:', items.map(a => ({id: a.id, client: a.client})));
               const a = items.find(z => String(z.id) === String(id));
+              console.log('Calendar found appointment:', a);
               if(a) {
-              viewAppointments();
+                console.log('Calendar: Switching to appointments view and calling fillForm');
+                viewAppointments();
                 // Piccolo delay per assicurarsi che la sezione sia caricata
                 setTimeout(() => {
+                  console.log('Calendar: Calling fillForm after delay');
                   fillForm(a);
                   window.scrollTo({top: 0, behavior: 'smooth'});
                 }, 100);
+              } else {
+                console.error('Calendar: Appointment not found! ID:', id, 'Available IDs:', items.map(a => a.id));
               }
             });
           });
@@ -4264,12 +4294,20 @@ function viewAppointments(){
     document.getElementById('btnDeleteA').style.display='none';
   }
   function fillForm(a){
+    console.log('=== fillForm called ===');
+    console.log('Appointment data:', a);
+    console.log('editId before:', editId);
     try {
       editId=a.id;
+      console.log('editId after:', editId);
       
       // Aggiorna titolo
       const titleEl = document.getElementById('a_form_title');
-      if (titleEl) titleEl.textContent='Modifica appuntamento';
+      console.log('Title element found:', !!titleEl);
+      if (titleEl) {
+        titleEl.textContent='Modifica appuntamento';
+        console.log('Title updated to: Modifica appuntamento');
+      }
       
       // Seleziona tipo prima di valorizzare i campi
       var t = String(a.type||'vendita').toLowerCase();
@@ -4355,7 +4393,15 @@ function viewAppointments(){
       
       // Mostra pulsante elimina
       const deleteBtn = document.getElementById('btnDeleteA');
-      if (deleteBtn) deleteBtn.style.display='';
+      console.log('Delete button element found:', !!deleteBtn);
+      if (deleteBtn) {
+        deleteBtn.style.display='';
+        console.log('Delete button shown');
+      } else {
+        console.error('Delete button not found!');
+      }
+      
+      console.log('=== fillForm completed successfully ===');
       
     } catch(error) {
       console.error('Error in fillForm:', error);
@@ -4587,11 +4633,23 @@ function deleteA(){
         });
       });
       // Click on the whole card opens it in edit
-      host.querySelectorAll('.card[data-aid]').forEach(card=>{
+      console.log('Setting up card click listeners for', host.querySelectorAll('.card[data-aid]').length, 'cards');
+      host.querySelectorAll('.card[data-aid]').forEach((card, index)=>{
+        const id=card.getAttribute('data-aid');
+        console.log(`Card ${index}: ID=${id}, HTML=`, card.outerHTML.substring(0, 100));
         card.addEventListener('click', ()=>{
-          const id=card.getAttribute('data-aid');
+          console.log('Card clicked! ID:', id);
+          console.log('allShown length:', allShown.length);
+          console.log('allShown data:', allShown.map(a => ({id: a.id, client: a.client})));
           const a=allShown.find(z=> String(z.id)===String(id));
-          if(a){ fillForm(a); window.scrollTo({top:0, behavior:'smooth'}); }
+          console.log('Found appointment:', a);
+          if(a){ 
+            console.log('Calling fillForm with appointment:', a);
+            fillForm(a); 
+            window.scrollTo({top:0, behavior:'smooth'}); 
+          } else {
+            console.error('Appointment not found! ID:', id, 'Available IDs:', allShown.map(a => a.id));
+          }
         });
       });
     });
