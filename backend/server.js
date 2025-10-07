@@ -112,7 +112,7 @@ if (useSupabaseStorage) {
 } else {
   storage = require("./lib/storage");
 }
-const { init: initStore, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord } = storage;
+const { init: initStore, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, supabase } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinutes, timeRangesOverlap } = require('./lib/timezone');

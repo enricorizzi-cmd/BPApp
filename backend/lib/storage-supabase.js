@@ -435,5 +435,6 @@ module.exports = {
   writeJSON,
   insertRecord,
   updateRecord,
-  deleteRecord
+  deleteRecord,
+  get supabase() { return supabase; }
 };
