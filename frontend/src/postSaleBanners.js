@@ -475,5 +475,11 @@
   }
   if (typeof global !== 'undefined') {
     global.initPostSaleBanners = initPostSaleBanners;
+    // Auto-initialize when module loads
+    try {
+      initPostSaleBanners();
+    } catch (e) {
+      console.error('Error initializing post sale banners:', e);
+    }
   }
 })(typeof window !== 'undefined' ? window : this);
