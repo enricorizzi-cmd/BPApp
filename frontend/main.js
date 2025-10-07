@@ -2686,8 +2686,8 @@ function viewPeriods(){
       }
       
       .indicator-fields {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 12px;
       }
       
@@ -2726,6 +2726,11 @@ function viewPeriods(){
         color: var(--muted);
       }
       
+      /* Hide Consuntivo field in Previsionale mode */
+      .field-group[data-cons][hidden] {
+        display: none !important;
+      }
+      
       @media (max-width: 768px) {
         #p_rows {
           grid-template-columns: 1fr;
@@ -2733,7 +2738,6 @@ function viewPeriods(){
         }
         
         .indicator-fields {
-          grid-template-columns: 1fr;
           gap: 10px;
         }
         
