@@ -39,7 +39,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       const payload = {
         title: 'Battle Plan',
         body: text,
-        tag: 'bp-manual',
+        tag: type === 'automatic' ? 'bp-automatic' : 'bp-manual',
         url: '/'
       };
       

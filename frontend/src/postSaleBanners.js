@@ -80,7 +80,12 @@
         : `Allora, hai venduto a ${String(appt.client||'Cliente')}? Appuntamento del ${when}`;
       const payload = { title, body, tag: (kind==='nncf' ? 'bp-nncf' : 'bp-sale'), url: '/' };
       dbg('Sending push notification:', payload);
-      await POST('/api/push/test', { payload });
+      // Usa l'endpoint delle notifiche manuali per funzionare anche con app chiusa
+      await POST('/api/notifications/send', { 
+        text: body, 
+        recipients: 'all',
+        type: 'automatic'
+      });
       markPush(appt.id, kind);
       dbg('Push notification sent and marked');
     }catch(e){ 
