@@ -7261,25 +7261,24 @@ function viewSettings(){
             '<h3>💰 Impostazioni Provvigioni</h3>'+
             '<div class="settings-grid">'+
               '<div class="settings-card">'+
-                '<h4>Provvigioni Senior</h4>'+
+                '<h4>Provvigioni GI</h4>'+
                 '<div class="commission-item">'+
-                  '<label>Percentuale VSS:</label>'+
-                  '<input type="number" id="comm_senior_vss" value="5.0" min="0" max="100" step="0.1">%'+
-                '</div>'+
-                '<div class="commission-item">'+
-                  '<label>Percentuale VSD:</label>'+
-                  '<input type="number" id="comm_senior_vsd" value="8.0" min="0" max="100" step="0.1">%'+
+                  '<label>Percentuale GI:</label>'+
+                  '<input type="number" id="comm_gi" value="15.0" min="0" max="100" step="0.1">%'+
                 '</div>'+
               '</div>'+
               '<div class="settings-card">'+
-                '<h4>Provvigioni Junior</h4>'+
+                '<h4>Provvigioni VSD Senior</h4>'+
                 '<div class="commission-item">'+
-                  '<label>Percentuale VSS:</label>'+
-                  '<input type="number" id="comm_junior_vss" value="3.0" min="0" max="100" step="0.1">%'+
+                  '<label>Percentuale VSD Senior:</label>'+
+                  '<input type="number" id="comm_vsdSenior" value="25.0" min="0" max="100" step="0.1">%'+
                 '</div>'+
+              '</div>'+
+              '<div class="settings-card">'+
+                '<h4>Provvigioni VSD Junior</h4>'+
                 '<div class="commission-item">'+
-                  '<label>Percentuale VSD:</label>'+
-                  '<input type="number" id="comm_junior_vsd" value="5.0" min="0" max="100" step="0.1">%'+
+                  '<label>Percentuale VSD Junior:</label>'+
+                  '<input type="number" id="comm_vsdJunior" value="20.0" min="0" max="100" step="0.1">%'+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -7681,10 +7680,20 @@ function loadSettingsData() {
   // Carica dati esistenti per provvigioni
   GET('/api/settings/commissions').then(function(r) {
     if (r && r.commissions) {
-      Object.keys(r.commissions).forEach(key => {
-        const el = document.getElementById('comm_' + key);
-        if (el) el.value = r.commissions[key];
-      });
+      // Converte i valori decimali in percentuali per la visualizzazione
+      const giEl = document.getElementById('comm_gi');
+      const vsdSeniorEl = document.getElementById('comm_vsdSenior');
+      const vsdJuniorEl = document.getElementById('comm_vsdJunior');
+      
+      if (giEl && r.commissions.gi !== undefined) {
+        giEl.value = (r.commissions.gi * 100).toFixed(1);
+      }
+      if (vsdSeniorEl && r.commissions.vsdSenior !== undefined) {
+        vsdSeniorEl.value = (r.commissions.vsdSenior * 100).toFixed(1);
+      }
+      if (vsdJuniorEl && r.commissions.vsdJunior !== undefined) {
+        vsdJuniorEl.value = (r.commissions.vsdJunior * 100).toFixed(1);
+      }
     }
   }).catch(() => {
     // Usa valori di default se non ci sono dati
@@ -7742,10 +7751,9 @@ function saveKpiWeights() {
 
 function saveCommissions() {
   const commissions = {
-    senior_vss: parseFloat(document.getElementById('comm_senior_vss').value) || 5.0,
-    senior_vsd: parseFloat(document.getElementById('comm_senior_vsd').value) || 8.0,
-    junior_vss: parseFloat(document.getElementById('comm_junior_vss').value) || 3.0,
-    junior_vsd: parseFloat(document.getElementById('comm_junior_vsd').value) || 5.0
+    gi: parseFloat(document.getElementById('comm_gi').value) / 100 || 0.15,
+    vsdSenior: parseFloat(document.getElementById('comm_vsdSenior').value) / 100 || 0.25,
+    vsdJunior: parseFloat(document.getElementById('comm_vsdJunior').value) / 100 || 0.20
   };
   
   POST('/api/settings/commissions', { commissions }).then(function(r) {
