@@ -1670,6 +1670,8 @@ BPFinal.enrichClientCards = function enrichClientCards(){
         card.__bp_appts = true;
         card.addEventListener('click', ev=>{
           if(ev.target.closest('button,select,input,a')) return;
+          // Non interferire con le card degli appuntamenti (che hanno data-aid)
+          if(card.hasAttribute('data-aid')) return;
           showClientAppointments(card);
         });
       }
