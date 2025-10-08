@@ -12,15 +12,25 @@
   }
 
   function impact(style){
-    if(!isMobile()) return;
-    if(!("vibrate" in navigator)) return;
+    if(!isMobile()) {
+      console.log('[HAPTICS] Not mobile device, skipping vibration');
+      return;
+    }
+    if(!("vibrate" in navigator)) {
+      console.log('[HAPTICS] Vibration API not available');
+      return;
+    }
     try{
       switch(style){
         case "light": navigator.vibrate(12); break;
         case "heavy": navigator.vibrate([10, 30, 10]); break;
+        case "success": navigator.vibrate([20, 50, 20]); break;
         default: navigator.vibrate(18); break; // medium
       }
-    }catch(_){}
+      console.log('[HAPTICS] Vibration triggered:', style);
+    }catch(e){
+      console.warn('[HAPTICS] Vibration failed:', e);
+    }
   }
 
   H.impact = impact;

@@ -65,7 +65,7 @@ window.Chart = Chart;
 /* ---- Fallback haptic() ---- */
 // Mappa su BP.Haptics.impact se disponibile, altrimenti no-op
 if (typeof window.haptic !== 'function'){
-  window.haptic = (window.BP && BP.Haptics && BP.Haptics.impact) ? BP.Haptics.impact : function(){};
+  window.haptic = (window.BP && window.BP.Haptics && window.BP.Haptics.impact) ? window.BP.Haptics.impact : function(){};
 }
 
 /* ---- Line chart helper condiviso (mini grafici = stile Squadra) ---- */
@@ -4279,7 +4279,7 @@ function viewAppointments(){
     
     POST('/api/appointments', payload).then(()=>{
       toast('Appuntamento salvato');
-      if (typeof haptics!=='undefined') haptics.try('success');
+      if (typeof haptic==='function') haptic('success');
       document.dispatchEvent(new Event('appt:saved'));
       
       // Coach per salvataggio appuntamento
@@ -4291,7 +4291,7 @@ function viewAppointments(){
       if (exportAfter && window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
         const ok = BP.ICS.downloadIcsForAppointment(payload);
         if (ok) {
-          if (typeof haptics!=='undefined') haptics.try('medium');
+          if (typeof haptic==='function') haptic('medium');
           try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
           toast('.ics esportato');
         } else {
@@ -4445,7 +4445,7 @@ function deleteA(){
           if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function'){
             const ok = BP.ICS.downloadIcsForAppointment(a);
             if (ok) {
-              if (typeof haptics!=='undefined') haptics.try('medium');
+              if (typeof haptic==='function') haptic('medium');
               try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
               toast('Esportato');
             } else {
