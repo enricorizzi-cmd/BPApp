@@ -69,6 +69,42 @@ export function injectMobileDrawerCSS(){
     .gi-card .table table {
       min-width: 800px !important; /* Forza larghezza minima per scroll */
     }
+    
+    /* Tabella Forecast incassi - autosize colonne (Dark mode) */
+    .gi-card .table table thead th:first-child {
+      width: auto !important;
+      min-width: 120px !important;
+      max-width: 200px !important;
+    }
+    .gi-card .table table thead th:nth-child(2) {
+      width: auto !important;
+      min-width: 100px !important;
+      max-width: 150px !important;
+    }
+    .gi-card .table table thead th:nth-child(3),
+    .gi-card .table table thead th:nth-child(4) {
+      width: auto !important;
+      min-width: 80px !important;
+      max-width: 120px !important;
+    }
+    
+    /* Form GI mobile - posizionamento e autosize (Dark mode) */
+    .gi-modal {
+      top: 60px !important; /* Sotto l'intestazione */
+      left: 0 !important;
+      right: 0 !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      min-width: 100vw !important;
+      height: calc(100vh - 60px) !important;
+      max-height: calc(100vh - 60px) !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      position: fixed !important;
+      z-index: 9999 !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
     .drawer-menu{ 
       display: flex !important;
       flex-direction: column !important;
@@ -189,6 +225,42 @@ export function injectMobileLightModeCSS(){
       }
       .gi-card .table table {
         min-width: 800px !important; /* Forza larghezza minima per scroll */
+      }
+      
+      /* Tabella Forecast incassi - autosize colonne */
+      .gi-card .table table thead th:first-child {
+        width: auto !important;
+        min-width: 120px !important;
+        max-width: 200px !important;
+      }
+      .gi-card .table table thead th:nth-child(2) {
+        width: auto !important;
+        min-width: 100px !important;
+        max-width: 150px !important;
+      }
+      .gi-card .table table thead th:nth-child(3),
+      .gi-card .table table thead th:nth-child(4) {
+        width: auto !important;
+        min-width: 80px !important;
+        max-width: 120px !important;
+      }
+      
+      /* Form GI mobile - posizionamento e autosize */
+      .gi-modal {
+        top: 60px !important; /* Sotto l'intestazione */
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-width: 100vw !important;
+        height: calc(100vh - 60px) !important;
+        max-height: calc(100vh - 60px) !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        position: fixed !important;
+        z-index: 9999 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
       }
       .drawer-menu{
         display: flex !important;
