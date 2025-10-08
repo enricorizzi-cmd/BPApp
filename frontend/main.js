@@ -4277,7 +4277,7 @@ function viewAppointments(){
     const payload=collectForm(); if(!payload) return;
     const wasNew = !editId;
     POST('/api/appointments', payload).then(()=>{
- toast('Appuntamento salvato');
+      toast('Appuntamento salvato');
       if (typeof haptics!=='undefined') haptics.try('success');
       document.dispatchEvent(new Event('appt:saved'));
       // Coach per salvataggio appuntamento
