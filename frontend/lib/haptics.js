@@ -8,18 +8,46 @@
 
   function isMobile(){
     const ua = navigator.userAgent || navigator.vendor || "";
-    return /android|iphone|ipad|ipod|mobile/i.test(ua);
+    // Rilevamento mobile più accurato
+    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i;
+    const isMobileUA = mobileRegex.test(ua);
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.innerWidth <= 768;
+    
+    console.log('[HAPTICS] Device detection:', {
+      ua: ua.substring(0, 100) + '...',
+      isMobileUA,
+      isTouchDevice,
+      isSmallScreen,
+      maxTouchPoints: navigator.maxTouchPoints
+    });
+    
+    return isMobileUA || (isTouchDevice && isSmallScreen);
   }
 
   function impact(style){
-    if(!isMobile()) {
-      console.log('[HAPTICS] Not mobile device, skipping vibration');
+    const isMobileDevice = isMobile();
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const hasVibrate = "vibrate" in navigator;
+    
+    console.log('[HAPTICS] Impact check:', {
+      isMobileDevice,
+      hasTouch,
+      hasVibrate,
+      style
+    });
+    
+    // Prova sempre se ha touch e vibrate, anche se non rilevato come mobile
+    if(!isMobileDevice && !hasTouch) {
+      console.log('[HAPTICS] Not mobile device and no touch, skipping vibration');
       return;
     }
-    if(!("vibrate" in navigator)) {
+    
+    if(!hasVibrate) {
       console.log('[HAPTICS] Vibration API not available');
       return;
     }
+    
     try{
       switch(style){
         case "light": navigator.vibrate(12); break;
@@ -34,4 +62,16 @@
   }
 
   H.impact = impact;
+  
+  // Funzione di test per verificare haptics
+  H.test = function() {
+    console.log('[HAPTICS] Testing all vibration patterns...');
+    impact('light');
+    setTimeout(() => impact('medium'), 500);
+    setTimeout(() => impact('heavy'), 1000);
+    setTimeout(() => impact('success'), 1500);
+  };
+  
+  // Esponi anche globalmente per test
+  window.testHaptics = H.test;
 })();
