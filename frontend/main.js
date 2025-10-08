@@ -972,7 +972,6 @@ function viewHome(){
       '</div>'+
     '</div>'+
     
-    <!-- Floating Action Button -->
     '<button class="fab" id="dash_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
       '+'+
     '</button>';
@@ -1925,7 +1924,6 @@ function viewCalendar(){
       '<div class="card" id="cal_free_slots" style="margin-top:8px;display:none"></div>'+
     '</div>'+
     
-    <!-- Floating Action Button -->
     '<button class="fab" id="cal_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
       '+'+
     '</button>';
