@@ -1911,6 +1911,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
 
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"
+  let LAST_BACKUP_MARK = ""; // "YYYY-MM-DD"
 
   function _weekBoundariesISO(d){
     const s = startOfWeek(d), e = endOfWeek(d);
@@ -1972,5 +1973,27 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     LAST_PUSH_MARK = mark;
   }
 
-  setInterval(()=>{ runWeekendNoonPushOncePerDay().catch(()=>{}); }, 60*1000);
+  async function runDailyBackupAt1AM(){
+    const now = new Date();
+    const hr = now.getHours();
+    const mark = ymd(now);
+    
+    // Run backup at 1 AM (01:00) once per day
+    if(hr !== 1 || LAST_BACKUP_MARK === mark) return;
+    
+    try {
+      logger.info('Starting daily Supabase backup...');
+      const { createBackup } = require('./backup-supabase');
+      const backupFile = await createBackup();
+      LAST_BACKUP_MARK = mark;
+      logger.info(`Daily backup completed successfully: ${backupFile}`);
+    } catch (error) {
+      logger.error('Daily backup failed:', error);
+    }
+  }
+
+  setInterval(()=>{ 
+    runWeekendNoonPushOncePerDay().catch(()=>{}); 
+    runDailyBackupAt1AM().catch(()=>{}); 
+  }, 60*1000);
 });
