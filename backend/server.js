@@ -432,7 +432,7 @@ async function ensureFiles(){
 
 // ---------- Auth ----------
 function signToken(u){
-  return jwt.sign({ id:u.id, role:u.role, name:u.name, permissions:u.permissions||[] }, JWT_SECRET, { expiresIn:"30d" });
+  return jwt.sign({ id:u.id, role:u.role, name:u.name, permissions:u.permissions||[] }, JWT_SECRET, { expiresIn:"365d" }); // 1 anno
 }
 function auth(req,res,next){
   const h = req.headers.authorization || "";

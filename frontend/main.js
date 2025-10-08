@@ -260,7 +260,7 @@ function viewLogin(){
               '<div><label>Email</label><input id="li_email" name="email" type="email" autocomplete="username" required></div>'+
               '<div><label>Password</label><input id="li_password" name="password" type="password" autocomplete="current-password" required></div>'+
             '</div>'+
-            '<div class="row"><label class="small"><input type="checkbox" id="li_remember" checked> Rimani collegato</label></div>'+
+            '<div class="row"><label class="small">🔒 Accesso persistente (1 anno)</label></div>'+
             '<div class="right" style="margin-top:8px">'+
               '<button type="submit" id="btnLogin">Accedi</button>'+
             '</div>'+
@@ -300,10 +300,9 @@ function viewLogin(){
     var btn = document.getElementById('btnLogin'); btn.disabled = true;
     var email = document.getElementById('li_email').value.trim().toLowerCase();
     var password = document.getElementById('li_password').value;
-    var remember = document.getElementById('li_remember').checked;
     POST('/api/login',{email:email,password:password}).then(function(r){
       if(typeof r==='string'){ try{ r=JSON.parse(r);}catch(e){} }
-      setToken(r.token, remember); setUser(r.user);
+      setToken(r.token, true); setUser(r.user); // Sempre persistente
       toast('Bentornato '+r.user.name+'!'); window.addXP(10);
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();
@@ -8148,11 +8147,20 @@ window.logout           = logout;
 window.rerenderTopbarSoon = rerenderTopbarSoon;
 
 // boot
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
   showAddToHomePrompt();
-  if (getUser()) {
-    renderTopbar();
-    viewHome();
+  const user = getUser();
+  if (user) {
+    // Verifica se il token è ancora valido
+    try {
+      await GET('/api/usernames'); // Test endpoint per verificare token
+      renderTopbar();
+      viewHome();
+    } catch (error) {
+      // Token scaduto o non valido, reindirizza al login
+      console.log('Token scaduto, reindirizzamento al login');
+      logout();
+    }
   } else {
     viewLogin();
   }

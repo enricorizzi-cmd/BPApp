@@ -17,11 +17,9 @@ export function del(k) {
 }
 
 export function setToken(t, remember) {
-  if (remember) {
-    save('bp_token', t);
-  } else {
-    sessionStorage.setItem('bp_token', t);
-  }
+  // Salva sempre nel localStorage per persistenza massima
+  // Il parametro 'remember' ora è sempre true per default
+  save('bp_token', t);
 }
 
 export function getToken() {

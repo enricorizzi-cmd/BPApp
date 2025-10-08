@@ -11,9 +11,16 @@ export function injectMobileDrawerCSS(){
       background: rgba(20,24,34,.96) !important;
       box-shadow: 14px 0 28px rgba(0,0,0,.45) !important;
       width: 86vw !important;
+      max-height: 100vh !important;
       overflow-y: auto !important;
+      overflow-x: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
     }
-    .drawer .row{ gap:10px !important; }
+    .drawer .row{ 
+      gap:10px !important; 
+      padding: 20px 16px !important;
+      padding-bottom: 40px !important; /* Spazio extra per scroll */
+    }
     .drawer button{
       background: rgba(255,255,255,.10) !important;
       border: 1px solid rgba(255,255,255,.22) !important;
