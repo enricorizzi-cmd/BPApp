@@ -1980,19 +1980,8 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     window.BP = window.BP || {};
     window.BP.Coach = window.BP.Coach || {};
     // Compat: consenti sia Coach.say(event|level, opts) sia Coach.say(level)
-    window.BP.Coach.say = window.BP.Coach.say || function(evOrLevel, opts){
-      try{
-        const s = String(evOrLevel||'').toLowerCase();
-        let lvl = (opts && opts.intensity) || (s==='low'||s==='medium'||s==='high'? s : undefined);
-        if (!lvl){
-          // mappa eventi tipici ad intensità
-          if (s==='bp_saved' || s==='client_converted' || s==='gi_created') lvl='high';
-          else if (s==='appointment_created' || s==='payments_defined' || s==='report_composed') lvl='medium';
-          else lvl='low';
-        }
-        coachSay(lvl);
-      }catch(_){ coachSay('medium'); }
-    };
+    // Rimuovo la definizione duplicata - usa solo quella da coach.js
+    // window.BP.Coach.say è già definito in coach.js
   }catch(_){ }
 
 // -------- Banner “È diventato cliente?” (NNCF) --------

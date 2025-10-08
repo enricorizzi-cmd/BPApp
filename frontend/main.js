@@ -4274,28 +4274,17 @@ function viewAppointments(){
     };
   }
   function saveA(exportAfter){
-    console.log('[DEBUG] saveA called, exportAfter:', exportAfter);
     const payload=collectForm(); if(!payload) return;
     const wasNew = !editId;
-    console.log('[DEBUG] saveA - payload:', payload, 'wasNew:', wasNew, 'editId:', editId);
     
     POST('/api/appointments', payload).then(()=>{
-      console.log('[DEBUG] saveA - POST success, showing toast');
       toast('Appuntamento salvato');
       if (typeof haptics!=='undefined') haptics.try('success');
       document.dispatchEvent(new Event('appt:saved'));
       
       // Coach per salvataggio appuntamento
-      console.log('[DEBUG] saveA - checking coach availability');
       if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
-        console.log('[DEBUG] saveA - triggering coach:', wasNew ? 'appointment_created' : 'appointment_updated');
         window.BP.Coach.say(wasNew ? 'appointment_created' : 'appointment_updated', { intensity: wasNew ? 'medium' : 'low' });
-      } else {
-        console.log('[DEBUG] saveA - coach not available:', {
-          BP: typeof window.BP,
-          Coach: window.BP ? typeof window.BP.Coach : 'N/A',
-          say: window.BP && window.BP.Coach ? typeof window.BP.Coach.say : 'N/A'
-        });
       }
       
       if (wasNew){ try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ } }
@@ -4310,26 +4299,8 @@ function viewAppointments(){
         }
       }
       
-      console.log('[DEBUG] saveA - calling resetForm and listA');
-      try {
-        resetForm(); 
-        console.log('[DEBUG] saveA - resetForm completed');
-      } catch(e) {
-        console.error('[DEBUG] saveA - resetForm error:', e);
-      }
-      
-      try {
-        listA(); 
-        console.log('[DEBUG] saveA - listA completed');
-      } catch(e) {
-        console.error('[DEBUG] saveA - listA error:', e);
-      }
-      
-      console.log('[DEBUG] saveA - all operations completed successfully');
-    }).catch((error)=>{
-      console.error('[DEBUG] saveA - POST error:', error);
-      toast('Errore salvataggio');
-    });
+      resetForm(); listA();
+    }).catch(()=> toast('Errore salvataggio'));
   }
 function deleteA(){
     if(!editId) return;
