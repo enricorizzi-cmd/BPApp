@@ -11,15 +11,30 @@ export function injectMobileDrawerCSS(){
       background: rgba(20,24,34,.96) !important;
       box-shadow: 14px 0 28px rgba(0,0,0,.45) !important;
       width: 86vw !important;
-      max-height: 100vh !important;
+      height: 100vh !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      z-index: 60 !important;
+      overflow: hidden !important; /* Container fisso, no scroll */
+    }
+    .drawer-scroll-container{
+      height: 100% !important;
       overflow-y: auto !important;
       overflow-x: hidden !important;
       -webkit-overflow-scrolling: touch !important;
+      scroll-behavior: smooth !important;
+      /* Performance ottimizzazioni */
+      will-change: scroll-position !important;
+      transform: translateZ(0) !important; /* Hardware acceleration */
     }
-    .drawer .row{ 
-      gap:10px !important; 
+    .drawer-menu{ 
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important; 
       padding: 20px 16px !important;
       padding-bottom: 40px !important; /* Spazio extra per scroll */
+      min-height: calc(100vh - 40px) !important; /* Assicura scroll se necessario */
     }
     .drawer button{
       background: rgba(255,255,255,.10) !important;
@@ -41,6 +56,12 @@ export function injectMobileDrawerCSS(){
     .hamb{
       z-index: 80 !important; /* Assicura che l'hamburger sia sempre cliccabile */
       position: relative !important;
+    }
+    /* Previeni scroll del body quando drawer è aperto */
+    body.drawer-open{
+      overflow: hidden !important;
+      position: fixed !important;
+      width: 100% !important;
     }
   }`;
   const s = document.createElement('style');
@@ -74,6 +95,29 @@ export function injectMobileLightModeCSS(){
       .drawer{
         background:#fff !important;
         box-shadow:14px 0 28px rgba(0,0,0,.10) !important;
+        height: 100vh !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 60 !important;
+        overflow: hidden !important;
+      }
+      .drawer-scroll-container{
+        height: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
+        will-change: scroll-position !important;
+        transform: translateZ(0) !important;
+      }
+      .drawer-menu{
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 20px 16px !important;
+        padding-bottom: 40px !important;
+        min-height: calc(100vh - 40px) !important;
       }
       .drawer button{
         color:#0f172a !important;

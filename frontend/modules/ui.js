@@ -8,21 +8,23 @@ export function topbarHTML(){
 
   const drawer =
     '<div id="drawer" class="drawer" role="dialog" aria-modal="true" aria-label="Menu">'+
-      '<div class="row">'+
-        '<button class="ghost" onclick="viewHome();toggleDrawer(false)">Dashboard</button>'+
-        '<button class="ghost" onclick="viewCalendar();toggleDrawer(false)">Calendario</button>'+
-        '<button class="ghost" onclick="viewPeriods();toggleDrawer(false)">BP</button>'+
-        '<button class="ghost" onclick="viewAppointments();toggleDrawer(false)">Appuntamenti</button>'+
-        '<button class="ghost" onclick="viewLeaderboard();toggleDrawer(false)">Classifiche</button>'+
-        '<button class="ghost" onclick="viewCommissions();toggleDrawer(false)">Provvigioni</button>'+
-        '<button class="ghost" onclick="viewVendite();toggleDrawer(false)">Vendite e Riordini</button>'+
-        '<button class="ghost" onclick="viewGI();toggleDrawer(false)">GI &amp; Scadenzario</button>'+
-        '<button class="ghost" onclick="viewReport();toggleDrawer(false)">Report</button>'+
-        '<button class="ghost" onclick="viewClients();toggleDrawer(false)">Clienti</button>'+
-        '<button class="ghost" onclick="viewTeam();toggleDrawer(false)">Squadra</button>'+
-        (isAdmin? '<button class="ghost" onclick="viewUsers();toggleDrawer(false)">Utenti</button>' : '')+
-        (isAdmin? '<button class="ghost" onclick="viewSettings();toggleDrawer(false)">Impostazioni</button>' : '')+
-        '<button onclick="logout()">Logout</button>'+
+      '<div class="drawer-scroll-container">'+
+        '<div class="drawer-menu">'+
+          '<button class="ghost" onclick="viewHome();toggleDrawer(false)">Dashboard</button>'+
+          '<button class="ghost" onclick="viewCalendar();toggleDrawer(false)">Calendario</button>'+
+          '<button class="ghost" onclick="viewPeriods();toggleDrawer(false)">BP</button>'+
+          '<button class="ghost" onclick="viewAppointments();toggleDrawer(false)">Appuntamenti</button>'+
+          '<button class="ghost" onclick="viewLeaderboard();toggleDrawer(false)">Classifiche</button>'+
+          '<button class="ghost" onclick="viewCommissions();toggleDrawer(false)">Provvigioni</button>'+
+          '<button class="ghost" onclick="viewVendite();toggleDrawer(false)">Vendite e Riordini</button>'+
+          '<button class="ghost" onclick="viewGI();toggleDrawer(false)">GI &amp; Scadenzario</button>'+
+          '<button class="ghost" onclick="viewReport();toggleDrawer(false)">Report</button>'+
+          '<button class="ghost" onclick="viewClients();toggleDrawer(false)">Clienti</button>'+
+          '<button class="ghost" onclick="viewTeam();toggleDrawer(false)">Squadra</button>'+
+          (isAdmin? '<button class="ghost" onclick="viewUsers();toggleDrawer(false)">Utenti</button>' : '')+
+          (isAdmin? '<button class="ghost" onclick="viewSettings();toggleDrawer(false)">Impostazioni</button>' : '')+
+          '<button onclick="logout()">Logout</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
 
@@ -446,7 +448,11 @@ export function toggleDrawer(force){
   // Aggiorna stato accessibilità e scroll background
   const hamb=document.getElementById('hamb');
   if(hamb){ hamb.setAttribute('aria-expanded', String(willOpen)); }
-  document.body.classList.toggle('no-scroll', willOpen);
+  
+  // Previeni scroll del body quando drawer è aperto (mobile)
+  if(window.innerWidth <= 980){
+    document.body.classList.toggle('drawer-open', willOpen);
+  }
 }
 
 let _tbTimer=null;
