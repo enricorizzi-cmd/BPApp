@@ -15,6 +15,7 @@ import "./lib/auth-fetch-shim.js";
 import "./lib/bp-hooks-core.js";
 import "./lib/client-status.js";
 import "./lib/clients-helpers.js";
+import "./lib/coach.js";
 import "./lib/globals-polyfills.js";
 import "./lib/haptics.js";
 import "./lib/ics-sanitize.js";
