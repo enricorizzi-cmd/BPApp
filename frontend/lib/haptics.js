@@ -8,43 +8,48 @@
 
   function isMobile(){
     const ua = navigator.userAgent || navigator.vendor || "";
-    // Rilevamento mobile più accurato
-    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i;
+    // Rilevamento mobile più permissivo
+    const mobileRegex = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|fennec|maemo|symbian|j2me|midp|wap|phone/i;
     const isMobileUA = mobileRegex.test(ua);
     const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isSmallScreen = window.innerWidth <= 768;
+    const isSmallScreen = window.innerWidth <= 1024; // Più permissivo
+    const hasMobileFeatures = 'orientation' in window || 'deviceMotionEvent' in window;
     
     console.log('[HAPTICS] Device detection:', {
       ua: ua.substring(0, 100) + '...',
       isMobileUA,
       isTouchDevice,
       isSmallScreen,
-      maxTouchPoints: navigator.maxTouchPoints
+      hasMobileFeatures,
+      maxTouchPoints: navigator.maxTouchPoints,
+      screenWidth: window.innerWidth,
+      orientation: 'orientation' in window,
+      deviceMotion: 'deviceMotionEvent' in window
     });
     
-    return isMobileUA || (isTouchDevice && isSmallScreen);
+    // Più permissivo: se ha touch O è mobile UA O ha features mobile
+    return isMobileUA || isTouchDevice || hasMobileFeatures || isSmallScreen;
   }
 
   function impact(style){
     const isMobileDevice = isMobile();
-    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const hasVibrate = "vibrate" in navigator;
     
     console.log('[HAPTICS] Impact check:', {
       isMobileDevice,
-      hasTouch,
       hasVibrate,
       style
     });
     
-    // Prova sempre se ha touch e vibrate, anche se non rilevato come mobile
-    if(!isMobileDevice && !hasTouch) {
-      console.log('[HAPTICS] Not mobile device and no touch, skipping vibration');
+    // Se non ha vibrate, non può funzionare
+    if(!hasVibrate) {
+      console.log('[HAPTICS] Vibration API not available');
       return;
     }
     
-    if(!hasVibrate) {
-      console.log('[HAPTICS] Vibration API not available');
+    // Se è rilevato come mobile, prova sempre
+    if(!isMobileDevice) {
+      console.log('[HAPTICS] Not detected as mobile device, skipping vibration');
       return;
     }
     
@@ -72,6 +77,27 @@
     setTimeout(() => impact('success'), 1500);
   };
   
+  // Funzione per forzare haptics (bypassa rilevamento mobile)
+  H.force = function(style) {
+    console.log('[HAPTICS] Force vibration:', style);
+    if(!("vibrate" in navigator)) {
+      console.log('[HAPTICS] Vibration API not available');
+      return;
+    }
+    try{
+      switch(style){
+        case "light": navigator.vibrate(12); break;
+        case "heavy": navigator.vibrate([10, 30, 10]); break;
+        case "success": navigator.vibrate([20, 50, 20]); break;
+        default: navigator.vibrate(18); break; // medium
+      }
+      console.log('[HAPTICS] Force vibration triggered:', style);
+    }catch(e){
+      console.warn('[HAPTICS] Force vibration failed:', e);
+    }
+  };
+  
   // Esponi anche globalmente per test
   window.testHaptics = H.test;
+  window.forceHaptics = H.force;
 })();
