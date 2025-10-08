@@ -2250,10 +2250,13 @@ function viewCalendar(){
       if(consultant==='all'){
         var det = avAll.details || [];
         var hAll = '<b>Slot liberi ≥ 4h per consulente (da oggi in poi)</b>';
-        hAll += '<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">';
+        hAll += '<div class="cal-results-grid" style="margin-top:16px">';
         for(var di=0; di<det.length; di++){
           var d = det[di];
-          hAll += '<span class="chip small">'+htmlEscape(d.name||'')+' <b>'+fmtInt(d.total||0)+'</b></span>';
+          hAll += '<div class="cal-result-pill">'+
+                  '<div class="cal-result-label">'+htmlEscape(d.name||'')+'</div>'+
+                  '<div class="cal-result-value">'+fmtInt(d.total||0)+'</div>'+
+                  '</div>';
         }
         hAll += '</div>';
         box2.style.display='block'; box2.innerHTML = hAll;
