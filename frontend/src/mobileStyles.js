@@ -27,13 +27,29 @@ export function injectMobileDrawerCSS(){
       /* Performance ottimizzazioni */
       will-change: scroll-position !important;
       transform: translateZ(0) !important; /* Hardware acceleration */
+      /* Scrollbar visibile */
+      scrollbar-width: thin !important;
+      scrollbar-color: rgba(255,255,255,0.3) transparent !important;
+    }
+    /* Webkit scrollbar styling */
+    .drawer-scroll-container::-webkit-scrollbar {
+      width: 6px !important;
+    }
+    .drawer-scroll-container::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+    .drawer-scroll-container::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3) !important;
+      border-radius: 3px !important;
+    }
+    .drawer-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.5) !important;
     }
     .drawer-menu{ 
       display: flex !important;
       flex-direction: column !important;
       gap: 10px !important; 
-      padding: 20px 16px !important;
-      padding-bottom: 40px !important; /* Spazio extra per scroll */
+      padding: 80px 16px 40px 16px !important; /* Top padding per compensare topbar */
       min-height: calc(100vh - 40px) !important; /* Assicura scroll se necessario */
     }
     .drawer button{
@@ -110,13 +126,27 @@ export function injectMobileLightModeCSS(){
         scroll-behavior: smooth !important;
         will-change: scroll-position !important;
         transform: translateZ(0) !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(0,0,0,0.3) transparent !important;
+      }
+      .drawer-scroll-container::-webkit-scrollbar {
+        width: 6px !important;
+      }
+      .drawer-scroll-container::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      .drawer-scroll-container::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.3) !important;
+        border-radius: 3px !important;
+      }
+      .drawer-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.5) !important;
       }
       .drawer-menu{
         display: flex !important;
         flex-direction: column !important;
         gap: 10px !important;
-        padding: 20px 16px !important;
-        padding-bottom: 40px !important;
+        padding: 80px 16px 40px 16px !important; /* Top padding per compensare topbar */
         min-height: calc(100vh - 40px) !important;
       }
       .drawer button{
