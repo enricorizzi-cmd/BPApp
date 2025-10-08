@@ -168,11 +168,7 @@ function injectCompanyLogoCSS() {
   document.head.insertAdjacentHTML('beforeend', css);
 }
 
-export function renderTopbar(){
-  if(!getUser()) return;
-  injectCompanyLogoCSS();
-
-  // CSS: sidebar per desktop + contrasto topbar mobile
+function injectSidebarCSS(){
   if(!document.getElementById('bp_sidebar_css')){
     const css = `
       /* Sidebar per desktop */
@@ -357,18 +353,9 @@ export function renderTopbar(){
     document.head.appendChild(st);
   }
 
-  const appEl = document.getElementById('app');
-  const tb = document.querySelector('.topbar');
-  const html = topbarHTML();
-  if(tb){ tb.outerHTML = html; } else if(appEl){ appEl.insertAdjacentHTML('afterbegin', html); }
+}
 
-  // Fix visivi mobile/light/badge (idempotenti)
-  try{ injectMobileDrawerCSS(); }catch{ /* ignore */ }
-  try{ injectMobileLightModeCSS(); }catch{ /* ignore */ }
-  try{ injectLightBadgesCSS(); }catch{ /* ignore */ }
-  try{ injectSummaryClickableCSS(); }catch{ /* ignore */ }
-
-  // Unified filters + Squadra header responsiveness (mobile-friendly)
+function injectUnifiedFiltersCSS(){
   if(!document.getElementById('bp-unified-filters-css')){
     const css = `
       /* Nested inputs align in two columns inside unified filters */
@@ -391,7 +378,9 @@ export function renderTopbar(){
     const st=document.createElement('style'); st.id='bp-unified-filters-css'; st.textContent=css;
     document.head.appendChild(st);
   }
+}
 
+function setupEventListeners(){
   // Wiring interazioni
   const hamb = document.getElementById('hamb');
   if(hamb){
@@ -430,6 +419,26 @@ export function renderTopbar(){
   // Chiudi con ESC
   document.removeEventListener('keydown', onEscCloseDrawer, false);
   document.addEventListener('keydown', onEscCloseDrawer, false);
+}
+
+export function renderTopbar(){
+  if(!getUser()) return;
+  injectCompanyLogoCSS();
+  injectSidebarCSS();
+  injectUnifiedFiltersCSS();
+  
+  const appEl = document.getElementById('app');
+  const tb = document.querySelector('.topbar');
+  const html = topbarHTML();
+  if(tb){ tb.outerHTML = html; } else if(appEl){ appEl.insertAdjacentHTML('afterbegin', html); }
+
+  // Fix visivi mobile/light/badge (idempotenti)
+  try{ injectMobileDrawerCSS(); }catch{ /* ignore */ }
+  try{ injectMobileLightModeCSS(); }catch{ /* ignore */ }
+  try{ injectLightBadgesCSS(); }catch{ /* ignore */ }
+  try{ injectSummaryClickableCSS(); }catch{ /* ignore */ }
+  
+  setupEventListeners();
 }
 
 // NB: RINOMINATO (prima _onEscCloseDrawer) per evitare collisioni/duplicati

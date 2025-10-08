@@ -302,7 +302,7 @@ function viewLogin(){
     var password = document.getElementById('li_password').value;
     POST('/api/login',{email:email,password:password}).then(function(r){
       if(typeof r==='string'){ try{ r=JSON.parse(r);}catch(e){} }
-      setToken(r.token, true); setUser(r.user); // Sempre persistente
+      setToken(r.token); setUser(r.user); // Sempre persistente
       toast('Bentornato '+r.user.name+'!'); window.addXP(10);
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();

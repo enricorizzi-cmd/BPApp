@@ -16,9 +16,8 @@ export function del(k) {
   localStorage.removeItem(k);
 }
 
-export function setToken(t, remember) {
+export function setToken(t) {
   // Salva sempre nel localStorage per persistenza massima
-  // Il parametro 'remember' ora è sempre true per default
   save('bp_token', t);
 }
 
