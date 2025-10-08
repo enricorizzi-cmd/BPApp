@@ -4483,10 +4483,6 @@ function deleteA(){
 
   // Logica di modifica appuntamenti ora gestita direttamente nei click handler
 
-  document.getElementById('btnSaveA').onclick       = ()=> saveA(false);
-  document.getElementById('btnSaveExportA').onclick = ()=> saveA(true);
-  document.getElementById('btnDeleteA').onclick     = deleteA;
-
   GET('/api/clients').then(()=>{});
   listA();
 }
