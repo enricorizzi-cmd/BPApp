@@ -45,11 +45,35 @@ export function injectMobileDrawerCSS(){
     .drawer-scroll-container::-webkit-scrollbar-thumb:hover {
       background: rgba(255,255,255,0.5) !important;
     }
+    
+    /* Tabelle GI & Scadenzario - Scroll orizzontale mobile */
+    .gi-card .table {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      scrollbar-width: thin !important;
+      scrollbar-color: rgba(255,255,255,0.3) transparent !important;
+    }
+    .gi-card .table::-webkit-scrollbar {
+      height: 6px !important;
+    }
+    .gi-card .table::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+    .gi-card .table::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.3) !important;
+      border-radius: 3px !important;
+    }
+    .gi-card .table::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.5) !important;
+    }
+    .gi-card .table table {
+      min-width: 800px !important; /* Forza larghezza minima per scroll */
+    }
     .drawer-menu{ 
       display: flex !important;
       flex-direction: column !important;
       gap: 10px !important; 
-      padding: 80px 16px 40px 16px !important; /* Top padding per compensare topbar */
+      padding: 100px 16px 40px 16px !important; /* Top padding per compensare topbar + PWA */
       min-height: calc(100vh - 40px) !important; /* Assicura scroll se necessario */
     }
     .drawer button{
@@ -142,11 +166,35 @@ export function injectMobileLightModeCSS(){
       .drawer-scroll-container::-webkit-scrollbar-thumb:hover {
         background: rgba(0,0,0,0.5) !important;
       }
+      
+      /* Tabelle GI & Scadenzario - Scroll orizzontale mobile (Light mode) */
+      .gi-card .table {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(0,0,0,0.3) transparent !important;
+      }
+      .gi-card .table::-webkit-scrollbar {
+        height: 6px !important;
+      }
+      .gi-card .table::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+      .gi-card .table::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.3) !important;
+        border-radius: 3px !important;
+      }
+      .gi-card .table::-webkit-scrollbar-thumb:hover {
+        background: rgba(0,0,0,0.5) !important;
+      }
+      .gi-card .table table {
+        min-width: 800px !important; /* Forza larghezza minima per scroll */
+      }
       .drawer-menu{
         display: flex !important;
         flex-direction: column !important;
         gap: 10px !important;
-        padding: 80px 16px 40px 16px !important; /* Top padding per compensare topbar */
+        padding: 100px 16px 40px 16px !important; /* Top padding per compensare topbar + PWA */
         min-height: calc(100vh - 40px) !important;
       }
       .drawer button{
