@@ -970,7 +970,12 @@ function viewHome(){
         '</div>'+
         '<div id="dash_bp_sent" class="accordion-content" style="margin-top:8px"></div>'+
       '</div>'+
-    '</div>';
+    '</div>'+
+    
+    <!-- Floating Action Button -->
+    '<button class="fab" id="dash_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
+      '+'+
+    '</button>';
 
   renderTopbar();
 
@@ -1918,7 +1923,12 @@ function viewCalendar(){
 
       '<div id="cal_day_box" class="card" style="margin-top:8px;display:none"></div>'+
       '<div class="card" id="cal_free_slots" style="margin-top:8px;display:none"></div>'+
-    '</div>';
+    '</div>'+
+    
+    <!-- Floating Action Button -->
+    '<button class="fab" id="cal_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
+      '+'+
+    '</button>';
   renderTopbar();
 
   var consSel = document.getElementById('cal_consultant');
