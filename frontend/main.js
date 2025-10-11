@@ -4285,6 +4285,13 @@ function viewAppointments(){
     const payload=collectForm(); if(!payload) return;
     const wasNew = !editId;
     
+    // Safety check: se stiamo creando un nuovo appuntamento, assicuriamoci che editId sia null
+    if (wasNew && editId) {
+      console.warn('editId was set during new appointment creation, resetting to prevent overwrite');
+      editId = null;
+      payload.id = undefined;
+    }
+    
     POST('/api/appointments', payload).then(()=>{
       toast('Appuntamento salvato');
       if (typeof haptic==='function') haptic('success');
@@ -4308,7 +4315,10 @@ function viewAppointments(){
       }
       
       resetForm(); listA();
-    }).catch(()=> toast('Errore salvataggio'));
+    }).catch(()=> {
+      toast('Errore salvataggio');
+      resetForm(); // Reset anche in caso di errore per evitare sovrascritture
+    });
   }
 function deleteA(){
     if(!editId) return;

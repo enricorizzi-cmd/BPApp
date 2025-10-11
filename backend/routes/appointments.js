@@ -97,6 +97,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     const it = db.appointments.find(a => a.id===body.id);
     if(!it) return res.status(404).json({ error:'not found' });
     if(req.user.role!=='admin' && it.userId!==req.user.id) return res.status(403).json({ error:'forbidden' });
+    
+    // Safety check: verifica che l'utente sia lo stesso dell'appuntamento originale
+    if(it.userId !== req.user.id) {
+      console.warn(`User ${req.user.id} attempted to update appointment ${body.id} owned by ${it.userId}`);
+      return res.status(403).json({ error:'forbidden - appointment ownership mismatch' });
+    }
 
     // Base fields
     copyIfPresent(it, body, 'client', toStr);
@@ -272,7 +278,17 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     const body = req.body || {};
     const db = await readJSON('appointments.json');
     db.appointments = db.appointments || [];
-    if(body.id) return handleUpdate(req,res,body,db);
+    
+    // Safety check: se c'è un ID ma non corrisponde a nessun appuntamento esistente,
+    // potrebbe essere un tentativo di sovrascrittura accidentale
+    if(body.id) {
+      const existingAppointment = db.appointments.find(a => a.id === body.id);
+      if(!existingAppointment) {
+        console.warn(`User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
+        return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
+      }
+      return handleUpdate(req,res,body,db);
+    }
     return handleCreate(req,res,body,db);
   });
 
