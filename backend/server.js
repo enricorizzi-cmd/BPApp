@@ -1006,7 +1006,7 @@ const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, wri
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
 const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
-const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId });
+const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase });
 const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 app.use('/api', appointmentRoutes);
@@ -1951,8 +1951,46 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   // Funzione per controllare scadenze cicli aperti
   async function checkOpenCyclesDeadlines(){
     try {
-      const db = await readJSON('open_cycles.json');
-      const cycles = (db.cycles || []).filter(c => c.status === 'open');
+      let cycles = [];
+      
+      // Prova prima Supabase se disponibile
+      if (typeof supabase !== 'undefined' && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('open_cycles')
+            .select('*')
+            .eq('status', 'open');
+          
+          if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+          }
+          
+          // Mappa i dati da Supabase al formato frontend
+          cycles = (data || []).map(row => ({
+            id: row.id,
+            consultantId: row.consultantid,
+            consultantName: row.consultantname,
+            description: row.description,
+            priority: row.priority,
+            deadlineType: row.deadlinetype,
+            deadlineData: row.deadlinedata || {},
+            status: row.status,
+            createdAt: row.createdat,
+            updatedAt: row.updatedat
+          }));
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+          // Fallback al metodo tradizionale
+          const db = await readJSON('open_cycles.json');
+          cycles = (db.cycles || []).filter(c => c.status === 'open');
+        }
+      } else {
+        // Fallback al metodo tradizionale
+        const db = await readJSON('open_cycles.json');
+        cycles = (db.cycles || []).filter(c => c.status === 'open');
+      }
+      
       const now = new Date();
       
       for(const cycle of cycles) {

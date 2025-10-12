@@ -1,6 +1,6 @@
 const express = require('express');
 
-module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId }) {
+module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase }) {
   const router = express.Router();
 
   // Helper functions
@@ -26,8 +26,45 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // GET /api/open-cycles - Lista cicli
   router.get('/open-cycles', auth, async (req, res) => {
     try {
-      const db = await readJSON('open_cycles.json');
-      const cycles = db.cycles || [];
+      let cycles = [];
+      
+      // Prova prima Supabase se disponibile
+      if (typeof supabase !== 'undefined' && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('open_cycles')
+            .select('*')
+            .order('createdat', { ascending: false });
+          
+          if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+          }
+          
+          // Mappa i dati da Supabase al formato frontend
+          cycles = (data || []).map(row => ({
+            id: row.id,
+            consultantId: row.consultantid,
+            consultantName: row.consultantname,
+            description: row.description,
+            priority: row.priority,
+            deadlineType: row.deadlinetype,
+            deadlineData: row.deadlinedata || {},
+            status: row.status,
+            createdAt: row.createdat,
+            updatedAt: row.updatedat
+          }));
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+          // Fallback al metodo tradizionale
+          const db = await readJSON('open_cycles.json');
+          cycles = db.cycles || [];
+        }
+      } else {
+        // Fallback al metodo tradizionale
+        const db = await readJSON('open_cycles.json');
+        cycles = db.cycles || [];
+      }
       
       // Filtro per consulente se non admin
       let filteredCycles = cycles;
@@ -103,14 +140,58 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   router.put('/open-cycles', auth, async (req, res) => {
     try {
       const body = req.body || {};
-      const db = await readJSON('open_cycles.json');
-      db.cycles = db.cycles || [];
 
       if (!body.id) {
         return res.status(400).json({ error: 'Cycle ID is required' });
       }
 
-      const cycle = db.cycles.find(c => c.id === body.id);
+      let cycle = null;
+      
+      // Prova prima Supabase se disponibile
+      if (typeof supabase !== 'undefined' && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('open_cycles')
+            .select('*')
+            .eq('id', body.id)
+            .single();
+          
+          if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+          }
+          
+          if (!data) {
+            return res.status(404).json({ error: 'Cycle not found' });
+          }
+          
+          // Mappa i dati da Supabase al formato frontend
+          cycle = {
+            id: data.id,
+            consultantId: data.consultantid,
+            consultantName: data.consultantname,
+            description: data.description,
+            priority: data.priority,
+            deadlineType: data.deadlinetype,
+            deadlineData: data.deadlinedata || {},
+            status: data.status,
+            createdAt: data.createdat,
+            updatedAt: data.updatedat
+          };
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+          // Fallback al metodo tradizionale
+          const db = await readJSON('open_cycles.json');
+          db.cycles = db.cycles || [];
+          cycle = db.cycles.find(c => c.id === body.id);
+        }
+      } else {
+        // Fallback al metodo tradizionale
+        const db = await readJSON('open_cycles.json');
+        db.cycles = db.cycles || [];
+        cycle = db.cycles.find(c => c.id === body.id);
+      }
+
       if (!cycle) {
         return res.status(404).json({ error: 'Cycle not found' });
       }
@@ -149,7 +230,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         } catch (error) {
           console.error('Error updating cycle:', error);
           // Fallback al metodo tradizionale se Supabase fallisce
-          await writeJSON('open_cycles.json', db);
+          const db = await readJSON('open_cycles.json');
+          db.cycles = db.cycles || [];
+          const cycleIndex = db.cycles.findIndex(c => c.id === cycle.id);
+          if (cycleIndex !== -1) {
+            db.cycles[cycleIndex] = cycle;
+            await writeJSON('open_cycles.json', db);
+          }
         }
       }
 
@@ -168,10 +255,53 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         return res.status(400).json({ error: 'Cycle ID is required' });
       }
 
-      const db = await readJSON('open_cycles.json');
-      db.cycles = db.cycles || [];
+      let cycle = null;
+      
+      // Prova prima Supabase se disponibile
+      if (typeof supabase !== 'undefined' && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('open_cycles')
+            .select('*')
+            .eq('id', id)
+            .single();
+          
+          if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+          }
+          
+          if (!data) {
+            return res.status(404).json({ error: 'Cycle not found' });
+          }
+          
+          // Mappa i dati da Supabase al formato frontend
+          cycle = {
+            id: data.id,
+            consultantId: data.consultantid,
+            consultantName: data.consultantname,
+            description: data.description,
+            priority: data.priority,
+            deadlineType: data.deadlinetype,
+            deadlineData: data.deadlinedata || {},
+            status: data.status,
+            createdAt: data.createdat,
+            updatedAt: data.updatedat
+          };
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+          // Fallback al metodo tradizionale
+          const db = await readJSON('open_cycles.json');
+          db.cycles = db.cycles || [];
+          cycle = db.cycles.find(c => c.id === id);
+        }
+      } else {
+        // Fallback al metodo tradizionale
+        const db = await readJSON('open_cycles.json');
+        db.cycles = db.cycles || [];
+        cycle = db.cycles.find(c => c.id === id);
+      }
 
-      const cycle = db.cycles.find(c => c.id === id);
       if (!cycle) {
         return res.status(404).json({ error: 'Cycle not found' });
       }
@@ -196,8 +326,46 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // GET /api/open-cycles/forecast - Forecast per periodo
   router.get('/open-cycles/forecast', auth, async (req, res) => {
     try {
-      const db = await readJSON('open_cycles.json');
-      const cycles = db.cycles || [];
+      let cycles = [];
+      
+      // Prova prima Supabase se disponibile
+      if (typeof supabase !== 'undefined' && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('open_cycles')
+            .select('*')
+            .eq('status', 'open')
+            .order('createdat', { ascending: false });
+          
+          if (error) {
+            console.error('Supabase error:', error);
+            throw error;
+          }
+          
+          // Mappa i dati da Supabase al formato frontend
+          cycles = (data || []).map(row => ({
+            id: row.id,
+            consultantId: row.consultantid,
+            consultantName: row.consultantname,
+            description: row.description,
+            priority: row.priority,
+            deadlineType: row.deadlinetype,
+            deadlineData: row.deadlinedata || {},
+            status: row.status,
+            createdAt: row.createdat,
+            updatedAt: row.updatedat
+          }));
+        } catch (error) {
+          console.error('Error fetching from Supabase:', error);
+          // Fallback al metodo tradizionale
+          const db = await readJSON('open_cycles.json');
+          cycles = db.cycles || [];
+        }
+      } else {
+        // Fallback al metodo tradizionale
+        const db = await readJSON('open_cycles.json');
+        cycles = db.cycles || [];
+      }
       
       // Filtro per consulente se non admin
       let filteredCycles = cycles;
