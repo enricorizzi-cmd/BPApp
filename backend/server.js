@@ -115,7 +115,7 @@ if (useSupabaseStorage) {
   console.error("Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables");
   process.exit(1);
 }
-const { init: initStore, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, supabase } = storage;
+const { init, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, supabase } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinutes, timeRangesOverlap } = require('./lib/timezone');
@@ -219,8 +219,7 @@ if (CORS_ORIGIN && CORS_ORIGIN !== '*') {
 app.use(express.json({ limit: "2mb" }));
 
 // ---------- Storage ----------
-const _initStoreRet = initStore(DATA_DIR);
-let _initStorePromise = (_initStoreRet && typeof _initStoreRet.then === 'function') ? _initStoreRet : Promise.resolve();
+let _initStorePromise = Promise.resolve();
 
 // Inizializza Supabase se disponibile
 if (useSupabaseStorage) {
