@@ -5049,8 +5049,11 @@ let cyclesSortOrder = 'desc';
 
 // Carica dati cicli aperti
 function loadOpenCycles() {
+  console.log('[DEBUG] loadOpenCycles called');
   GET('/api/open-cycles').then(response => {
+    console.log('[DEBUG] GET /api/open-cycles response:', response);
     cyclesData = (response && response.cycles) || [];
+    console.log('[DEBUG] cyclesData:', cyclesData);
     
     // Ordina per data inserimento (più recenti primi)
     cyclesData.sort((a, b) => {
@@ -5059,11 +5062,12 @@ function loadOpenCycles() {
       return dateB - dateA;
     });
     
+    console.log('[DEBUG] cyclesData after sort:', cyclesData);
     renderCyclesTable();
     updateCyclesStats();
     populateConsultantFilters();
   }).catch(error => {
-    console.error('Error loading cycles:', error);
+    console.error('[DEBUG] Error loading cycles:', error);
     toast('Errore caricamento cicli');
     document.getElementById('cycles_rows').innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center; padding: 40px;">Errore caricamento</td></tr>';
   });
@@ -5071,8 +5075,12 @@ function loadOpenCycles() {
 
 // Renderizza tabella cicli
 function renderCyclesTable() {
+  console.log('[DEBUG] renderCyclesTable called with cyclesData:', cyclesData);
   const tbody = document.getElementById('cycles_rows');
-  if (!tbody) return;
+  if (!tbody) {
+    console.log('[DEBUG] tbody not found');
+    return;
+  }
   
   if (cyclesData.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center; padding: 40px;">Nessun ciclo trovato</td></tr>';
