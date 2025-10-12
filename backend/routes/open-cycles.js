@@ -32,10 +32,14 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       // Prova prima Supabase se disponibile
       if (typeof supabase !== 'undefined' && supabase) {
         try {
+          console.log('[DEBUG] Supabase client available, querying open_cycles table...');
           const { data, error } = await supabase
             .from('open_cycles')
             .select('*')
             .order('createdat', { ascending: false });
+          
+          console.log('[DEBUG] Supabase query result - data:', data);
+          console.log('[DEBUG] Supabase query result - error:', error);
           
           if (error) {
             console.error('Supabase error:', error);
