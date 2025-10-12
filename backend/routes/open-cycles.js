@@ -396,8 +396,8 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     }
   });
 
-  // Test endpoint per verificare connessione Supabase
-  router.get('/open-cycles/test', auth, async (req, res) => {
+  // Test endpoint per verificare connessione Supabase (senza auth per debug)
+  router.get('/open-cycles/test', async (req, res) => {
     try {
       console.log('[DEBUG] Testing Supabase connection...');
       
