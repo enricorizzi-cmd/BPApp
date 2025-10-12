@@ -26,6 +26,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // GET /api/open-cycles - Lista cicli
   router.get('/open-cycles', auth, async (req, res) => {
     try {
+      console.log('[DEBUG] GET /api/open-cycles - req.user:', req.user);
       let cycles = [];
       
       // Prova prima Supabase se disponibile
@@ -68,10 +69,18 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       
       // Filtro per consulente se non admin
       let filteredCycles = cycles;
+      console.log('[DEBUG] Total cycles from Supabase:', cycles.length);
+      console.log('[DEBUG] User role:', req.user.role);
+      console.log('[DEBUG] User id:', req.user.id);
+      
       if (req.user.role !== 'admin') {
         filteredCycles = cycles.filter(c => c.consultantId === req.user.id);
+        console.log('[DEBUG] Filtered cycles for non-admin:', filteredCycles.length);
+      } else {
+        console.log('[DEBUG] Admin user - showing all cycles');
       }
       
+      console.log('[DEBUG] Final cycles to return:', filteredCycles.length);
       res.json({ cycles: filteredCycles });
     } catch (error) {
       console.error('Error fetching open cycles:', error);
