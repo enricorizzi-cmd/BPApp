@@ -14,6 +14,7 @@ export function topbarHTML(){
           '<button class="ghost" onclick="viewCalendar();toggleDrawer(false)">Calendario</button>'+
           '<button class="ghost" onclick="viewPeriods();toggleDrawer(false)">BP</button>'+
           '<button class="ghost" onclick="viewAppointments();toggleDrawer(false)">Appuntamenti</button>'+
+          '<button class="ghost" onclick="viewOpenCycles();toggleDrawer(false)">Cicli Aperti</button>'+
           '<button class="ghost" onclick="viewLeaderboard();toggleDrawer(false)">Classifiche</button>'+
           '<button class="ghost" onclick="viewCommissions();toggleDrawer(false)">Provvigioni</button>'+
           '<button class="ghost" onclick="viewVendite();toggleDrawer(false)">Vendite e Riordini</button>'+
@@ -34,6 +35,7 @@ export function topbarHTML(){
     { icon: '📅', text: 'Calendario', onclick: 'viewCalendar()' },
     { icon: '📊', text: 'BP', onclick: 'viewPeriods()' },
     { icon: '👥', text: 'Appuntamenti', onclick: 'viewAppointments()' },
+    { icon: '🔄', text: 'Cicli Aperti', onclick: 'viewOpenCycles()' },
     { icon: '🏆', text: 'Classifiche', onclick: 'viewLeaderboard()' },
     { icon: '💰', text: 'Provvigioni', onclick: 'viewCommissions()' },
     { icon: '🛒', text: 'Vendite e Riordini', onclick: 'viewVendite()' },

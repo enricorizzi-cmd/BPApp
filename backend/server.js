@@ -298,6 +298,7 @@ async function ensureFiles(){
     await ensure("periods.json", { periods: [] });
     await ensure("push_subscriptions.json", { subs: [] });
     await ensure("gi.json", { sales: [] });
+    await ensure("open_cycles.json", { cycles: [] });
     await ensure("settings.json", {
       indicators: ["VSS","VSDPersonale","VSDIndiretto","GI","Telefonate","AppFissati","AppFatti","CorsiLeadership","iProfile","MBS","NNCF"],
       weights: { VSS:0.25, VSDPersonale:0.25, GI:0.30, NNCF:0.20 },
@@ -1035,8 +1036,10 @@ const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, wri
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
 const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
+const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
+app.use('/api', openCyclesRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 

@@ -4864,6 +4864,755 @@ function viewLeaderboard(){
 })();
 
 
+// ===== CICLI APERTI =====
+function viewOpenCycles(){
+  if(!getUser()) return viewLogin();
+  document.title = 'Battle Plan – Cicli Aperti';
+  setActiveSidebarItem('viewOpenCycles');
+  const isAdmin = getUser().role==='admin';
+
+  appEl.innerHTML = topbarHTML() + `
+    <div class="wrap">
+      <!-- Hero Section -->
+      <div class="cycles-card" style="background: linear-gradient(135deg, rgba(255,193,7,.12), rgba(255,152,0,.08)); border: 1px solid rgba(255,193,7,.3); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+        <div class="cycles-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h1 class="cycles-card-title" style="margin: 0; color: var(--text); font-size: 28px; font-weight: 600;">🔄 Cicli Aperti</h1>
+          <div class="cycles-card-actions">
+            <button class="ghost" id="cycles_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); padding: 8px 16px; border-radius: 6px;">
+              <span style="margin-right: 8px;">+</span>Nuovo Ciclo
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="cycles-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div class="cycles-stat-card" style="background: rgba(255,255,255,.05); padding: 16px; border-radius: 8px; text-align: center;">
+            <div class="cycles-stat-value" id="cycles-total" style="font-size: 24px; font-weight: bold; color: var(--accent);">-</div>
+            <div class="cycles-stat-label" style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">Cicli Totali</div>
+          </div>
+          <div class="cycles-stat-card" style="background: rgba(255,255,255,.05); padding: 16px; border-radius: 8px; text-align: center;">
+            <div class="cycles-stat-value" id="cycles-open" style="font-size: 24px; font-weight: bold; color: #4caf50;">-</div>
+            <div class="cycles-stat-label" style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">Aperti</div>
+          </div>
+          <div class="cycles-stat-card" style="background: rgba(255,255,255,.05); padding: 16px; border-radius: 8px; text-align: center;">
+            <div class="cycles-stat-value" id="cycles-urgent" style="font-size: 24px; font-weight: bold; color: #f44336;">-</div>
+            <div class="cycles-stat-label" style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">Urgenti</div>
+          </div>
+          <div class="cycles-stat-card" style="background: rgba(255,255,255,.05); padding: 16px; border-radius: 8px; text-align: center;">
+            <div class="cycles-stat-value" id="cycles-no-deadline" style="font-size: 24px; font-weight: bold; color: #ff9800;">-</div>
+            <div class="cycles-stat-label" style="font-size: 14px; color: var(--text-secondary); margin-top: 4px;">Senza Scadenza</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtri -->
+      <div class="cycles-filters" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <div class="row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Consulente</label>
+            <select id="cycles_filter_consultant" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+              <option value="">Tutti</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Priorità</label>
+            <select id="cycles_filter_priority" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+              <option value="">Tutte le priorità</option>
+              <option value="urgent">Urgente</option>
+              <option value="important">Importante</option>
+              <option value="standard">Standard</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Tipologia Scadenza</label>
+            <select id="cycles_filter_deadline" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+              <option value="">Tutte le tipologie</option>
+              <option value="none">Senza scadenza</option>
+              <option value="single">Scadenza singola</option>
+              <option value="multiple">Scadenze multiple</option>
+              <option value="recurring">Ripetitiva</option>
+            </select>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Completamento</label>
+            <select id="cycles_filter_status" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+              <option value="open">Aperti</option>
+              <option value="closed">Chiusi</option>
+            </select>
+          </div>
+          <div>
+            <button id="cycles_filter_apply" class="ghost" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px;">Applica Filtri</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabella Cicli -->
+      <div class="cycles-table" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+        <div class="cycles-table-header" style="padding: 16px; border-bottom: 1px solid var(--border);">
+          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">Cicli Aperti</h2>
+        </div>
+        <div class="table" style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: var(--bg-secondary);">
+                <th data-sort="consultant" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Consulente</th>
+                <th data-sort="created" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Data inserimento</th>
+                <th data-sort="description" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Descrizione</th>
+                <th data-sort="priority" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Priorità</th>
+                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Tipologia scadenza</th>
+                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Scadenza</th>
+                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border);">Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="cycles_rows">
+              <tr>
+                <td colspan="7" class="muted" style="text-align: center; padding: 40px;">Caricamento...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Forecast Section -->
+      <div class="cycles-forecast" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 24px; overflow: hidden;">
+        <div class="cycles-forecast-header" style="padding: 16px; border-bottom: 1px solid var(--border);">
+          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">Forecast Cicli</h2>
+          <div class="forecast-filters" style="margin-top: 12px;">
+            <div class="row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+              <div>
+                <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Granularità</label>
+                <select id="cycles_forecast_granularity" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                  <option value="settimanale">Settimanale</option>
+                  <option value="mensile" selected>Mensile</option>
+                  <option value="trimestrale">Trimestrale</option>
+                  <option value="semestrale">Semestrale</option>
+                  <option value="annuale">Annuale</option>
+                </select>
+              </div>
+              ${isAdmin ? `
+                <div>
+                  <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Consulente</label>
+                  <select id="cycles_forecast_consultant" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                    <option value="">Tutti</option>
+                  </select>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="table" style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: var(--bg-secondary);">
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">Periodo</th>
+                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border);">Cicli programmati</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">Dettaglio</th>
+              </tr>
+            </thead>
+            <tbody id="cycles_forecast_rows">
+              <tr>
+                <td colspan="3" class="muted" style="text-align: center; padding: 40px;">Caricamento...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Floating Action Button -->
+    <button class="fab" id="cycles_fab" onclick="document.getElementById('cycles_add').click()" title="Nuovo ciclo" style="position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 1000;">
+      +
+    </button>
+  `;
+
+  // Inizializzazione
+  loadOpenCycles();
+  setupCyclesFilters();
+  setupCyclesSorting();
+  renderForecast();
+}
+
+// Variabili globali per cicli aperti
+let cyclesData = [];
+let cyclesSortField = 'created';
+let cyclesSortOrder = 'desc';
+
+// Carica dati cicli aperti
+function loadOpenCycles() {
+  GET('/api/open-cycles').then(response => {
+    cyclesData = (response && response.cycles) || [];
+    
+    // Ordina per data inserimento (più recenti primi)
+    cyclesData.sort((a, b) => {
+      const dateA = new Date(a.createdAt);
+      const dateB = new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    
+    renderCyclesTable();
+    updateCyclesStats();
+    populateConsultantFilters();
+  }).catch(error => {
+    console.error('Error loading cycles:', error);
+    toast('Errore caricamento cicli');
+    document.getElementById('cycles_rows').innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center; padding: 40px;">Errore caricamento</td></tr>';
+  });
+}
+
+// Renderizza tabella cicli
+function renderCyclesTable() {
+  const tbody = document.getElementById('cycles_rows');
+  if (!tbody) return;
+  
+  if (cyclesData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center; padding: 40px;">Nessun ciclo trovato</td></tr>';
+    return;
+  }
+  
+  const rows = cyclesData.map(cycle => {
+    const createdDate = new Date(cycle.createdAt).toLocaleDateString('it-IT');
+    const priorityText = {
+      'urgent': 'Urgente',
+      'important': 'Importante', 
+      'standard': 'Standard'
+    }[cycle.priority] || 'Standard';
+    
+    const deadlineTypeText = {
+      'none': 'Senza scadenza',
+      'single': 'Scadenza singola',
+      'multiple': 'Scadenze multiple',
+      'recurring': 'Ripetitiva'
+    }[cycle.deadlineType] || 'Senza scadenza';
+    
+    const nextDeadline = getNextDeadline(cycle);
+    const deadlineDisplay = nextDeadline ? new Date(nextDeadline).toLocaleString('it-IT') : '—';
+    
+    // Styling per priorità e scadenze
+    const rowClass = cycle.priority === 'urgent' ? 'cycle-row urgent' : 'cycle-row';
+    const descriptionStyle = cycle.deadlineType === 'none' ? 'color: #f44336; font-style: italic;' : '';
+    const priorityStyle = cycle.priority === 'urgent' ? 'font-weight: bold; color: #f44336;' : '';
+    
+    return `
+      <tr class="${rowClass}" data-cycle-id="${cycle.id}" style="${descriptionStyle}">
+        <td style="padding: 12px;">${htmlEscape(cycle.consultantName)}</td>
+        <td style="padding: 12px;">${createdDate}</td>
+        <td style="padding: 12px;">${htmlEscape(cycle.description)}</td>
+        <td style="padding: 12px; ${priorityStyle}">${priorityText}</td>
+        <td style="padding: 12px;">${deadlineTypeText}</td>
+        <td style="padding: 12px;">${deadlineDisplay}</td>
+        <td style="padding: 12px; text-align: center;">
+          <button class="ghost small" onclick="editCycle('${cycle.id}')" style="margin-right: 4px;">Modifica</button>
+          <button class="ghost small" onclick="toggleCycleStatus('${cycle.id}')" style="margin-right: 4px;">
+            ${cycle.status === 'open' ? 'Chiudi' : 'Riapri'}
+          </button>
+          <button class="ghost small" onclick="deleteCycle('${cycle.id}')" style="color: #f44336;">Elimina</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  tbody.innerHTML = rows;
+}
+
+// Aggiorna statistiche
+function updateCyclesStats() {
+  const total = cyclesData.length;
+  const open = cyclesData.filter(c => c.status === 'open').length;
+  const urgent = cyclesData.filter(c => c.priority === 'urgent').length;
+  const noDeadline = cyclesData.filter(c => c.deadlineType === 'none').length;
+  
+  const totalEl = document.getElementById('cycles-total');
+  const openEl = document.getElementById('cycles-open');
+  const urgentEl = document.getElementById('cycles-urgent');
+  const noDeadlineEl = document.getElementById('cycles-no-deadline');
+  
+  if (totalEl) totalEl.textContent = total;
+  if (openEl) openEl.textContent = open;
+  if (urgentEl) urgentEl.textContent = urgent;
+  if (noDeadlineEl) noDeadlineEl.textContent = noDeadline;
+}
+
+// Popola filtri consulente
+function populateConsultantFilters() {
+  const filterEl = document.getElementById('cycles_filter_consultant');
+  const forecastEl = document.getElementById('cycles_forecast_consultant');
+  
+  if (!filterEl && !forecastEl) return;
+  
+  GET('/api/usernames').then(response => {
+    const users = (response && response.users) || [];
+    const currentUser = getUser();
+    
+    const options = users.map(user => 
+      `<option value="${user.id}">${htmlEscape(user.name)}${user.grade ? ` (${user.grade})` : ''}</option>`
+    ).join('');
+    
+    if (filterEl) {
+      filterEl.innerHTML = '<option value="">Tutti</option>' + options;
+      // Default su utente corrente per non-admin
+      if (currentUser.role !== 'admin') {
+        filterEl.value = currentUser.id;
+      }
+    }
+    
+    if (forecastEl) {
+      forecastEl.innerHTML = '<option value="">Tutti</option>' + options;
+    }
+  }).catch(error => {
+    console.error('Error loading users:', error);
+  });
+}
+
+// Setup filtri
+function setupCyclesFilters() {
+  const applyBtn = document.getElementById('cycles_filter_apply');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', applyCyclesFilters);
+  }
+  
+  // Event listeners per filtri
+  const filterInputs = ['cycles_filter_consultant', 'cycles_filter_priority', 'cycles_filter_deadline', 'cycles_filter_status'];
+  filterInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', applyCyclesFilters);
+    }
+  });
+}
+
+// Applica filtri
+function applyCyclesFilters() {
+  const consultantFilter = document.getElementById('cycles_filter_consultant')?.value || '';
+  const priorityFilter = document.getElementById('cycles_filter_priority')?.value || '';
+  const deadlineFilter = document.getElementById('cycles_filter_deadline')?.value || '';
+  const statusFilter = document.getElementById('cycles_filter_status')?.value || 'open';
+  
+  let filteredData = cyclesData;
+  
+  // Filtro consulente
+  if (consultantFilter) {
+    filteredData = filteredData.filter(c => c.consultantId === consultantFilter);
+  }
+  
+  // Filtro priorità
+  if (priorityFilter) {
+    filteredData = filteredData.filter(c => c.priority === priorityFilter);
+  }
+  
+  // Filtro tipologia scadenza
+  if (deadlineFilter) {
+    filteredData = filteredData.filter(c => c.deadlineType === deadlineFilter);
+  }
+  
+  // Filtro status
+  if (statusFilter) {
+    filteredData = filteredData.filter(c => c.status === statusFilter);
+  }
+  
+  // Salva dati filtrati temporaneamente e renderizza
+  const originalData = cyclesData;
+  cyclesData = filteredData;
+  renderCyclesTable();
+  cyclesData = originalData;
+}
+
+// Setup ordinamento
+function setupCyclesSorting() {
+  const headers = document.querySelectorAll('.cycles-table th[data-sort]');
+  
+  headers.forEach(header => {
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', () => {
+      const sortField = header.getAttribute('data-sort');
+      const currentOrder = header.getAttribute('data-order') || 'asc';
+      const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+      
+      // Rimuovi attributi da tutti gli header
+      headers.forEach(h => h.removeAttribute('data-order'));
+      
+      // Imposta nuovo ordine
+      header.setAttribute('data-order', newOrder);
+      
+      // Ordina dati
+      sortCyclesData(sortField, newOrder);
+      renderCyclesTable();
+    });
+  });
+}
+
+// Ordina dati cicli
+function sortCyclesData(field, order) {
+  cyclesData.sort((a, b) => {
+    let aVal, bVal;
+    
+    switch(field) {
+      case 'consultant':
+        aVal = a.consultantName;
+        bVal = b.consultantName;
+        break;
+      case 'created':
+        aVal = new Date(a.createdAt);
+        bVal = new Date(b.createdAt);
+        break;
+      case 'description':
+        aVal = a.description;
+        bVal = b.description;
+        break;
+      case 'priority':
+        const priorityOrder = { 'urgent': 3, 'important': 2, 'standard': 1 };
+        aVal = priorityOrder[a.priority];
+        bVal = priorityOrder[b.priority];
+        break;
+      case 'deadline':
+        aVal = getNextDeadline(a);
+        bVal = getNextDeadline(b);
+        break;
+    }
+    
+    if (order === 'asc') {
+      return aVal > bVal ? 1 : -1;
+    } else {
+      return aVal < bVal ? 1 : -1;
+    }
+  });
+}
+
+// Ottieni prossima scadenza
+function getNextDeadline(cycle) {
+  if (cycle.deadlineType === 'none') return null;
+  
+  const now = new Date();
+  const deadlines = [];
+  
+  if (cycle.deadlineType === 'single' && cycle.deadlineData.dates) {
+    deadlines.push(...cycle.deadlineData.dates);
+  } else if (cycle.deadlineType === 'multiple' && cycle.deadlineData.dates) {
+    deadlines.push(...cycle.deadlineData.dates);
+  } else if (cycle.deadlineType === 'recurring' && cycle.deadlineData.recurring) {
+    // Per ora restituiamo la data di inizio se presente
+    if (cycle.deadlineData.recurring.start) {
+      deadlines.push(cycle.deadlineData.recurring.start);
+    }
+  }
+  
+  // Trova la prossima scadenza futura
+  const futureDeadlines = deadlines.filter(d => new Date(d) > now);
+  return futureDeadlines.length > 0 ? futureDeadlines[0] : null;
+}
+
+// Renderizza forecast
+function renderForecast() {
+  const granularity = document.getElementById('cycles_forecast_granularity')?.value || 'mensile';
+  const consultantId = document.getElementById('cycles_forecast_consultant')?.value || '';
+  
+  // Filtra cicli per consulente
+  let filteredCycles = cyclesData.filter(c => c.status === 'open');
+  if (consultantId) {
+    filteredCycles = filteredCycles.filter(c => c.consultantId === consultantId);
+  }
+  
+  // Per ora mostra solo i cicli aperti senza aggregazione per periodo
+  const tbody = document.getElementById('cycles_forecast_rows');
+  if (!tbody) return;
+  
+  if (filteredCycles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="muted" style="text-align: center; padding: 40px;">Nessun ciclo programmato</td></tr>';
+    return;
+  }
+  
+  const rows = filteredCycles.map(cycle => {
+    const nextDeadline = getNextDeadline(cycle);
+    const deadlineDisplay = nextDeadline ? new Date(nextDeadline).toLocaleString('it-IT') : 'Senza scadenza';
+    
+    return `
+      <tr>
+        <td style="padding: 12px;">${deadlineDisplay}</td>
+        <td style="padding: 12px; text-align: center;">1</td>
+        <td style="padding: 12px;">${htmlEscape(cycle.description)}</td>
+      </tr>
+    `;
+  });
+  
+  tbody.innerHTML = rows.join('');
+}
+
+// Funzioni CRUD
+function editCycle(id) {
+  const cycle = cyclesData.find(c => c.id === id);
+  if (!cycle) return;
+  
+  showCycleForm(cycle);
+}
+
+function toggleCycleStatus(id) {
+  const cycle = cyclesData.find(c => c.id === id);
+  if (!cycle) return;
+  
+  const newStatus = cycle.status === 'open' ? 'closed' : 'open';
+  
+  PUT('/api/open-cycles', { id, status: newStatus }).then(() => {
+    toast(`Ciclo ${newStatus === 'open' ? 'riaperto' : 'chiuso'}`);
+    loadOpenCycles();
+  }).catch(() => {
+    toast('Errore aggiornamento ciclo');
+  });
+}
+
+function deleteCycle(id) {
+  if (!confirm('Eliminare questo ciclo?')) return;
+  
+  DELETE(`/api/open-cycles?id=${id}`).then(() => {
+    toast('Ciclo eliminato');
+    loadOpenCycles();
+  }).catch(() => {
+    toast('Errore eliminazione ciclo');
+  });
+}
+
+function showCycleForm(cycle = null) {
+  const isEdit = !!cycle;
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,.5); z-index: 10000; display: flex; 
+    align-items: center; justify-content: center; padding: 20px;
+  `;
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="background: var(--card-bg); border-radius: 8px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin: 0 0 20px 0; color: var(--text);">${isEdit ? 'Modifica' : 'Nuovo'} Ciclo Aperto</h3>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Descrizione *</label>
+        <textarea id="cycle_description" placeholder="Descrivi l'attività da fare..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); min-height: 80px; resize: vertical;">${cycle?.description || ''}</textarea>
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Priorità *</label>
+        <select id="cycle_priority" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+          <option value="urgent" ${cycle?.priority === 'urgent' ? 'selected' : ''}>Urgente</option>
+          <option value="important" ${cycle?.priority === 'important' ? 'selected' : ''}>Importante</option>
+          <option value="standard" ${cycle?.priority === 'standard' ? 'selected' : ''}>Standard</option>
+        </select>
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Tipologia scadenza</label>
+        <select id="cycle_deadline_type" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+          <option value="none" ${cycle?.deadlineType === 'none' ? 'selected' : ''}>Nessuna scadenza</option>
+          <option value="single" ${cycle?.deadlineType === 'single' ? 'selected' : ''}>Scadenza singola</option>
+          <option value="multiple" ${cycle?.deadlineType === 'multiple' ? 'selected' : ''}>Scadenze multiple</option>
+          <option value="recurring" ${cycle?.deadlineType === 'recurring' ? 'selected' : ''}>Ripetitiva</option>
+        </select>
+      </div>
+      
+      <div id="deadline_config" class="form-group" style="margin-bottom: 16px; display: none;">
+        <!-- Configurazione scadenze dinamica -->
+      </div>
+      
+      <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+        <button id="cycle_save" class="ghost" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px;">${isEdit ? 'Aggiorna' : 'Crea'}</button>
+        <button id="cycle_cancel" class="ghost" style="padding: 8px 16px; background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); border-radius: 4px;">Annulla</button>
+        ${isEdit ? '<button id="cycle_delete" class="ghost" style="padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 4px;">Elimina</button>' : ''}
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Event listeners
+  document.getElementById('cycle_cancel').onclick = () => modal.remove();
+  document.getElementById('cycle_save').onclick = () => saveCycle(cycle?.id);
+  if (isEdit) {
+    document.getElementById('cycle_delete').onclick = () => {
+      modal.remove();
+      deleteCycle(cycle.id);
+    };
+  }
+  
+  // Setup configurazione scadenze
+  document.getElementById('cycle_deadline_type').addEventListener('change', setupDeadlineConfig);
+  setupDeadlineConfig();
+}
+
+function setupDeadlineConfig() {
+  const type = document.getElementById('cycle_deadline_type').value;
+  const configEl = document.getElementById('deadline_config');
+  
+  switch(type) {
+    case 'single':
+      configEl.innerHTML = `
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Data e ora scadenza</label>
+        <input type="datetime-local" id="deadline_single_date" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+      `;
+      break;
+      
+    case 'multiple':
+      configEl.innerHTML = `
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Scadenze multiple</label>
+        <div id="deadline_multiple_list">
+          <div class="deadline-item" style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+            <button type="button" onclick="removeDeadlineItem(this)" style="padding: 8px 12px; background: #f44336; color: white; border: none; border-radius: 4px;">Rimuovi</button>
+          </div>
+        </div>
+        <button type="button" onclick="addDeadlineItem()" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px;">Aggiungi scadenza</button>
+      `;
+      break;
+      
+    case 'recurring':
+      configEl.innerHTML = `
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Pattern ripetizione</label>
+        <select id="recurring_pattern" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); margin-bottom: 12px;">
+          <option value="daily">Giornaliero</option>
+          <option value="weekly">Settimanale</option>
+          <option value="monthly">Mensile</option>
+        </select>
+        
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Intervallo</label>
+        <input type="number" id="recurring_interval" value="1" min="1" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); margin-bottom: 12px;">
+        
+        <div id="weekly_config" style="display: none; margin-bottom: 12px;">
+          <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Giorni della settimana</label>
+          <div class="checkbox-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="1"> Lun</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="2"> Mar</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="3"> Mer</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="4"> Gio</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="5"> Ven</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="6"> Sab</label>
+            <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="0"> Dom</label>
+          </div>
+        </div>
+        
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Ora</label>
+        <input type="time" id="recurring_time" value="09:00" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Data inizio</label>
+        <input type="date" id="recurring_start" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text); margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Data fine (opzionale)</label>
+        <input type="date" id="recurring_end" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+      `;
+      
+      // Mostra/nascondi configurazione settimanale
+      document.getElementById('recurring_pattern').addEventListener('change', (e) => {
+        const weeklyConfig = document.getElementById('weekly_config');
+        weeklyConfig.style.display = e.target.value === 'weekly' ? 'block' : 'none';
+      });
+      break;
+      
+    default:
+      configEl.innerHTML = '';
+  }
+  
+  configEl.style.display = type === 'none' ? 'none' : 'block';
+}
+
+function saveCycle(id) {
+  const description = document.getElementById('cycle_description').value.trim();
+  const priority = document.getElementById('cycle_priority').value;
+  const deadlineType = document.getElementById('cycle_deadline_type').value;
+  
+  if (!description) {
+    toast('Inserisci una descrizione');
+    return;
+  }
+  
+  const payload = {
+    description,
+    priority,
+    deadlineType,
+    deadlineData: {}
+  };
+  
+  if (id) {
+    payload.id = id;
+  }
+  
+  // Configurazione scadenze
+  if (deadlineType === 'single') {
+    const date = document.getElementById('deadline_single_date').value;
+    if (date) {
+      payload.deadlineData = { dates: [new Date(date).toISOString()] };
+    }
+  } else if (deadlineType === 'multiple') {
+    const dates = Array.from(document.querySelectorAll('.deadline-date'))
+      .map(input => input.value)
+      .filter(value => value)
+      .map(value => new Date(value).toISOString());
+    payload.deadlineData = { dates };
+  } else if (deadlineType === 'recurring') {
+    const pattern = document.getElementById('recurring_pattern').value;
+    const interval = parseInt(document.getElementById('recurring_interval').value) || 1;
+    const time = document.getElementById('recurring_time').value;
+    const start = document.getElementById('recurring_start').value;
+    const end = document.getElementById('recurring_end').value;
+    
+    payload.deadlineData = {
+      recurring: {
+        pattern,
+        interval,
+        time,
+        start: start ? new Date(start).toISOString() : null,
+        end: end ? new Date(end).toISOString() : null
+      }
+    };
+    
+    if (pattern === 'weekly') {
+      const daysOfWeek = Array.from(document.querySelectorAll('#weekly_config input[type="checkbox"]:checked'))
+        .map(cb => parseInt(cb.value));
+      payload.deadlineData.recurring.daysOfWeek = daysOfWeek;
+    }
+  }
+  
+  const method = id ? 'PUT' : 'POST';
+  const endpoint = '/api/open-cycles';
+  
+  fetch(endpoint, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + getToken()
+    },
+    body: JSON.stringify(payload)
+  }).then(response => {
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  }).then(() => {
+    toast(`Ciclo ${id ? 'aggiornato' : 'creato'}`);
+    document.querySelector('.modal').remove();
+    loadOpenCycles();
+  }).catch(() => {
+    toast(`Errore ${id ? 'aggiornamento' : 'creazione'} ciclo`);
+  });
+}
+
+// Funzioni helper per scadenze multiple
+function addDeadlineItem() {
+  const list = document.getElementById('deadline_multiple_list');
+  const item = document.createElement('div');
+  item.className = 'deadline-item';
+  item.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
+  item.innerHTML = `
+    <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+    <button type="button" onclick="removeDeadlineItem(this)" style="padding: 8px 12px; background: #f44336; color: white; border: none; border-radius: 4px;">Rimuovi</button>
+  `;
+  list.appendChild(item);
+}
+
+function removeDeadlineItem(button) {
+  button.parentElement.remove();
+}
+
+// Event listener per il bottone "Nuovo Ciclo"
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'cycles_add') {
+    showCycleForm();
+  }
+});
+
 // ===== CLIENTI =====
 function viewClients(){
   if(!getUser()) return viewLogin();
@@ -8158,6 +8907,7 @@ window.viewCommissions  = viewCommissions;
 window.viewVendite     = viewVendite;
 window.viewReport       = viewReport;
 window.viewUsers        = viewUsers;
+window.viewOpenCycles   = viewOpenCycles;
 window.toggleDrawer     = toggleDrawer;
 window.logout           = logout;
 window.rerenderTopbarSoon = rerenderTopbarSoon;

@@ -68,7 +68,7 @@ async function createBackup() {
     // Backup all normalized tables (including missing ones)
     const tables = [
       'users', 'app_users', 'appointments', 'clients', 'periods', 
-      'settings', 'push_subscriptions', 'report_recipients', 'gi', 'audit_log'
+      'settings', 'push_subscriptions', 'report_recipients', 'gi', 'audit_log', 'open_cycles'
     ];
     
     const backupData = {
