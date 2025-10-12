@@ -32,6 +32,7 @@ import "./lib/leaderboard-hooks.js";
 import "./lib/migrate-banner-data.js";
 import "./lib/migrate-push-data.js";
 import "./lib/push-client.js";
+import "./lib/test-banner-persistence.js";
 import "./lib/timezone.js";
 import "./lib/user-preferences-sync.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";

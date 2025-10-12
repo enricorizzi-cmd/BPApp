@@ -65,6 +65,9 @@ async function readJSON(tableName) {
         vsdIndiretto: apt.vsdindiretto,
         appFissati: apt.appfissati,
         nncfPromptAnswered: apt.nncfpromptanswered,
+        salePromptAnswered: apt.salepromptanswered,
+        salePromptSnoozedUntil: apt.salepromptsnoozeduntil,
+        nncfPromptSnoozedUntil: apt.nncfpromptsnoozeduntil,
         createdAt: apt.createdat,
         updatedAt: apt.updatedat,
         // Remove database-specific fields
@@ -77,6 +80,9 @@ async function readJSON(tableName) {
         vsdindiretto: undefined,
         appfissati: undefined,
         nncfpromptanswered: undefined,
+        salepromptanswered: undefined,
+        salepromptsnoozeduntil: undefined,
+        nncfpromptsnoozeduntil: undefined,
         createdat: undefined,
         updatedat: undefined
       }));
@@ -235,9 +241,31 @@ async function writeJSON(tableName, data) {
           userid: apt.userId,
           start_time: apt.start,
           end_time: apt.end,
+          clientid: apt.clientId,
+          durationminutes: apt.durationMinutes,
+          vsdpersonal: apt.vsdPersonal,
+          vsdindiretto: apt.vsdIndiretto,
+          appfissati: apt.appFissati,
+          nncfpromptanswered: apt.nncfPromptAnswered,
+          salepromptanswered: apt.salePromptAnswered,
+          salepromptsnoozeduntil: apt.salePromptSnoozedUntil,
+          nncfpromptsnoozeduntil: apt.nncfPromptSnoozedUntil,
+          createdat: apt.createdAt,
+          updatedat: apt.updatedAt,
           start: undefined,
           end: undefined,
-          userId: undefined
+          userId: undefined,
+          clientId: undefined,
+          durationMinutes: undefined,
+          vsdPersonal: undefined,
+          vsdIndiretto: undefined,
+          appFissati: undefined,
+          nncfPromptAnswered: undefined,
+          salePromptAnswered: undefined,
+          salePromptSnoozedUntil: undefined,
+          nncfPromptSnoozedUntil: undefined,
+          createdAt: undefined,
+          updatedAt: undefined
         }));
         await supabase.from('appointments').insert(mappedAppointments);
       }
