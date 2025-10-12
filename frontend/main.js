@@ -5150,14 +5150,14 @@ function populateConsultantFilters() {
     
     if (filterEl) {
       filterEl.innerHTML = '<option value="">Tutti</option>' + options;
-      // Default su utente corrente per non-admin
-      if (currentUser.role !== 'admin') {
-        filterEl.value = currentUser.id;
-      }
+      // Default su utente corrente per tutti (admin e non-admin)
+      filterEl.value = currentUser.id;
     }
     
     if (forecastEl) {
       forecastEl.innerHTML = '<option value="">Tutti</option>' + options;
+      // Default su utente corrente per tutti (admin e non-admin)
+      forecastEl.value = currentUser.id;
     }
   }).catch(error => {
     console.error('Error loading users:', error);
