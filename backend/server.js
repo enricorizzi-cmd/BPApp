@@ -1890,6 +1890,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"
   let LAST_BACKUP_MARK = ""; // "YYYY-MM-DD"
+  let SENT_CYCLE_NOTIFICATIONS = new Set(); // Tracking notifiche cicli già inviate
 
   function _weekBoundariesISO(d){
     const s = startOfWeek(d), e = endOfWeek(d);
@@ -2078,6 +2079,14 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         return; // Non inviare notifiche se non è il momento giusto
       }
       
+      // Genera chiave unica per questa notifica (ciclo + scadenza)
+      const notificationKey = `${cycle.id}_${deadline}`;
+      
+      // Controlla se già inviata
+      if(SENT_CYCLE_NOTIFICATIONS.has(notificationKey)) {
+        return; // Notifica già inviata
+      }
+      
       const title = "🚨 Scadenza Imminente";
       const body = `Il ciclo "${cycle.description}" scade tra meno di 1 ora!`;
       
@@ -2109,6 +2118,10 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       } catch (error) {
         console.error('Error sending notification:', error);
       }
+      
+      // Marca come inviata per evitare duplicati
+      SENT_CYCLE_NOTIFICATIONS.add(notificationKey);
+      console.log(`[BP] Cycle deadline notification sent: ${notificationKey}`);
       
     } catch(error) {
       console.error('Error sending cycle deadline notification:', error);
