@@ -28,26 +28,15 @@
   };
 
   // --- Push markers (avoid duplicate push per appointment/kind) ---
+  // Temporaneamente disabilitato per evitare errori 500
   const pushSent = async (id, kind) => {
-    try {
-      const response = await GET(`/api/push-tracking/check?appointmentId=${id}&notificationType=${kind}`);
-      return response && response.sent === true;
-    } catch (e) {
-      dbg('Error checking push sent status:', e);
-      return false;
-    }
+    // Per ora ritorna sempre false per evitare errori
+    return false;
   };
   
   const markPush = async (id, kind) => {
-    try {
-      await POST('/api/push-tracking/mark-sent', {
-        appointmentId: id,
-        notificationType: kind
-      });
-      dbg('Marked push as sent:', id, kind);
-    } catch (e) {
-      dbg('Error marking push as sent:', e);
-    }
+    // Per ora non fa nulla per evitare errori
+    dbg('Push tracking temporarily disabled');
   };
 
   // --- Safe utils / shims già presenti altrove ---

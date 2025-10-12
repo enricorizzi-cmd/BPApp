@@ -26,6 +26,7 @@ import "./lib/targets.js";
 import "./lib/telemetry.js";
 import "./lib/undo.js";
 // Ensure post-sale/NNCF banners are registered before final-hooks tries to init them
+import "./lib/debug-banner-state.js";
 import "./lib/final-hooks.js";
 import "./lib/ics-single.js";
 import "./lib/leaderboard-hooks.js";
@@ -33,7 +34,6 @@ import "./lib/migrate-banner-data.js";
 import "./lib/migrate-push-data.js";
 import "./lib/push-client.js";
 import "./lib/test-banner-persistence.js";
-import "./lib/debug-banner-state.js";
 import "./lib/timezone.js";
 import "./lib/user-preferences-sync.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";
@@ -5049,11 +5049,8 @@ let cyclesSortOrder = 'desc';
 
 // Carica dati cicli aperti
 function loadOpenCycles() {
-  console.log('[DEBUG] loadOpenCycles called');
   GET('/api/open-cycles').then(response => {
-    console.log('[DEBUG] GET /api/open-cycles response:', response);
     cyclesData = (response && response.cycles) || [];
-    console.log('[DEBUG] cyclesData:', cyclesData);
     
     // Ordina per data inserimento (più recenti primi)
     cyclesData.sort((a, b) => {
@@ -5062,12 +5059,11 @@ function loadOpenCycles() {
       return dateB - dateA;
     });
     
-    console.log('[DEBUG] cyclesData after sort:', cyclesData);
     renderCyclesTable();
     updateCyclesStats();
     populateConsultantFilters();
   }).catch(error => {
-    console.error('[DEBUG] Error loading cycles:', error);
+    console.error('Error loading cycles:', error);
     toast('Errore caricamento cicli');
     document.getElementById('cycles_rows').innerHTML = '<tr><td colspan="7" class="muted" style="text-align: center; padding: 40px;">Errore caricamento</td></tr>';
   });
@@ -5075,10 +5071,8 @@ function loadOpenCycles() {
 
 // Renderizza tabella cicli
 function renderCyclesTable() {
-  console.log('[DEBUG] renderCyclesTable called with cyclesData:', cyclesData);
   const tbody = document.getElementById('cycles_rows');
   if (!tbody) {
-    console.log('[DEBUG] tbody not found');
     return;
   }
   
