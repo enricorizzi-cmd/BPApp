@@ -54,3 +54,11 @@ export function POST(path, body) {
 export function DEL(path) {
   return api(path, { method: 'DELETE' });
 }
+
+export function PUT(path, body) {
+  return api(path, { method: 'PUT', body: body || {} });
+}
+
+export function DELETE(path) {
+  return api(path, { method: 'DELETE' });
+}

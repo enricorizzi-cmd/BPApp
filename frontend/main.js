@@ -40,7 +40,7 @@ import { showAddToHomePrompt } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
 import { renderTopbar, rerenderTopbarSoon, setActiveSidebarItem, toggleDrawer, topbarHTML } from "./modules/ui.js";
 import { fmtInt } from "./modules/utils.js";
-import { DEL, GET, POST } from "./src/api.js";
+import { DEL, DELETE, GET, POST, PUT } from "./src/api.js";
 import { del, getToken, getUser, load, logout, save, setToken, setUser } from "./src/auth.js";
 import { endOfMonth, endOfQuarter, endOfSemester, endOfYear, formatPeriodLabel, isoWeekNum, nextMonthBounds, nextQuarterBounds, nextSemesterBounds, nextWeekBounds, nextYearBounds, pad2, startOfMonth, startOfQuarter, startOfSemester, startOfWeek, startOfYear, timeHM, weekBoundsOf, ymd } from "./src/dateUtils.js";
 import "./src/postSaleBanners.js";
@@ -5600,6 +5600,11 @@ function deleteCycle(id) {
     toast('Errore eliminazione ciclo');
   });
 }
+
+// Esponi funzioni globalmente per i pulsanti HTML
+window.editCycle = editCycle;
+window.toggleCycleStatus = toggleCycleStatus;
+window.deleteCycle = deleteCycle;
 
 function showCycleForm(cycle = null) {
   const isEdit = !!cycle;
