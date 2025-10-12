@@ -4889,6 +4889,8 @@ function viewOpenCycles(){
         .cycles-filters select {
           width: 100% !important;
           min-width: auto !important;
+          padding: 8px 10px !important;
+          font-size: 14px !important;
         }
         .cycles-stats-grid {
           grid-template-columns: repeat(2, 1fr) !important;
@@ -4921,6 +4923,27 @@ function viewOpenCycles(){
         .cycles-card-actions button {
           width: 100%;
           justify-content: center;
+        }
+        .forecast-filters select {
+          padding: 8px 10px !important;
+          font-size: 14px !important;
+        }
+        .cycles-forecast .table {
+          min-width: 400px !important;
+        }
+        .cycles-forecast table {
+          min-width: 400px !important;
+        }
+        .forecast-filters-row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+        }
+        .forecast-filters-row > div {
+          margin-bottom: 12px;
+        }
+        .forecast-filters-row select {
+          width: 100% !important;
+          min-width: auto !important;
         }
       }
     </style>
@@ -5033,7 +5056,7 @@ function viewOpenCycles(){
         <div class="cycles-forecast-header" style="padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
           <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">📊 Forecast Cicli</h2>
           <div class="forecast-filters" style="margin-top: 16px;">
-            <div class="row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+            <div class="row forecast-filters-row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
               <div>
                 <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Granularità</label>
                 <select id="cycles_forecast_granularity" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
