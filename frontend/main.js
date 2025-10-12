@@ -4877,6 +4877,53 @@ function viewOpenCycles(){
   const isAdmin = getUser().role==='admin';
 
   appEl.innerHTML = topbarHTML() + `
+    <style>
+      @media (max-width: 768px) {
+        .cycles-filters .row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+        }
+        .cycles-filters .row > div {
+          margin-bottom: 12px;
+        }
+        .cycles-filters select {
+          width: 100% !important;
+          min-width: auto !important;
+        }
+        .cycles-stats-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 12px !important;
+        }
+        .cycles-stat-card {
+          padding: 12px !important;
+        }
+        .cycles-stat-value {
+          font-size: 20px !important;
+        }
+        .cycles-stat-label {
+          font-size: 12px !important;
+        }
+        .cycles-table-header h2,
+        .cycles-forecast-header h2 {
+          font-size: 18px !important;
+        }
+        .cycles-card-title {
+          font-size: 24px !important;
+        }
+        .cycles-card-header {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 16px;
+        }
+        .cycles-card-actions {
+          width: 100%;
+        }
+        .cycles-card-actions button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
     <div class="wrap">
       <!-- Hero Section -->
       <div class="cycles-card" style="background: linear-gradient(135deg, rgba(255,193,7,.12), rgba(255,152,0,.08)); border: 1px solid rgba(255,193,7,.3); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
@@ -4959,17 +5006,17 @@ function viewOpenCycles(){
         <div class="cycles-table-header" style="padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
           <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">📋 Cicli Aperti</h2>
         </div>
-        <div class="table" style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse;">
+        <div class="table" style="overflow-x: auto; min-width: 800px;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
             <thead>
               <tr style="background: var(--bg-secondary);">
-                <th data-sort="consultant" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Consulente</th>
-                <th data-sort="created" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Data inserimento</th>
-                <th data-sort="description" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Descrizione</th>
-                <th data-sort="priority" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Priorità</th>
-                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Tipologia scadenza</th>
-                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;">Scadenza</th>
-                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border);">Azioni</th>
+                <th data-sort="consultant" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 120px;">Consulente</th>
+                <th data-sort="created" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 120px;">Data inserimento</th>
+                <th data-sort="description" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 200px;">Descrizione</th>
+                <th data-sort="priority" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 100px;">Priorità</th>
+                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 140px;">Tipologia scadenza</th>
+                <th data-sort="deadline" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 120px;">Scadenza</th>
+                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border); min-width: 180px;">Azioni</th>
               </tr>
             </thead>
             <tbody id="cycles_rows">
@@ -5008,13 +5055,13 @@ function viewOpenCycles(){
             </div>
           </div>
         </div>
-        <div class="table" style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse;">
+        <div class="table" style="overflow-x: auto; min-width: 600px;">
+          <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
             <thead>
               <tr style="background: var(--bg-secondary);">
-                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">Periodo</th>
-                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border);">Cicli programmati</th>
-                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">Dettaglio</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); min-width: 150px;">Periodo</th>
+                <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border); min-width: 120px;">Cicli programmati</th>
+                <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); min-width: 300px;">Dettaglio</th>
               </tr>
             </thead>
             <tbody id="cycles_forecast_rows">
