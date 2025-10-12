@@ -5039,7 +5039,6 @@ function viewOpenCycles(){
   setupCyclesSorting();
   setupForecastFilters();
   setupCyclesHoverEffects();
-  renderForecast();
 }
 
 // Variabili globali per cicli aperti
@@ -5062,6 +5061,7 @@ function loadOpenCycles() {
     renderCyclesTable();
     updateCyclesStats();
     populateConsultantFilters();
+    renderForecast(); // Chiama dopo che i filtri sono popolati
   }).catch(error => {
     console.error('Error loading cycles:', error);
     toast('Errore caricamento cicli');
@@ -5167,8 +5167,10 @@ function populateConsultantFilters() {
     
     if (forecastEl) {
       forecastEl.innerHTML = '<option value="">Tutti</option>' + options;
-      // Default su "Tutti" per vedere tutti i cicli nel forecast
-      forecastEl.value = '';
+      // Default su utente corrente per tutti (admin e non-admin)
+      forecastEl.value = currentUser.id;
+      // Aggiorna forecast dopo aver impostato il filtro
+      renderForecast();
     }
   }).catch(error => {
     console.error('Error loading users:', error);
