@@ -396,5 +396,46 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     }
   });
 
+  // Test endpoint per verificare connessione Supabase
+  router.get('/open-cycles/test', auth, async (req, res) => {
+    try {
+      console.log('[DEBUG] Testing Supabase connection...');
+      
+      if (typeof supabase === 'undefined' || !supabase) {
+        return res.json({ error: 'Supabase client not available' });
+      }
+      
+      // Test query semplice
+      const { data, error } = await supabase
+        .from('open_cycles')
+        .select('count')
+        .limit(1);
+      
+      console.log('[DEBUG] Test query result:', { data, error });
+      
+      if (error) {
+        return res.json({ error: error.message, code: error.code });
+      }
+      
+      // Test query con tutti i dati
+      const { data: allData, error: allError } = await supabase
+        .from('open_cycles')
+        .select('*')
+        .limit(5);
+      
+      console.log('[DEBUG] All data query result:', { allData, allError });
+      
+      res.json({ 
+        success: true, 
+        count: data,
+        sample: allData,
+        error: allError
+      });
+    } catch (error) {
+      console.error('[DEBUG] Test endpoint error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return router;
 };
