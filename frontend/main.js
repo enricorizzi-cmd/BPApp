@@ -4871,7 +4871,7 @@ function viewClients(){
   setActiveSidebarItem('viewClients');
   const isAdmin = getUser().role==='admin';
   const newConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_new_owner"><option value="">—</option></select></div>' : '';
-  const filterConsHTML = isAdmin ? '<div><label>Consulente</label><select id="cl_f_cons"><option value="">Tutti</option></select></div>' : '';
+  const filterConsHTML = '<div><label>Consulente</label><select id="cl_f_cons"><option value="">Tutti</option></select></div>';
 
   appEl.innerHTML = topbarHTML()+
     '<div class="wrap">'+
@@ -4952,15 +4952,13 @@ function viewClients(){
       const me = getUser() || {};
       if(selF){
         var hF = '';
-        // Solo admin può vedere "Tutti" e altri utenti
-        if(me.role === 'admin') {
-          hF += '<option value="">Tutti</option>';
-          hF += users.map(function(u){
-            return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
-          }).join('');
-        }
+        // Tutti gli utenti possono vedere "Tutti" e altri utenti nel filtro
+        hF += '<option value="">Tutti</option>';
+        hF += users.map(function(u){
+          return '<option value="'+u.id+'">'+htmlEscape(u.name)+(u.grade?(' ('+u.grade+')'):'')+'</option>';
+        }).join('');
         selF.innerHTML = hF;
-        selF.value = (me.role === 'admin') ? '' : me.id;
+        selF.value = ''; // Default su "Tutti" per tutti gli utenti
       }
       if(selN){
         var hN = '<option value="">—</option>';
@@ -4979,7 +4977,7 @@ function viewClients(){
 
       const fState=document.getElementById('cl_f_state').value;
       const elCons=document.getElementById('cl_f_cons');
-      const fCons = elCons ? elCons.value : String(getUser().id);
+      const fCons = elCons ? elCons.value : '';
 
       function norm(s){ return String(s||'').trim().toLowerCase(); }
 
