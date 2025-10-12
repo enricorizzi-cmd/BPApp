@@ -5029,6 +5029,7 @@ function viewOpenCycles(){
   loadOpenCycles();
   setupCyclesFilters();
   setupCyclesSorting();
+  setupForecastFilters();
   renderForecast();
 }
 
@@ -5180,6 +5181,20 @@ function setupCyclesFilters() {
   });
 }
 
+// Setup filtri forecast
+function setupForecastFilters() {
+  const granularityEl = document.getElementById('cycles_forecast_granularity');
+  const consultantEl = document.getElementById('cycles_forecast_consultant');
+  
+  if (granularityEl) {
+    granularityEl.addEventListener('change', renderForecast);
+  }
+  
+  if (consultantEl) {
+    consultantEl.addEventListener('change', renderForecast);
+  }
+}
+
 // Applica filtri
 function applyCyclesFilters() {
   const consultantFilter = document.getElementById('cycles_filter_consultant')?.value || '';
@@ -5311,7 +5326,6 @@ function renderForecast() {
     filteredCycles = filteredCycles.filter(c => c.consultantId === consultantId);
   }
   
-  // Per ora mostra solo i cicli aperti senza aggregazione per periodo
   const tbody = document.getElementById('cycles_forecast_rows');
   if (!tbody) return;
   
@@ -5320,20 +5334,185 @@ function renderForecast() {
     return;
   }
   
-  const rows = filteredCycles.map(cycle => {
-    const nextDeadline = getNextDeadline(cycle);
-    const deadlineDisplay = nextDeadline ? new Date(nextDeadline).toLocaleString('it-IT') : 'Senza scadenza';
+  // Aggrega cicli per periodo
+  const periodGroups = aggregateCyclesByPeriod(filteredCycles, granularity);
+  
+  if (Object.keys(periodGroups).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="muted" style="text-align: center; padding: 40px;">Nessun ciclo programmato</td></tr>';
+    return;
+  }
+  
+  // Ordina periodi cronologicamente
+  const sortedPeriods = Object.keys(periodGroups).sort((a, b) => {
+    const dateA = parsePeriodKey(a, granularity);
+    const dateB = parsePeriodKey(b, granularity);
+    return dateA - dateB;
+  });
+  
+  const rows = sortedPeriods.map(periodKey => {
+    const cycles = periodGroups[periodKey];
+    const periodDisplay = formatPeriodKey(periodKey, granularity);
+    const totalCount = cycles.length;
+    const details = cycles.map(c => htmlEscape(c.description)).join(', ');
     
     return `
       <tr>
-        <td style="padding: 12px;">${deadlineDisplay}</td>
-        <td style="padding: 12px; text-align: center;">1</td>
-        <td style="padding: 12px;">${htmlEscape(cycle.description)}</td>
+        <td style="padding: 12px;">${periodDisplay}</td>
+        <td style="padding: 12px; text-align: center;">${totalCount}</td>
+        <td style="padding: 12px;">${details}</td>
       </tr>
     `;
   });
   
   tbody.innerHTML = rows.join('');
+}
+
+// Aggrega cicli per periodo
+function aggregateCyclesByPeriod(cycles, granularity) {
+  const groups = {};
+  
+  cycles.forEach(cycle => {
+    const deadlines = getAllCycleDeadlines(cycle);
+    
+    deadlines.forEach(deadline => {
+      const periodKey = getPeriodKey(deadline, granularity);
+      if (!groups[periodKey]) {
+        groups[periodKey] = [];
+      }
+      groups[periodKey].push(cycle);
+    });
+  });
+  
+  return groups;
+}
+
+// Ottieni tutte le scadenze di un ciclo (versione completa)
+function getAllCycleDeadlines(cycle) {
+  const deadlines = [];
+  
+  if (cycle.deadlineType === 'single' && cycle.deadlineData.dates) {
+    deadlines.push(...cycle.deadlineData.dates);
+  } else if (cycle.deadlineType === 'multiple' && cycle.deadlineData.dates) {
+    deadlines.push(...cycle.deadlineData.dates);
+  } else if (cycle.deadlineType === 'recurring' && cycle.deadlineData.recurring) {
+    const recurring = cycle.deadlineData.recurring;
+    if (recurring.start) {
+      const startDate = new Date(recurring.start);
+      const endDate = recurring.end ? new Date(recurring.end) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 anno da ora
+      
+      // Genera scadenze ripetitive
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        deadlines.push(currentDate.toISOString());
+        
+        // Calcola prossima scadenza
+        if (recurring.pattern === 'daily') {
+          currentDate.setDate(currentDate.getDate() + (recurring.interval || 1));
+        } else if (recurring.pattern === 'weekly') {
+          currentDate.setDate(currentDate.getDate() + 7 * (recurring.interval || 1));
+        } else if (recurring.pattern === 'monthly') {
+          currentDate.setMonth(currentDate.getMonth() + (recurring.interval || 1));
+        }
+      }
+    }
+  }
+  
+  return deadlines;
+}
+
+// Ottieni chiave periodo per una data
+function getPeriodKey(dateString, granularity) {
+  const date = new Date(dateString);
+  
+  switch (granularity) {
+    case 'settimanale':
+      const year = date.getFullYear();
+      const week = getWeekNumber(date);
+      return `${year}-W${week.toString().padStart(2, '0')}`;
+      
+    case 'mensile':
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      
+    case 'trimestrale':
+      const quarter = Math.floor(date.getMonth() / 3) + 1;
+      return `${date.getFullYear()}-Q${quarter}`;
+      
+    case 'semestrale':
+      const semester = date.getMonth() < 6 ? 1 : 2;
+      return `${date.getFullYear()}-S${semester}`;
+      
+    case 'annuale':
+      return date.getFullYear().toString();
+      
+    default:
+      return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+  }
+}
+
+// Ottieni numero settimana dell'anno
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+// Parsa chiave periodo per ordinamento
+function parsePeriodKey(periodKey, granularity) {
+  const parts = periodKey.split('-');
+  
+  switch (granularity) {
+    case 'settimanale':
+      const [year, week] = parts;
+      return new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
+      
+    case 'mensile':
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+      
+    case 'trimestrale':
+      const quarter = parseInt(parts[1].substring(1));
+      return new Date(parseInt(parts[0]), (quarter - 1) * 3, 1);
+      
+    case 'semestrale':
+      const semester = parseInt(parts[1].substring(1));
+      return new Date(parseInt(parts[0]), (semester - 1) * 6, 1);
+      
+    case 'annuale':
+      return new Date(parseInt(parts[0]), 0, 1);
+      
+    default:
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+  }
+}
+
+// Formatta chiave periodo per visualizzazione
+function formatPeriodKey(periodKey, granularity) {
+  const parts = periodKey.split('-');
+  
+  switch (granularity) {
+    case 'settimanale':
+      return `Settimana ${parts[1]} ${parts[0]}`;
+      
+    case 'mensile':
+      const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                     'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+      return `${months[parseInt(parts[1]) - 1]} ${parts[0]}`;
+      
+    case 'trimestrale':
+      const quarter = parseInt(parts[1].substring(1));
+      return `Q${quarter} ${parts[0]}`;
+      
+    case 'semestrale':
+      const semester = parseInt(parts[1].substring(1));
+      return `Semestre ${semester} ${parts[0]}`;
+      
+    case 'annuale':
+      return parts[0];
+      
+    default:
+      return periodKey;
+  }
 }
 
 // Funzioni CRUD

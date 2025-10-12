@@ -1995,8 +1995,107 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     }
   }
 
+  // Funzione per controllare scadenze cicli aperti
+  async function checkOpenCyclesDeadlines(){
+    try {
+      const db = await readJSON('open_cycles.json');
+      const cycles = (db.cycles || []).filter(c => c.status === 'open');
+      const now = new Date();
+      
+      for(const cycle of cycles) {
+        const deadlines = getCycleDeadlines(cycle);
+        const upcomingDeadlines = deadlines.filter(d => {
+          const deadlineDate = new Date(d);
+          const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
+          return diffHours >= 0 && diffHours <= 24; // Prossime 24 ore
+        });
+        
+        if(upcomingDeadlines.length > 0) {
+          await sendCycleDeadlineNotification(cycle, upcomingDeadlines[0]);
+        }
+      }
+    } catch(error) {
+      console.error('Error checking open cycles deadlines:', error);
+    }
+  }
+  
+  // Ottieni tutte le scadenze di un ciclo
+  function getCycleDeadlines(cycle) {
+    const deadlines = [];
+    
+    if(cycle.deadlineType === 'single' && cycle.deadlineData.dates) {
+      deadlines.push(...cycle.deadlineData.dates);
+    } else if(cycle.deadlineType === 'multiple' && cycle.deadlineData.dates) {
+      deadlines.push(...cycle.deadlineData.dates);
+    } else if(cycle.deadlineType === 'recurring' && cycle.deadlineData.recurring) {
+      const recurring = cycle.deadlineData.recurring;
+      if(recurring.start) {
+        const startDate = new Date(recurring.start);
+        const endDate = recurring.end ? new Date(recurring.end) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 giorni da ora
+        
+        // Genera scadenze ripetitive
+        let currentDate = new Date(startDate);
+        while(currentDate <= endDate) {
+          deadlines.push(currentDate.toISOString());
+          
+          // Calcola prossima scadenza
+          if(recurring.pattern === 'daily') {
+            currentDate.setDate(currentDate.getDate() + (recurring.interval || 1));
+          } else if(recurring.pattern === 'weekly') {
+            currentDate.setDate(currentDate.getDate() + 7 * (recurring.interval || 1));
+          } else if(recurring.pattern === 'monthly') {
+            currentDate.setMonth(currentDate.getMonth() + (recurring.interval || 1));
+          }
+        }
+      }
+    }
+    
+    return deadlines;
+  }
+  
+  // Invia notifica per scadenza ciclo
+  async function sendCycleDeadlineNotification(cycle, deadline) {
+    try {
+      const deadlineDate = new Date(deadline);
+      const now = new Date();
+      const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
+      
+      let title, body;
+      if(diffHours <= 1) {
+        // Scadenza imminente (entro 1 ora)
+        title = "🚨 Scadenza Imminente";
+        body = `Il ciclo "${cycle.description}" scade tra meno di 1 ora!`;
+      } else if(diffHours <= 24) {
+        // Scadenza nelle prossime 24 ore
+        title = "⏰ Scadenza Prossima";
+        body = `Il ciclo "${cycle.description}" scade tra ${Math.round(diffHours)} ore`;
+      } else {
+        return; // Non inviare notifiche per scadenze troppo lontane
+      }
+      
+      // Invia push notification
+      await _sendPushToUser(cycle.consultantId, {
+        t: "cycle_deadline",
+        title: title,
+        body: body,
+        url: "/#cycles"
+      });
+      
+      // Invia anche notifica persistente
+      await POST('/api/notifications/send', {
+        text: body,
+        recipients: cycle.consultantId,
+        type: 'automatic'
+      });
+      
+    } catch(error) {
+      console.error('Error sending cycle deadline notification:', error);
+    }
+  }
+
   setInterval(()=>{ 
     runWeekendNoonPushOncePerDay().catch(()=>{}); 
     runDailyBackupAt1AM().catch(()=>{}); 
+    checkOpenCyclesDeadlines().catch(()=>{}); 
   }, 60*1000);
 });
