@@ -5,8 +5,8 @@
 (function() {
   'use strict';
   
-  // Abilita debug per i banner
-  window.DEBUG_BANNERS = true;
+  // Debug disabilitato per produzione
+  window.DEBUG_BANNERS = false;
   
   // Test function
   window.testBannerPersistence = async function() {

@@ -29,13 +29,15 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     try {
       const { error } = await supabase
         .from('push_notifications_sent')
-        .insert({
+        .upsert({
           id: `push_${userId}_${appointmentId}_${notificationType}`,
           userid: userId,
           appointmentid: appointmentId,
           notification_type: notificationType,
           sent_at: new Date().toISOString(),
           createdat: new Date().toISOString()
+        }, { 
+          onConflict: 'id' // Use the unique constraint on id
         });
       
       if (error) {
