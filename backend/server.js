@@ -2035,11 +2035,25 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       });
       
       // Invia anche notifica persistente
-      await POST('/api/notifications/send', {
-        text: body,
-        recipients: cycle.consultantId,
-        type: 'automatic'
-      });
+      try {
+        const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
+        // Simula una richiesta per inviare la notifica
+        const mockReq = {
+          body: {
+            text: body,
+            recipients: cycle.consultantId,
+            type: 'automatic'
+          },
+          user: { id: cycle.consultantId }
+        };
+        const mockRes = {
+          json: () => {},
+          status: () => ({ json: () => {} })
+        };
+        await notificationsRoutes.post('/send', mockReq, mockRes);
+      } catch (error) {
+        console.error('Error sending notification:', error);
+      }
       
     } catch(error) {
       console.error('Error sending cycle deadline notification:', error);
