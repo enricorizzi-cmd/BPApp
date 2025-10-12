@@ -2073,18 +2073,13 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       const now = new Date();
       const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
       
-      let title, body;
-      if(diffHours <= 1) {
-        // Scadenza imminente (entro 1 ora)
-        title = "🚨 Scadenza Imminente";
-        body = `Il ciclo "${cycle.description}" scade tra meno di 1 ora!`;
-      } else if(diffHours <= 24) {
-        // Scadenza nelle prossime 24 ore
-        title = "⏰ Scadenza Prossima";
-        body = `Il ciclo "${cycle.description}" scade tra ${Math.round(diffHours)} ore`;
-      } else {
-        return; // Non inviare notifiche per scadenze troppo lontane
+      // Solo notifica 1 ora prima della scadenza
+      if(diffHours > 1 || diffHours < 0) {
+        return; // Non inviare notifiche se non è il momento giusto
       }
+      
+      const title = "🚨 Scadenza Imminente";
+      const body = `Il ciclo "${cycle.description}" scade tra meno di 1 ora!`;
       
       // Invia push notification
       await _sendPushToUser(cycle.consultantId, {
