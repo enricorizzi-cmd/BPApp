@@ -223,10 +223,16 @@ let _initStorePromise = Promise.resolve();
 
 // Inizializza Supabase se disponibile
 if (useSupabaseStorage) {
+  console.log('[BP] useSupabaseStorage is true, checking environment variables...');
+  console.log('[BP] SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+  console.log('[BP] SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+  
   _initStorePromise = _initStorePromise.then(() => {
     console.log('[BP] Initializing Supabase connection...');
     return init();
   });
+} else {
+  console.log('[BP] useSupabaseStorage is false, skipping Supabase initialization');
 }
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
