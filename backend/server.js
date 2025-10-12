@@ -221,6 +221,14 @@ app.use(express.json({ limit: "2mb" }));
 // ---------- Storage ----------
 const _initStoreRet = initStore(DATA_DIR);
 let _initStorePromise = (_initStoreRet && typeof _initStoreRet.then === 'function') ? _initStoreRet : Promise.resolve();
+
+// Inizializza Supabase se disponibile
+if (useSupabaseStorage) {
+  _initStorePromise = _initStorePromise.then(() => {
+    console.log('[BP] Initializing Supabase connection...');
+    return init();
+  });
+}
 function genId(){ return nanoid(); }
 function todayISO(){ return new Date().toISOString(); }
 function pad2(n){ return n<10 ? "0"+n : ""+n; }
