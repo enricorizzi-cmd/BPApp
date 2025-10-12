@@ -5167,8 +5167,8 @@ function populateConsultantFilters() {
     
     if (forecastEl) {
       forecastEl.innerHTML = '<option value="">Tutti</option>' + options;
-      // Default su utente corrente per tutti (admin e non-admin)
-      forecastEl.value = currentUser.id;
+      // Default su "Tutti" per vedere tutti i cicli nel forecast
+      forecastEl.value = '';
     }
   }).catch(error => {
     console.error('Error loading users:', error);
@@ -5406,13 +5406,13 @@ function renderForecast() {
     const cycles = periodGroups[periodKey];
     const periodDisplay = formatPeriodKey(periodKey, granularity);
     const totalCount = cycles.length;
-    const details = cycles.map(c => htmlEscape(c.description)).join(', ');
+    const details = cycles.map(c => htmlEscape(c.description)).join('<br>');
     
     return `
       <tr>
         <td style="padding: 12px;">${periodDisplay}</td>
         <td style="padding: 12px; text-align: center;">${totalCount}</td>
-        <td style="padding: 12px;">${details}</td>
+        <td style="padding: 12px; text-align: left; vertical-align: top;">${details}</td>
       </tr>
     `;
   });
