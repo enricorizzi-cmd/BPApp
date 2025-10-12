@@ -28,9 +28,27 @@
   };
 
   // --- Push markers (avoid duplicate push per appointment/kind) ---
-  const pushKey  = (id, kind)=> `bp_push_${kind}_${id}`;
-  const pushSent = (id,kind)=> { try{ return localStorage.getItem(pushKey(id,kind))==='1'; }catch(_){ return false; } };
-  const markPush = (id,kind)=> { try{ localStorage.setItem(pushKey(id,kind),'1'); }catch(_){ } };
+  const pushSent = async (id, kind) => {
+    try {
+      const response = await GET(`/api/push-tracking/check?appointmentId=${id}&notificationType=${kind}`);
+      return response && response.sent === true;
+    } catch (e) {
+      dbg('Error checking push sent status:', e);
+      return false;
+    }
+  };
+  
+  const markPush = async (id, kind) => {
+    try {
+      await POST('/api/push-tracking/mark-sent', {
+        appointmentId: id,
+        notificationType: kind
+      });
+      dbg('Marked push as sent:', id, kind);
+    } catch (e) {
+      dbg('Error marking push as sent:', e);
+    }
+  };
 
   // --- Safe utils / shims già presenti altrove ---
   const GET  = (window.BPFinal && BPFinal.GET)  || window.GET;
@@ -58,7 +76,7 @@
         dbg('triggerPush early return - missing POST/appt/id');
         return;
       }
-      if(pushSent(appt.id, kind)) {
+      if(await pushSent(appt.id, kind)) {
         dbg('triggerPush early return - already sent');
         return;
       }
@@ -75,7 +93,7 @@
         recipients: 'all',
         type: 'automatic'
       });
-      markPush(appt.id, kind);
+      await markPush(appt.id, kind);
       dbg('Push notification sent and marked');
     }catch(e){ 
       dbg('Error in triggerPush:', e);

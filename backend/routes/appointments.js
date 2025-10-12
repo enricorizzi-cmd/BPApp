@@ -162,9 +162,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         console.error('Error updating appointment:', error);
         return res.status(500).json({ error: 'Failed to update appointment' });
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON('appointments.json', db);
     }
     
     return res.json({ ok:true, id: it.id, clientId: it.clientId });
@@ -254,10 +251,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         console.error('Error inserting appointment:', error);
         return res.status(500).json({ error: 'Failed to save appointment' });
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      db.appointments.push(row);
-      await writeJSON('appointments.json', db);
     }
     
     return res.json({ ok:true, id: row.id, clientId: row.clientId });
@@ -309,10 +302,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     if (typeof deleteRecord === 'function') {
       // Supabase: eliminazione singola
       await deleteRecord('appointments', id);
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      db.appointments = (db.appointments||[]).filter(a => a.id!==id);
-      await writeJSON('appointments.json', db);
     }
     
     return res.json({ ok:true });

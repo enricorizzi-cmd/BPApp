@@ -90,10 +90,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           db.cycles.push(cycle);
           await writeJSON('open_cycles.json', db);
         }
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        db.cycles.push(cycle);
-        await writeJSON('open_cycles.json', db);
       }
 
       res.json({ ok: true, id: cycle.id, cycle });
@@ -155,9 +151,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           // Fallback al metodo tradizionale se Supabase fallisce
           await writeJSON('open_cycles.json', db);
         }
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        await writeJSON('open_cycles.json', db);
       }
 
       res.json({ ok: true, id: cycle.id, cycle });
@@ -191,10 +184,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       // Usa deleteRecord per Supabase invece di writeJSON per evitare sovrascrittura
       if (typeof deleteRecord === 'function') {
         await deleteRecord('open_cycles', id);
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        db.cycles = db.cycles.filter(c => c.id !== id);
-        await writeJSON('open_cycles.json', db);
       }
 
       res.json({ ok: true });

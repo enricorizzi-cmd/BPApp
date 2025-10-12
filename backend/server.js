@@ -110,7 +110,10 @@ if (useSupabaseStorage) {
 } else if (usePgStorage) {
   storage = require("./lib/storage-pg");
 } else {
-  storage = require("./lib/storage");
+  // Fallback rimosso: ora usiamo solo Supabase per consistenza cross-device
+  console.error("ERROR: Supabase storage is required for cross-device consistency");
+  console.error("Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables");
+  process.exit(1);
 }
 const { init: initStore, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, supabase } = storage;
 const jwt = require("jsonwebtoken");
@@ -507,9 +510,6 @@ app.post("/api/register", async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true });
@@ -550,9 +550,6 @@ app.post("/api/reset-password", rateLimit({ windowMs: 2*60*1000, max: 5 }), asyn
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   await sendEmail(u.email, "Reset Password", `Your reset token is ${token}`);
@@ -617,9 +614,6 @@ app.post("/api/users/create", auth, requirePermission("users:write"), async (req
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true, id:user.id });
@@ -669,9 +663,6 @@ app.post("/api/users", auth, requirePermission("users:write"), async (req,res)=>
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true });
@@ -702,9 +693,6 @@ app.post("/api/users/profile", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true });
@@ -759,9 +747,6 @@ app.post("/api/users/credentials", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true });
@@ -795,9 +780,6 @@ app.delete("/api/users", auth, requirePermission("users:write"), async (req,res)
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("users.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("users.json", db);
   }
   
   res.json({ ok:true });
@@ -838,9 +820,6 @@ app.post("/api/settings", auth, requireAdmin, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("settings.json", newSettings);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("settings.json", newSettings);
   }
   
   res.json({ ok:true });
@@ -895,9 +874,6 @@ app.post("/api/clients", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("clients.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("clients.json", db);
     }
     return res.json({ ok:true, id:c.id });
   }
@@ -934,9 +910,6 @@ app.post("/api/clients", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("clients.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("clients.json", db);
     }
   }
   return res.json({ ok:true });
@@ -958,9 +931,6 @@ app.delete("/api/clients", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("clients.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("clients.json", db);
   }
   res.json({ ok:true });
 });
@@ -1037,11 +1007,15 @@ const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertR
 const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
 const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId });
+const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
 app.use('/api', openCyclesRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/push-tracking', pushTrackingRoutes);
+app.use('/api/user-preferences', userPreferencesRoutes);
 
 // ---------- Periods (BP) ----------
 app.get("/api/periods", auth, async (req,res)=>{
@@ -1173,9 +1147,6 @@ app.post("/api/periods", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("periods.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("periods.json", db);
     }
     
     return res.json({ ok:true, id: it.id, updated:true });
@@ -1205,9 +1176,6 @@ app.post("/api/periods", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("periods.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("periods.json", db);
     }
     
     return res.json({ ok:true, id: existing.id, updated:true });
@@ -1241,9 +1209,6 @@ app.post("/api/periods", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("periods.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("periods.json", db);
     }
     
     return res.json({ ok:true, id: row.id, created:true });
@@ -1272,9 +1237,6 @@ app.delete("/api/periods", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("periods.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("periods.json", db);
   }
   
   res.json({ ok:true });
@@ -1593,9 +1555,6 @@ app.post("/api/gi", auth, async (req,res)=>{
         // Fallback al metodo tradizionale se Supabase fallisce
         await writeJSON("gi.json", db);
       }
-    } else {
-      // SQLite locale: usa il metodo tradizionale
-      await writeJSON("gi.json", db);
     }
     
     return res.json({ ok:true, id: it.id });
@@ -1648,9 +1607,6 @@ app.post("/api/gi", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("gi.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("gi.json", db);
   }
   
   return res.json({ ok:true, id: row.id });
@@ -1672,9 +1628,6 @@ app.delete("/api/gi", auth, async (req,res)=>{
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("gi.json", db);
     }
-  } else {
-    // SQLite locale: usa il metodo tradizionale
-    await writeJSON("gi.json", db);
   }
   
   res.json({ ok:true });

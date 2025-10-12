@@ -5601,22 +5601,22 @@ function showCycleForm(cycle = null) {
   modal.className = 'modal';
   modal.style.cssText = `
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,.8); z-index: 10000; display: flex; 
+    background: rgba(0,0,0,.3); z-index: 10000; display: flex; 
     align-items: center; justify-content: center; padding: 20px;
   `;
   
   modal.innerHTML = `
-    <div class="modal-content" style="background: var(--card-bg); border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.3); border: 1px solid var(--border);">
-      <h3 style="margin: 0 0 20px 0; color: var(--text); font-size: 20px; font-weight: 600;">${isEdit ? 'Modifica' : 'Nuovo'} Ciclo Aperto</h3>
+    <div class="modal-content" style="background: #ffffff; border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,.3); border: 1px solid #e0e0e0;">
+      <h3 style="margin: 0 0 20px 0; color: #333333; font-size: 20px; font-weight: 600;">${isEdit ? 'Modifica' : 'Nuovo'} Ciclo Aperto</h3>
       
       <div class="form-group" style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Descrizione *</label>
-        <textarea id="cycle_description" placeholder="Descrivi l'attività da fare..." style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; min-height: 80px; resize: vertical; font-size: 14px; box-sizing: border-box;">${cycle?.description || ''}</textarea>
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Descrizione *</label>
+        <textarea id="cycle_description" placeholder="Descrivi l'attività da fare..." style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; min-height: 80px; resize: vertical; font-size: 14px; box-sizing: border-box;">${cycle?.description || ''}</textarea>
       </div>
       
       <div class="form-group" style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Priorità *</label>
-        <select id="cycle_priority" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Priorità *</label>
+        <select id="cycle_priority" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
           <option value="urgent" ${cycle?.priority === 'urgent' ? 'selected' : ''}>Urgente</option>
           <option value="important" ${cycle?.priority === 'important' ? 'selected' : ''}>Importante</option>
           <option value="standard" ${cycle?.priority === 'standard' ? 'selected' : ''}>Standard</option>
@@ -5624,8 +5624,8 @@ function showCycleForm(cycle = null) {
       </div>
       
       <div class="form-group" style="margin-bottom: 20px;">
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Tipologia scadenza</label>
-        <select id="cycle_deadline_type" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Tipologia scadenza</label>
+        <select id="cycle_deadline_type" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
           <option value="none" ${cycle?.deadlineType === 'none' ? 'selected' : ''}>Nessuna scadenza</option>
           <option value="single" ${cycle?.deadlineType === 'single' ? 'selected' : ''}>Scadenza singola</option>
           <option value="multiple" ${cycle?.deadlineType === 'multiple' ? 'selected' : ''}>Scadenze multiple</option>
@@ -5638,8 +5638,8 @@ function showCycleForm(cycle = null) {
       </div>
       
       <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-        <button id="cycle_save" class="ghost" style="padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,0,0,.2);">${isEdit ? 'Aggiorna' : 'Crea'}</button>
-        <button id="cycle_cancel" class="ghost" style="padding: 12px 20px; background: var(--bg-secondary); color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-weight: 500;">Annulla</button>
+        <button id="cycle_save" class="ghost" style="padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,123,255,.2);">${isEdit ? 'Aggiorna' : 'Crea'}</button>
+        <button id="cycle_cancel" class="ghost" style="padding: 12px 20px; background: #f8f9fa; color: #333333; border: 1px solid #e0e0e0; border-radius: 8px; font-weight: 500;">Annulla</button>
         ${isEdit ? '<button id="cycle_delete" class="ghost" style="padding: 12px 20px; background: #f44336; color: white; border: none; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(244,67,54,.2);">Elimina</button>' : ''}
       </div>
     </div>
@@ -5669,38 +5669,38 @@ function setupDeadlineConfig() {
   switch(type) {
     case 'single':
       configEl.innerHTML = `
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Data e ora scadenza</label>
-        <input type="datetime-local" id="deadline_single_date" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Data e ora scadenza</label>
+        <input type="datetime-local" id="deadline_single_date" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
       `;
       break;
       
     case 'multiple':
       configEl.innerHTML = `
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Scadenze multiple</label>
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Scadenze multiple</label>
         <div id="deadline_multiple_list">
           <div class="deadline-item" style="display: flex; gap: 8px; margin-bottom: 8px;">
-            <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+            <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
             <button type="button" onclick="removeDeadlineItem(this)" style="padding: 12px 16px; background: #f44336; color: white; border: none; border-radius: 8px; font-weight: 500;">Rimuovi</button>
           </div>
         </div>
-        <button type="button" onclick="addDeadlineItem()" style="padding: 12px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,0,0,.2);">Aggiungi scadenza</button>
+        <button type="button" onclick="addDeadlineItem()" style="padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,123,255,.2);">Aggiungi scadenza</button>
       `;
       break;
       
     case 'recurring':
       configEl.innerHTML = `
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Pattern ripetizione</label>
-        <select id="recurring_pattern" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Pattern ripetizione</label>
+        <select id="recurring_pattern" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
           <option value="daily">Giornaliero</option>
           <option value="weekly">Settimanale</option>
           <option value="monthly">Mensile</option>
         </select>
         
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Intervallo</label>
-        <input type="number" id="recurring_interval" value="1" min="1" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Intervallo</label>
+        <input type="number" id="recurring_interval" value="1" min="1" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
         
         <div id="weekly_config" style="display: none; margin-bottom: 16px;">
-          <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Giorni della settimana</label>
+          <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Giorni della settimana</label>
           <div class="checkbox-group" style="display: flex; gap: 12px; flex-wrap: wrap;">
             <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="1"> Lun</label>
             <label style="display: flex; align-items: center; gap: 4px;"><input type="checkbox" value="2"> Mar</label>
@@ -5712,14 +5712,14 @@ function setupDeadlineConfig() {
           </div>
         </div>
         
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Ora</label>
-        <input type="time" id="recurring_time" value="09:00" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Ora</label>
+        <input type="time" id="recurring_time" value="09:00" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
         
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Data inizio</label>
-        <input type="date" id="recurring_start" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Data inizio</label>
+        <input type="date" id="recurring_start" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;">
         
-        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Data fine (opzionale)</label>
-        <input type="date" id="recurring_end" style="width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+        <label style="display: block; margin-bottom: 6px; font-size: 14px; color: #666666; font-weight: 500;">Data fine (opzionale)</label>
+        <input type="date" id="recurring_end" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
       `;
       
       // Mostra/nascondi configurazione settimanale
@@ -5822,7 +5822,7 @@ function addDeadlineItem() {
   item.className = 'deadline-item';
   item.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
   item.innerHTML = `
-    <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
+    <input type="datetime-local" class="deadline-date" style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; background: #ffffff; color: #333333; font-size: 14px; box-sizing: border-box;">
     <button type="button" onclick="removeDeadlineItem(this)" style="padding: 12px 16px; background: #f44336; color: white; border: none; border-radius: 8px; font-weight: 500;">Rimuovi</button>
   `;
   list.appendChild(item);

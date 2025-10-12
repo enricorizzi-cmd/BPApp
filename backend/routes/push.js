@@ -46,11 +46,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           else db.subs.push(row);
           await writeJSON('push_subscriptions.json', db);
         }
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        if(idx>=0) db.subs[idx] = { ...db.subs[idx], ...row };
-        else db.subs.push(row);
-        await writeJSON('push_subscriptions.json', db);
       }
       res.json({ ok:true });
     }catch(e){ res.status(400).json({ error:'invalid_subscription' }); }
@@ -92,9 +87,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           // Fallback al metodo tradizionale se Supabase fallisce
           await writeJSON('push_subscriptions.json', db);
         }
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        await writeJSON('push_subscriptions.json', db);
       }
       res.json({ ok:true });
     }catch(e){ res.status(500).json({ error:'fail' }); }
@@ -121,9 +113,6 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           // Fallback al metodo tradizionale se Supabase fallisce
           await writeJSON('push_subscriptions.json', db);
         }
-      } else {
-        // SQLite locale: usa il metodo tradizionale
-        await writeJSON('push_subscriptions.json', db);
       }
       res.json({ ok:true });
     }catch(e){ res.status(500).json({ error:'fail' }); }
