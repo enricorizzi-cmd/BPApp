@@ -1,42 +1,18 @@
 /* BPApp – Client Status helpers
-   Banner “È diventato cliente?” (solo per appuntamenti NNCF = true).
+   Banner "È diventato cliente?" (solo per appuntamenti NNCF = true).
    Mostra scelta Sì/No e aggiorna lo status del cliente.
    - Visualizzazione indipendente dai tuoi toast standard (non li sovrascrive)
-   - Memorizza localmente gli appuntamenti già “chiusi” (per non riproporlo)
+   - Usa solo il database per tracciare le risposte ai banner
    API:
      BP.ClientStatus.renderBecameClientBanner({ appointment, clientName }, onChoice)
      BP.ClientStatus.setClientStatus({ clientId, status })
      BP.ClientStatus.setClientStatusByName({ clientName, status })
-     BP.ClientStatus.hasSeen(apptId) / markSeen(apptId)
 */
 (function () {
   const NS = (window.BP = window.BP || {});
   const CS = (NS.ClientStatus = NS.ClientStatus || {});
 
-  const SEEN_KEY = "bp_banner_seen"; // localStorage { [apptId]: true }
-
-  function loadSeen() {
-    try {
-      return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}");
-    } catch (e) {
-      return {};
-    }
-  }
-  function saveSeen(map) {
-    try {
-      localStorage.setItem(SEEN_KEY, JSON.stringify(map || {}));
-    } catch (e) {}
-  }
-
-  function hasSeen(apptId) {
-    const map = loadSeen();
-    return !!map[apptId];
-  }
-  function markSeen(apptId) {
-    const map = loadSeen();
-    map[apptId] = true;
-    saveSeen(map);
-  }
+  // Funzioni rimosse: ora si usa solo il database per tracciare le risposte ai banner
 
   // REST helpers
   async function apiGET(url) {
@@ -149,8 +125,6 @@ CS.setClientStatusByName = setClientStatusByName;
   })();
 
   // API
-  CS.hasSeen = hasSeen;
-  CS.markSeen = markSeen;
   CS.renderBecameClientBanner = renderBanner;
   CS.setClientStatus = setClientStatus;
   CS.setClientStatusByName = setClientStatusByName;

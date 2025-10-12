@@ -1987,7 +1987,6 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 // -------- Banner “È diventato cliente?” (NNCF) --------
 (function(){
   var BANNER_ID = 'bp-nncf-banner';
-  var SEEN_KEY  = 'bp_seen_nncf_appt'; // salva l'id (o timestamp) dell'ultimo mostrato
 
   function injectBannerCSS(){
     if (document.getElementById('bp-nncf-css')) return;
@@ -2038,30 +2037,26 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       '</div>';
     document.body.appendChild(el);
 
-    function markSeen(){
-      try { localStorage.setItem(SEEN_KEY, String(appt.id || appt.end || Date.now())); } catch(_){}
-    }
     function close(){ try{ el.remove(); }catch(_){} }
 
     document.getElementById('bp_nncf_yes').onclick = function(){
       updateClientStatusByName(name, 'cliente')
         .then(function(){ toast('Stato cliente aggiornato'); })
         .catch(function(){ toast('Impossibile aggiornare lo stato'); })
-        .finally(function(){ markSeen(); close(); });
+        .finally(function(){ close(); });
     };
     document.getElementById('bp_nncf_notyet').onclick = function(){
       updateClientStatusByName(name, 'prospect')
         .catch(function(){ /* ok se non aggiornabile */ })
-        .finally(function(){ markSeen(); close(); });
+        .finally(function(){ close(); });
     };
     document.getElementById('bp_nncf_close').onclick = function(){
-      markSeen(); close();
+      close();
     };
   }
 
   function scanNNCF(){
-    // mostra una sola volta l’ultimo NNCF concluso da almeno 1 minuto
-    var seen = localStorage.getItem(SEEN_KEY)||'';
+    // mostra una sola volta l'ultimo NNCF concluso da almeno 1 minuto
     return GET('/api/appointments').then(function(r){
       var now = Date.now();
       var list = (r && r.appointments) || [];
@@ -2077,8 +2072,10 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
       if(!nncf.length) return;
       var last = nncf[0];
-      var lastKey = String(last.id || last.end || '');
-      if (lastKey && seen && String(seen)===lastKey) return; // già visto
+      
+      // Controlla se il banner è già stato risposto nel database
+      if (last.nncfPromptAnswered) return; // già risposto
+      
       showBanner(last);
     }).catch(function(_){ /* silenzioso */ });
   }

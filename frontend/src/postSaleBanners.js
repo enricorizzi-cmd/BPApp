@@ -8,34 +8,23 @@
   const KIND_SALE = 'sale';
   const BANNER_DELAY_MINUTES = 1; // Banner appare 1 minuto dopo la fine dell'appuntamento
 
-  // --- Helpers storage (snooze/Done) - ora solo per cache locale ---
-  const snoozeKey  = (id, kind)=> `bp_snooze_${kind}_${id}`;
-  const doneKey    = (id, kind)=> `bp_done_${kind}_${id}`;
-  const isSnoozed  = (id,kind)=> {
-    try{ const s=localStorage.getItem(snoozeKey(id,kind)); return s && (new Date(s).getTime()>Date.now()); }catch(_){ return false; }
-  };
-  const snooze1d   = (id,kind)=>{
-    try{ const t=new Date(); t.setDate(t.getDate()+1); localStorage.setItem(snoozeKey(id,kind), t.toISOString()); }catch(_){}
-  };
-  const isDone     = (id,kind)=> { try{ return localStorage.getItem(doneKey(id,kind))==='1'; }catch(_){ return false; } };
-  const markDone   = (id,kind)=> { try{ localStorage.setItem(doneKey(id,kind),'1'); }catch(_){ } };
-
   // --- Ephemeral pending markers to avoid duplicate queueing within short window ---
   const _pending = new Set();
-  const pendingKey  = (id,kind)=> `bp_pending_${kind}_${id}`;
   const isPending   = (id,kind)=> {
     const k = `${kind}:${id}`;
-    if (_pending.has(k)) return true;
-    try{ const s = localStorage.getItem(pendingKey(id,kind)); return s && (new Date(s).getTime()>Date.now()); }catch(_){ return false; }
+    return _pending.has(k);
   };
   const markPending = (id,kind,mins=5)=>{
     const k = `${kind}:${id}`;
     _pending.add(k);
-    try{ const t=new Date(); t.setMinutes(t.getMinutes()+Math.max(1,Number(mins)||5)); localStorage.setItem(pendingKey(id,kind), t.toISOString()); }catch(_){ }
+    // Auto-clear after specified minutes
+    setTimeout(() => {
+      _pending.delete(k);
+    }, Math.max(1, Number(mins) || 5) * 60 * 1000);
   };
   const clearPending = (id,kind)=>{
-    const k = `${kind}:${id}`; _pending.delete(k);
-    try{ localStorage.removeItem(pendingKey(id,kind)); }catch(_){ }
+    const k = `${kind}:${id}`; 
+    _pending.delete(k);
   };
 
   // --- Push markers (avoid duplicate push per appointment/kind) ---
@@ -319,7 +308,6 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
-        markDone(appt.id, KIND_SALE);
         clearPending(appt.id, KIND_SALE);
         close();
         await markBannerAnswered(appt.id, KIND_SALE, 'yes');
@@ -330,14 +318,12 @@
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
-        markDone(appt.id, KIND_SALE);
         clearPending(appt.id, KIND_SALE);
         close();
         await markBannerAnswered(appt.id, KIND_SALE, 'no');
         try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
-        snooze1d(appt.id, KIND_SALE); 
         clearPending(appt.id, KIND_SALE); 
         await snoozeBanner(appt.id, KIND_SALE, 24);
         toast('Te lo ripropongo domani'); 
@@ -363,7 +349,6 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
-        markDone(appt.id, KIND_NNCF);
         clearPending(appt.id, KIND_NNCF);
         close();
         await markBannerAnswered(appt.id, KIND_NNCF, 'yes');
@@ -377,7 +362,6 @@
         openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
-        markDone(appt.id, KIND_NNCF);
         clearPending(appt.id, KIND_NNCF);
         close();
         await markBannerAnswered(appt.id, KIND_NNCF, 'no');
@@ -388,7 +372,6 @@
         }catch(_){}
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
-        snooze1d(appt.id, KIND_NNCF); 
         clearPending(appt.id, KIND_NNCF); 
         await snoozeBanner(appt.id, KIND_NNCF, 24);
         toast('Te lo ripropongo domani'); 
@@ -433,12 +416,12 @@
           dbg('Processing vendita appointment', appt.id, appt.type, 'nncf:', appt.nncf);
           
           if (appt.nncf){
-            // Controlla stato persistente del banner NNCF
+            // Controlla stato persistente del banner NNCF dal database
             if (isBannerAnswered(appt, KIND_NNCF)) return;
             if (isBannerSnoozed(appt, KIND_NNCF)) return;
             
-            // Controlla anche stato locale per evitare duplicati
-            if (isDone(appt.id, KIND_NNCF) || isSnoozed(appt.id, KIND_NNCF) || isPending(appt.id, KIND_NNCF)) { 
+            // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
+            if (isPending(appt.id, KIND_NNCF)) { 
               dbg('skip pending NNCF', appt && appt.id); 
               return; 
             }
@@ -449,12 +432,12 @@
             dbg('mark pending NNCF', appt && appt.id);
             enqueueBanner(bannerNNCF(appt));
           } else {
-            // Controlla stato persistente del banner Sale
+            // Controlla stato persistente del banner Sale dal database
             if (isBannerAnswered(appt, KIND_SALE)) return;
             if (isBannerSnoozed(appt, KIND_SALE)) return;
             
-            // Controlla anche stato locale per evitare duplicati
-            if (isDone(appt.id, KIND_SALE) || isSnoozed(appt.id, KIND_SALE) || isPending(appt.id, KIND_SALE)) { 
+            // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
+            if (isPending(appt.id, KIND_SALE)) { 
               dbg('skip pending SALE', appt && appt.id); 
               return; 
             }

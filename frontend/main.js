@@ -29,6 +29,7 @@ import "./lib/undo.js";
 import "./lib/final-hooks.js";
 import "./lib/ics-single.js";
 import "./lib/leaderboard-hooks.js";
+import "./lib/migrate-banner-data.js";
 import "./lib/push-client.js";
 import "./lib/timezone.js";
 import { showAddToHomePrompt } from "./modules/installPrompt.js";
@@ -4878,7 +4879,7 @@ function viewOpenCycles(){
         <div class="cycles-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h1 class="cycles-card-title" style="margin: 0; color: var(--text); font-size: 28px; font-weight: 600;">🔄 Cicli Aperti</h1>
           <div class="cycles-card-actions">
-            <button class="ghost" id="cycles_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); padding: 8px 16px; border-radius: 6px;">
+            <button class="ghost" id="cycles_add" style="background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 500; box-shadow: 0 2px 8px rgba(0,0,0,.2); transition: all 0.2s ease;">
               <span style="margin-right: 8px;">+</span>Nuovo Ciclo
             </button>
           </div>
@@ -4906,17 +4907,20 @@ function viewOpenCycles(){
       </div>
 
       <!-- Filtri -->
-      <div class="cycles-filters" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+      <div class="cycles-filters" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.1);">
+        <div class="cycles-filters-header" style="margin-bottom: 16px;">
+          <h3 style="margin: 0; color: var(--text); font-size: 18px; font-weight: 600;">🔍 Filtri Cicli</h3>
+        </div>
         <div class="row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
           <div>
-            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Consulente</label>
-            <select id="cycles_filter_consultant" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+            <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Consulente</label>
+            <select id="cycles_filter_consultant" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
               <option value="">Tutti</option>
             </select>
           </div>
           <div>
-            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Priorità</label>
-            <select id="cycles_filter_priority" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+            <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Priorità</label>
+            <select id="cycles_filter_priority" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
               <option value="">Tutte le priorità</option>
               <option value="urgent">Urgente</option>
               <option value="important">Importante</option>
@@ -4924,8 +4928,8 @@ function viewOpenCycles(){
             </select>
           </div>
           <div>
-            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Tipologia Scadenza</label>
-            <select id="cycles_filter_deadline" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+            <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Tipologia Scadenza</label>
+            <select id="cycles_filter_deadline" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
               <option value="">Tutte le tipologie</option>
               <option value="none">Senza scadenza</option>
               <option value="single">Scadenza singola</option>
@@ -4934,22 +4938,22 @@ function viewOpenCycles(){
             </select>
           </div>
           <div>
-            <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Completamento</label>
-            <select id="cycles_filter_status" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+            <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Completamento</label>
+            <select id="cycles_filter_status" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
               <option value="open">Aperti</option>
               <option value="closed">Chiusi</option>
             </select>
           </div>
           <div>
-            <button id="cycles_filter_apply" class="ghost" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px;">Applica Filtri</button>
+            <button id="cycles_filter_apply" class="ghost" style="padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,.1);">Applica Filtri</button>
           </div>
         </div>
       </div>
 
       <!-- Tabella Cicli -->
-      <div class="cycles-table" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-        <div class="cycles-table-header" style="padding: 16px; border-bottom: 1px solid var(--border);">
-          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">Cicli Aperti</h2>
+      <div class="cycles-table" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1);">
+        <div class="cycles-table-header" style="padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">📋 Cicli Aperti</h2>
         </div>
         <div class="table" style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse;">
@@ -4974,14 +4978,14 @@ function viewOpenCycles(){
       </div>
 
       <!-- Forecast Section -->
-      <div class="cycles-forecast" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 24px; overflow: hidden;">
-        <div class="cycles-forecast-header" style="padding: 16px; border-bottom: 1px solid var(--border);">
-          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">Forecast Cicli</h2>
-          <div class="forecast-filters" style="margin-top: 12px;">
+      <div class="cycles-forecast" style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; margin-top: 24px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1);">
+        <div class="cycles-forecast-header" style="padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+          <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">📊 Forecast Cicli</h2>
+          <div class="forecast-filters" style="margin-top: 16px;">
             <div class="row" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
               <div>
-                <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Granularità</label>
-                <select id="cycles_forecast_granularity" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Granularità</label>
+                <select id="cycles_forecast_granularity" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
                   <option value="settimanale">Settimanale</option>
                   <option value="mensile" selected>Mensile</option>
                   <option value="trimestrale">Trimestrale</option>
@@ -4991,8 +4995,8 @@ function viewOpenCycles(){
               </div>
               ${isAdmin ? `
                 <div>
-                  <label style="display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-secondary);">Consulente</label>
-                  <select id="cycles_forecast_consultant" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--input-bg); color: var(--text);">
+                  <label style="display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-secondary); font-weight: 500;">Consulente</label>
+                  <select id="cycles_forecast_consultant" style="padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--input-bg); color: var(--text); min-width: 150px;">
                     <option value="">Tutti</option>
                   </select>
                 </div>
@@ -5020,7 +5024,7 @@ function viewOpenCycles(){
     </div>
     
     <!-- Floating Action Button -->
-    <button class="fab" id="cycles_fab" onclick="document.getElementById('cycles_add').click()" title="Nuovo ciclo" style="position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 1000;">
+    <button class="fab" id="cycles_fab" onclick="document.getElementById('cycles_add').click()" title="Nuovo ciclo" style="position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 1000; transition: all 0.2s ease;">
       +
     </button>
   `;
@@ -5030,6 +5034,7 @@ function viewOpenCycles(){
   setupCyclesFilters();
   setupCyclesSorting();
   setupForecastFilters();
+  setupCyclesHoverEffects();
   renderForecast();
 }
 
@@ -5192,6 +5197,48 @@ function setupForecastFilters() {
   
   if (consultantEl) {
     consultantEl.addEventListener('change', renderForecast);
+  }
+}
+
+// Setup effetti hover per pulsanti
+function setupCyclesHoverEffects() {
+  // Pulsante "Nuovo Ciclo"
+  const addBtn = document.getElementById('cycles_add');
+  if (addBtn) {
+    addBtn.addEventListener('mouseenter', () => {
+      addBtn.style.transform = 'translateY(-2px)';
+      addBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,.3)';
+    });
+    addBtn.addEventListener('mouseleave', () => {
+      addBtn.style.transform = 'translateY(0)';
+      addBtn.style.boxShadow = '0 2px 8px rgba(0,0,0,.2)';
+    });
+  }
+  
+  // FAB
+  const fabBtn = document.getElementById('cycles_fab');
+  if (fabBtn) {
+    fabBtn.addEventListener('mouseenter', () => {
+      fabBtn.style.transform = 'scale(1.1)';
+      fabBtn.style.boxShadow = '0 6px 16px rgba(0,0,0,.4)';
+    });
+    fabBtn.addEventListener('mouseleave', () => {
+      fabBtn.style.transform = 'scale(1)';
+      fabBtn.style.boxShadow = '0 4px 12px rgba(0,0,0,.3)';
+    });
+  }
+  
+  // Pulsante "Applica Filtri"
+  const applyBtn = document.getElementById('cycles_filter_apply');
+  if (applyBtn) {
+    applyBtn.addEventListener('mouseenter', () => {
+      applyBtn.style.transform = 'translateY(-1px)';
+      applyBtn.style.boxShadow = '0 4px 8px rgba(0,0,0,.2)';
+    });
+    applyBtn.addEventListener('mouseleave', () => {
+      applyBtn.style.transform = 'translateY(0)';
+      applyBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,.1)';
+    });
   }
 }
 
