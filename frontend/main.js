@@ -4947,7 +4947,7 @@ function viewOpenCycles(){
         }
       }
     </style>
-    <div class="wrap">
+    <div class="wrap" style="padding-bottom: 40px;">
       <!-- Hero Section -->
       <div class="cycles-card" style="background: linear-gradient(135deg, rgba(255,193,7,.12), rgba(255,152,0,.08)); border: 1px solid rgba(255,193,7,.3); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
         <div class="cycles-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
