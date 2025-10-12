@@ -115,7 +115,7 @@ if (useSupabaseStorage) {
   console.error("Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables");
   process.exit(1);
 }
-const { init, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, supabase } = storage;
+const { init, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord } = storage;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinutes, timeRangesOverlap } = require('./lib/timezone');
@@ -222,6 +222,7 @@ app.use(express.json({ limit: "2mb" }));
 let _initStorePromise = Promise.resolve();
 
 // Inizializza Supabase se disponibile
+let supabase = null;
 if (useSupabaseStorage) {
   console.log('[BP] useSupabaseStorage is true, checking environment variables...');
   console.log('[BP] SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
@@ -229,7 +230,10 @@ if (useSupabaseStorage) {
   
   _initStorePromise = _initStorePromise.then(() => {
     console.log('[BP] Initializing Supabase connection...');
-    return init();
+    return init().then(() => {
+      supabase = storage.supabase;
+      console.log('[BP] Supabase client assigned to routes');
+    });
   });
 } else {
   console.log('[BP] useSupabaseStorage is false, skipping Supabase initialization');
@@ -1015,20 +1019,14 @@ async function findOrCreateClientByName(name, nncf, user){
   return c;
 }
 
+// Route che non dipendono da Supabase
 const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
-const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
-const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase });
-const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
-const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+
 app.use('/api', appointmentRoutes);
 app.use('/api', pushRoutes);
-app.use('/api', openCyclesRoutes);
-app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/push-tracking', pushTrackingRoutes);
-app.use('/api/user-preferences', userPreferencesRoutes);
 
 // ---------- Periods (BP) ----------
 app.get("/api/periods", auth, async (req,res)=>{
@@ -1875,6 +1873,17 @@ self.addEventListener('notificationclick', (event) => {
 
 // ---------- Start ----------
 _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
+  // Route che dipendono da Supabase (dopo inizializzazione)
+  const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+  const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase });
+  const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+  const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+  
+  app.use('/api/settings', settingsRoutes);
+  app.use('/api', openCyclesRoutes);
+  app.use('/api/push-tracking', pushTrackingRoutes);
+  app.use('/api/user-preferences', userPreferencesRoutes);
+  
   await setupStatic();
   app.listen(PORT, HOST, ()=> logger.info(`BP backend listening on http://${HOST}:${PORT}`));
 
