@@ -47,6 +47,9 @@ import "./src/postSaleBanners.js";
 import { $1, $all } from "./src/query.js";
 window.Chart = Chart;
 window.getUser = getUser;
+window.setText = setText;
+window.fmtEuro = fmtEuro;
+window.fmtInt = fmtInt;
 ;(function () {
   'use strict';
 

@@ -1123,6 +1123,54 @@ async function recomputeDashboardMini(){
     drawLineGeneric('d_mini_'+k.toLowerCase(), L, data);
   });
 
+  // Aggiorna anche i valori numerici dei minichart
+  const totals = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
+  periods.forEach(p=>{
+    if (p.type !== effectivePeriodType(type)) return;
+    const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
+    const f = new Date(r.start || r.end).getTime();
+    const t = new Date(r.end).getTime();
+    if (ps >= f && pe <= t) {
+      const bag = (String(mode).toLowerCase()==='previsionale') ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{});
+      
+      // Helper robusti come in recomputeKPI
+      function asNum(v){ v = Number((v==null?'':v)); return isFinite(v)?v:0; }
+      function pickVSDInd(bag){
+        if(!bag) return 0;
+        var k = ['VSDIndiretto','vsdIndiretto','VSD_indiretto','VSDI'];
+        for(var i=0;i<k.length;i++){
+          if (bag[k[i]] != null) return asNum(bag[k[i]]);
+        }
+        if (bag.VSDTotale != null && bag.VSDPersonale != null){
+          return asNum(bag.VSDTotale) - asNum(bag.VSDPersonale);
+        }
+        return 0;
+      }
+      function pickProvv(bag){
+        if(!bag) return 0;
+        if (bag.TotProvvigioni != null) return asNum(bag.TotProvvigioni);
+        return asNum(bag.ProvvGI) + asNum(bag.ProvvVSD);
+      }
+      
+      totals.VSS += asNum(bag.VSS);
+      totals.VSDPersonale += asNum(bag.VSDPersonale);
+      totals.VSDIndiretto += pickVSDInd(bag);
+      totals.GI += asNum(bag.GI);
+      totals.NNCF += asNum(bag.NNCF);
+      totals.PROVV += pickProvv(bag);
+    }
+  });
+
+  // Aggiorna i valori numerici se le funzioni sono disponibili
+  if (window.setText && window.fmtEuro && window.fmtInt) {
+    window.setText('kpi_vss', window.fmtEuro(Math.round(totals.VSS)));
+    window.setText('kpi_vsd', window.fmtEuro(Math.round(totals.VSDPersonale)));
+    window.setText('kpi_vsd_ind', window.fmtEuro(Math.round(totals.VSDIndiretto)));
+    window.setText('kpi_gi', window.fmtEuro(Math.round(totals.GI)));
+    window.setText('kpi_nncf', window.fmtInt(Math.round(totals.NNCF)));
+    window.setText('kpi_provv', window.fmtEuro(Math.round(totals.PROVV)));
+  }
+
   // Coach: obiettivi raggiunti o vicini (80% / 100%)
   try{
     if (window.BP && BP.Targets && typeof BP.Targets.getForPeriod==='function'){
