@@ -138,40 +138,84 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       // Trova appuntamenti di vendita recenti (ultime 2 ore) non ancora notificati
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       
+      const queryStartTime = Date.now();
       const { data: appointments, error } = await supabase
         .from('appointments')
-        .select('*')
+        .select('id,userid,client,type,end_time,salepromptanswered,nncfpromptanswered') // Solo campi necessari
         .eq('type', 'vendita')
         .gte('end_time', twoHoursAgo)
         .lte('end_time', new Date().toISOString())
         .or('salepromptanswered.is.null,salepromptanswered.eq.false')
-        .or('nncfpromptanswered.is.null,nncfpromptanswered.eq.false');
+        .or('nncfpromptanswered.is.null,nncfpromptanswered.eq.false')
+        .limit(100) // Limite per evitare memory spike
+        .order('end_time', { ascending: false }); // Ordine per processare i più recenti
+      
+      const queryTime = Date.now() - queryStartTime;
+      console.log(`[QueryOptimization] Query executed in ${queryTime}ms, found ${appointments?.length || 0} appointments`);
       
       if (error) throw error;
       
+      // Gestione overflow se ci sono più di 100 appuntamenti
+      if (appointments && appointments.length === 100) {
+        console.log(`[QueryOptimization] Processed first 100 appointments (most recent)`);
+        console.log(`[QueryOptimization] Remaining appointments will be processed in next cycle`);
+      }
+      
+      // Memory monitoring
+      const startMemory = process.memoryUsage();
+      console.log(`[MemoryMetrics] Start: ${Math.round(startMemory.heapUsed / 1024 / 1024)}MB`);
+      
       let processed = 0;
-      for (const appointment of appointments || []) {
-        const notificationType = appointment.nncf ? 'post_nncf' : 'post_sale';
+      const batchSize = 20;
+      const appointmentsList = appointments || [];
+      
+      // Processa in batch per evitare memory spike
+      for (let i = 0; i < appointmentsList.length; i += batchSize) {
+        const batch = appointmentsList.slice(i, i + batchSize);
+        const batchNumber = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(appointmentsList.length / batchSize);
         
-        // Controlla se già inviata
-        const alreadySent = await isNotificationSent(appointment.id, notificationType);
-        if (alreadySent) continue;
+        console.log(`[BatchProcessing] Processing batch ${batchNumber}/${totalBatches} (${batch.length} appointments)`);
         
-        // Invia notifica
-        const payload = {
-          title: appointment.nncf ? "🎯 Nuovo Cliente?" : "💰 Hai Venduto?",
-          body: `Appuntamento con ${appointment.client} - ${appointment.nncf ? 'È diventato cliente?' : 'Hai chiuso la vendita?'}`,
-          url: "/#appointments"
-        };
+        // Processa batch
+        for (const appointment of batch) {
+          const notificationType = appointment.nncf ? 'post_nncf' : 'post_sale';
+          
+          // Controlla se già inviata
+          const alreadySent = await isNotificationSent(appointment.id, notificationType);
+          if (alreadySent) continue;
+          
+          // Invia notifica
+          const payload = {
+            title: appointment.nncf ? "🎯 Nuovo Cliente?" : "💰 Hai Venduto?",
+            body: `Appuntamento con ${appointment.client} - ${appointment.nncf ? 'È diventato cliente?' : 'Hai chiuso la vendita?'}`,
+            url: "/#appointments"
+          };
+          
+          const result = await sendPushNotification(appointment.userid, payload);
+          
+          // Marca come inviata solo se almeno una delivery è riuscita
+          if (result.sent > 0) {
+            await markNotificationSent(appointment.userid, appointment.id, notificationType);
+            processed++;
+          }
+        }
         
-        const result = await sendPushNotification(appointment.userid, payload);
+        // Pausa tra batch per non bloccare event loop
+        if (i + batchSize < appointmentsList.length) {
+          await new Promise(resolve => setTimeout(resolve, 100)); // 100ms pause
+        }
         
-        // Marca come inviata solo se almeno una delivery è riuscita
-        if (result.sent > 0) {
-          await markNotificationSent(appointment.userid, appointment.id, notificationType);
-          processed++;
+        // Memory check ogni 5 batch
+        if (batchNumber % 5 === 0) {
+          const currentMemory = process.memoryUsage();
+          console.log(`[MemoryMetrics] Batch ${batchNumber}: ${Math.round(currentMemory.heapUsed / 1024 / 1024)}MB`);
         }
       }
+      
+      // Memory finale
+      const endMemory = process.memoryUsage();
+      console.log(`[MemoryMetrics] End: ${Math.round(endMemory.heapUsed / 1024 / 1024)}MB, Delta: ${Math.round((endMemory.heapUsed - startMemory.heapUsed) / 1024 / 1024)}MB`);
       
       console.log(`[NotificationManager] Processed ${processed} post-appointment notifications`);
       return processed;

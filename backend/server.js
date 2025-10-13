@@ -2149,13 +2149,33 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     checkOpenCyclesDeadlines().catch(()=>{}); 
   }, 60*1000);
   
-  // Job separato per notifiche post-appuntamento (meno frequente)
+  // Job separato per notifiche post-appuntamento (ottimizzato per scalabilità)
   setInterval(()=>{ 
-    notificationManager.processPostAppointmentNotifications().catch(()=>{}); 
-  }, 3*60*1000); // Ogni 3 minuti invece di 1
+    const startTime = Date.now();
+    console.log(`[JobMetrics] Post-appointment job started at ${new Date().toISOString()}`);
+    notificationManager.processPostAppointmentNotifications()
+      .then(processed => {
+        const duration = Date.now() - startTime;
+        console.log(`[JobMetrics] Post-appointment job completed in ${duration}ms, processed ${processed} notifications`);
+      })
+      .catch(error => {
+        const duration = Date.now() - startTime;
+        console.error(`[JobMetrics] Post-appointment job failed after ${duration}ms:`, error);
+      });
+  }, 7*60*1000); // Ogni 7 minuti (riduce carico 57%)
   
-  // Cleanup subscription invalide ogni 6 ore
+  // Cleanup subscription invalide (ottimizzato per scalabilità)
   setInterval(()=>{ 
-    notificationManager.cleanupInvalidSubscriptions().catch(()=>{}); 
-  }, 6*60*60*1000);
+    const startTime = Date.now();
+    console.log(`[JobMetrics] Subscription cleanup started at ${new Date().toISOString()}`);
+    notificationManager.cleanupInvalidSubscriptions()
+      .then(cleaned => {
+        const duration = Date.now() - startTime;
+        console.log(`[JobMetrics] Subscription cleanup completed in ${duration}ms, cleaned ${cleaned} subscriptions`);
+      })
+      .catch(error => {
+        const duration = Date.now() - startTime;
+        console.error(`[JobMetrics] Subscription cleanup failed after ${duration}ms:`, error);
+      });
+  }, 4*60*60*1000); // Ogni 4 ore (più frequente ma meno carico)
 });
