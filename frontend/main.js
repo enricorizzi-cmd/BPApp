@@ -4904,9 +4904,17 @@ function viewOpenCycles(){
         .cycles-forecast .table::-webkit-scrollbar-thumb:hover {
           background: rgba(255,255,255,0.5) !important;
         }
-        .cycles-table .table table,
+        .cycles-table .table table {
+          min-width: 1000px !important; /* Tabella cicli: 7 colonne */
+        }
         .cycles-forecast .table table {
-          min-width: 800px !important; /* Forza larghezza minima per scroll */
+          min-width: 600px !important; /* Tabella forecast: 3 colonne */
+        }
+        .gi-card .table table {
+          min-width: 1000px !important; /* Tabella vendite: 8 colonne */
+        }
+        .gi-card .table table:has(#gi-forecast-future) {
+          min-width: 800px !important; /* Tabella forecast GI: 4 colonne */
         }
         
         /* Stats grid responsive */
@@ -4958,6 +4966,16 @@ function viewOpenCycles(){
         }
         .cycles-table .table::-webkit-scrollbar-thumb:hover,
         .cycles-forecast .table::-webkit-scrollbar-thumb:hover {
+          background: rgba(0,0,0,0.5) !important;
+        }
+        /* Tabelle GI - Scroll orizzontale mobile (Light mode) */
+        .gi-card .table {
+          scrollbar-color: rgba(0,0,0,0.3) transparent !important;
+        }
+        .gi-card .table::-webkit-scrollbar-thumb {
+          background: rgba(0,0,0,0.3) !important;
+        }
+        .gi-card .table::-webkit-scrollbar-thumb:hover {
           background: rgba(0,0,0,0.5) !important;
         }
       }
