@@ -1020,7 +1020,7 @@ async function findOrCreateClientByName(name, nncf, user){
 }
 
 // Route che non dipendono da Supabase
-const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId });
+const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase });
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
 const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const { parseDateTime, toUTCString, minutesBetween, addMinutes, isValidDateTime } = require('../lib/timezone');
 
-module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId }){
+module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase }){
   const router = express.Router();
 
   // ---- helpers ----
@@ -93,16 +93,43 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     return res.json({ appointments: enriched });
   }
 
-  async function handleUpdate(req, res, body, db){
-    const it = db.appointments.find(a => a.id===body.id);
-    if(!it) return res.status(404).json({ error:'not found' });
-    if(req.user.role!=='admin' && it.userId!==req.user.id) return res.status(403).json({ error:'forbidden' });
-    
-    // Safety check: verifica che l'utente sia lo stesso dell'appuntamento originale
-    if(it.userId !== req.user.id) {
-      console.warn(`User ${req.user.id} attempted to update appointment ${body.id} owned by ${it.userId}`);
-      return res.status(403).json({ error:'forbidden - appointment ownership mismatch' });
-    }
+  async function handleUpdate(req, res, body){
+    // L'appuntamento è già stato verificato nel router principale
+    // Recupera l'appuntamento completo da Supabase
+    try {
+      const { data: existingAppointment, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', body.id)
+        .single();
+      
+      if (error || !existingAppointment) {
+        return res.status(404).json({ error:'appointment not found' });
+      }
+      
+      const it = {
+        id: existingAppointment.id,
+        userId: existingAppointment.userid,
+        client: existingAppointment.client,
+        clientId: existingAppointment.clientid,
+        type: existingAppointment.type,
+        start: existingAppointment.start_time,
+        end: existingAppointment.end_time,
+        durationMinutes: existingAppointment.durationminutes,
+        vss: existingAppointment.vss,
+        vsdPersonal: existingAppointment.vsdpersonal,
+        vsdIndiretto: existingAppointment.vsdindiretto,
+        telefonate: existingAppointment.telefonate,
+        appFissati: existingAppointment.appfissati,
+        nncf: existingAppointment.nncf,
+        nncfPromptAnswered: existingAppointment.nncfpromptanswered,
+        salePromptAnswered: existingAppointment.salepromptanswered,
+        salePromptSnoozedUntil: existingAppointment.salepromptsnoozeduntil,
+        nncfPromptSnoozedUntil: existingAppointment.nncfpromptsnoozeduntil,
+        notes: existingAppointment.notes,
+        createdAt: existingAppointment.createdat,
+        updatedAt: existingAppointment.updatedat
+      };
 
     // Base fields
     copyIfPresent(it, body, 'client', toStr);
@@ -161,16 +188,24 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           updatedat: it.updatedAt
         };
         await updateRecord('appointments', it.id, mappedUpdates);
+        
+        // Log dell'operazione per monitoraggio
+        console.log(`[APPOINTMENT_UPDATED] User: ${req.user.id}, ID: ${it.id}, Client: ${it.client}, Start: ${it.start}`);
+        
       } catch (error) {
         console.error('Error updating appointment:', error);
         return res.status(500).json({ error: 'Failed to update appointment' });
       }
     }
     
-    return res.json({ ok:true, id: it.id, clientId: it.clientId });
+      return res.json({ ok:true, id: it.id, clientId: it.clientId });
+    } catch (error) {
+      console.error('Error in handleUpdate:', error);
+      return res.status(500).json({ error: 'Database error during update' });
+    }
   }
 
-  async function handleCreate(req, res, body, db){
+  async function handleCreate(req, res, body){
     if(!body.start) return res.status(400).json({ error:'missing fields' });
     if(!body.client){
       const t = String(body.type||'').toLowerCase();
@@ -253,6 +288,10 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           updatedat: row.updatedAt
         };
         await insertRecord('appointments', mappedRow);
+        
+        // Log dell'operazione per monitoraggio
+        console.log(`[APPOINTMENT_CREATED] User: ${req.user.id}, ID: ${row.id}, Client: ${row.client}, Start: ${row.start}`);
+        
       } catch (error) {
         console.error('Error inserting appointment:', error);
         return res.status(500).json({ error: 'Failed to save appointment' });
@@ -275,20 +314,38 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
   router.post('/appointments', auth, async (req,res)=>{
     const body = req.body || {};
-    const db = await readJSON('appointments.json');
-    db.appointments = db.appointments || [];
     
-    // Safety check: se c'è un ID ma non corrisponde a nessun appuntamento esistente,
-    // potrebbe essere un tentativo di sovrascrittura accidentale
+    // Safety check: se c'è un ID, verifica che l'appuntamento esista direttamente su Supabase
     if(body.id) {
-      const existingAppointment = db.appointments.find(a => a.id === body.id);
-      if(!existingAppointment) {
-        console.warn(`User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
-        return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
+      try {
+        // Verifica esistenza direttamente su Supabase per evitare race conditions
+        const { data: existingAppointment, error } = await supabase
+          .from('appointments')
+          .select('id, userid, client, start_time')
+          .eq('id', body.id)
+          .single();
+        
+        if (error || !existingAppointment) {
+          console.warn(`[SAFETY_CHECK] User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
+          return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
+        }
+        
+        // Verifica ownership per sicurezza
+        if (existingAppointment.userid !== req.user.id && req.user.role !== 'admin') {
+          console.warn(`[SAFETY_CHECK] User ${req.user.id} attempted to update appointment ${body.id} owned by ${existingAppointment.userid}`);
+          return res.status(403).json({ error:'forbidden - appointment ownership mismatch' });
+        }
+        
+        // Log dell'operazione per monitoraggio
+        console.log(`[APPOINTMENT_UPDATE_REQUEST] User: ${req.user.id}, ID: ${body.id}, Client: ${existingAppointment.client}, Start: ${existingAppointment.start_time}`);
+        
+        return handleUpdate(req,res,body);
+      } catch (error) {
+        console.error('Error checking appointment existence:', error);
+        return res.status(500).json({ error:'database error during validation' });
       }
-      return handleUpdate(req,res,body,db);
     }
-    return handleCreate(req,res,body,db);
+    return handleCreate(req,res,body);
   });
 
   function extractId(req){
