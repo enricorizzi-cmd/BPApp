@@ -1050,6 +1050,14 @@ function viewHome(){
         
         // Ricarica i dati dopo che il selettore è stato popolato
         if (window.recomputeKPI) window.recomputeKPI();
+        
+        // Imposta il trigger per il cambio consulente DOPO che il selettore è popolato
+        selCons.onchange = function(){
+          if (typeof haptic==='function') haptic('light');
+          recomputeKPI();
+          recomputeMini();
+          refreshLists();
+        };
       }).catch(function(){});
     })();
   } else {
@@ -1609,13 +1617,8 @@ function cardAppt(x){
     recomputeMini();
     refreshLists();
   };
-  var selCons = document.getElementById('dash_cons');
-  if (selCons) selCons.onchange = function(){
-    if (typeof haptic==='function') haptic('light');
-    recomputeKPI();
-    recomputeMini();
-    refreshLists();
-  };
+  // Il trigger per selCons è ora impostato dopo che il selettore è popolato (per admin)
+  // Per non-admin, il selettore non esiste quindi non serve trigger
 
   // first run
   recomputeKPI();

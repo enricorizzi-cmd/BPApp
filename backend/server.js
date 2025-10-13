@@ -1041,11 +1041,11 @@ app.get("/api/periods", auth, async (req,res)=>{
   if (isAdmin && userQ) {
     // Admin può specificare un utente specifico
     rows = rows.filter(p => String(p.userId) === String(userQ));
-  } else if (global === "1" && isAdmin) {
-    // Admin con global=1 vede tutti i periodi (nessun filtro)
+  } else if (isAdmin && (global === "1" || !userQ)) {
+    // Admin con global=1 O senza userQ (Tutti) vede tutti i periodi
     // rows rimane invariato
   } else {
-    // Non-admin o admin senza global=1 vede solo i propri dati
+    // Non-admin vede solo i propri dati
     rows = rows.filter(p => String(p.userId) === String(req.user.id));
   }
 
