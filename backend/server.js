@@ -1036,13 +1036,17 @@ app.get("/api/periods", auth, async (req,res)=>{
   // Base set: admin+global=1 => tutti; altrimenti solo i propri
   const isAdmin = req.user.role === "admin";
   let rows = (db.periods || []);
-  if (!(global === "1" && isAdmin)) {
-    rows = rows.filter(p => String(p.userId) === String(req.user.id));
-  }
-
-  // Filtro opzionale: utente specifico (solo admin)
-  if (userQ && isAdmin) {
+  
+  // Logica corretta per il filtro utente
+  if (isAdmin && userQ) {
+    // Admin può specificare un utente specifico
     rows = rows.filter(p => String(p.userId) === String(userQ));
+  } else if (global === "1" && isAdmin) {
+    // Admin con global=1 vede tutti i periodi (nessun filtro)
+    // rows rimane invariato
+  } else {
+    // Non-admin o admin senza global=1 vede solo i propri dati
+    rows = rows.filter(p => String(p.userId) === String(req.user.id));
   }
 
   // Filtro opzionale: tipo periodo (settimanale|mensile|trimestrale|semestrale|annuale)
