@@ -4878,23 +4878,38 @@ function viewOpenCycles(){
 
   appEl.innerHTML = topbarHTML() + `
     <style>
-      @media (max-width: 768px) {
-        .cycles-filters .row {
-          flex-direction: column !important;
-          align-items: stretch !important;
+      @media (max-width: 980px) {
+        /* Tabelle Cicli Aperti - Scroll orizzontale mobile (come GI & Scadenzario) */
+        .cycles-table .table,
+        .cycles-forecast .table {
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          scrollbar-width: thin !important;
+          scrollbar-color: rgba(255,255,255,0.3) transparent !important;
         }
-        .cycles-filters .row > div {
-          margin-bottom: 12px;
+        .cycles-table .table::-webkit-scrollbar,
+        .cycles-forecast .table::-webkit-scrollbar {
+          height: 6px !important;
         }
-        .cycles-filters select {
-          width: 100% !important;
-          min-width: auto !important;
-          padding: 4px 6px !important;
-          font-size: 12px !important;
-          height: 28px !important;
-          line-height: 18px !important;
-          border-radius: 4px !important;
+        .cycles-table .table::-webkit-scrollbar-track,
+        .cycles-forecast .table::-webkit-scrollbar-track {
+          background: transparent !important;
         }
+        .cycles-table .table::-webkit-scrollbar-thumb,
+        .cycles-forecast .table::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.3) !important;
+          border-radius: 3px !important;
+        }
+        .cycles-table .table::-webkit-scrollbar-thumb:hover,
+        .cycles-forecast .table::-webkit-scrollbar-thumb:hover {
+          background: rgba(255,255,255,0.5) !important;
+        }
+        .cycles-table .table table,
+        .cycles-forecast .table table {
+          min-width: 800px !important; /* Forza larghezza minima per scroll */
+        }
+        
+        /* Stats grid responsive */
         .cycles-stats-grid {
           grid-template-columns: repeat(2, 1fr) !important;
           gap: 12px !important;
@@ -4908,6 +4923,8 @@ function viewOpenCycles(){
         .cycles-stat-label {
           font-size: 12px !important;
         }
+        
+        /* Header responsive */
         .cycles-table-header h2,
         .cycles-forecast-header h2 {
           font-size: 18px !important;
@@ -4927,63 +4944,21 @@ function viewOpenCycles(){
           width: 100%;
           justify-content: center;
         }
-        .forecast-filters select {
-          padding: 4px 6px !important;
-          font-size: 12px !important;
-          height: 28px !important;
-          line-height: 18px !important;
-          border-radius: 4px !important;
-        }
-        .cycles-table .table {
-          min-width: 1200px !important;
-          overflow-x: scroll !important;
-          -webkit-overflow-scrolling: touch !important;
-        }
-        .cycles-table table {
-          min-width: 1200px !important;
-        }
+      }
+      
+      @media (max-width: 980px) and (prefers-color-scheme: light) {
+        /* Tabelle Cicli Aperti - Scroll orizzontale mobile (Light mode) */
+        .cycles-table .table,
         .cycles-forecast .table {
-          min-width: 800px !important;
-          overflow-x: scroll !important;
-          -webkit-overflow-scrolling: touch !important;
-        }
-        .cycles-forecast table {
-          min-width: 800px !important;
-        }
-        .forecast-filters-row {
-          flex-direction: column !important;
-          align-items: stretch !important;
-        }
-        .forecast-filters-row > div {
-          margin-bottom: 12px;
-        }
-        .forecast-filters-row select {
-          width: 100% !important;
-          min-width: auto !important;
-        }
-        .cycles-filters label,
-        .forecast-filters label {
-          font-size: 11px !important;
-          margin-bottom: 3px !important;
-          font-weight: 500 !important;
-        }
-        .cycles-table,
-        .cycles-forecast {
-          overflow: visible !important;
-        }
-        .cycles-table .table::-webkit-scrollbar,
-        .cycles-forecast .table::-webkit-scrollbar {
-          height: 8px !important;
-        }
-        .cycles-table .table::-webkit-scrollbar-track,
-        .cycles-forecast .table::-webkit-scrollbar-track {
-          background: #f1f1f1 !important;
-          border-radius: 4px !important;
+          scrollbar-color: rgba(0,0,0,0.3) transparent !important;
         }
         .cycles-table .table::-webkit-scrollbar-thumb,
         .cycles-forecast .table::-webkit-scrollbar-thumb {
-          background: #888 !important;
-          border-radius: 4px !important;
+          background: rgba(0,0,0,0.3) !important;
+        }
+        .cycles-table .table::-webkit-scrollbar-thumb:hover,
+        .cycles-forecast .table::-webkit-scrollbar-thumb:hover {
+          background: rgba(0,0,0,0.5) !important;
         }
       }
     </style>
@@ -5069,8 +5044,8 @@ function viewOpenCycles(){
         <div class="cycles-table-header" style="padding: 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
           <h2 style="margin: 0; color: var(--text); font-size: 20px; font-weight: 600;">📋 Cicli Aperti</h2>
         </div>
-        <div class="table" style="overflow-x: auto; min-width: 800px;">
-          <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+        <div class="table">
+          <table>
             <thead>
               <tr style="background: var(--bg-secondary);">
                 <th data-sort="consultant" style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; min-width: 120px;">Consulente</th>
@@ -5118,8 +5093,8 @@ function viewOpenCycles(){
             </div>
           </div>
         </div>
-        <div class="table" style="overflow-x: auto; min-width: 600px;">
-          <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+        <div class="table">
+          <table>
             <thead>
               <tr style="background: var(--bg-secondary);">
                 <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border); min-width: 150px;">Periodo</th>
