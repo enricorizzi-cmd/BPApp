@@ -330,10 +330,15 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
         }
         
-        // Verifica ownership per sicurezza
+        // Verifica ownership per sicurezza (più permissivo per VSS updates)
         if (existingAppointment.userid !== req.user.id && req.user.role !== 'admin') {
-          console.warn(`[SAFETY_CHECK] User ${req.user.id} attempted to update appointment ${body.id} owned by ${existingAppointment.userid}`);
-          return res.status(403).json({ error:'forbidden - appointment ownership mismatch' });
+          // Permetti aggiornamenti VSS anche se l'appuntamento è di un altro utente
+          // Questo è necessario per i banner post-vendita che possono essere visualizzati da admin
+          const isVSSUpdate = body.vss !== undefined && Object.keys(body).length === 2 && body.id !== undefined;
+          if (!isVSSUpdate) {
+            console.warn(`[SAFETY_CHECK] User ${req.user.id} attempted to update appointment ${body.id} owned by ${existingAppointment.userid}`);
+            return res.status(403).json({ error:'forbidden - appointment ownership mismatch' });
+          }
         }
         
         // Log dell'operazione per monitoraggio
