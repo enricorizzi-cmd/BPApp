@@ -1045,8 +1045,8 @@ function viewHome(){
         }
         
         sel.innerHTML = h;
-        // Admin vede "Tutti" di default, non-admin vede se stesso
-        sel.value = (me.role === 'admin') ? '' : me.id;
+        // Tutti vedono se stessi di default, admin può cambiare
+        sel.value = me.id;
       }).catch(function(){});
     })();
   }
