@@ -47,9 +47,6 @@ import "./src/postSaleBanners.js";
 import { $1, $all } from "./src/query.js";
 window.Chart = Chart;
 window.getUser = getUser;
-window.setText = setText;
-window.fmtEuro = fmtEuro;
-window.fmtInt = fmtInt;
 ;(function () {
   'use strict';
 
@@ -1022,6 +1019,11 @@ function viewHome(){
   function setText(id, text){ var el=document.getElementById(id); if(el) el.textContent = text; }
   function fmtEuro(n){ var v=Number(n)||0; return v.toLocaleString('it-IT')+'€'; }
   function fmtInt(n){ var v=Number(n)||0; return String(Math.round(v)); }
+  
+  // Esponi le funzioni globalmente per l'uso in final-hooks.js
+  window.setText = setText;
+  window.fmtEuro = fmtEuro;
+  window.fmtInt = fmtInt;
   function htmlEscape(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]); }
 
   // ===== Filtro consulenti (identico a Squadra)
