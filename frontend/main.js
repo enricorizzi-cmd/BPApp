@@ -4876,6 +4876,7 @@ function viewOpenCycles(){
   setActiveSidebarItem('viewOpenCycles');
   const isAdmin = getUser().role==='admin';
 
+  renderTopbar();
   appEl.innerHTML = topbarHTML() + `
     <style>
       @media (max-width: 980px) {
@@ -5141,14 +5142,6 @@ function viewOpenCycles(){
   setupCyclesFilters();
   setupCyclesSorting();
   setupForecastFilters();
-  
-  // Debug: verifica listener menu hamburger
-  setTimeout(() => {
-    const hamb = document.getElementById('hamb');
-    console.log('[DEBUG] Hamburger element:', hamb);
-    console.log('[DEBUG] Hamburger onclick:', hamb?.onclick);
-    console.log('[DEBUG] toggleDrawer function:', typeof window.toggleDrawer);
-  }, 100);
   setupCyclesHoverEffects();
 }
 
