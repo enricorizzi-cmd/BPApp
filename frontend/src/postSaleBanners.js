@@ -534,11 +534,12 @@
     dbg('Document ready, starting initial scan');
     scan();
   }
+  // DISABILITATO: re-scan automatico - ora gestito dal backend
   // re-scan when an appointment is saved or tab becomes visible
-  try{ document.addEventListener('appt:saved', function(){ setTimeout(scan, 50); }); }catch(_){ }
-  try{ document.addEventListener('visibilitychange', function(){ if(!document.hidden) setTimeout(scan, 50); }); }catch(_){ }
+  // try{ document.addEventListener('appt:saved', function(){ setTimeout(scan, 50); }); }catch(_){ }
+  // try{ document.addEventListener('visibilitychange', function(){ if(!document.hidden) setTimeout(scan, 50); }); }catch(_){ }
   // periodic scan (in case the page stays open while an appointment's end time passes)
-  try{ setInterval(function(){ scan(); }, 60*1000); }catch(_){ }
+  // try{ setInterval(function(){ scan(); }, 60*1000); }catch(_){ }
   }
   if (typeof global !== 'undefined') {
     global.initPostSaleBanners = initPostSaleBanners;

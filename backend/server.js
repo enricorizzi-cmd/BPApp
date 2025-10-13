@@ -1895,6 +1895,14 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   
   // Inizializza tracking persistente per notifiche cicli
   const cycleNotificationTracking = require('./lib/cycle-notification-tracking')({ supabase });
+  
+  // Inizializza notification manager per gestione centralizzata
+  const notificationManager = require('./lib/notification-manager')({ 
+    supabase, 
+    webpush, 
+    VAPID_PUBLIC_KEY, 
+    VAPID_PRIVATE_KEY 
+  });
 
   function _weekBoundariesISO(d){
     const s = startOfWeek(d), e = endOfWeek(d);
@@ -2127,5 +2135,11 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     runWeekendNoonPushOncePerDay().catch(()=>{}); 
     runDailyBackupAt1AM().catch(()=>{}); 
     checkOpenCyclesDeadlines().catch(()=>{}); 
+    notificationManager.processPostAppointmentNotifications().catch(()=>{}); 
   }, 60*1000);
+  
+  // Cleanup subscription invalide ogni 6 ore
+  setInterval(()=>{ 
+    notificationManager.cleanupInvalidSubscriptions().catch(()=>{}); 
+  }, 6*60*60*1000);
 });
