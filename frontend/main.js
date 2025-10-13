@@ -5131,7 +5131,7 @@ function viewOpenCycles(){
     </div>
     
     <!-- Floating Action Button -->
-    <button class="fab" id="cycles_fab" onclick="document.getElementById('cycles_add').click()" title="Nuovo ciclo" style="position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 1000; transition: all 0.2s ease;">
+    <button class="fab" id="cycles_fab" onclick="document.getElementById('cycles_add').click()" title="Nuovo ciclo" style="position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: white; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.3); z-index: 50; transition: all 0.2s ease;">
       +
     </button>
   `;
