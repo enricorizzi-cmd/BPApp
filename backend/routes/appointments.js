@@ -251,29 +251,38 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     // Usa updateRecord per Supabase invece di writeJSON per evitare sovrascrittura
     if (typeof updateRecord === 'function') {
       try {
-        // Supabase: aggiornamento singolo con mapping corretto dei campi esistenti
+        // Supabase: aggiornamento solo dei campi modificati
         const mappedUpdates = {
-          client: it.client,
-          start_time: it.start,
-          end_time: it.end,
-          durationminutes: it.durationMinutes,
-          type: it.type,
-          vss: it.vss,
-          vsdpersonal: it.vsdPersonal,
-          vsdindiretto: it.vsdIndiretto,
-          telefonate: it.telefonate,
-          appfissati: it.appFissati,
-          nncf: it.nncf,
-          nncfpromptanswered: it.nncfPromptAnswered,
-          salepromptanswered: it.salePromptAnswered,
-          salepromptsnoozeduntil: it.salePromptSnoozedUntil,
-          nncfpromptsnoozeduntil: it.nncfPromptSnoozedUntil,
-          notes: it.notes,
-          annotation: it.notes, // Duplicato per compatibilità
-          userid: it.userId,
-          clientid: it.clientId,
           updatedat: it.updatedAt
         };
+        
+        // Aggiorna solo i campi presenti nel body della richiesta
+        if (body.client !== undefined) mappedUpdates.client = it.client;
+        if (body.start !== undefined) mappedUpdates.start_time = it.start;
+        if (body.end !== undefined) mappedUpdates.end_time = it.end;
+        if (body.durationMinutes !== undefined) mappedUpdates.durationminutes = it.durationMinutes;
+        if (body.type !== undefined) mappedUpdates.type = it.type;
+        if (body.vss !== undefined) mappedUpdates.vss = it.vss;
+        if (body.vsdPersonal !== undefined) mappedUpdates.vsdpersonal = it.vsdPersonal;
+        if (body.vsdIndiretto !== undefined) mappedUpdates.vsdindiretto = it.vsdIndiretto;
+        if (body.telefonate !== undefined) mappedUpdates.telefonate = it.telefonate;
+        if (body.appFissati !== undefined) mappedUpdates.appfissati = it.appFissati;
+        if (body.nncf !== undefined) mappedUpdates.nncf = it.nncf;
+        if (body.nncfPromptAnswered !== undefined) mappedUpdates.nncfpromptanswered = it.nncfPromptAnswered;
+        if (body.salePromptAnswered !== undefined) mappedUpdates.salepromptanswered = it.salePromptAnswered;
+        if (body.salePromptSnoozedUntil !== undefined) mappedUpdates.salepromptsnoozeduntil = it.salePromptSnoozedUntil;
+        if (body.nncfPromptSnoozedUntil !== undefined) mappedUpdates.nncfpromptsnoozeduntil = it.nncfPromptSnoozedUntil;
+        if (body.notes !== undefined) {
+          mappedUpdates.notes = it.notes;
+          mappedUpdates.annotation = it.notes; // Duplicato per compatibilità
+        }
+        
+        // DEBUG: Log banner fields per troubleshooting
+        if (it.nncfPromptAnswered !== undefined || it.salePromptAnswered !== undefined) {
+          console.log(`[BANNER_UPDATE] Appt: ${it.id}, nncfPromptAnswered: ${it.nncfPromptAnswered}, salePromptAnswered: ${it.salePromptAnswered}`);
+          console.log(`[BANNER_UPDATE] Mapped fields: nncfpromptanswered: ${mappedUpdates.nncfpromptanswered}, salepromptanswered: ${mappedUpdates.salepromptanswered}`);
+        }
+        
         await updateRecord('appointments', it.id, mappedUpdates);
         
         // Log dell'operazione per monitoraggio

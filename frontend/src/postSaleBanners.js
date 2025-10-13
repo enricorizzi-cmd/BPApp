@@ -315,6 +315,21 @@
       // Marca push come inviato per evitare duplicati
       await markPush(apptId, kind);
       
+      // FORZA REFRESH: Ricarica gli appuntamenti per aggiornare lo stato dei banner
+      try {
+        console.log(`[BANNER_SAVE] Refreshing appointments data after banner save`);
+        // Trigger refresh globale degli appuntamenti
+        if (typeof window.refreshAppointments === 'function') {
+          await window.refreshAppointments();
+        }
+        // Trigger refresh specifico dei banner
+        if (typeof window.scanBanners === 'function') {
+          setTimeout(() => window.scanBanners(), 1000); // Delay per permettere al DB di aggiornarsi
+        }
+      } catch (refreshError) {
+        console.warn(`[BANNER_SAVE] Refresh failed (non-critical):`, refreshError);
+      }
+      
       dbg('Banner marked as answered and push tracked', apptId, kind, action);
       console.log(`[BANNER_SAVE] Successfully saved banner answer for appt: ${apptId}`);
     } catch (e) {
