@@ -181,19 +181,41 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     }
   }
   
-  // Cleanup subscription invalide
+  // Cleanup subscription invalide (ottimizzato)
   async function cleanupInvalidSubscriptions() {
     try {
       console.log('[NotificationManager] Cleaning up invalid subscriptions...');
       
-      const { data: subscriptions, error } = await supabase
+      // 1. Cleanup subscription senza lastseen aggiornato da >7 giorni
+      const sevenDaysAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();
+      const { data: oldSubscriptions, error: oldError } = await supabase
         .from('push_subscriptions')
-        .select('*');
+        .select('*')
+        .or(`lastseen.is.null,lastseen.lt.${sevenDaysAgo}`);
       
-      if (error) throw error;
+      if (oldError) throw oldError;
       
       let cleaned = 0;
-      for (const sub of subscriptions || []) {
+      
+      // Rimuovi subscription vecchie senza test (assumiamo morte)
+      for (const sub of oldSubscriptions || []) {
+        await deleteInvalidSubscription(sub.userid, {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth }
+        });
+        cleaned++;
+        console.log(`[NotificationManager] Removed old subscription for user ${sub.userid} (lastseen: ${sub.lastseen || 'never'})`);
+      }
+      
+      // 2. Test solo subscription recenti (ultimi 7 giorni) per errori 404/410
+      const { data: recentSubscriptions, error: recentError } = await supabase
+        .from('push_subscriptions')
+        .select('*')
+        .gte('lastseen', sevenDaysAgo);
+      
+      if (recentError) throw recentError;
+      
+      for (const sub of recentSubscriptions || []) {
         const subscription = {
           endpoint: sub.endpoint,
           keys: { p256dh: sub.p256dh, auth: sub.auth }
@@ -206,11 +228,12 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
           if (error.statusCode === 410 || error.statusCode === 404) {
             await deleteInvalidSubscription(sub.userid, subscription);
             cleaned++;
+            console.log(`[NotificationManager] Removed invalid subscription for user ${sub.userid} (${error.statusCode})`);
           }
         }
       }
       
-      console.log(`[NotificationManager] Cleaned ${cleaned} invalid subscriptions`);
+      console.log(`[NotificationManager] Cleaned ${cleaned} invalid subscriptions (${oldSubscriptions?.length || 0} old + ${cleaned - (oldSubscriptions?.length || 0)} invalid)`);
       return cleaned;
     } catch (error) {
       console.error('[NotificationManager] Error cleaning subscriptions:', error);
