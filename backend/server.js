@@ -2105,7 +2105,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         const mockReq = {
           body: {
             text: body,
-            recipients: cycle.consultantId,
+            recipients: [cycle.consultantId], // ← CORRETTO: array di destinatari
             type: 'automatic'
           },
           user: { id: cycle.consultantId }
