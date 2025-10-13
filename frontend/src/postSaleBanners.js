@@ -77,9 +77,11 @@
       const payload = { title, body, tag: (kind==='nncf' ? 'bp-nncf' : 'bp-sale'), url: '/' };
       dbg('Sending push notification:', payload);
       // Usa l'endpoint delle notifiche manuali per funzionare anche con app chiusa
+      // INVIA SOLO AL CONSULENTE CHE HA CREATO L'APPUNTAMENTO
+      const consultantId = appt.userId || appt.consultantId || (window.getUser ? window.getUser().id : null);
       await POST('/api/notifications/send', { 
         text: body, 
-        recipients: 'all',
+        recipients: consultantId ? [consultantId] : 'all',
         type: 'automatic'
       });
       await markPush(appt.id, kind);

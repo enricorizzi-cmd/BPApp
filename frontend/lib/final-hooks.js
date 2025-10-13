@@ -2109,12 +2109,16 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   function scanNNCF(){
     // mostra una sola volta l'ultimo NNCF concluso da almeno 1 minuto
+    // SOLO PER GLI APPUNTAMENTI DEL CONSULENTE CORRENTE
     return GET('/api/appointments').then(function(r){
       var now = Date.now();
+      var currentUserId = window.getUser ? window.getUser().id : null;
       var list = (r && r.appointments) || [];
       var nncf = list
         .filter(function(a){
           if(!a || !a.nncf) return false;
+          // FILTRA PER UTENTE: mostra solo i banner degli appuntamenti del consulente corrente
+          if (currentUserId && String(a.userId || '') !== String(currentUserId)) return false;
           var end = +new Date(a.end || a.start || 0);
           return end && end < (now - 60*1000); // passato da ≥1 min
         })
