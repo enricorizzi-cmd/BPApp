@@ -4889,10 +4889,11 @@ function viewOpenCycles(){
         .cycles-filters select {
           width: 100% !important;
           min-width: auto !important;
-          padding: 6px 8px !important;
-          font-size: 13px !important;
-          height: 32px !important;
-          line-height: 20px !important;
+          padding: 4px 6px !important;
+          font-size: 12px !important;
+          height: 28px !important;
+          line-height: 18px !important;
+          border-radius: 4px !important;
         }
         .cycles-stats-grid {
           grid-template-columns: repeat(2, 1fr) !important;
@@ -4927,22 +4928,27 @@ function viewOpenCycles(){
           justify-content: center;
         }
         .forecast-filters select {
-          padding: 6px 8px !important;
-          font-size: 13px !important;
-          height: 32px !important;
-          line-height: 20px !important;
+          padding: 4px 6px !important;
+          font-size: 12px !important;
+          height: 28px !important;
+          line-height: 18px !important;
+          border-radius: 4px !important;
         }
         .cycles-table .table {
-          min-width: 1000px !important;
+          min-width: 1200px !important;
+          overflow-x: scroll !important;
+          -webkit-overflow-scrolling: touch !important;
         }
         .cycles-table table {
-          min-width: 1000px !important;
+          min-width: 1200px !important;
         }
         .cycles-forecast .table {
-          min-width: 600px !important;
+          min-width: 800px !important;
+          overflow-x: scroll !important;
+          -webkit-overflow-scrolling: touch !important;
         }
         .cycles-forecast table {
-          min-width: 600px !important;
+          min-width: 800px !important;
         }
         .forecast-filters-row {
           flex-direction: column !important;
@@ -4957,8 +4963,27 @@ function viewOpenCycles(){
         }
         .cycles-filters label,
         .forecast-filters label {
-          font-size: 12px !important;
-          margin-bottom: 4px !important;
+          font-size: 11px !important;
+          margin-bottom: 3px !important;
+          font-weight: 500 !important;
+        }
+        .cycles-table,
+        .cycles-forecast {
+          overflow: visible !important;
+        }
+        .cycles-table .table::-webkit-scrollbar,
+        .cycles-forecast .table::-webkit-scrollbar {
+          height: 8px !important;
+        }
+        .cycles-table .table::-webkit-scrollbar-track,
+        .cycles-forecast .table::-webkit-scrollbar-track {
+          background: #f1f1f1 !important;
+          border-radius: 4px !important;
+        }
+        .cycles-table .table::-webkit-scrollbar-thumb,
+        .cycles-forecast .table::-webkit-scrollbar-thumb {
+          background: #888 !important;
+          border-radius: 4px !important;
         }
       }
     </style>
