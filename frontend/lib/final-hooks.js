@@ -1125,11 +1125,11 @@ async function recomputeDashboardMini(){
 
   // Aggiorna anche i valori numerici dei minichart
   const totals = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
+  const f = new Date(r.start).getTime();
+  const t = new Date(r.end).getTime();
   periods.forEach(p=>{
     if (p.type !== effectivePeriodType(type)) return;
     const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
-    const f = new Date(r.start || r.end).getTime();
-    const t = new Date(r.end).getTime();
     if (ps >= f && pe <= t) {
       const bag = (String(mode).toLowerCase()==='previsionale') ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{});
       
