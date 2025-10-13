@@ -28,15 +28,26 @@
   };
 
   // --- Push markers (avoid duplicate push per appointment/kind) ---
-  // Temporaneamente disabilitato per evitare errori 500
   const pushSent = async (id, kind) => {
-    // Per ora ritorna sempre false per evitare errori
-    return false;
+    try {
+      const response = await GET(`/api/push-tracking/sent?appointmentId=${id}&type=${kind}`);
+      return response.sent || false;
+    } catch (e) {
+      console.warn('[Push Tracking] Error checking sent status:', e);
+      return false; // Default to false on error
+    }
   };
   
   const markPush = async (id, kind) => {
-    // Per ora non fa nulla per evitare errori
-    dbg('Push tracking temporarily disabled');
+    try {
+      await POST('/api/push-tracking/mark', { 
+        appointmentId: id, 
+        type: kind 
+      });
+      dbg('Push marked as sent', id, kind);
+    } catch (e) {
+      console.warn('[Push Tracking] Error marking as sent:', e);
+    }
   };
 
   // --- Safe utils / shims già presenti altrove ---
@@ -65,6 +76,19 @@
         dbg('triggerPush early return - missing POST/appt/id');
         return;
       }
+      
+      // SICUREZZA: Controlla se il banner è già stato risposto
+      if (isBannerAnswered(appt, kind)) {
+        dbg('Banner already answered, skipping push notification');
+        return;
+      }
+      
+      // SICUREZZA: Controlla se il banner è in snooze
+      if (isBannerSnoozed(appt, kind)) {
+        dbg('Banner snoozed, skipping push notification');
+        return;
+      }
+      
       if(await pushSent(appt.id, kind)) {
         dbg('triggerPush early return - already sent');
         return;
@@ -79,9 +103,20 @@
       // Usa l'endpoint delle notifiche manuali per funzionare anche con app chiusa
       // INVIA SOLO AL CONSULENTE CHE HA CREATO L'APPUNTAMENTO
       const consultantId = appt.userId || appt.consultantId || (window.getUser ? window.getUser().id : null);
+      
+      // Log per audit sicurezza
+      console.log(`[BANNER] Processing: ${kind}, Appt: ${appt.id}, Client: ${appt.client}, ConsultantId: ${consultantId}`);
+      
+      // SICUREZZA: Se consultantId non è disponibile, non inviare nulla
+      if (!consultantId) {
+        console.warn('[BANNER] No consultantId available, skipping notification for appt:', appt.id);
+        await markPush(appt.id, kind);
+        return;
+      }
+      
       await POST('/api/notifications/send', { 
         text: body, 
-        recipients: consultantId ? [consultantId] : 'all',
+        recipients: [consultantId], // ← SICURO: sempre array specifico
         type: 'automatic'
       });
       await markPush(appt.id, kind);
@@ -270,10 +305,17 @@
   async function markBannerAnswered(apptId, kind, action) {
     try {
       const field = kind === KIND_NNCF ? 'nncfPromptAnswered' : 'salePromptAnswered';
+      
+      // Salva risposta banner
       await POST('/api/appointments', { id: apptId, [field]: true });
-      dbg('Marked banner as answered', apptId, kind, action);
+      
+      // Marca push come inviato per evitare duplicati
+      await markPush(apptId, kind);
+      
+      dbg('Banner marked as answered and push tracked', apptId, kind, action);
     } catch (e) {
       dbg('Error marking banner as answered', e);
+      throw e; // Rilancia per gestione errori
     }
   }
 

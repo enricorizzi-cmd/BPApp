@@ -10,6 +10,14 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     try {
       const { text, recipients, type } = req.body;
       
+      // SICUREZZA: Blocca notifiche automatiche a tutti gli utenti
+      if (recipients === 'all' && type === 'automatic') {
+        console.warn(`[SECURITY] Blocked automatic notification to all users from ${req.user.id}`);
+        return res.status(400).json({ 
+          error: 'Automatic notifications cannot be sent to all users' 
+        });
+      }
+      
       // Solo le notifiche manuali richiedono admin, quelle automatiche possono essere inviate da chiunque
       if (type !== 'automatic' && req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Admin only for manual notifications' });
@@ -17,6 +25,9 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       if (!text || !recipients) {
         return res.status(400).json({ error: 'Text and recipients required' });
       }
+      
+      // Log per audit sicurezza
+      console.log(`[NOTIFICATION] Type: ${type}, Recipients: ${recipients}, SentBy: ${req.user.id}, Text: ${text.substring(0, 50)}...`);
       
       // Carica sottoscrizioni push
       let subs = [];
