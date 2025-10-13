@@ -4889,8 +4889,10 @@ function viewOpenCycles(){
         .cycles-filters select {
           width: 100% !important;
           min-width: auto !important;
-          padding: 8px 10px !important;
-          font-size: 14px !important;
+          padding: 6px 8px !important;
+          font-size: 13px !important;
+          height: 32px !important;
+          line-height: 20px !important;
         }
         .cycles-stats-grid {
           grid-template-columns: repeat(2, 1fr) !important;
@@ -4925,14 +4927,22 @@ function viewOpenCycles(){
           justify-content: center;
         }
         .forecast-filters select {
-          padding: 8px 10px !important;
-          font-size: 14px !important;
+          padding: 6px 8px !important;
+          font-size: 13px !important;
+          height: 32px !important;
+          line-height: 20px !important;
+        }
+        .cycles-table .table {
+          min-width: 1000px !important;
+        }
+        .cycles-table table {
+          min-width: 1000px !important;
         }
         .cycles-forecast .table {
-          min-width: 400px !important;
+          min-width: 600px !important;
         }
         .cycles-forecast table {
-          min-width: 400px !important;
+          min-width: 600px !important;
         }
         .forecast-filters-row {
           flex-direction: column !important;
@@ -4944,6 +4954,11 @@ function viewOpenCycles(){
         .forecast-filters-row select {
           width: 100% !important;
           min-width: auto !important;
+        }
+        .cycles-filters label,
+        .forecast-filters label {
+          font-size: 12px !important;
+          margin-bottom: 4px !important;
         }
       }
     </style>
