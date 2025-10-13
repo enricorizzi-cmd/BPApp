@@ -5511,7 +5511,10 @@ function renderForecast() {
     const cycles = periodGroups[periodKey];
     const periodDisplay = formatPeriodKey(periodKey, granularity);
     const totalCount = cycles.length;
-    const details = cycles.map(c => htmlEscape(c.description)).join('<br>');
+    const details = cycles.map(c => {
+      const desc = htmlEscape(c.description);
+      return desc.length > 30 ? desc.substring(0, 30) + '...' : desc;
+    }).join('<br>');
     
     return `
       <tr>
