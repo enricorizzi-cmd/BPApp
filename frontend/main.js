@@ -1045,8 +1045,8 @@ function viewHome(){
         }
         
         sel.innerHTML = h;
-        // Tutti vedono se stessi di default, admin può cambiare
-        sel.value = me.id;
+        // Admin vede "Tutti" di default, non-admin vede se stesso
+        sel.value = (me.role === 'admin') ? '' : me.id;
       }).catch(function(){});
     })();
   }
@@ -1190,7 +1190,7 @@ function recomputeKPI(){
   var t = new Date(r.end).getTime();
 
   var el = document.getElementById('dash_cons');
-  var cons = el ? el.value : getUser().id;
+  var cons = el ? el.value : null;
 
   // helper robusti
   function asNum(v){ v = Number((v==null?'':v)); return isFinite(v)?v:0; }
@@ -1613,6 +1613,9 @@ function cardAppt(x){
   recomputeKPI();
   recomputeMini();
   refreshLists();
+  
+  // Esponi recomputeKPI globalmente per i trigger
+  window.recomputeKPI = recomputeKPI;
 
   if (typeof kickFinal === 'function') kickFinal('dashboard');
 }
