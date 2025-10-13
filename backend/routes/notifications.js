@@ -8,13 +8,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // POST - Invia notifica manuale
   router.post('/send', auth, async (req, res) => {
     try {
+      const { text, recipients, type } = req.body;
+      
       // Solo le notifiche manuali richiedono admin, quelle automatiche possono essere inviate da chiunque
-      const { type } = req.body || {};
       if (type !== 'automatic' && req.user.role !== 'admin') {
         return res.status(403).json({ error: 'Admin only for manual notifications' });
       }
-      
-      const { text, recipients, type } = req.body;
       if (!text || !recipients) {
         return res.status(400).json({ error: 'Text and recipients required' });
       }
