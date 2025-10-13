@@ -1628,6 +1628,9 @@ function cardAppt(x){
   // Esponi recomputeKPI globalmente per i trigger
   window.recomputeKPI = recomputeKPI;
 
+  // Imposta i trigger per i mini-chart dopo che tutto è stato caricato
+  if (typeof wireMiniChartTriggers === 'function') wireMiniChartTriggers();
+
   if (typeof kickFinal === 'function') kickFinal('dashboard');
 }
 

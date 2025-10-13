@@ -2382,8 +2382,8 @@ onceReady(async ()=>{
   if (typeof markToday==='function')       markToday();
   if (typeof clampSlotCounters==='function') clampSlotCounters();
 
-  // Mini-chart / grafici
-  if (typeof wireMiniChartTriggers==='function') wireMiniChartTriggers();
+  // Mini-chart / grafici - spostato dopo il caricamento della dashboard
+  // if (typeof wireMiniChartTriggers==='function') wireMiniChartTriggers();
   if (typeof recomputeDashboardMini==='function') await recomputeDashboardMini();
   if (typeof recomputeCommsMini==='function')     await recomputeCommsMini();
   if (typeof recomputeTeamChart==='function')     await recomputeTeamChart();
