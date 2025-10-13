@@ -556,16 +556,7 @@
         font-size: 20px;
       }
       
-      /* Hide less important columns on mobile */
-      .table th:nth-child(3),
-      .table td:nth-child(3) {
-        display: none;
-      }
-      
-      .table th:nth-child(4),
-      .table td:nth-child(4) {
-        display: none;
-      }
+      /* All columns visible on mobile with horizontal scroll */
     }
     
     @media (max-width: 480px) {
@@ -582,11 +573,7 @@
         font-size: 12px;
       }
       
-      /* Hide even more columns on very small screens */
-      .table th:nth-child(6),
-      .table td:nth-child(6) {
-        display: none;
-      }
+      /* All columns visible on very small screens with horizontal scroll */
     }
     
     /* Unified filters: equal widths + responsive grid */
@@ -664,11 +651,13 @@
 
 <script>window.BP_USE_SERIES_API = true;</script>
 
-<!-- App core (render UI) -->
+<!-- App core (render UI) -->
+
 
 <!-- Librerie locali incluse nel bundle (vedi main.js) -->
 
-<!-- === FINAL PACK: CSS rimane separato; JS è nel bundle === -->
+<!-- === FINAL PACK: CSS rimane separato; JS è nel bundle === -->
+
 <!-- push-client.js incluso nel bundle -->
 
   <!-- Service Worker per Push (registrazione semplice) -->
