@@ -1878,11 +1878,13 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase });
   const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+  const cycleNotificationsRoutes = require("./routes/cycle-notifications")({ auth, supabase });
   
   app.use('/api/settings', settingsRoutes);
   app.use('/api', openCyclesRoutes);
   app.use('/api/push-tracking', pushTrackingRoutes);
   app.use('/api/user-preferences', userPreferencesRoutes);
+  app.use('/api/cycle-notifications', cycleNotificationsRoutes);
   
   await setupStatic();
   app.listen(PORT, HOST, ()=> logger.info(`BP backend listening on http://${HOST}:${PORT}`));
@@ -1890,7 +1892,9 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"
   let LAST_BACKUP_MARK = ""; // "YYYY-MM-DD"
-  let SENT_CYCLE_NOTIFICATIONS = new Set(); // Tracking notifiche cicli già inviate
+  
+  // Inizializza tracking persistente per notifiche cicli
+  const cycleNotificationTracking = require('./lib/cycle-notification-tracking')({ supabase });
 
   function _weekBoundariesISO(d){
     const s = startOfWeek(d), e = endOfWeek(d);
@@ -2088,11 +2092,10 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         return; // Non inviare notifiche se non è il momento giusto
       }
       
-      // Genera chiave unica per questa notifica (ciclo + scadenza)
-      const notificationKey = `${cycle.id}_${deadline}`;
-      
-      // Controlla se già inviata
-      if(SENT_CYCLE_NOTIFICATIONS.has(notificationKey)) {
+      // CORRETTO: Controlla se già inviata usando tracking persistente
+      const alreadySent = await cycleNotificationTracking.checkCycleNotificationSent(cycle.id, deadline);
+      if (alreadySent) {
+        console.log(`[BP] Cycle deadline notification already sent: ${cycle.id}_${deadline}`);
         return; // Notifica già inviata
       }
       
@@ -2107,12 +2110,13 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         url: "/#cycles"
       });
       
-      // Nota: La notifica push è già stata inviata sopra
-      // Non serve inviare anche una notifica persistente per i cicli
-      
-      // Marca come inviata per evitare duplicati
-      SENT_CYCLE_NOTIFICATIONS.add(notificationKey);
-      console.log(`[BP] Cycle deadline notification sent: ${notificationKey}`);
+      // CORRETTO: Marca come inviata usando tracking persistente
+      const marked = await cycleNotificationTracking.markCycleNotificationSent(cycle.id, deadline, cycle.consultantId);
+      if (marked) {
+        console.log(`[BP] Cycle deadline notification sent and tracked: ${cycle.id}_${deadline}`);
+      } else {
+        console.warn(`[BP] Cycle deadline notification sent but tracking failed: ${cycle.id}_${deadline}`);
+      }
       
     } catch(error) {
       console.error('Error sending cycle deadline notification:', error);
