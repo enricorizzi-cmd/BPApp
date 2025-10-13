@@ -21,7 +21,8 @@ module.exports = function({ supabase }) {
       return !!data; // Return true if notification was sent
     } catch (error) {
       console.error('[Cycle Tracking] Error checking sent status:', error);
-      return false; // Default to false on error
+      // SICUREZZA: In caso di errore, assumiamo che sia già stata inviata per evitare duplicati
+      return true; // Fail-safe: meglio non inviare che inviare duplicati
     }
   }
   
@@ -48,7 +49,9 @@ module.exports = function({ supabase }) {
       return true;
     } catch (error) {
       console.error('[Cycle Tracking] Error marking as sent:', error);
-      return false;
+      // SICUREZZA: Anche se il tracking fallisce, la notifica è già stata inviata
+      // Il sistema continuerà a funzionare, ma potrebbe inviare duplicati in caso di restart
+      return false; // Indica che il tracking è fallito
     }
   }
   
