@@ -1903,6 +1903,18 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     VAPID_PUBLIC_KEY, 
     VAPID_PRIVATE_KEY 
   });
+  
+  // Verifica inizializzazione NotificationManager
+  if (!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    console.error('[CRITICAL] NotificationManager not properly initialized - push notifications disabled');
+    console.error('[CRITICAL] Missing:', {
+      webpush: !!webpush,
+      VAPID_PUBLIC_KEY: !!VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY: !!VAPID_PRIVATE_KEY
+    });
+  } else {
+    console.log('[SUCCESS] NotificationManager initialized successfully');
+  }
 
   function _weekBoundariesISO(d){
     const s = startOfWeek(d), e = endOfWeek(d);
@@ -2135,8 +2147,12 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     runWeekendNoonPushOncePerDay().catch(()=>{}); 
     runDailyBackupAt1AM().catch(()=>{}); 
     checkOpenCyclesDeadlines().catch(()=>{}); 
-    notificationManager.processPostAppointmentNotifications().catch(()=>{}); 
   }, 60*1000);
+  
+  // Job separato per notifiche post-appuntamento (meno frequente)
+  setInterval(()=>{ 
+    notificationManager.processPostAppointmentNotifications().catch(()=>{}); 
+  }, 3*60*1000); // Ogni 3 minuti invece di 1
   
   // Cleanup subscription invalide ogni 6 ore
   setInterval(()=>{ 
