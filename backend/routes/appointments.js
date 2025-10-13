@@ -126,9 +126,9 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           vsdIndiretto: row.vsdindiretto,
           telefonate: row.telefonate,
           appFissati: row.appfissati,
-          nncf: row.nncf,
-          nncfPromptAnswered: row.nncfpromptanswered,
-          salePromptAnswered: row.salepromptanswered,
+          nncf: !!row.nncf, // ← CORRETTO: conversione esplicita a boolean
+          nncfPromptAnswered: !!row.nncfpromptanswered, // ← CORRETTO: conversione esplicita a boolean
+          salePromptAnswered: !!row.salepromptanswered, // ← CORRETTO: conversione esplicita a boolean
           salePromptSnoozedUntil: row.salepromptsnoozeduntil,
           nncfPromptSnoozedUntil: row.nncfpromptsnoozeduntil,
           notes: row.notes,
@@ -140,6 +140,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           ...a, 
           clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)) 
         }));
+        
+        // DEBUG: Log per verificare lettura corretta da Supabase
+        console.log(`[APPOINTMENTS_DEBUG] Supabase query successful: ${enriched.length} appointments`);
+        if (enriched.length > 0) {
+          const sample = enriched[0];
+          console.log(`[APPOINTMENTS_DEBUG] Sample appointment: ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}`);
+        }
         
         return res.json({ appointments: enriched });
       }
@@ -153,7 +160,23 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     if(global && isAdmin) list = all;
     else if(isAdmin && userId) list = all.filter(a => a.userId === userId);
     else list = all.filter(a => a.userId === req.user.id);
-    const enriched = (list||[]).map(a => ({ ...a, clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)) }));
+    
+    // CORRETTO: conversione esplicita a boolean per coerenza con Supabase
+    const enriched = (list||[]).map(a => ({ 
+      ...a, 
+      clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)),
+      nncf: !!a.nncf,
+      nncfPromptAnswered: !!a.nncfPromptAnswered,
+      salePromptAnswered: !!a.salePromptAnswered
+    }));
+    
+    // DEBUG: Log per verificare fallback JSON
+    console.log(`[APPOINTMENTS_DEBUG] JSON fallback: ${enriched.length} appointments`);
+    if (enriched.length > 0) {
+      const sample = enriched[0];
+      console.log(`[APPOINTMENTS_DEBUG] Sample appointment (JSON): ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}`);
+    }
+    
     return res.json({ appointments: enriched });
   }
 

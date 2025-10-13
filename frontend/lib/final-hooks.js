@@ -2118,7 +2118,8 @@ BPFinal.ensureClientSection = function ensureClientSection(){
         .filter(function(a){
           if(!a || !a.nncf) return false;
           // FILTRA PER UTENTE: mostra solo i banner degli appuntamenti del consulente corrente
-          if (currentUserId && String(a.userId || '') !== String(currentUserId)) return false;
+          // CORRETTO: controllo più robusto per userId
+          if (currentUserId && a.userId && String(a.userId) !== String(currentUserId)) return false;
           var end = +new Date(a.end || a.start || 0);
           return end && end < (now - 60*1000); // passato da ≥1 min
         })
@@ -2130,10 +2131,12 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       var last = nncf[0];
       
       // DEBUG: Log stato banner per troubleshooting
-      console.log(`[BANNER_DEBUG] NNCF Appt: ${last.id}, Client: ${last.client}, nncfPromptAnswered: ${last.nncfPromptAnswered}, salePromptAnswered: ${last.salePromptAnswered}`);
+      console.log(`[BANNER_DEBUG] NNCF Appt: ${last.id}, Client: ${last.client}, UserId: ${last.userId}, CurrentUserId: ${currentUserId}, nncfPromptAnswered: ${last.nncfPromptAnswered} (${typeof last.nncfPromptAnswered}), salePromptAnswered: ${last.salePromptAnswered} (${typeof last.salePromptAnswered})`);
       
       // Controlla se il banner è già stato risposto nel database
-      if (last.nncfPromptAnswered) {
+      // CORRETTO: conversione esplicita a boolean per sicurezza
+      const isAnswered = !!last.nncfPromptAnswered;
+      if (isAnswered) {
         console.log(`[BANNER_DEBUG] Banner already answered, skipping for appt: ${last.id}`);
         return; // già risposto
       }
