@@ -2129,9 +2129,16 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       if(!nncf.length) return;
       var last = nncf[0];
       
-      // Controlla se il banner è già stato risposto nel database
-      if (last.nncfPromptAnswered) return; // già risposto
+      // DEBUG: Log stato banner per troubleshooting
+      console.log(`[BANNER_DEBUG] NNCF Appt: ${last.id}, Client: ${last.client}, nncfPromptAnswered: ${last.nncfPromptAnswered}, salePromptAnswered: ${last.salePromptAnswered}`);
       
+      // Controlla se il banner è già stato risposto nel database
+      if (last.nncfPromptAnswered) {
+        console.log(`[BANNER_DEBUG] Banner already answered, skipping for appt: ${last.id}`);
+        return; // già risposto
+      }
+      
+      console.log(`[BANNER_DEBUG] Showing banner for appt: ${last.id}`);
       showBanner(last);
     }).catch(function(_){ /* silenzioso */ });
   }

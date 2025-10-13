@@ -84,6 +84,70 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   async function handleGetList(req, res, db, clientsDb, isAdmin){
     const global = req.query.global === '1';
     const userId = req.query.user;
+    
+    try {
+      // Prova prima Supabase per dati aggiornati
+      if (typeof supabase !== 'undefined' && supabase) {
+        let query = supabase
+          .from('appointments')
+          .select('*')
+          .order('start_time', { ascending: false });
+        
+        // Filtri per utente
+        if (global && isAdmin) {
+          // Admin globale - tutti gli appuntamenti
+        } else if (isAdmin && userId) {
+          // Admin che filtra per utente specifico
+          query = query.eq('userid', userId);
+        } else {
+          // Utente normale - solo i propri appuntamenti
+          query = query.eq('userid', req.user.id);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Supabase error in handleGetList:', error);
+          throw error;
+        }
+        
+        // Mappa i dati da Supabase al formato frontend
+        const appointments = (data || []).map(row => ({
+          id: row.id,
+          userId: row.userid,
+          client: row.client,
+          clientId: row.clientid,
+          type: row.type,
+          start: row.start_time,
+          end: row.end_time,
+          durationMinutes: row.durationminutes,
+          vss: row.vss,
+          vsdPersonal: row.vsdpersonal,
+          vsdIndiretto: row.vsdindiretto,
+          telefonate: row.telefonate,
+          appFissati: row.appfissati,
+          nncf: row.nncf,
+          nncfPromptAnswered: row.nncfpromptanswered,
+          salePromptAnswered: row.salepromptanswered,
+          salePromptSnoozedUntil: row.salepromptsnoozeduntil,
+          nncfPromptSnoozedUntil: row.nncfpromptsnoozeduntil,
+          notes: row.notes,
+          createdAt: row.createdat,
+          updatedAt: row.updatedat
+        }));
+        
+        const enriched = appointments.map(a => ({ 
+          ...a, 
+          clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)) 
+        }));
+        
+        return res.json({ appointments: enriched });
+      }
+    } catch (error) {
+      console.error('Error fetching from Supabase, falling back to JSON:', error);
+    }
+    
+    // Fallback al metodo tradizionale
     const all = db.appointments||[];
     let list;
     if(global && isAdmin) list = all;

@@ -306,14 +306,19 @@
     try {
       const field = kind === KIND_NNCF ? 'nncfPromptAnswered' : 'salePromptAnswered';
       
+      console.log(`[BANNER_SAVE] Saving banner answer: apptId=${apptId}, kind=${kind}, field=${field}, action=${action}`);
+      
       // Salva risposta banner
-      await POST('/api/appointments', { id: apptId, [field]: true });
+      const response = await POST('/api/appointments', { id: apptId, [field]: true });
+      console.log(`[BANNER_SAVE] Save response:`, response);
       
       // Marca push come inviato per evitare duplicati
       await markPush(apptId, kind);
       
       dbg('Banner marked as answered and push tracked', apptId, kind, action);
+      console.log(`[BANNER_SAVE] Successfully saved banner answer for appt: ${apptId}`);
     } catch (e) {
+      console.error(`[BANNER_SAVE] Error marking banner as answered:`, e);
       dbg('Error marking banner as answered', e);
       throw e; // Rilancia per gestione errori
     }
