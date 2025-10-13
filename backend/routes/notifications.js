@@ -64,7 +64,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             await webpush.sendNotification(sub, JSON.stringify(payload));
             sent++;
           } catch (error) {
-            console.error('[Notifications] Failed to send to subscription:', error.message);
+            // Log solo errori significativi, ignora subscription scadute/invalide
+            if (error.statusCode === 410 || error.statusCode === 404) {
+              // Subscription scaduta o endpoint non valido - normale
+              console.log(`[Notifications] Subscription expired/invalid (${error.statusCode}), skipping`);
+            } else {
+              console.error('[Notifications] Failed to send to subscription:', error.message);
+            }
             failed++;
           }
         }

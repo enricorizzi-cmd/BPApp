@@ -1909,8 +1909,17 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     if(!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
     const subs = await getSubscriptions(userId);  
     await Promise.all(subs.map(async s=>{
-      try{ await webpush.sendNotification(s, JSON.stringify(payload)); }
-      catch(e){ /* ignora endpoint morti */ }
+      try{ 
+        await webpush.sendNotification(s, JSON.stringify(payload)); 
+      }
+      catch(e){ 
+        // Log solo errori significativi, ignora subscription scadute/invalide
+        if (e.statusCode === 410 || e.statusCode === 404) {
+          console.log(`[Push] Subscription expired/invalid (${e.statusCode}), skipping`);
+        } else {
+          console.error('[Push] Failed to send notification:', e.message);
+        }
+      }
     }));
   }
   function _reminderBody(prevOk, consOk){
@@ -2098,26 +2107,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         url: "/#cycles"
       });
       
-      // Invia anche notifica persistente
-      try {
-        const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
-        // Simula una richiesta per inviare la notifica
-        const mockReq = {
-          body: {
-            text: body,
-            recipients: [cycle.consultantId], // ← CORRETTO: array di destinatari
-            type: 'automatic'
-          },
-          user: { id: cycle.consultantId }
-        };
-        const mockRes = {
-          json: () => {},
-          status: () => ({ json: () => {} })
-        };
-        await notificationsRoutes.post('/send', mockReq, mockRes);
-      } catch (error) {
-        console.error('Error sending notification:', error);
-      }
+      // Nota: La notifica push è già stata inviata sopra
+      // Non serve inviare anche una notifica persistente per i cicli
       
       // Marca come inviata per evitare duplicati
       SENT_CYCLE_NOTIFICATIONS.add(notificationKey);
