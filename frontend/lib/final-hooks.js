@@ -1104,10 +1104,10 @@ async function recomputeDashboardMini(){
 
   // Leggi il filtro utente come fanno recomputeKPI e recomputeMini
   const el = document.getElementById('dash_cons');
-  const cons = el ? el.value : (window.getUser ? window.getUser().id : null);
+  const cons = el ? el.value : null;
 
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
-  const periods = await ensurePeriods('dash', { userId: cons || null });
+  const periods = await ensurePeriods('dash', cons ? { userId: cons } : {});
   const L = labelsFor(type, buckets);
 
   ['VSS','VSDPersonale','GI','NNCF'].forEach(k=>{

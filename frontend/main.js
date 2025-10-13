@@ -1047,8 +1047,16 @@ function viewHome(){
         sel.innerHTML = h;
         // Tutti vedono se stessi di default, admin può cambiare
         sel.value = me.id;
+        
+        // Ricarica i dati dopo che il selettore è stato popolato
+        if (window.recomputeKPI) window.recomputeKPI();
       }).catch(function(){});
     })();
+  } else {
+    // Per non-admin, ricarica i dati immediatamente
+    setTimeout(() => {
+      if (window.recomputeKPI) window.recomputeKPI();
+    }, 100);
   }
 
   // ===== label per bucket (come Squadra)
