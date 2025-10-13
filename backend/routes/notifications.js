@@ -66,8 +66,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           } catch (error) {
             // Log solo errori significativi, ignora subscription scadute/invalide
             if (error.statusCode === 410 || error.statusCode === 404) {
-              // Subscription scaduta o endpoint non valido - normale
-              console.log(`[Notifications] Subscription expired/invalid (${error.statusCode}), skipping`);
+              // Silenzioso: subscription scadute sono normali
             } else {
               console.error('[Notifications] Failed to send to subscription:', error.message);
             }

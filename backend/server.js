@@ -1919,7 +1919,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       catch(e){ 
         // Log solo errori significativi, ignora subscription scadute/invalide
         if (e.statusCode === 410 || e.statusCode === 404) {
-          console.log(`[Push] Subscription expired/invalid (${e.statusCode}), skipping`);
+          // Silenzioso: subscription scadute sono normali
         } else {
           console.error('[Push] Failed to send notification:', e.message);
         }
