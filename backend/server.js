@@ -2099,8 +2099,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         return; // Notifica già inviata
       }
       
-      const title = "🚨 Scadenza Ciclo";
-      const body = `Il ciclo "${cycle.description}" è scaduto!`;
+      const title = "⏰ È il momento!";
+      const body = `Ehi super! È ora di dedicarti a "${cycle.description}"!`;
       
       // Invia push notification
       await _sendPushToUser(cycle.consultantId, {
