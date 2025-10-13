@@ -2085,10 +2085,10 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     try {
       const deadlineDate = new Date(deadline);
       const now = new Date();
-      const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
+      const diffMinutes = (deadlineDate - now) / (1000 * 60);
       
-      // Solo notifica 1 ora prima della scadenza
-      if(diffHours > 1 || diffHours < 0) {
+      // Notifica esattamente alla scadenza (entro 1 minuto di tolleranza)
+      if(diffMinutes > 1 || diffMinutes < -1) {
         return; // Non inviare notifiche se non è il momento giusto
       }
       
@@ -2099,8 +2099,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
         return; // Notifica già inviata
       }
       
-      const title = "🚨 Scadenza Imminente";
-      const body = `Il ciclo "${cycle.description}" scade tra meno di 1 ora!`;
+      const title = "🚨 Scadenza Ciclo";
+      const body = `Il ciclo "${cycle.description}" è scaduto!`;
       
       // Invia push notification
       await _sendPushToUser(cycle.consultantId, {
