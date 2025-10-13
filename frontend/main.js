@@ -4908,7 +4908,7 @@ function viewOpenCycles(){
           min-width: 1200px !important; /* Tabella cicli: 7 colonne (120+120+200+100+140+120+180=1080px + padding) */
         }
         .cycles-forecast .table table {
-          min-width: 600px !important; /* Tabella forecast: 3 colonne */
+          min-width: 700px !important; /* Tabella forecast: 3 colonne (150+120+300=570px + padding) */
         }
         .gi-card .table table {
           min-width: 1000px !important; /* Tabella vendite: 8 colonne */
