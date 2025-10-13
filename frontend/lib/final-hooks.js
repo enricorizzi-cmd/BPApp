@@ -1391,11 +1391,11 @@ function sumProvvForPeriod(p, mode, which, rates){
 
 function wireMiniChartTriggers(){
   // Dashboard – accetta entrambe le id (legacy + nuove)
-  on($1('#dash_mode'),'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
-  on($1('#d_mode'),   'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
+  on($1('#dash_mode'),'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); if (window.recomputeKPI) window.recomputeKPI(); });
+  on($1('#d_mode'),   'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboard) recomputeDashboard(); if (window.recomputeDashboardMini) recomputeDashboardMini(); if (window.recomputeKPI) window.recomputeKPI(); });
   
   // Dashboard – trigger per cambio consulente
-  on($1('#dash_cons'),'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboardMini) recomputeDashboardMini(); });
+  on($1('#dash_cons'),'change', ()=>{ hapticImpact('light'); if (window.recomputeDashboardMini) recomputeDashboardMini(); if (window.recomputeKPI) window.recomputeKPI(); });
 
   // Provvigioni – accetta entrambe
   on($1('#comm_mode'),'change', ()=>{ hapticImpact('light'); if (window.recomputeCommsMini) recomputeCommsMini(); });
@@ -2413,6 +2413,7 @@ onceReady(async ()=>{
 
       if (s==='dash' && typeof recomputeDashboardMini==='function') {
         recomputeDashboardMini();
+        if (typeof window.recomputeKPI==='function') window.recomputeKPI();
         if (typeof renderDashboard==='function') renderDashboard();
       }
       if (s==='comm' && typeof recomputeCommsMini==='function') {
