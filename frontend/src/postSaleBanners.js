@@ -30,7 +30,7 @@
   // --- Push markers (avoid duplicate push per appointment/kind) ---
   const pushSent = async (id, kind) => {
     try {
-      const response = await GET(`/api/push-tracking/sent?appointmentId=${id}&type=${kind}`);
+      const response = await GET(`/api/push-tracking/check?appointmentId=${id}&notificationType=${kind}`);
       return response.sent || false;
     } catch (e) {
       console.warn('[Push Tracking] Error checking sent status:', e);
@@ -40,9 +40,9 @@
   
   const markPush = async (id, kind) => {
     try {
-      await POST('/api/push-tracking/mark', { 
+      await POST('/api/push-tracking/mark-sent', { 
         appointmentId: id, 
-        type: kind 
+        notificationType: kind 
       });
       dbg('Push marked as sent', id, kind);
     } catch (e) {
