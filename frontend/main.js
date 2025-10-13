@@ -5200,7 +5200,21 @@ function renderCyclesTable() {
     }[cycle.deadlineType] || 'Senza scadenza';
     
     const nextDeadline = getNextDeadline(cycle);
-    const deadlineDisplay = nextDeadline ? new Date(nextDeadline).toLocaleString('it-IT') : '—';
+    let deadlineDisplay = '—';
+    let deadlineStyle = '';
+    
+    if (nextDeadline) {
+      const deadlineDate = new Date(nextDeadline);
+      const now = new Date();
+      const isPast = deadlineDate < now;
+      
+      deadlineDisplay = deadlineDate.toLocaleString('it-IT');
+      
+      // Stile per scadenze passate
+      if (isPast) {
+        deadlineStyle = 'color: #f44336; font-style: italic;';
+      }
+    }
     
     // Styling per priorità e scadenze
     const rowClass = cycle.priority === 'urgent' ? 'cycle-row urgent' : 'cycle-row';
@@ -5214,7 +5228,7 @@ function renderCyclesTable() {
         <td style="padding: 12px;">${htmlEscape(cycle.description)}</td>
         <td style="padding: 12px; ${priorityStyle}">${priorityText}</td>
         <td style="padding: 12px;">${deadlineTypeText}</td>
-        <td style="padding: 12px;">${deadlineDisplay}</td>
+        <td style="padding: 12px; ${deadlineStyle}">${deadlineDisplay}</td>
         <td style="padding: 12px; text-align: center;">
           <button class="ghost small" onclick="editCycle('${cycle.id}')" style="margin-right: 4px;">Modifica</button>
           <button class="ghost small" onclick="toggleCycleStatus('${cycle.id}')" style="margin-right: 4px;">
@@ -5450,7 +5464,7 @@ function sortCyclesData(field, order) {
   });
 }
 
-// Ottieni prossima scadenza
+// Ottieni prossima scadenza (o scadenza più recente se tutte passate)
 function getNextDeadline(cycle) {
   if (cycle.deadlineType === 'none') return null;
   
@@ -5468,9 +5482,21 @@ function getNextDeadline(cycle) {
     }
   }
   
+  if (deadlines.length === 0) return null;
+  
+  // Ordina le scadenze per data
+  deadlines.sort((a, b) => new Date(a) - new Date(b));
+  
   // Trova la prossima scadenza futura
   const futureDeadlines = deadlines.filter(d => new Date(d) > now);
-  return futureDeadlines.length > 0 ? futureDeadlines[0] : null;
+  
+  // Se ci sono scadenze future, restituisci la prima
+  if (futureDeadlines.length > 0) {
+    return futureDeadlines[0];
+  }
+  
+  // Se tutte le scadenze sono passate, restituisci l'ultima (più recente)
+  return deadlines[deadlines.length - 1];
 }
 
 // Renderizza forecast
