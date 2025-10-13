@@ -46,6 +46,7 @@ import { endOfMonth, endOfQuarter, endOfSemester, endOfYear, formatPeriodLabel, 
 import "./src/postSaleBanners.js";
 import { $1, $all } from "./src/query.js";
 window.Chart = Chart;
+window.getUser = getUser;
 ;(function () {
   'use strict';
 

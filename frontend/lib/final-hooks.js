@@ -1102,8 +1102,12 @@ async function recomputeDashboardMini(){
   const type = r.type || 'mensile';
   const mode = __readMode('dash'); // consuntivo | previsionale
 
+  // Leggi il filtro utente come fanno recomputeKPI e recomputeMini
+  const el = document.getElementById('dash_cons');
+  const cons = el ? el.value : (window.getUser ? window.getUser().id : null);
+
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
-  const periods = await ensurePeriods('dash');
+  const periods = await ensurePeriods('dash', { userId: cons || null });
   const L = labelsFor(type, buckets);
 
   ['VSS','VSDPersonale','GI','NNCF'].forEach(k=>{
