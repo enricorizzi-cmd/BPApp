@@ -4876,7 +4876,6 @@ function viewOpenCycles(){
   setActiveSidebarItem('viewOpenCycles');
   const isAdmin = getUser().role==='admin';
 
-  renderTopbar();
   appEl.innerHTML = topbarHTML() + `
     <style>
       @media (max-width: 980px) {
@@ -5137,6 +5136,8 @@ function viewOpenCycles(){
     </button>
   `;
 
+  renderTopbar();
+  
   // Inizializzazione
   loadOpenCycles();
   setupCyclesFilters();
