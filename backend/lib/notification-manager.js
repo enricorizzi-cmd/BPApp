@@ -141,7 +141,7 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       const queryStartTime = Date.now();
       const { data: appointments, error } = await supabase
         .from('appointments')
-        .select('id,userid,client,type,end_time,salepromptanswered,nncfpromptanswered') // Solo campi necessari
+        .select('id,userid,client,type,end_time,salepromptanswered,nncfpromptanswered,nncf') // AGGIUNTO: nncf per determinare tipo notifica
         .eq('type', 'vendita')
         .gte('end_time', twoHoursAgo)
         .lte('end_time', new Date().toISOString())
