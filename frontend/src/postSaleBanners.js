@@ -244,12 +244,14 @@
       console.error('[GI_BUILDER_DEBUG] Error in tryOpenGiBuilder:', e);
       logger.error(e); 
     }
-        return;
-      }
 
-      // Fallback assoluto: invia comunque l'evento
+    // Fallback assoluto: invia comunque l'evento
+    try {
       document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
-    }catch(_){ /* ignora */ }
+      console.log('[GI_BUILDER_DEBUG] Fallback gi:edit event dispatched');
+    } catch(e) { 
+      console.error('[GI_BUILDER_DEBUG] Error in fallback gi:edit event:', e);
+    }
   }
 
   // --- Quick editor VSS (solo quel campo) ---
