@@ -7,10 +7,11 @@ let supabase = null;
 
 async function init() {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  // Usa service role key per operazioni server-side (bypass RLS)
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_ANON_KEY for Supabase storage");
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/SUPABASE_ANON_KEY for Supabase storage");
   }
 
   supabase = createClient(supabaseUrl, supabaseKey);
