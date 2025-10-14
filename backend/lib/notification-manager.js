@@ -185,11 +185,20 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
           const alreadySent = await isNotificationSent(appointment.id, notificationType);
           if (alreadySent) continue;
           
-          // Invia notifica
+          // Invia notifica con payload completo
           const payload = {
             title: appointment.nncf ? "🎯 Nuovo Cliente?" : "💰 Hai Venduto?",
             body: `Appuntamento con ${appointment.client} - ${appointment.nncf ? 'È diventato cliente?' : 'Hai chiuso la vendita?'}`,
-            url: "/#appointments"
+            url: "/#appointments",
+            tag: appointment.nncf ? 'bp-post-nncf' : 'bp-post-sale',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            data: {
+              appointmentId: appointment.id,
+              client: appointment.client,
+              type: appointment.nncf ? 'nncf' : 'sale',
+              url: "/#appointments"
+            }
           };
           
           const result = await sendPushNotification(appointment.userid, payload);
@@ -285,11 +294,35 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     }
   }
   
+  // Invia notifica "Ricordati di compilare il BP"
+  async function sendBPReminderNotification(userId) {
+    try {
+      const payload = {
+        title: "📋 Ricordati di compilare il BP",
+        body: "Non dimenticare di aggiornare il tuo Battle Plan con i risultati di oggi!",
+        url: "/#periods",
+        tag: 'bp-reminder',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        data: {
+          type: 'bp-reminder',
+          url: "/#periods"
+        }
+      };
+      
+      return await sendPushNotification(userId, payload);
+    } catch (error) {
+      console.error('[NotificationManager] Error sending BP reminder:', error);
+      return { sent: 0, failed: 1, cleaned: 0 };
+    }
+  }
+
   return {
     sendPushNotification,
     markNotificationSent,
     isNotificationSent,
     processPostAppointmentNotifications,
-    cleanupInvalidSubscriptions
+    cleanupInvalidSubscriptions,
+    sendBPReminderNotification
   };
 };

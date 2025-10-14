@@ -100,13 +100,9 @@ self.addEventListener('push', (event) => {
         badge: data.badge || '/favicon.ico'
       })
     );
-  }catch(_){
-    event.waitUntil(
-      self.registration.showNotification('Battle Plan', {
-        body: 'Hai una nuova notifica',
-        tag: 'bp-tag-fallback'
-      })
-    );
+  }catch(error){
+    console.error('[ServiceWorker] Error processing notification:', error);
+    // Non mostrare notifiche generiche - solo notifiche specifiche
   }
 });
 

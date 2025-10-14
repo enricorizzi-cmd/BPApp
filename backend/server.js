@@ -1803,8 +1803,9 @@ self.addEventListener('push', (event) => {
     const tag = data.tag || 'bp-tag';
     const url = data.url || '/';
     event.waitUntil(self.registration.showNotification(title, { body, tag, data: { url }, icon: data.icon || '/favicon.ico', badge: data.badge || '/favicon.ico' }));
-  }catch(_){
-    event.waitUntil(self.registration.showNotification('Battle Plan', { body: 'Hai una nuova notifica', tag: 'bp-tag-fallback' }));
+  }catch(error){
+    console.error('[ServiceWorker] Error processing notification:', error);
+    // Non mostrare notifiche generiche - solo notifiche specifiche
   }
 });
 self.addEventListener('notificationclick', (event) => {
@@ -1896,6 +1897,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   // mini-cron: ogni minuto prova (le condizioni interne filtrano sab/dom 12:00 e 1 volta al giorno)
   let LAST_PUSH_MARK = ""; // "YYYY-MM-DD"
   let LAST_BACKUP_MARK = ""; // "YYYY-MM-DD"
+  let LAST_BP_REMINDER_MARK = ""; // "YYYY-MM-DD"
   
   // Inizializza tracking persistente per notifiche cicli
   const cycleNotificationTracking = require('./lib/cycle-notification-tracking')({ supabase });
@@ -2126,12 +2128,20 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       const title = "⏰ È il momento!";
       const body = `Ehi super! È ora di dedicarti a "${cycle.description}"!`;
       
-      // Invia push notification
+      // Invia push notification con payload corretto
       await _sendPushToUser(cycle.consultantId, {
-        t: "cycle_deadline",
         title: title,
         body: body,
-        url: "/#cycles"
+        url: "/#cycles",
+        tag: 'bp-cycle-deadline',
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        data: {
+          cycleId: cycle.id,
+          deadline: deadline,
+          type: 'cycle-deadline',
+          url: "/#cycles"
+        }
       });
       
       // CORRETTO: Marca come inviata usando tracking persistente
@@ -2147,10 +2157,54 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     }
   }
 
+  // Invia notifiche "Ricordati di compilare il BP" solo sabato e domenica alle 12:00
+  async function sendBPReminderNotifications() {
+    try {
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = domenica, 6 = sabato
+      const hour = now.getHours();
+      
+      // Solo sabato (6) e domenica (0) alle 12:00
+      if (!(dayOfWeek === 0 || dayOfWeek === 6) || hour !== 12) return;
+      
+      // Solo una volta al giorno
+      const today = now.toISOString().split('T')[0];
+      if (LAST_BP_REMINDER_MARK === today) return;
+      
+      const dayName = dayOfWeek === 0 ? 'domenica' : 'sabato';
+      console.log(`[BP] Sending BP reminder notifications (${dayName} 12:00)...`);
+      
+      // Ottieni tutti gli utenti attivi
+      const { data: users, error } = await supabase
+        .from('app_users')
+        .select('id, name')
+        .limit(100);
+      
+      if (error) throw error;
+      
+      let sent = 0;
+      for (const user of users || []) {
+        try {
+          const result = await notificationManager.sendBPReminderNotification(user.id);
+          if (result.sent > 0) sent++;
+        } catch (error) {
+          console.error(`[BP] Failed to send BP reminder to user ${user.id}:`, error.message);
+        }
+      }
+      
+      LAST_BP_REMINDER_MARK = today;
+      console.log(`[BP] BP reminder notifications sent: ${sent}/${users?.length || 0} (${dayName} 12:00)`);
+      
+    } catch (error) {
+      console.error('[BP] Error sending BP reminder notifications:', error);
+    }
+  }
+
   setInterval(()=>{ 
     runWeekendNoonPushOncePerDay().catch(()=>{}); 
     runDailyBackupAt1AM().catch(()=>{}); 
-    checkOpenCyclesDeadlines().catch(()=>{}); 
+    checkOpenCyclesDeadlines().catch(()=>{});
+    sendBPReminderNotifications().catch(()=>{});
   }, 60*1000);
   
   // Job separato per notifiche post-appuntamento (ottimizzato per scalabilità)

@@ -268,10 +268,10 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         if (body.telefonate !== undefined) mappedUpdates.telefonate = it.telefonate;
         if (body.appFissati !== undefined) mappedUpdates.appfissati = it.appFissati;
         if (body.nncf !== undefined) mappedUpdates.nncf = it.nncf;
-        if (body.nncfPromptAnswered !== undefined) mappedUpdates.nncfpromptanswered = it.nncfPromptAnswered;
-        if (body.salePromptAnswered !== undefined) mappedUpdates.salepromptanswered = it.salePromptAnswered;
-        if (body.salePromptSnoozedUntil !== undefined) mappedUpdates.salepromptsnoozeduntil = it.salePromptSnoozedUntil;
-        if (body.nncfPromptSnoozedUntil !== undefined) mappedUpdates.nncfpromptsnoozeduntil = it.nncfPromptSnoozedUntil;
+        if (body.nncfPromptAnswered !== undefined) mappedUpdates.nncfpromptanswered = !!body.nncfPromptAnswered;
+        if (body.salePromptAnswered !== undefined) mappedUpdates.salepromptanswered = !!body.salePromptAnswered;
+        if (body.salePromptSnoozedUntil !== undefined) mappedUpdates.salepromptsnoozeduntil = body.salePromptSnoozedUntil;
+        if (body.nncfPromptSnoozedUntil !== undefined) mappedUpdates.nncfpromptsnoozeduntil = body.nncfPromptSnoozedUntil;
         if (body.notes !== undefined) {
           mappedUpdates.notes = it.notes;
           mappedUpdates.annotation = it.notes; // Duplicato per compatibilità
