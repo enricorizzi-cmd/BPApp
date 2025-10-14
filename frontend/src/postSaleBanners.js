@@ -6,7 +6,7 @@
   const LOOKBACK_DAYS = window.BANNERS_LOOKBACK_DAYS || 7; // ultimi N giorni
   const KIND_NNCF = 'nncf';
   const KIND_SALE = 'sale';
-  const BANNER_DELAY_MINUTES = 1; // Banner appare 1 minuto dopo la fine dell'appuntamento
+  const BANNER_DELAY_MINUTES = 0; // Banner appare immediatamente dopo la fine dell'appuntamento (sincronizzato con notifiche push)
 
   // --- Ephemeral pending markers to avoid duplicate queueing within short window ---
   const _pending = new Set();
@@ -143,7 +143,11 @@
   }
   function getBannerHost(){ let h=document.getElementById('bp_banner_host'); if(!h){ h=document.createElement('div'); h.id='bp_banner_host'; document.body.appendChild(h);} return h; }
   let _q=[], _showing=false;
-  function enqueueBanner(render){ _q.push(render); pump(); }
+  function enqueueBanner(render){ 
+    console.log('[BANNER] Enqueuing banner for display');
+    _q.push(render); 
+    pump(); 
+  }
   function pump(){
     if(_showing) return; const next=_q.shift(); if(!next) return; _showing=true; ensureBannerCSS(); const host=getBannerHost(); host.innerHTML='';
     
@@ -161,7 +165,11 @@
     
     const card = next(close); 
     host.appendChild(card); 
-    requestAnimationFrame(()=> card.classList.add('show'));
+    console.log('[BANNER] Banner displayed in DOM');
+    requestAnimationFrame(()=> {
+      card.classList.add('show');
+      console.log('[BANNER] Banner animation started');
+    });
   }
 
   // --- Client status helpers ---
@@ -533,12 +541,14 @@
             return;
           }
           
-          // Controlla se è passato almeno 1 minuto dalla fine dell'appuntamento
+          // Controlla se è passato il delay dalla fine dell'appuntamento
           const bannerDelayMs = BANNER_DELAY_MINUTES * 60 * 1000;
           if (end > (now - bannerDelayMs)) {
-            dbg('Skipping appointment - too recent', appt.id, appt.type, 'ended', new Date(end).toLocaleString());
+            dbg('Skipping appointment - too recent', appt.id, appt.type, 'ended', new Date(end).toLocaleString(), 'delay:', BANNER_DELAY_MINUTES, 'minutes');
             return;
           }
+          
+          console.log(`[BANNER] Processing: ${appt.nncf ? 'nncf' : 'sale'}, Appt: ${appt.id}, Client: ${appt.client}, ConsultantId: ${appt.userid}`);
           
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
           if (!isVendita) {
