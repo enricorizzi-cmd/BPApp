@@ -155,8 +155,21 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       
       if (error) throw error;
       
+      // Filtra appuntamenti in base al tipo per evitare notifiche duplicate
+      const filteredAppointments = (appointments || []).filter(appointment => {
+        if (appointment.nncf) {
+          // Appuntamento NNCF: controlla solo nncfpromptanswered
+          return appointment.nncfpromptanswered === null || appointment.nncfpromptanswered === false;
+        } else {
+          // Appuntamento vendita normale: controlla solo salepromptanswered
+          return appointment.salepromptanswered === null || appointment.salepromptanswered === false;
+        }
+      });
+      
+      console.log(`[NotificationManager] Filtered ${filteredAppointments.length} appointments from ${appointments?.length || 0} total (removed ${(appointments?.length || 0) - filteredAppointments.length} already answered)`);
+      
       // Gestione overflow se ci sono più di 100 appuntamenti
-      if (appointments && appointments.length === 100) {
+      if (filteredAppointments && filteredAppointments.length === 100) {
         console.log(`[QueryOptimization] Processed first 100 appointments (most recent)`);
         console.log(`[QueryOptimization] Remaining appointments will be processed in next cycle`);
       }
@@ -167,7 +180,7 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       
       let processed = 0;
       const batchSize = 20;
-      const appointmentsList = appointments || [];
+      const appointmentsList = filteredAppointments || [];
       
       // Processa in batch per evitare memory spike
       for (let i = 0; i < appointmentsList.length; i += batchSize) {
