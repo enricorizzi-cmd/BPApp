@@ -89,25 +89,40 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
   // Marca notifica come inviata (tracking atomico)
   async function markNotificationSent(userId, appointmentId, notificationType, deviceId = null) {
     try {
+      const trackingData = {
+        id: `${appointmentId}_${notificationType}`,
+        userid: userId,
+        appointmentid: appointmentId,
+        notification_type: notificationType,
+        device_id: deviceId,
+        delivery_status: 'sent',
+        sent_at: new Date().toISOString(),
+        createdat: new Date().toISOString()
+      };
+      
+      console.log(`[DEBUG_TRACKING] Attempting to mark notification as sent:`, trackingData);
+      
       const { error } = await supabase
         .from('push_notifications_sent')
-        .upsert({
-          id: `${appointmentId}_${notificationType}`,
-          userid: userId,
-          appointmentid: appointmentId,
-          notification_type: notificationType,
-          device_id: deviceId,
-          delivery_status: 'sent',
-          sent_at: new Date().toISOString(),
-          createdat: new Date().toISOString()
-        }, {
+        .upsert(trackingData, {
           onConflict: 'id'
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[DEBUG_TRACKING] Supabase error marking notification:`, error);
+        throw error;
+      }
+      
+      console.log(`[DEBUG_TRACKING] Successfully marked notification as sent: ${appointmentId}_${notificationType}`);
       return true;
     } catch (error) {
-      console.error('[NotificationManager] Error marking notification as sent:', error);
+      console.error(`[DEBUG_TRACKING] Error marking notification as sent:`, error);
+      console.error(`[DEBUG_TRACKING] Error details:`, {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       return false;
     }
   }
@@ -115,6 +130,8 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
   // Verifica se notifica è già stata inviata
   async function isNotificationSent(appointmentId, notificationType) {
     try {
+      console.log(`[DEBUG_TRACKING] Checking if notification already sent: ${appointmentId}_${notificationType}`);
+      
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
@@ -122,10 +139,22 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         .eq('notification_type', notificationType)
         .single();
       
-      if (error && error.code !== 'PGRST116') throw error;
-      return !!data;
+      if (error && error.code !== 'PGRST116') {
+        console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
+        throw error;
+      }
+      
+      const alreadySent = !!data;
+      console.log(`[DEBUG_TRACKING] Notification ${appointmentId}_${notificationType} already sent: ${alreadySent}`);
+      return alreadySent;
     } catch (error) {
-      console.error('[NotificationManager] Error checking notification status:', error);
+      console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
+      console.error(`[DEBUG_TRACKING] Error details:`, {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       return true; // Fail-safe: assume già inviata
     }
   }
@@ -137,6 +166,7 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       
       // Trova appuntamenti di vendita recenti (ultime 2 ore) non ancora notificati
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+      console.log(`[DEBUG_SCANSIONE] Scanning appointments from ${twoHoursAgo} to now`);
       
       const queryStartTime = Date.now();
       const { data: appointments, error } = await supabase
@@ -153,20 +183,37 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       const queryTime = Date.now() - queryStartTime;
       console.log(`[QueryOptimization] Query executed in ${queryTime}ms, found ${appointments?.length || 0} appointments`);
       
-      if (error) throw error;
+      if (error) {
+        console.error(`[DEBUG_SCANSIONE] Query error:`, error);
+        throw error;
+      }
+      
+      // Debug dettagliato degli appuntamenti trovati
+      if (appointments && appointments.length > 0) {
+        console.log(`[DEBUG_SCANSIONE] Found ${appointments.length} appointments:`);
+        appointments.forEach((apt, index) => {
+          console.log(`[DEBUG_SCANSIONE] ${index + 1}. ID: ${apt.id}, Client: ${apt.client}, NNCF: ${apt.nncf}, SaleAnswered: ${apt.salepromptanswered}, NNCFAnswered: ${apt.nncfpromptanswered}, EndTime: ${apt.end_time}`);
+        });
+      } else {
+        console.log(`[DEBUG_SCANSIONE] No appointments found in time range`);
+      }
       
       // Filtra appuntamenti in base al tipo per evitare notifiche duplicate
       const filteredAppointments = (appointments || []).filter(appointment => {
         if (appointment.nncf) {
           // Appuntamento NNCF: controlla solo nncfpromptanswered
-          return appointment.nncfpromptanswered === null || appointment.nncfpromptanswered === false;
+          const shouldNotify = appointment.nncfpromptanswered === null || appointment.nncfpromptanswered === false;
+          console.log(`[DEBUG_FILTRO] NNCF Appointment ${appointment.id}: nncfpromptanswered=${appointment.nncfpromptanswered}, shouldNotify=${shouldNotify}`);
+          return shouldNotify;
         } else {
           // Appuntamento vendita normale: controlla solo salepromptanswered
-          return appointment.salepromptanswered === null || appointment.salepromptanswered === false;
+          const shouldNotify = appointment.salepromptanswered === null || appointment.salepromptanswered === false;
+          console.log(`[DEBUG_FILTRO] Sale Appointment ${appointment.id}: salepromptanswered=${appointment.salepromptanswered}, shouldNotify=${shouldNotify}`);
+          return shouldNotify;
         }
       });
       
-      console.log(`[NotificationManager] Filtered ${filteredAppointments.length} appointments from ${appointments?.length || 0} total (removed ${(appointments?.length || 0) - filteredAppointments.length} already answered)`);
+      console.log(`[DEBUG_FILTRO] Filtered ${filteredAppointments.length} appointments from ${appointments?.length || 0} total (removed ${(appointments?.length || 0) - filteredAppointments.length} already answered)`);
       
       // Gestione overflow se ci sono più di 100 appuntamenti
       if (filteredAppointments && filteredAppointments.length === 100) {
@@ -193,10 +240,15 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         // Processa batch
         for (const appointment of batch) {
           const notificationType = appointment.nncf ? 'post_nncf' : 'post_sale';
+          console.log(`[DEBUG_PUSH] Processing appointment ${appointment.id} (${notificationType})`);
           
           // Controlla se già inviata
           const alreadySent = await isNotificationSent(appointment.id, notificationType);
-          if (alreadySent) continue;
+          console.log(`[DEBUG_PUSH] Appointment ${appointment.id} already sent: ${alreadySent}`);
+          if (alreadySent) {
+            console.log(`[DEBUG_PUSH] Skipping appointment ${appointment.id} - already sent`);
+            continue;
+          }
           
           // Invia notifica con payload completo
           const payload = {
@@ -214,12 +266,18 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
             }
           };
           
+          console.log(`[DEBUG_PUSH] Sending notification to user ${appointment.userid} for appointment ${appointment.id}`);
           const result = await sendPushNotification(appointment.userid, payload);
+          console.log(`[DEBUG_PUSH] Send result for ${appointment.id}: sent=${result.sent}, failed=${result.failed}, cleaned=${result.cleaned}`);
           
           // Marca come inviata solo se almeno una delivery è riuscita
           if (result.sent > 0) {
-            await markNotificationSent(appointment.userid, appointment.id, notificationType);
-            processed++;
+            console.log(`[DEBUG_PUSH] Marking notification as sent for ${appointment.id} (${notificationType})`);
+            const marked = await markNotificationSent(appointment.userid, appointment.id, notificationType);
+            console.log(`[DEBUG_PUSH] Mark result for ${appointment.id}: ${marked ? 'SUCCESS' : 'FAILED'}`);
+            if (marked) processed++;
+          } else {
+            console.log(`[DEBUG_PUSH] Not marking ${appointment.id} as sent - no successful deliveries`);
           }
         }
         

@@ -268,8 +268,14 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         if (body.telefonate !== undefined) mappedUpdates.telefonate = it.telefonate;
         if (body.appFissati !== undefined) mappedUpdates.appfissati = it.appFissati;
         if (body.nncf !== undefined) mappedUpdates.nncf = it.nncf;
-        if (body.nncfPromptAnswered !== undefined) mappedUpdates.nncfpromptanswered = !!body.nncfPromptAnswered;
-        if (body.salePromptAnswered !== undefined) mappedUpdates.salepromptanswered = !!body.salePromptAnswered;
+        if (body.nncfPromptAnswered !== undefined) {
+          mappedUpdates.nncfpromptanswered = !!body.nncfPromptAnswered;
+          console.log(`[DEBUG_BANNER_SAVE] Setting nncfpromptanswered: ${body.nncfPromptAnswered} -> ${mappedUpdates.nncfpromptanswered}`);
+        }
+        if (body.salePromptAnswered !== undefined) {
+          mappedUpdates.salepromptanswered = !!body.salePromptAnswered;
+          console.log(`[DEBUG_BANNER_SAVE] Setting salepromptanswered: ${body.salePromptAnswered} -> ${mappedUpdates.salepromptanswered}`);
+        }
         if (body.salePromptSnoozedUntil !== undefined) mappedUpdates.salepromptsnoozeduntil = body.salePromptSnoozedUntil;
         if (body.nncfPromptSnoozedUntil !== undefined) mappedUpdates.nncfpromptsnoozeduntil = body.nncfPromptSnoozedUntil;
         if (body.notes !== undefined) {
@@ -278,12 +284,16 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         }
         
         // DEBUG: Log banner fields per troubleshooting
-        if (it.nncfPromptAnswered !== undefined || it.salePromptAnswered !== undefined) {
-          console.log(`[BANNER_UPDATE] Appt: ${it.id}, nncfPromptAnswered: ${it.nncfPromptAnswered}, salePromptAnswered: ${it.salePromptAnswered}`);
-          console.log(`[BANNER_UPDATE] Mapped fields: nncfpromptanswered: ${mappedUpdates.nncfpromptanswered}, salepromptanswered: ${mappedUpdates.salepromptanswered}`);
+        if (body.nncfPromptAnswered !== undefined || body.salePromptAnswered !== undefined) {
+          console.log(`[DEBUG_BANNER_SAVE] Updating appointment ${it.id} with banner fields`);
+          console.log(`[DEBUG_BANNER_SAVE] Original values: nncfPromptAnswered: ${body.nncfPromptAnswered}, salePromptAnswered: ${body.salePromptAnswered}`);
+          console.log(`[DEBUG_BANNER_SAVE] Mapped fields: nncfpromptanswered: ${mappedUpdates.nncfpromptanswered}, salepromptanswered: ${mappedUpdates.salepromptanswered}`);
+          console.log(`[DEBUG_BANNER_SAVE] All mapped updates:`, JSON.stringify(mappedUpdates, null, 2));
         }
         
+        console.log(`[DEBUG_BANNER_SAVE] Calling updateRecord for appointment ${it.id}`);
         await updateRecord('appointments', it.id, mappedUpdates);
+        console.log(`[DEBUG_BANNER_SAVE] Successfully updated appointment ${it.id}`);
         
         // Log dell'operazione per monitoraggio
         console.log(`[APPOINTMENT_UPDATED] User: ${req.user.id}, ID: ${it.id}, Client: ${it.client}, Start: ${it.start}`);
@@ -410,6 +420,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
   router.post('/appointments', auth, async (req,res)=>{
     const body = req.body || {};
+    console.log(`[DEBUG_BANNER_SAVE] Received appointment update request from user ${req.user.id}:`, JSON.stringify(body, null, 2));
     
     // Safety check: se c'è un ID, verifica che l'appuntamento esista direttamente su Supabase
     if(body.id) {
@@ -422,9 +433,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           .single();
         
         if (error || !existingAppointment) {
-          console.warn(`[SAFETY_CHECK] User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
+          console.warn(`[DEBUG_BANNER_SAVE] User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
+          console.error(`[DEBUG_BANNER_SAVE] Supabase error:`, error);
           return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
         }
+        
+        console.log(`[DEBUG_BANNER_SAVE] Found existing appointment:`, existingAppointment);
         
         // Verifica ownership per sicurezza (più permissivo per VSS updates)
         if (existingAppointment.userid !== req.user.id && req.user.role !== 'admin') {
@@ -442,7 +456,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         
         return handleUpdate(req,res,body);
       } catch (error) {
-        console.error('Error checking appointment existence:', error);
+        console.error(`[DEBUG_BANNER_SAVE] Error checking appointment existence:`, error);
+        console.error(`[DEBUG_BANNER_SAVE] Error details:`, {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
         return res.status(500).json({ error:'database error during validation' });
       }
     }
