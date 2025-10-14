@@ -255,14 +255,27 @@
       showOverlay(panelHTML);
       const panel = document.getElementById('bp-overlay-panel') || document.body;
       const q = (s)=> panel.querySelector(s);
-      const close = ()=>{ try{ hideOverlay(); }catch(_){ } };
+      
+      // Definisci close con try-catch per evitare errori
+      const close = ()=>{ 
+        try{ 
+          hideOverlay();
+        }catch(e){ 
+          console.error('[VSS_CLOSE] Error closing VSS overlay:', e);
+        } 
+      };
+      
       q('#vss_x').onclick = close;
       q('#vss_ok').onclick = async ()=>{
         try{
           const v = Math.max(0, Number(q('#vss_val').value||0));
           await POST('/api/appointments', { id: appt.id, vss: v });
           hapticImpact('medium'); toast('Appuntamento aggiornato');
-          close();
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[VSS_CLOSE] Close function is not available');
+          }
 
           if (v>0){
             try{
@@ -284,14 +297,27 @@
     d.className = 'modal';
     d.innerHTML = panelHTML;
     document.body.appendChild(d);
-    const close = ()=>{ try{ d.remove(); }catch(_){ } };
+    
+    // Definisci close con try-catch per evitare errori
+    const close = ()=>{ 
+      try{ 
+        d.remove();
+      }catch(e){ 
+        console.error('[VSS_CLOSE] Error closing VSS modal:', e);
+      } 
+    };
+    
     d.querySelector('#vss_x').onclick = close;
-      d.querySelector('#vss_ok').onclick = async ()=>{
+    d.querySelector('#vss_ok').onclick = async ()=>{
         try{
           const v = Math.max(0, Number(d.querySelector('#vss_val').value||0));
           await POST('/api/appointments', { id: appt.id, vss: v });
           hapticImpact('medium'); toast('Appuntamento aggiornato');
-          close();
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[VSS_CLOSE] Close function is not available');
+          }
 
           if (v>0){
             try{
