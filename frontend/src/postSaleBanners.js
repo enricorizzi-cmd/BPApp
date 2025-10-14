@@ -144,7 +144,6 @@
   function getBannerHost(){ let h=document.getElementById('bp_banner_host'); if(!h){ h=document.createElement('div'); h.id='bp_banner_host'; document.body.appendChild(h);} return h; }
   let _q=[], _showing=false;
   function enqueueBanner(render){ 
-    console.log('[BANNER] Enqueuing banner for display');
     _q.push(render); 
     pump(); 
   }
@@ -165,11 +164,7 @@
     
     const card = next(close); 
     host.appendChild(card); 
-    console.log('[BANNER] Banner displayed in DOM');
-    requestAnimationFrame(()=> {
-      card.classList.add('show');
-      console.log('[BANNER] Banner animation started');
-    });
+    requestAnimationFrame(()=> card.classList.add('show'));
   }
 
   // --- Client status helpers ---
@@ -196,61 +191,47 @@
 
   // --- Apertura affidabile del builder pagamenti GI ---
   function tryOpenGiBuilder(id){
-    console.log('[GI_BUILDER_DEBUG] Attempting to open GI Builder for ID:', id);
-    if (!id) {
-      console.log('[GI_BUILDER_DEBUG] No ID provided, returning');
-      return;
-    }
+    if (!id) return;
     try{
       // Se esiste un helper globale, usalo
       if (typeof window.openPaymentBuilderById === 'function') { 
-        console.log('[GI_BUILDER_DEBUG] Using openPaymentBuilderById');
         window.openPaymentBuilderById(id); 
         return; 
       }
       if (typeof window.gotoGIAndOpenBuilder === 'function') { 
-        console.log('[GI_BUILDER_DEBUG] Using gotoGIAndOpenBuilder');
         window.gotoGIAndOpenBuilder(id); 
         return; 
       }
 
       // Se siamo già nella vista GI, apri subito
       if (document.querySelector('#gi_rows')){
-        console.log('[GI_BUILDER_DEBUG] Already in GI view, dispatching gi:edit event');
         document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
         return;
       }
 
       // Prova a navigare alla vista GI e poi apri
       if (typeof window.viewGI === 'function'){
-        console.log('[GI_BUILDER_DEBUG] Using viewGI to navigate to GI view');
         try{ window.viewGI(); }catch(_){ }
         let tries = 0;
         (function waitAndOpen(){
           const ok = document.getElementById('gi_rows');
           if (ok || tries>40){
-            console.log('[GI_BUILDER_DEBUG] GI view loaded or timeout reached, dispatching gi:edit event');
             try{ document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } })); }catch(_){ }
             return;
           }
           tries++; 
-          console.log('[GI_BUILDER_DEBUG] Waiting for GI view to load, attempt:', tries);
           setTimeout(waitAndOpen, 100);
         })();
-      } else {
-        console.log('[GI_BUILDER_DEBUG] No GI navigation method available');
       }
     }catch(e){ 
-      console.error('[GI_BUILDER_DEBUG] Error in tryOpenGiBuilder:', e);
       logger.error(e); 
     }
 
     // Fallback assoluto: invia comunque l'evento
     try {
       document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
-      console.log('[GI_BUILDER_DEBUG] Fallback gi:edit event dispatched');
     } catch(e) { 
-      console.error('[GI_BUILDER_DEBUG] Error in fallback gi:edit event:', e);
+      // Ignora errori fallback
     }
   }
 
@@ -294,72 +275,36 @@
       q('#vss_x').onclick = close;
       q('#vss_ok').onclick = async ()=>{
         try{
-          console.log('[VSS_DEBUG] VSS form save button clicked');
           const v = Math.max(0, Number(q('#vss_val').value||0));
-          console.log('[VSS_DEBUG] VSS value to save:', v);
-          console.log('[VSS_DEBUG] Appointment ID:', appt.id);
-          
           await POST('/api/appointments', { id: appt.id, vss: v });
-          console.log('[VSS_DEBUG] VSS saved successfully');
           
-          // Debug delle funzioni di feedback
-          console.log('[VSS_DEBUG] hapticImpact type:', typeof hapticImpact);
-          console.log('[VSS_DEBUG] toast type:', typeof toast);
-          
+          // Feedback utente con controlli di sicurezza
           if (typeof hapticImpact === 'function') {
-            console.log('[VSS_DEBUG] Calling hapticImpact');
             hapticImpact('medium');
-            console.log('[VSS_DEBUG] hapticImpact called successfully');
-          } else {
-            console.warn('[VSS_DEBUG] hapticImpact is not a function, type:', typeof hapticImpact);
           }
-          
           if (typeof toast === 'function') {
-            console.log('[VSS_DEBUG] Calling toast');
             toast('Appuntamento aggiornato');
-            console.log('[VSS_DEBUG] Toast called successfully');
-          } else {
-            console.warn('[VSS_DEBUG] toast is not a function, type:', typeof toast);
           }
-          
-          console.log('[VSS_DEBUG] Toast shown, attempting to close form');
           
           if (typeof close === 'function') {
-            console.log('[VSS_DEBUG] Close function is available, calling it');
             close();
-            console.log('[VSS_DEBUG] Close function called successfully');
-          } else {
-            console.error('[VSS_DEBUG] Close function is not available, type:', typeof close);
           }
 
           if (v>0){
             try{
-              console.log('[VSS_DEBUG] VSS > 0, creating sale record');
               const sale = await upsertGIFromAppointment(appt, v);
-              console.log('[VSS_DEBUG] Sale record created:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
-                console.log('[VSS_DEBUG] Opening GI Builder for sale ID:', id);
                 tryOpenGiBuilder(id);
-                console.log('[VSS_DEBUG] GI Builder opened');
               }
             }catch(e){ 
-              console.error('[VSS_DEBUG] Error creating sale record:', e);
               logger.error(e); 
             }
           }
           if (opts && typeof opts.onSaved==='function') {
-            console.log('[VSS_DEBUG] Calling onSaved callback');
             opts.onSaved(v);
           }
-          console.log('[VSS_DEBUG] VSS form processing completed successfully');
         }catch(e){ 
-          console.error('[VSS_DEBUG] Error in VSS form save:', e);
-          console.error('[VSS_DEBUG] Error details:', {
-            message: e.message,
-            stack: e.stack,
-            name: e.name
-          });
           logger.error(e); 
           toast('Errore salvataggio VSS'); 
         }
@@ -385,72 +330,36 @@
     d.querySelector('#vss_x').onclick = close;
     d.querySelector('#vss_ok').onclick = async ()=>{
         try{
-          console.log('[VSS_DEBUG_MODAL] VSS form save button clicked (modal version)');
           const v = Math.max(0, Number(d.querySelector('#vss_val').value||0));
-          console.log('[VSS_DEBUG_MODAL] VSS value to save:', v);
-          console.log('[VSS_DEBUG_MODAL] Appointment ID:', appt.id);
-          
           await POST('/api/appointments', { id: appt.id, vss: v });
-          console.log('[VSS_DEBUG_MODAL] VSS saved successfully');
           
-          // Debug delle funzioni di feedback
-          console.log('[VSS_DEBUG_MODAL] hapticImpact type:', typeof hapticImpact);
-          console.log('[VSS_DEBUG_MODAL] toast type:', typeof toast);
-          
+          // Feedback utente con controlli di sicurezza
           if (typeof hapticImpact === 'function') {
-            console.log('[VSS_DEBUG_MODAL] Calling hapticImpact');
             hapticImpact('medium');
-            console.log('[VSS_DEBUG_MODAL] hapticImpact called successfully');
-          } else {
-            console.warn('[VSS_DEBUG_MODAL] hapticImpact is not a function, type:', typeof hapticImpact);
           }
-          
           if (typeof toast === 'function') {
-            console.log('[VSS_DEBUG_MODAL] Calling toast');
             toast('Appuntamento aggiornato');
-            console.log('[VSS_DEBUG_MODAL] Toast called successfully');
-          } else {
-            console.warn('[VSS_DEBUG_MODAL] toast is not a function, type:', typeof toast);
           }
-          
-          console.log('[VSS_DEBUG_MODAL] Toast shown, attempting to close form');
           
           if (typeof close === 'function') {
-            console.log('[VSS_DEBUG_MODAL] Close function is available, calling it');
             close();
-            console.log('[VSS_DEBUG_MODAL] Close function called successfully');
-          } else {
-            console.error('[VSS_DEBUG_MODAL] Close function is not available, type:', typeof close);
           }
 
           if (v>0){
             try{
-              console.log('[VSS_DEBUG_MODAL] VSS > 0, creating sale record');
               const sale = await upsertGIFromAppointment(appt, v);
-              console.log('[VSS_DEBUG_MODAL] Sale record created:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
-                console.log('[VSS_DEBUG_MODAL] Opening GI Builder for sale ID:', id);
                 tryOpenGiBuilder(id);
-                console.log('[VSS_DEBUG_MODAL] GI Builder opened');
               }
             }catch(e){ 
-              console.error('[VSS_DEBUG_MODAL] Error creating sale record:', e);
               logger.error(e); 
             }
           }
           if (opts && typeof opts.onSaved==='function') {
-            console.log('[VSS_DEBUG_MODAL] Calling onSaved callback');
             opts.onSaved(v);
           }
-          console.log('[VSS_DEBUG_MODAL] VSS form processing completed successfully');
         }catch(e){ 
-          console.error('[VSS_DEBUG_MODAL] Error in VSS form save:', e);
-          console.error('[VSS_DEBUG_MODAL] Error details:', {
-            message: e.message,
-            stack: e.stack,
-            name: e.name
-          });
           logger.error(e); 
           toast('Errore salvataggio VSS'); 
         }
@@ -698,7 +607,6 @@
             return;
           }
           
-          console.log(`[BANNER] Processing: ${appt.nncf ? 'nncf' : 'sale'}, Appt: ${appt.id}, Client: ${appt.client}, ConsultantId: ${appt.userid}`);
           
           const isVendita = String(appt.type||'').toLowerCase()==='vendita';
           if (!isVendita) {
