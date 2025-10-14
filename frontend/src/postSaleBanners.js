@@ -146,8 +146,22 @@
   function enqueueBanner(render){ _q.push(render); pump(); }
   function pump(){
     if(_showing) return; const next=_q.shift(); if(!next) return; _showing=true; ensureBannerCSS(); const host=getBannerHost(); host.innerHTML='';
-    const card = next(close); host.appendChild(card); requestAnimationFrame(()=> card.classList.add('show'));
-    function close(){ host.innerHTML=''; _showing=false; setTimeout(pump,40); }
+    
+    // Definisci close PRIMA di usarla per evitare problemi di scope
+    function close(){ 
+      try {
+        host.innerHTML=''; 
+        _showing=false; 
+        setTimeout(pump,40); 
+      } catch(e) {
+        console.error('[BANNER_CLOSE] Error closing banner:', e);
+        _showing=false;
+      }
+    }
+    
+    const card = next(close); 
+    host.appendChild(card); 
+    requestAnimationFrame(()=> card.classList.add('show'));
   }
 
   // --- Client status helpers ---
@@ -379,26 +393,50 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
-        clearPending(appt.id, KIND_SALE);
-        close();
-        await markBannerAnswered(appt.id, KIND_SALE, 'yes');
-        // Coach per risposta positiva al banner vendita
-        if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
-          window.BP.Coach.say('client_converted', { intensity: 'high' });
+        try {
+          clearPending(appt.id, KIND_SALE);
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+          await markBannerAnswered(appt.id, KIND_SALE, 'yes');
+          // Coach per risposta positiva al banner vendita
+          if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+            window.BP.Coach.say('client_converted', { intensity: 'high' });
+          }
+          openVSSQuickEditor(appt);
+        } catch(e) {
+          console.error('[BANNER_YES] Error in yes click handler:', e);
         }
-        openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
-        clearPending(appt.id, KIND_SALE);
-        close();
-        await markBannerAnswered(appt.id, KIND_SALE, 'no');
-        try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
+        try {
+          clearPending(appt.id, KIND_SALE);
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+          await markBannerAnswered(appt.id, KIND_SALE, 'no');
+          try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
+        } catch(e) {
+          console.error('[BANNER_NO] Error in no click handler:', e);
+        }
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
-        clearPending(appt.id, KIND_SALE); 
-        await snoozeBanner(appt.id, KIND_SALE, 24);
-        toast('Te lo ripropongo domani'); 
-        close();
+        try {
+          clearPending(appt.id, KIND_SALE); 
+          await snoozeBanner(appt.id, KIND_SALE, 24);
+          toast('Te lo ripropongo domani'); 
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+        } catch(e) {
+          console.error('[BANNER_LATER] Error in later click handler:', e);
+        }
       };
       return card;
     };
@@ -420,33 +458,57 @@
            <button data-act="yes">Sì</button>
          </div>`;
       card.querySelector('[data-act="yes"]').onclick = async function(){
-        clearPending(appt.id, KIND_NNCF);
-        close();
-        await markBannerAnswered(appt.id, KIND_NNCF, 'yes');
-        try{
-          await updateClientStatusByName(appt.client, 'attivo');
-        }catch(_){}
-        // Coach per conversione cliente da NNCF
-        if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
-          window.BP.Coach.say('client_converted', { intensity: 'high' });
+        try {
+          clearPending(appt.id, KIND_NNCF);
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+          await markBannerAnswered(appt.id, KIND_NNCF, 'yes');
+          try{
+            await updateClientStatusByName(appt.client, 'attivo');
+          }catch(_){}
+          // Coach per conversione cliente da NNCF
+          if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+            window.BP.Coach.say('client_converted', { intensity: 'high' });
+          }
+          openVSSQuickEditor(appt);
+        } catch(e) {
+          console.error('[BANNER_NNCF_YES] Error in NNCF yes click handler:', e);
         }
-        openVSSQuickEditor(appt);
       };
       card.querySelector('[data-act="no"]').onclick = async function(){
-        clearPending(appt.id, KIND_NNCF);
-        close();
-        await markBannerAnswered(appt.id, KIND_NNCF, 'no');
-        try{
-          await updateClientStatusByName(appt.client, 'lead non chiuso');
-          await POST('/api/appointments', { id: appt.id, vss: 0 });
-          toast('Aggiornato: Lead non chiuso, VSS=0');
-        }catch(_){}
+        try {
+          clearPending(appt.id, KIND_NNCF);
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+          await markBannerAnswered(appt.id, KIND_NNCF, 'no');
+          try{
+            await updateClientStatusByName(appt.client, 'lead non chiuso');
+            await POST('/api/appointments', { id: appt.id, vss: 0 });
+            toast('Aggiornato: Lead non chiuso, VSS=0');
+          }catch(_){}
+        } catch(e) {
+          console.error('[BANNER_NNCF_NO] Error in NNCF no click handler:', e);
+        }
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
-        clearPending(appt.id, KIND_NNCF); 
-        await snoozeBanner(appt.id, KIND_NNCF, 24);
-        toast('Te lo ripropongo domani'); 
-        close();
+        try {
+          clearPending(appt.id, KIND_NNCF); 
+          await snoozeBanner(appt.id, KIND_NNCF, 24);
+          toast('Te lo ripropongo domani'); 
+          if (typeof close === 'function') {
+            close();
+          } else {
+            console.error('[BANNER_CLOSE] Close function is not available');
+          }
+        } catch(e) {
+          console.error('[BANNER_NNCF_LATER] Error in NNCF later click handler:', e);
+        }
       };
       return card;
     };
