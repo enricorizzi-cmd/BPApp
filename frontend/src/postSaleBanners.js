@@ -302,7 +302,26 @@
           await POST('/api/appointments', { id: appt.id, vss: v });
           console.log('[VSS_DEBUG] VSS saved successfully');
           
-          hapticImpact('medium'); toast('Appuntamento aggiornato');
+          // Debug delle funzioni di feedback
+          console.log('[VSS_DEBUG] hapticImpact type:', typeof hapticImpact);
+          console.log('[VSS_DEBUG] toast type:', typeof toast);
+          
+          if (typeof hapticImpact === 'function') {
+            console.log('[VSS_DEBUG] Calling hapticImpact');
+            hapticImpact('medium');
+            console.log('[VSS_DEBUG] hapticImpact called successfully');
+          } else {
+            console.warn('[VSS_DEBUG] hapticImpact is not a function, type:', typeof hapticImpact);
+          }
+          
+          if (typeof toast === 'function') {
+            console.log('[VSS_DEBUG] Calling toast');
+            toast('Appuntamento aggiornato');
+            console.log('[VSS_DEBUG] Toast called successfully');
+          } else {
+            console.warn('[VSS_DEBUG] toast is not a function, type:', typeof toast);
+          }
+          
           console.log('[VSS_DEBUG] Toast shown, attempting to close form');
           
           if (typeof close === 'function') {
@@ -374,7 +393,26 @@
           await POST('/api/appointments', { id: appt.id, vss: v });
           console.log('[VSS_DEBUG_MODAL] VSS saved successfully');
           
-          hapticImpact('medium'); toast('Appuntamento aggiornato');
+          // Debug delle funzioni di feedback
+          console.log('[VSS_DEBUG_MODAL] hapticImpact type:', typeof hapticImpact);
+          console.log('[VSS_DEBUG_MODAL] toast type:', typeof toast);
+          
+          if (typeof hapticImpact === 'function') {
+            console.log('[VSS_DEBUG_MODAL] Calling hapticImpact');
+            hapticImpact('medium');
+            console.log('[VSS_DEBUG_MODAL] hapticImpact called successfully');
+          } else {
+            console.warn('[VSS_DEBUG_MODAL] hapticImpact is not a function, type:', typeof hapticImpact);
+          }
+          
+          if (typeof toast === 'function') {
+            console.log('[VSS_DEBUG_MODAL] Calling toast');
+            toast('Appuntamento aggiornato');
+            console.log('[VSS_DEBUG_MODAL] Toast called successfully');
+          } else {
+            console.warn('[VSS_DEBUG_MODAL] toast is not a function, type:', typeof toast);
+          }
+          
           console.log('[VSS_DEBUG_MODAL] Toast shown, attempting to close form');
           
           if (typeof close === 'function') {
