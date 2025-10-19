@@ -7854,9 +7854,19 @@ appEl.innerHTML = topbarHTML() + `
   if(gSel) gSel.onchange = ()=>{ haptic('light'); renderForecast(); };
   const cSel = $('gi-global-consultant');
   if(cSel) cSel.onchange = ()=>{ haptic('light'); 
+    // Salva il valore del consulente selezionato
+    const selectedConsultant = cSel.value;
+    
     // Ricalcola tutte le sezioni quando cambia il consulente
     renderForecast();
     refreshGIData(); // Ricalcola anche la tabella vendite e le statistiche
+    
+    // Ripristina il valore del consulente dopo il reload
+    setTimeout(() => {
+      if(cSel && selectedConsultant) {
+        cSel.value = selectedConsultant;
+      }
+    }, 100);
   };
 
   // Carica i dati GI direttamente
