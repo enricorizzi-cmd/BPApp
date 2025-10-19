@@ -7854,19 +7854,17 @@ appEl.innerHTML = topbarHTML() + `
   if(gSel) gSel.onchange = ()=>{ haptic('light'); renderForecast(); };
   const cSel = $('gi-global-consultant');
   if(cSel) cSel.onchange = ()=>{ haptic('light'); 
-    // Salva il valore del consulente selezionato
-    const selectedConsultant = cSel.value;
-    
     // Ricalcola tutte le sezioni quando cambia il consulente
     renderForecast();
-    refreshGIData(); // Ricalcola anche la tabella vendite e le statistiche
     
-    // Ripristina il valore del consulente dopo il reload
-    setTimeout(() => {
-      if(cSel && selectedConsultant) {
-        cSel.value = selectedConsultant;
-      }
-    }, 100);
+    // Aggiorna solo la tabella vendite e le statistiche senza ricaricare tutto
+    const consId = cSel.value;
+    const filteredRows = consId ? salesData.filter(r => String(r.consultantId||'') === String(consId)) : salesData;
+    
+    $('gi_rows').innerHTML = filteredRows.length ? filteredRows.map(rowHTML).join('') :
+      '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
+    bindRowActions();
+    updateStats(filteredRows);
   };
 
   // Carica i dati GI direttamente
