@@ -6952,6 +6952,14 @@ appEl.innerHTML = topbarHTML() + `
       <div class="gi-card-header">
         <h1 class="gi-card-title">GI & Scadenzario</h1>
         <div class="gi-card-actions">
+          ${isAdmin ? `
+            <div style="margin-right: 16px;">
+              <label style="font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block;">Consulente</label>
+              <select id="gi-global-consultant" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px 12px; border-radius: 8px; min-width: 140px;">
+                <option value="">Tutti</option>
+              </select>
+            </div>
+          ` : ''}
           <button class="ghost" id="gi_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
             <span style="margin-right: 8px;">+</span>Nuova vendita
           </button>
@@ -7021,7 +7029,6 @@ appEl.innerHTML = topbarHTML() + `
           <option value="semestrale">semestrale</option>
           <option value="annuale">annuale</option>
         </select></div>
-        ${isAdmin ? `<div><label>Consulente</label><select id="gi-forecast-consultant"><option value="">Tutti</option></select></div>` : ''}
       </div>
         </div>
       </div>
@@ -7165,7 +7172,7 @@ appEl.innerHTML = topbarHTML() + `
 
   function populateForecastConsultants(rows){
     if(!isAdmin) return;
-    const sel = $('gi-forecast-consultant');
+    const sel = $('gi-global-consultant');
     if(!sel) return;
     const map = new Map();
     rows.forEach(r=>{
@@ -7200,7 +7207,7 @@ appEl.innerHTML = topbarHTML() + `
 
   function renderForecast(){
     const granSel = $('gi-forecast-granularity');
-    const consSel = $('gi-forecast-consultant');
+    const consSel = $('gi-global-consultant');
     const gran = granSel ? granSel.value : 'mensile';
     const consId = consSel ? consSel.value : '';
     const filtered = salesData.filter(s => !consId || String(s.consultantId||'')===String(consId));
@@ -7247,12 +7254,18 @@ appEl.innerHTML = topbarHTML() + `
       let rows=(j&&j.sales)||[];
       rows.sort((a,b)=> (+new Date(b.date||b.createdAt||0))-(+new Date(a.date||a.createdAt||0))); // più recenti in alto
       salesData = rows;
-      $('gi_rows').innerHTML = rows.length ? rows.map(rowHTML).join('') :
+      
+      // Filtra per consulente se selezionato
+      const consSel = $('gi-global-consultant');
+      const consId = consSel ? consSel.value : '';
+      const filteredRows = consId ? rows.filter(r => String(r.consultantId||'') === String(consId)) : rows;
+      
+      $('gi_rows').innerHTML = filteredRows.length ? filteredRows.map(rowHTML).join('') :
         '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
       bindRowActions();
       populateForecastConsultants(rows);
       renderForecast();
-      updateStats(rows);
+      updateStats(filteredRows); // Usa i dati filtrati per le statistiche
       
       // Remove loading state
       cards.forEach(card => card.classList.remove('gi-loading'));
@@ -7839,8 +7852,12 @@ appEl.innerHTML = topbarHTML() + `
 
   const gSel = $('gi-forecast-granularity');
   if(gSel) gSel.onchange = ()=>{ haptic('light'); renderForecast(); };
-  const cSel = $('gi-forecast-consultant');
-  if(cSel) cSel.onchange = ()=>{ haptic('light'); renderForecast(); };
+  const cSel = $('gi-global-consultant');
+  if(cSel) cSel.onchange = ()=>{ haptic('light'); 
+    // Ricalcola tutte le sezioni quando cambia il consulente
+    renderForecast();
+    refreshGIData(); // Ricalcola anche la tabella vendite e le statistiche
+  };
 
   // Carica i dati GI direttamente
   load();
