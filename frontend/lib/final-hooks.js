@@ -1182,9 +1182,46 @@ async function recomputeDashboardMini(){
       keys.forEach(k=>{
         let s=0; const B=buckets[buckets.length-1]; if(!B) return;
         periods.forEach(p=>{
+          // GRANULARITÀ RISPETTATA: Solo periodi del tipo selezionato
           if (p.type !== effectivePeriodType(type)) return;
-          const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
-          if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, k);
+          
+          // LOGICA IBRIDA: Usa numeri periodo quando disponibili, fallback alle date
+          let matches = false;
+          if (p.year && p.month && p.quarter) {
+            // Usa numeri periodo per matching più preciso
+            if (p.type === 'settimanale' && p.week) {
+              // Per settimane, calcola il range settimanale basato sul numero settimana
+              const weekStart = new Date(p.year, 0, 1 + (p.week - 1) * 7).getTime();
+              const weekEnd = weekStart + (7 * 24 * 60 * 60 * 1000) - 1;
+              matches = weekStart >= B.s && weekEnd <= B.e;
+            } else if (p.type === 'mensile') {
+              // Per mesi, usa il range mensile
+              const periodStart = new Date(p.year, p.month - 1, 1).getTime();
+              const periodEnd = new Date(p.year, p.month, 0, 23, 59, 59).getTime();
+              matches = periodStart >= B.s && periodEnd <= B.e;
+            } else if (p.type === 'trimestrale') {
+              // Per trimestri, usa il range trimestrale
+              const quarterStart = new Date(p.year, (p.quarter - 1) * 3, 1).getTime();
+              const quarterEnd = new Date(p.year, p.quarter * 3, 0, 23, 59, 59).getTime();
+              matches = quarterStart >= B.s && quarterEnd <= B.e;
+            } else if (p.type === 'semestrale' && p.semester) {
+              // Per semestri, usa il range semestrale
+              const semesterStart = new Date(p.year, (p.semester - 1) * 6, 1).getTime();
+              const semesterEnd = new Date(p.year, p.semester * 6, 0, 23, 59, 59).getTime();
+              matches = semesterStart >= B.s && semesterEnd <= B.e;
+            } else if (p.type === 'annuale') {
+              // Per anni, usa il range annuale
+              const yearStart = new Date(p.year, 0, 1).getTime();
+              const yearEnd = new Date(p.year, 11, 31, 23, 59, 59).getTime();
+              matches = yearStart >= B.s && yearEnd <= B.e;
+            }
+          } else {
+            // FALLBACK: Usa date tradizionali se numeri periodo non disponibili
+            const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
+            matches = ps >= B.s && pe <= B.e;
+          }
+          
+          if (matches) s += sumIndicator(p, mode, k);
         });
         lastVals[k]=Math.round(s);
       });
@@ -1222,9 +1259,46 @@ async function recomputeCommsMini(){
   const data = buckets.map(B=>{
     let s = 0;
     periods.forEach(p=>{
+      // GRANULARITÀ RISPETTATA: Solo periodi del tipo selezionato
       if (p.type !== effectivePeriodType(type)) return;
-      const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
-      if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, 'VSDPersonale');
+      
+      // LOGICA IBRIDA: Usa numeri periodo quando disponibili, fallback alle date
+      let matches = false;
+      if (p.year && p.month && p.quarter) {
+        // Usa numeri periodo per matching più preciso
+        if (p.type === 'settimanale' && p.week) {
+          // Per settimane, calcola il range settimanale basato sul numero settimana
+          const weekStart = new Date(p.year, 0, 1 + (p.week - 1) * 7).getTime();
+          const weekEnd = weekStart + (7 * 24 * 60 * 60 * 1000) - 1;
+          matches = weekStart >= B.s && weekEnd <= B.e;
+        } else if (p.type === 'mensile') {
+          // Per mesi, usa il range mensile
+          const periodStart = new Date(p.year, p.month - 1, 1).getTime();
+          const periodEnd = new Date(p.year, p.month, 0, 23, 59, 59).getTime();
+          matches = periodStart >= B.s && periodEnd <= B.e;
+        } else if (p.type === 'trimestrale') {
+          // Per trimestri, usa il range trimestrale
+          const quarterStart = new Date(p.year, (p.quarter - 1) * 3, 1).getTime();
+          const quarterEnd = new Date(p.year, p.quarter * 3, 0, 23, 59, 59).getTime();
+          matches = quarterStart >= B.s && quarterEnd <= B.e;
+        } else if (p.type === 'semestrale' && p.semester) {
+          // Per semestri, usa il range semestrale
+          const semesterStart = new Date(p.year, (p.semester - 1) * 6, 1).getTime();
+          const semesterEnd = new Date(p.year, p.semester * 6, 0, 23, 59, 59).getTime();
+          matches = semesterStart >= B.s && semesterEnd <= B.e;
+        } else if (p.type === 'annuale') {
+          // Per anni, usa il range annuale
+          const yearStart = new Date(p.year, 0, 1).getTime();
+          const yearEnd = new Date(p.year, 11, 31, 23, 59, 59).getTime();
+          matches = yearStart >= B.s && yearEnd <= B.e;
+        }
+      } else {
+        // FALLBACK: Usa date tradizionali se numeri periodo non disponibili
+        const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
+        matches = ps >= B.s && pe <= B.e;
+      }
+      
+      if (matches) s += sumIndicator(p, mode, 'VSDPersonale');
     });
     return Math.round(s);
   });
@@ -1378,10 +1452,47 @@ function sumProvvForPeriod(p, mode, which, rates){
   const data = buckets.map(B=>{
     let s = 0;
     periods.forEach(p=>{
+      // GRANULARITÀ RISPETTATA: Solo periodi del tipo selezionato
       if (p.type !== effectivePeriodType(type)) return;
       if (userId && String(p.userId)!==String(userId)) return;
-      const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
-      if (ps>=B.s && pe<=B.e) s += sumIndicator(p, mode, ind);
+      
+      // LOGICA IBRIDA: Usa numeri periodo quando disponibili, fallback alle date
+      let matches = false;
+      if (p.year && p.month && p.quarter) {
+        // Usa numeri periodo per matching più preciso
+        if (p.type === 'settimanale' && p.week) {
+          // Per settimane, calcola il range settimanale basato sul numero settimana
+          const weekStart = new Date(p.year, 0, 1 + (p.week - 1) * 7).getTime();
+          const weekEnd = weekStart + (7 * 24 * 60 * 60 * 1000) - 1;
+          matches = weekStart >= B.s && weekEnd <= B.e;
+        } else if (p.type === 'mensile') {
+          // Per mesi, usa il range mensile
+          const periodStart = new Date(p.year, p.month - 1, 1).getTime();
+          const periodEnd = new Date(p.year, p.month, 0, 23, 59, 59).getTime();
+          matches = periodStart >= B.s && periodEnd <= B.e;
+        } else if (p.type === 'trimestrale') {
+          // Per trimestri, usa il range trimestrale
+          const quarterStart = new Date(p.year, (p.quarter - 1) * 3, 1).getTime();
+          const quarterEnd = new Date(p.year, p.quarter * 3, 0, 23, 59, 59).getTime();
+          matches = quarterStart >= B.s && quarterEnd <= B.e;
+        } else if (p.type === 'semestrale' && p.semester) {
+          // Per semestri, usa il range semestrale
+          const semesterStart = new Date(p.year, (p.semester - 1) * 6, 1).getTime();
+          const semesterEnd = new Date(p.year, p.semester * 6, 0, 23, 59, 59).getTime();
+          matches = semesterStart >= B.s && semesterEnd <= B.e;
+        } else if (p.type === 'annuale') {
+          // Per anni, usa il range annuale
+          const yearStart = new Date(p.year, 0, 1).getTime();
+          const yearEnd = new Date(p.year, 11, 31, 23, 59, 59).getTime();
+          matches = yearStart >= B.s && yearEnd <= B.e;
+        }
+      } else {
+        // FALLBACK: Usa date tradizionali se numeri periodo non disponibili
+        const ps = new Date(p.startDate).getTime(), pe = new Date(p.endDate).getTime();
+        matches = ps >= B.s && pe <= B.e;
+      }
+      
+      if (matches) s += sumIndicator(p, mode, ind);
     });
     return Math.round(s);
   });
