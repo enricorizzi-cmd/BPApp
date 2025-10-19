@@ -7081,7 +7081,7 @@ appEl.innerHTML = topbarHTML() + `
   
   // Add refresh function
   window.refreshGIData = function() {
-    loadGIData();
+    load();
   };
   const esc = s => String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const fmtEuro = n => (Number(n)||0).toLocaleString('it-IT')+'€';
