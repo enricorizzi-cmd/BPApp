@@ -6,12 +6,17 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // Helper functions per Supabase
   async function checkPushSent(userId, appointmentId, notificationType) {
     try {
+      // Mappa i tipi per controllare entrambi i sistemi
+      const frontendType = notificationType === 'post_sale' ? 'sale' : 
+                          notificationType === 'post_nncf' ? 'nncf' : notificationType;
+      const backendType = notificationType;
+      
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('userid', userId)
         .eq('appointmentid', appointmentId)
-        .eq('notification_type', notificationType)
+        .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
         .single();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned

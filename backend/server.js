@@ -1796,8 +1796,15 @@ self.addEventListener('activate', () => self.clients && self.clients.claim && cl
 self.addEventListener('push', (event) => {
   try{
     const data = event.data ? event.data.json() : {};
+    
+    // SOLO notifiche con contenuto valido - NO fallback generici
+    if (!data.body || data.body.trim() === '') {
+      console.warn('[ServiceWorker] Received empty notification, ignoring');
+      return;
+    }
+    
     const title = data.title || 'Battle Plan';
-    const body = data.body || 'Hai una nuova notifica';
+    const body = data.body;
     const tag = data.tag || 'bp-tag';
     const url = data.url || '/';
     event.waitUntil(self.registration.showNotification(title, { body, tag, data: { url }, icon: data.icon || '/favicon.ico', badge: data.badge || '/favicon.ico' }));

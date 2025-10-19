@@ -127,16 +127,22 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     }
   }
   
-  // Verifica se notifica è già stata inviata
+  // Verifica se notifica è già stata inviata (controlla entrambi i sistemi)
   async function isNotificationSent(appointmentId, notificationType) {
     try {
       console.log(`[DEBUG_TRACKING] Checking if notification already sent: ${appointmentId}_${notificationType}`);
       
+      // Mappa i tipi per controllare entrambi i sistemi
+      const frontendType = notificationType === 'post_sale' ? 'sale' : 
+                          notificationType === 'post_nncf' ? 'nncf' : notificationType;
+      const backendType = notificationType;
+      
+      // Controlla entrambi i tipi per evitare duplicati
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('appointmentid', appointmentId)
-        .eq('notification_type', notificationType)
+        .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
         .single();
       
       if (error && error.code !== 'PGRST116') {
@@ -145,7 +151,7 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       }
       
       const alreadySent = !!data;
-      console.log(`[DEBUG_TRACKING] Notification ${appointmentId}_${notificationType} already sent: ${alreadySent}`);
+      console.log(`[DEBUG_TRACKING] Notification ${appointmentId} (${frontendType}/${backendType}) already sent: ${alreadySent}`);
       return alreadySent;
     } catch (error) {
       console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
@@ -250,10 +256,13 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
             continue;
           }
           
-          // Invia notifica con payload completo
+          // Invia notifica con payload completo e testi corretti
+          const when = new Date(appointment.end_time).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
           const payload = {
             title: appointment.nncf ? "🎯 Nuovo Cliente?" : "💰 Hai Venduto?",
-            body: `Appuntamento con ${appointment.client} - ${appointment.nncf ? 'È diventato cliente?' : 'Hai chiuso la vendita?'}`,
+            body: appointment.nncf 
+              ? `Ehi, ${appointment.client} è diventato cliente? Appuntamento del ${when}`
+              : `Allora, hai venduto a ${appointment.client}? Appuntamento del ${when}`,
             url: "/#appointments",
             tag: appointment.nncf ? 'bp-post-nncf' : 'bp-post-sale',
             icon: '/favicon.ico',
