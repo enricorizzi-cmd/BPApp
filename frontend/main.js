@@ -7253,9 +7253,9 @@ appEl.innerHTML = topbarHTML() + `
     GET('/api/gi'+qs).then(j=>{
       let rows=(j&&j.sales)||[];
       rows.sort((a,b)=> (+new Date(b.date||b.createdAt||0))-(+new Date(a.date||a.createdAt||0))); // più recenti in alto
-      salesData = rows;
+      salesData = rows; // Mantieni sempre tutti i dati per il forecast
       
-      // Filtra per consulente se selezionato
+      // Filtra per consulente se selezionato (solo per la tabella e statistiche)
       const consSel = $('gi-global-consultant');
       const consId = consSel ? consSel.value : '';
       const filteredRows = consId ? rows.filter(r => String(r.consultantId||'') === String(consId)) : rows;
@@ -7264,7 +7264,7 @@ appEl.innerHTML = topbarHTML() + `
         '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
       bindRowActions();
       populateForecastConsultants(rows);
-      renderForecast();
+      renderForecast(); // renderForecast() userà salesData e filtrerà internamente
       updateStats(filteredRows); // Usa i dati filtrati per le statistiche
       
       // Remove loading state
