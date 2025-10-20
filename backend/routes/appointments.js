@@ -136,16 +136,22 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           updatedAt: row.updatedat
         }));
         
-        const enriched = appointments.map(a => ({ 
-          ...a, 
-          clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)) 
-        }));
+        // Arricchisci gli appuntamenti con il nome del consulente
+        const usersDb = await readJSON("users.json");
+        const enriched = appointments.map(a => {
+          const user = (usersDb.users || []).find(u => String(u.id) === String(a.userId));
+          return { 
+            ...a, 
+            clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)),
+            consultantName: user ? (user.name || user.email || `User ${a.userId}`) : `User ${a.userId}`
+          };
+        });
         
         // DEBUG: Log per verificare lettura corretta da Supabase
         console.log(`[APPOINTMENTS_DEBUG] Supabase query successful: ${enriched.length} appointments`);
         if (enriched.length > 0) {
           const sample = enriched[0];
-          console.log(`[APPOINTMENTS_DEBUG] Sample appointment: ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}`);
+          console.log(`[APPOINTMENTS_DEBUG] Sample appointment: ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
         }
         
         return res.json({ appointments: enriched });
@@ -161,20 +167,25 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     else if(isAdmin && userId) list = all.filter(a => a.userId === userId);
     else list = all.filter(a => a.userId === req.user.id);
     
-    // CORRETTO: conversione esplicita a boolean per coerenza con Supabase
-    const enriched = (list||[]).map(a => ({ 
-      ...a, 
-      clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)),
-      nncf: !!a.nncf,
-      nncfPromptAnswered: !!a.nncfPromptAnswered,
-      salePromptAnswered: !!a.salePromptAnswered
-    }));
+    // Arricchisci anche il fallback JSON con il nome del consulente
+    const usersDb = await readJSON("users.json");
+    const enriched = (list||[]).map(a => {
+      const user = (usersDb.users || []).find(u => String(u.id) === String(a.userId));
+      return { 
+        ...a, 
+        clientId: a.clientId || (resolveClientIdByName(clientsDb, a.client)),
+        nncf: !!a.nncf,
+        nncfPromptAnswered: !!a.nncfPromptAnswered,
+        salePromptAnswered: !!a.salePromptAnswered,
+        consultantName: user ? (user.name || user.email || `User ${a.userId}`) : `User ${a.userId}`
+      };
+    });
     
     // DEBUG: Log per verificare fallback JSON
     console.log(`[APPOINTMENTS_DEBUG] JSON fallback: ${enriched.length} appointments`);
     if (enriched.length > 0) {
       const sample = enriched[0];
-      console.log(`[APPOINTMENTS_DEBUG] Sample appointment (JSON): ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}`);
+      console.log(`[APPOINTMENTS_DEBUG] Sample appointment (JSON): ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
     }
     
     return res.json({ appointments: enriched });

@@ -1388,6 +1388,8 @@ function cardAppt(x){
         '</div>'+
       '</div>'+
       (indLine?'<div class="small">'+indLine+'</div>':'')+
+      '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(x.consultantName||'Consulente sconosciuto')+'</div>'+
+      (x.notes?'<div class="small muted" style="margin-top: 4px;">📝 '+htmlEscape(x.notes)+'</div>':'')+
     '</div>';
 }
 
@@ -2211,7 +2213,8 @@ function viewCalendar(){
                      '<div class="small muted">'+timeHMlocal(x.start)+'–'+timeHMlocal(x.end)+' · '+htmlEscape(x.type||'')+'</div>'+
                      '<div><b>'+htmlEscape(x.client||'')+'</b></div>'+
                      (indLine?'<div class="small">'+indLine+'</div>':'')+
-                     (x.notes?('<div class="small muted">'+htmlEscape(x.notes)+'</div>'):'')+
+                     '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(x.consultantName||'Consulente sconosciuto')+'</div>'+
+                     (x.notes?('<div class="small muted" style="margin-top: 4px;">📝 '+htmlEscape(x.notes)+'</div>'):'')+
                    '</div>';
             }
             h+='</div>';
@@ -4443,6 +4446,8 @@ function deleteA(){
           '<button class="ghost btn-ics" title="Esporta" data-ics="'+htmlEscape(String(a.id||''))+'">📅</button>'+
         '</div>'+
         (line2?'<div class="small">'+line2+'</div>':'')+
+        '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(a.consultantName||'Consulente sconosciuto')+'</div>'+
+        (a.notes?'<div class="small muted" style="margin-top: 4px;">📝 '+htmlEscape(a.notes)+'</div>':'')+
       '</div>';
   }
   function listA(){
