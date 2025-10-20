@@ -1990,23 +1990,36 @@ function viewCalendar(){
   function renderMonth(y, m, filters, consultant){
     var baseApps = '/api/appointments';
     var baseAvail = '/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
-    if(consultant==='all'){ baseApps += '?global=1'; baseAvail += '&global=1'; }
-    else if(consultant && consultant!==getUser().id){ baseApps += '?user='+consultant; baseAvail += '&user='+consultant; }
+    var baseGI = '/api/gi?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
+    
+    if(consultant==='all'){ 
+      baseApps += '?global=1'; 
+      baseAvail += '&global=1';
+      baseGI += '&global=1';
+    }
+    else if(consultant && consultant!==getUser().id){ 
+      baseApps += '?user='+consultant; 
+      baseAvail += '&user='+consultant;
+      baseGI += '&user='+consultant;
+    }
+    
     Promise.all([
       GET(baseApps),
-      GET(baseAvail)
+      GET(baseAvail),
+      GET(baseGI)
     ])
     .then(function(arr){
       var apps  = (arr[0] && arr[0].appointments) ? arr[0].appointments : [];
       var avAll = arr[1]||{slots:[],summary:{total:0,mondays:0,others:0}};
       var slots = avAll.slots||[];
+      var giData = (arr[2] && arr[2].sales) ? arr[2].sales : [];
 
       var from = new Date(y, m-1, 1);
       var to   = new Date(y, m, 0, 23,59,59,999);
 
       // --- util risultati ---
       function sumInRange(s, e){
-        var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0};
+        var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0, gi:0};
         for(var i=0;i<apps.length;i++){
           var a = apps[i];
           var t = BPTimezone.parseUTCString(a.start);
@@ -2025,7 +2038,44 @@ function viewCalendar(){
             }
           }
         }
+        
+        // Calcola GI per il periodo
+        out.gi = calculateGIForPeriod(s, e);
+        
         return out;
+      }
+      
+      // Funzione per calcolare GI aggregato per settimana
+      function calculateGIForPeriod(startDate, endDate) {
+        var totalGI = 0;
+        
+        for(var i = 0; i < giData.length; i++) {
+          var gi = giData[i];
+          if(!gi.schedule || !Array.isArray(gi.schedule)) continue;
+          
+          for(var j = 0; j < gi.schedule.length; j++) {
+            var payment = gi.schedule[j];
+            if(!payment.dueDate) continue;
+            
+            var paymentDate = new Date(payment.dueDate);
+            
+            // Se la rata è nel periodo, aggiungila al totale
+            if(paymentDate >= startDate && paymentDate <= endDate) {
+              totalGI += Number(payment.amount || 0);
+            }
+          }
+        }
+        
+        return totalGI;
+      }
+      
+      // Funzione per calcolare GI settimanale (sempre al venerdì)
+      function calculateGIForWeek(weekStart) {
+        var weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6); // Domenica
+        weekEnd.setHours(23, 59, 59, 999);
+        
+        return calculateGIForPeriod(weekStart, weekEnd);
       }
       function showResultsBox(tot, label, weekly){
         var host = document.getElementById('cal_results'); if(!host) return;
@@ -2063,6 +2113,10 @@ function viewCalendar(){
               '<div class="cal-result-label">N. app</div>'+
               '<div class="cal-result-value">'+fmtInt(tot.count)+'</div>'+
             '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">GI</div>'+
+              '<div class="cal-result-value">'+fmtEuro(tot.gi)+'</div>'+
+            '</div>'+
           '</div>';
         host.style.display='block';
         if(weekly){
@@ -2078,7 +2132,7 @@ function viewCalendar(){
         if(s<from || s>to) continue;
         // Usa data locale per coerenza con calendario locale
         var key = ymd(s);
-        if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,salesCount:0,items:[]};
+        if(!map[key]) map[key]={vss:0,vsd:0,vsdI:0,telefonate:0,appFissati:0,nncf:0,mins:0,count:0,salesCount:0,gi:0,items:[]};
         map[key].vss += Number(a.vss||0);
         map[key].vsd += Number(a.vsdPersonal||0);
         map[key].vsdI += Number(a.vsdIndiretto||0);
@@ -2097,6 +2151,32 @@ function viewCalendar(){
         }
         
         map[key].items.push(a);
+      }
+      
+      // Calcola GI per ogni giorno del mese
+      for(var key in map) {
+        var dayDate = new Date(key);
+        var dayStart = new Date(dayDate);
+        dayStart.setHours(0, 0, 0, 0);
+        var dayEnd = new Date(dayDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        map[key].gi = calculateGIForPeriod(dayStart, dayEnd);
+      }
+      
+      // Calcola GI settimanale per i venerdì
+      var fridayMap = {};
+      for(var key in map) {
+        var dayDate = new Date(key);
+        var dayOfWeek = dayDate.getDay(); // 0=domenica, 5=venerdì
+        
+        if(dayOfWeek === 5) { // Venerdì
+          var weekStart = new Date(dayDate);
+          weekStart.setDate(weekStart.getDate() - 4); // Lunedì della settimana
+          weekStart.setHours(0, 0, 0, 0);
+          
+          fridayMap[key] = calculateGIForWeek(weekStart);
+        }
       }
 
       var dayNames=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
@@ -2157,6 +2237,13 @@ function viewCalendar(){
               if(v.appFissati>0){ lines += '<div class="small">AppFiss '+fmtInt(v.appFissati)+'</div>'; nLines++; }
               if(v.nncf>0){ lines += '<div class="small">NNCF '+fmtInt(v.nncf)+'</div>'; nLines++; }
               if(v.count>0){lines += '<div class="small">App. '+fmtInt(v.count)+'</div>'; nLines++; }
+              
+              // Mostra GI solo nei venerdì con valore settimanale
+              if(dow === 5 && fridayMap[key] > 0) { // Venerdì con GI
+                lines += '<div class="small" style="color: var(--accent); font-weight: 600;">GI '+fmtEuro(fridayMap[key])+'</div>'; 
+                nLines++; 
+              }
+              
               if(hasSlot4h){ lines += '<div class="tag" style="margin-top:4px">slot ≥4h</div>'; nLines++; }
             }
 
