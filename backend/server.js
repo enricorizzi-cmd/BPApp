@@ -1079,7 +1079,17 @@ app.get("/api/periods", auth, async (req,res)=>{
     }
   }
 
-  res.json({ periods: rows });
+  // Arricchisci i periodi con il nome del consulente
+  const usersDb = await readJSON("users.json");
+  const enrichedRows = rows.map(period => {
+    const user = (usersDb.users || []).find(u => String(u.id) === String(period.userId));
+    return {
+      ...period,
+      consultantName: user ? (user.name || user.email || `User ${period.userId}`) : `User ${period.userId}`
+    };
+  });
+
+  res.json({ periods: enrichedRows });
 });
 
 // --- helpers provvigioni (GI 15% tutti; VSDPersonale 20% junior / 25% senior) ---

@@ -1548,6 +1548,7 @@ function cardAppt(x){
           htmlP += '<div class="card" style="flex:1 1 360px">'+
             '<div><b>'+htmlEscape(formatPeriodLabel(tp,cur.start))+'</b></div>'+
             '<div class="small muted">'+dmy(cur.start)+' → '+dmy(cur.end)+'</div>'+
+            '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(bp.consultantName||'Consulente sconosciuto')+'</div>'+
             '<div class="right" style="margin-top:6px">'+
               '<button class="ghost" type="button" data-edit="'+bp.id+'">Modifica previs.</button>'+
               '<button type="button" data-cons="'+bp.id+'">Consuntivo…</button>'+
@@ -3173,6 +3174,7 @@ function viewPeriods(){
         var card = '<div class="card" style="flex:1 1 360px">'+
                     '<div><b>'+htmlEscape(name)+'</b></div>'+
                     '<div class="small">Prev VSS '+fmtEuro((p.indicatorsPrev||{}).VSS||0)+' · Cons '+fmtEuro((p.indicatorsCons||{}).VSS||0)+'</div>'+
+                    '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(p.consultantName||'Consulente sconosciuto')+'</div>'+
                     '<div class="right" style="margin-top:6px">'+
                       '<button class="ghost" data-edit="'+p.id+'">Modifica previs.</button>'+
                       '<button data-cons="'+p.id+'">Consuntivo…</button>'+
@@ -3276,6 +3278,7 @@ function viewPeriods(){
         var node=domFromHTML('<div class="card">'+
           '<div><b>'+htmlEscape(formatPeriodLabel(tp,cur.start))+'</b></div>'+
           '<div class="small muted">'+dmy(cur.start)+' → '+dmy(cur.end)+'</div>'+
+          '<div class="small" style="color: var(--muted); margin-top: 4px;">👤 '+htmlEscape(bp.consultantName||'Consulente sconosciuto')+'</div>'+
           '<div class="right" style="margin-top:6px">'+
             '<button class="ghost" type="button" data-edit="'+bp.id+'">Modifica previs.</button>'+
             '<button type="button" data-cons="'+bp.id+'">Consuntivo…</button>'+
