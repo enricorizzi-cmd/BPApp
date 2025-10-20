@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <title>Battle Plan v13</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#0e1116">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f6f7fb">
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,6 +13,22 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M10 55h80v10H10zM20 35h60v10H20zM35 15h30v10H35z'/%3E%3C/svg%3E">
   <style>
+    /* TEMA LIGHT FISSO - Sempre attivo indipendentemente dalle preferenze del sistema */
+    :root{
+      --bg:#f6f7fb; --bg-soft:#f0f3f8;
+      --card:#ffffff; --card-soft:#ffffff;
+      --text:#152236; --muted:#6e7f93;
+      --hair: rgba(0,0,0,.06); --hair2: rgba(0,0,0,.12);
+      --accent: #5dd3ff;
+      --accent2:#8d7bff;
+      --ok: #2ecc71;
+      --warn:#ffb454;
+      --danger:#ff5c5c;
+      --shadow: 0 6px 22px rgba(10,20,30,.08);
+      --radius: 16px;
+    }
+    
+    /* TEMA DARK DISABILITATO - Mantenuto per futuro ripristino
     :root{
       --bg: #0e1116;
       --bg-soft: #121722;
@@ -22,13 +38,7 @@
       --muted: #9fb0c3;
       --hair: rgba(255,255,255,.08);
       --hair2: rgba(255,255,255,.16);
-      --accent: #5dd3ff;
-      --accent2:#8d7bff;
-      --ok: #2ecc71;
-      --warn:#ffb454;
-      --danger:#ff5c5c;
       --shadow: 0 6px 22px rgba(0,0,0,.35);
-      --radius: 16px;
     }
     @media (prefers-color-scheme: light){
       :root{
@@ -39,6 +49,7 @@
         --shadow: 0 6px 22px rgba(10,20,30,.08);
       }
     }
+    */
     *{ box-sizing: border-box; }
     html,body{ height:100%; }
     body{
@@ -630,7 +641,7 @@
       #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
     }
   </style>
-  <script type="module" crossorigin src="/assets/index-B7e8F6BY.js"></script>
+  <script type="module" crossorigin src="/assets/index-DXV4xwVk.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-5y824dI4.css">
   <script type="module">import.meta.url;import("_").catch(()=>1);(async function*(){})().next();window.__vite_is_modern_browser=true</script>
   <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
@@ -673,7 +684,7 @@
     })();
   </script>
   <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
-  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-DS2EzN9d.js"></script>
-  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-CRJTcbef.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="/assets/polyfills-legacy-BRAKqSvN.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="/assets/index-legacy-gQSussgR.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
 </body>
 </html>
