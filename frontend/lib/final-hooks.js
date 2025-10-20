@@ -2211,11 +2211,33 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
       if(!vendite.length) return;
       
-      // Mostra banner per la prima vendita trovata
+      // Controlla se notifica è già stata inviata per evitare banner duplicati
       var vendita = vendite[0];
-      console.log(`[VenditeRiordini] Showing banner for vendita: ${vendita.id}`);
-      showVenditeRiordiniBanner(vendita);
+      return checkVenditeRiordiniNotificationSent(vendita.id).then(function(alreadySent){
+        if(alreadySent) {
+          console.log(`[VenditeRiordini] Notification already sent for ${vendita.id}, skipping banner`);
+          return;
+        }
+        
+        console.log(`[VenditeRiordini] Showing banner for vendita: ${vendita.id}`);
+        showVenditeRiordiniBanner(vendita);
+      });
     }).catch(function(_){ /* silenzioso */ });
+  }
+
+  // Funzione per controllare se notifica è già stata inviata (frontend)
+  function checkVenditeRiordiniNotificationSent(venditaId){
+    try {
+      return GET('/api/push-tracking/check?appointmentId=' + venditaId + '&notificationType=vendite-feedback').then(function(response){
+        return response.sent || false;
+      }).catch(function(error){
+        console.error('Error checking vendite riordini notification status:', error);
+        return false; // Default to false on error
+      });
+    } catch (error) {
+      console.error('Error in checkVenditeRiordiniNotificationSent:', error);
+      return false;
+    }
   }
 
   function showVenditeRiordiniBanner(vendita){
@@ -2279,6 +2301,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     }).then(function(){
       closeVenditeRiordiniBanner();
       toast('Preventivo posticipato a domani');
+      
+      // Marca notifica come inviata per evitare duplicati
+      markVenditeRiordiniNotificationSent(venditaId);
     }).catch(function(error){
       console.error('Error postponing vendita:', error);
       toast('Errore nel posticipare il preventivo');
@@ -2293,6 +2318,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     }).then(function(){
       closeVenditeRiordiniBanner();
       toast('Preventivo rifiutato');
+      
+      // Marca notifica come inviata per evitare duplicati
+      markVenditeRiordiniNotificationSent(venditaId);
     }).catch(function(error){
       console.error('Error rejecting vendita:', error);
       toast('Errore nel rifiutare il preventivo');
@@ -2368,6 +2396,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       closeVenditeRiordiniForm();
       toast('Preventivo confermato!');
       
+      // Marca notifica come inviata per evitare duplicati
+      markVenditeRiordiniNotificationSent(venditaId);
+      
       // Integra VSS nel calendario
       integrateVSSInCalendar(venditaId, valoreConfermato);
     }).catch(function(error){
@@ -2375,6 +2406,23 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       toast('Errore nel confermare il preventivo');
     });
   };
+
+  // Funzione per marcare notifica come inviata (frontend)
+  function markVenditeRiordiniNotificationSent(venditaId){
+    try {
+      // Usa l'endpoint di tracking esistente
+      POST('/api/push-tracking/mark-sent', {
+        appointmentId: venditaId,
+        notificationType: 'vendite-feedback'
+      }).then(function(){
+        console.log('Vendite riordini notification marked as sent:', venditaId);
+      }).catch(function(error){
+        console.error('Error marking vendite riordini notification as sent:', error);
+      });
+    } catch (error) {
+      console.error('Error in markVenditeRiordiniNotificationSent:', error);
+    }
+  }
 
   function integrateVSSInCalendar(venditaId, valoreConfermato){
     // Ottieni dati vendita per la data
