@@ -8246,20 +8246,175 @@ window.refreshVenditeRiordiniData = function() {
 };
 
 window.editVenditaRiordini = function(id) {
-  // TODO: Implementare modifica
-  console.log('Edit vendita:', id);
+  // Carica dati vendita e mostra modal di modifica
+  GET('/api/vendite-riordini').then(function(r){
+    var vendite = (r && r.vendite) || [];
+    var vendita = vendite.find(v => v.id === id);
+    
+    if(!vendita) {
+      toast('Preventivo non trovato');
+      return;
+    }
+
+    showVenditeRiordiniModal({ 
+      mode: 'edit', 
+      vendita: vendita 
+    });
+  }).catch(function(error){
+    console.error('Error loading vendita for edit:', error);
+    toast('Errore nel caricare il preventivo');
+  });
 };
 
 window.deleteVenditaRiordini = function(id) {
   if (confirm('Sei sicuro di voler eliminare questo preventivo?')) {
-    // TODO: Implementare eliminazione
-    console.log('Delete vendita:', id);
+    DELETE('/api/vendite-riordini', { id: id }).then(function(){
+      toast('Preventivo eliminato');
+      refreshVenditeRiordiniData();
+    }).catch(function(error){
+      console.error('Error deleting vendita:', error);
+      toast('Errore nell\'eliminazione del preventivo');
+    });
   }
 };
 
 window.showVenditaRiordiniModal = function(opts = {}) {
-  // TODO: Implementare modal per nuovo preventivo
-  console.log('Show vendita modal:', opts);
+  const mode = opts.mode || 'new';
+  const vendita = opts.vendita || {};
+  const isEdit = mode === 'edit';
+  
+  // Calcola data feedback di default (domani)
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  
+  const modalHTML = `
+    <div class="bp-overlay" onclick="closeVenditeRiordiniModal()">
+      <div class="bp-modal" onclick="event.stopPropagation()">
+        <div class="bp-modal-header">
+          <h3>${isEdit ? 'Modifica Preventivo' : 'Nuovo Preventivo'}</h3>
+          <button onclick="closeVenditeRiordiniModal()">✕</button>
+        </div>
+        <div class="bp-modal-body">
+          <div class="bp-form-group">
+            <label>Data *</label>
+            <input type="date" id="vendita_data" value="${vendita.data || new Date().toISOString().split('T')[0]}" required>
+          </div>
+          
+          <div class="bp-form-group">
+            <label>Cliente *</label>
+            <input type="text" id="vendita_cliente" value="${vendita.cliente || ''}" placeholder="Nome cliente" required>
+          </div>
+          
+          <div class="bp-form-group">
+            <label>Descrizione Servizi</label>
+            <textarea id="vendita_descrizione" rows="3" placeholder="Descrizione dei servizi proposti">${vendita.descrizione_servizi || ''}</textarea>
+          </div>
+          
+          <div class="bp-form-group">
+            <label>Valore Proposto (VSS) *</label>
+            <input type="number" id="vendita_valore_proposto" value="${vendita.valore_proposto || ''}" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+          
+          <div class="bp-form-group">
+            <label>Data Feedback</label>
+            <input type="date" id="vendita_data_feedback" value="${vendita.data_feedback || tomorrowStr}">
+          </div>
+          
+          <div class="bp-form-group">
+            <label>Stato</label>
+            <select id="vendita_stato">
+              <option value="da_presentare" ${vendita.stato === 'da_presentare' ? 'selected' : ''}>Da Presentare</option>
+              <option value="proposto" ${vendita.stato === 'proposto' ? 'selected' : ''}>Proposto</option>
+              <option value="confermato" ${vendita.stato === 'confermato' ? 'selected' : ''}>Confermato</option>
+              <option value="rifiutato" ${vendita.stato === 'rifiutato' ? 'selected' : ''}>Rifiutato</option>
+            </select>
+          </div>
+          
+          ${isEdit ? `
+          <div class="bp-form-group">
+            <label>Valore Confermato (VSS)</label>
+            <input type="number" id="vendita_valore_confermato" value="${vendita.valore_confermato || ''}" step="0.01" min="0" placeholder="0.00" ${vendita.stato !== 'confermato' ? 'disabled' : ''}>
+          </div>
+          ` : ''}
+        </div>
+        <div class="bp-modal-footer">
+          <button class="bp-btn-secondary" onclick="closeVenditeRiordiniModal()">Annulla</button>
+          <button class="bp-btn-primary" onclick="saveVenditaRiordini('${isEdit ? vendita.id : ''}')">
+            ${isEdit ? 'Aggiorna' : 'Crea'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  
+  // Auto-fill valore confermato quando stato = confermato
+  if(isEdit) {
+    const statoSelect = document.getElementById('vendita_stato');
+    const valoreConfermatoInput = document.getElementById('vendita_valore_confermato');
+    
+    statoSelect.addEventListener('change', function(){
+      if(this.value === 'confermato') {
+        valoreConfermatoInput.disabled = false;
+        if(!valoreConfermatoInput.value) {
+          valoreConfermatoInput.value = document.getElementById('vendita_valore_proposto').value;
+        }
+      } else {
+        valoreConfermatoInput.disabled = true;
+      }
+    });
+  }
+};
+
+// Funzioni di supporto per modal vendite riordini
+window.closeVenditeRiordiniModal = function(){
+  var overlay = document.querySelector('.bp-overlay');
+  if(overlay) overlay.remove();
+};
+
+window.saveVenditaRiordini = function(venditaId){
+  const data = document.getElementById('vendita_data').value;
+  const cliente = document.getElementById('vendita_cliente').value;
+  const descrizione_servizi = document.getElementById('vendita_descrizione').value;
+  const valore_proposto = parseFloat(document.getElementById('vendita_valore_proposto').value) || 0;
+  const data_feedback = document.getElementById('vendita_data_feedback').value;
+  const stato = document.getElementById('vendita_stato').value;
+  
+  // Validazione
+  if(!data || !cliente || valore_proposto <= 0) {
+    toast('Compila tutti i campi obbligatori');
+    return;
+  }
+  
+  const venditaData = {
+    data,
+    cliente,
+    descrizione_servizi,
+    valore_proposto,
+    data_feedback,
+    stato
+  };
+  
+  // Se in modalità edit, aggiungi valore confermato
+  if(venditaId) {
+    const valore_confermato = parseFloat(document.getElementById('vendita_valore_confermato').value) || 0;
+    venditaData.valore_confermato = valore_confermato;
+  }
+  
+  const apiCall = venditaId ? 
+    PUT('/api/vendite-riordini', { id: venditaId, ...venditaData }) :
+    POST('/api/vendite-riordini', venditaData);
+  
+  apiCall.then(function(response){
+    closeVenditeRiordiniModal();
+    toast(venditaId ? 'Preventivo aggiornato' : 'Preventivo creato');
+    refreshVenditeRiordiniData();
+  }).catch(function(error){
+    console.error('Error saving vendita:', error);
+    toast('Errore nel salvare il preventivo');
+  });
 };
 
 window.viewVenditeRiordini = window.viewVenditeRiordini || viewVenditeRiordini;
