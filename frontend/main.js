@@ -8269,11 +8269,11 @@ window.editVenditaRiordini = function(id) {
 window.deleteVenditaRiordini = function(id) {
   if (confirm('Sei sicuro di voler eliminare questo preventivo?')) {
     DELETE('/api/vendite-riordini', { id: id }).then(function(){
-      toast('Preventivo eliminato');
+      toast('🗑️ Preventivo eliminato! I dati sono stati rimossi dal sistema.');
       refreshVenditeRiordiniData();
     }).catch(function(error){
       console.error('Error deleting vendita:', error);
-      toast('Errore nell\'eliminazione del preventivo');
+      toast('❌ Errore nell\'eliminazione del preventivo');
     });
   }
 };
@@ -8410,11 +8410,11 @@ window.saveVenditaRiordini = function(venditaId){
   
   apiCall.then(function(response){
     closeVenditeRiordiniModal();
-    toast(venditaId ? 'Preventivo aggiornato' : 'Preventivo creato');
+    toast(venditaId ? '✅ Preventivo aggiornato con successo!' : '🎯 Nuovo preventivo creato! Ora puoi tracciare il feedback.');
     refreshVenditeRiordiniData();
   }).catch(function(error){
     console.error('Error saving vendita:', error);
-    toast('Errore nel salvare il preventivo');
+    toast('❌ Errore nel salvare il preventivo');
   });
 };
 

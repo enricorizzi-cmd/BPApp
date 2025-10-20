@@ -2300,13 +2300,13 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       data_feedback: tomorrowStr
     }).then(function(){
       closeVenditeRiordiniBanner();
-      toast('Preventivo posticipato a domani');
+      toast('📅 Preventivo posticipato a domani! Riceverai un nuovo reminder.');
       
       // Marca notifica come inviata per evitare duplicati
       markVenditeRiordiniNotificationSent(venditaId);
     }).catch(function(error){
       console.error('Error postponing vendita:', error);
-      toast('Errore nel posticipare il preventivo');
+      toast('❌ Errore nel posticipare il preventivo');
     });
   };
 
@@ -2317,13 +2317,13 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       stato: 'rifiutato'
     }).then(function(){
       closeVenditeRiordiniBanner();
-      toast('Preventivo rifiutato');
+      toast('❌ Preventivo rifiutato! Il cliente non è interessato.');
       
       // Marca notifica come inviata per evitare duplicati
       markVenditeRiordiniNotificationSent(venditaId);
     }).catch(function(error){
       console.error('Error rejecting vendita:', error);
-      toast('Errore nel rifiutare il preventivo');
+      toast('❌ Errore nel rifiutare il preventivo');
     });
   };
 
@@ -2394,7 +2394,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     }).then(function(){
       closeVenditeRiordiniBanner();
       closeVenditeRiordiniForm();
-      toast('Preventivo confermato!');
+      toast('🎉 Preventivo confermato! VSS aggiunto al calendario.');
       
       // Marca notifica come inviata per evitare duplicati
       markVenditeRiordiniNotificationSent(venditaId);
@@ -2403,7 +2403,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       integrateVSSInCalendar(venditaId, valoreConfermato);
     }).catch(function(error){
       console.error('Error confirming vendita:', error);
-      toast('Errore nel confermare il preventivo');
+      toast('❌ Errore nel confermare il preventivo');
     });
   };
 
@@ -2453,18 +2453,16 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       };
 
       // Salva appuntamento nel calendario
-      POST('/api/appointments', appointmentData).then(function(){
-        console.log('VSS integrato nel calendario per vendita:', venditaId);
-        toast('VSS integrato nel calendario');
-        
-        // Trigger refresh calendario se visibile
-        if (typeof document.dispatchEvent === 'function') {
-          document.dispatchEvent(new Event('bp:saved'));
-        }
-      }).catch(function(error){
-        console.error('Error integrating VSS in calendar:', error);
-        toast('Errore nell\'integrazione VSS nel calendario');
-      });
+            POST('/api/appointments', appointmentData).then(function(){
+              console.log('VSS integrato nel calendario per vendita:', venditaId);
+              
+              // Trigger refresh calendario se visibile
+              if (typeof document.dispatchEvent === 'function') {
+                document.dispatchEvent(new Event('bp:saved'));
+              }
+            }).catch(function(error){
+              console.error('Error integrating VSS in calendar:', error);
+            });
     }).catch(function(error){
       console.error('Error loading vendita for VSS integration:', error);
     });
