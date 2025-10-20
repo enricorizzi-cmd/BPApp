@@ -8394,10 +8394,11 @@ window.saveVenditaRiordini = function(venditaId){
     descrizione_servizi,
     valore_proposto,
     data_feedback,
-    stato
+    stato,
+    valore_confermato: 0  // Default sempre 0 per nuove righe
   };
   
-  // Se in modalità edit, aggiungi valore confermato
+  // Se in modalità edit, aggiorna valore confermato
   if(venditaId) {
     const valore_confermato = parseFloat(document.getElementById('vendita_valore_confermato').value) || 0;
     venditaData.valore_confermato = valore_confermato;
