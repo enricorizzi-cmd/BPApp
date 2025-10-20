@@ -4,8 +4,9 @@
 .gi-modal {
   min-width: min(900px, 96vw);
   max-width: 1000px;
-  max-height: 90vh;
-  overflow: auto;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
   border: 1px solid var(--hair2);
   box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
@@ -15,6 +16,25 @@
   transform: translateY(0);
   transition: all 0.3s ease;
   border-radius: 20px;
+}
+
+/* Custom scrollbar for modal */
+.gi-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gi-modal::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+}
+
+.gi-modal::-webkit-scrollbar-thumb {
+  background: rgba(93,211,255,.3);
+  border-radius: 4px;
+}
+
+.gi-modal::-webkit-scrollbar-thumb:hover {
+  background: rgba(93,211,255,.5);
 }
 
 /* Header Section */
@@ -402,12 +422,32 @@
 /* Rate List */
 .gi-rlist {
   margin-top: 16px;
-  max-height: 300px;
-  overflow: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid var(--hair2);
   border-radius: 12px;
   padding: 16px;
   background: rgba(255,255,255,.02);
+}
+
+/* Custom scrollbar for rate list */
+.gi-rlist::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gi-rlist::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+}
+
+.gi-rlist::-webkit-scrollbar-thumb {
+  background: rgba(93,211,255,.3);
+  border-radius: 4px;
+}
+
+.gi-rlist::-webkit-scrollbar-thumb:hover {
+  background: rgba(93,211,255,.5);
 }
 
 .gi-r {

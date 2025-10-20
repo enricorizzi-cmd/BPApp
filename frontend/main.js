@@ -7896,7 +7896,7 @@ function viewVenditeRiordini(){
   let currentConsultant = '';
 
   appEl.innerHTML = topbarHTML() + `
-    <div class="wrap">
+    <div class="wrap" style="overflow-y: auto; height: calc(100vh - 56px);">
 
       <!-- Hero Section -->
       <div class="gi-card" style="background: linear-gradient(135deg, rgba(46,204,113,.12), rgba(93,211,255,.08)); border: 1px solid rgba(46,204,113,.3);">
@@ -8289,66 +8289,65 @@ window.showVenditaRiordiniModal = function(opts = {}) {
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
   
   const modalHTML = `
-    <div class="bp-overlay" onclick="closeVenditeRiordiniModal()">
-      <div class="bp-modal" onclick="event.stopPropagation()">
-        <div class="bp-modal-header">
-          <h3>${isEdit ? 'Modifica Preventivo' : 'Nuovo Preventivo'}</h3>
-          <button onclick="closeVenditeRiordiniModal()">✕</button>
+    <div class="bp-modal" onclick="event.stopPropagation()">
+      <div class="bp-modal-header">
+        <h3>${isEdit ? 'Modifica Preventivo' : 'Nuovo Preventivo'}</h3>
+        <button onclick="closeVenditeRiordiniModal()">✕</button>
+      </div>
+      <div class="bp-modal-body">
+        <div class="bp-form-group">
+          <label>Data *</label>
+          <input type="date" id="vendita_data" value="${vendita.data || new Date().toISOString().split('T')[0]}" required>
         </div>
-        <div class="bp-modal-body">
-          <div class="bp-form-group">
-            <label>Data *</label>
-            <input type="date" id="vendita_data" value="${vendita.data || new Date().toISOString().split('T')[0]}" required>
-          </div>
-          
-          <div class="bp-form-group">
-            <label>Cliente *</label>
-            <input type="text" id="vendita_cliente" value="${vendita.cliente || ''}" placeholder="Nome cliente" required>
-          </div>
-          
-          <div class="bp-form-group">
-            <label>Descrizione Servizi</label>
-            <textarea id="vendita_descrizione" rows="3" placeholder="Descrizione dei servizi proposti">${vendita.descrizione_servizi || ''}</textarea>
-          </div>
-          
-          <div class="bp-form-group">
-            <label>Valore Proposto (VSS) *</label>
-            <input type="number" id="vendita_valore_proposto" value="${vendita.valore_proposto || ''}" step="0.01" min="0" placeholder="0.00" required>
-          </div>
-          
-          <div class="bp-form-group">
-            <label>Data Feedback</label>
-            <input type="date" id="vendita_data_feedback" value="${vendita.data_feedback || tomorrowStr}">
-          </div>
-          
-          <div class="bp-form-group">
-            <label>Stato</label>
-            <select id="vendita_stato">
-              <option value="da_presentare" ${vendita.stato === 'da_presentare' ? 'selected' : ''}>Da Presentare</option>
-              <option value="proposto" ${vendita.stato === 'proposto' ? 'selected' : ''}>Proposto</option>
-              <option value="confermato" ${vendita.stato === 'confermato' ? 'selected' : ''}>Confermato</option>
-              <option value="rifiutato" ${vendita.stato === 'rifiutato' ? 'selected' : ''}>Rifiutato</option>
-            </select>
-          </div>
-          
-          ${isEdit ? `
-          <div class="bp-form-group">
-            <label>Valore Confermato (VSS)</label>
-            <input type="number" id="vendita_valore_confermato" value="${vendita.valore_confermato || ''}" step="0.01" min="0" placeholder="0.00" ${vendita.stato !== 'confermato' ? 'disabled' : ''}>
-          </div>
-          ` : ''}
+        
+        <div class="bp-form-group">
+          <label>Cliente *</label>
+          <input type="text" id="vendita_cliente" value="${vendita.cliente || ''}" placeholder="Nome cliente" required>
         </div>
-        <div class="bp-modal-footer">
-          <button class="bp-btn-secondary" onclick="closeVenditeRiordiniModal()">Annulla</button>
-          <button class="bp-btn-primary" onclick="saveVenditaRiordini('${isEdit ? vendita.id : ''}')">
-            ${isEdit ? 'Aggiorna' : 'Crea'}
-          </button>
+        
+        <div class="bp-form-group">
+          <label>Descrizione Servizi</label>
+          <textarea id="vendita_descrizione" rows="3" placeholder="Descrizione dei servizi proposti">${vendita.descrizione_servizi || ''}</textarea>
         </div>
+        
+        <div class="bp-form-group">
+          <label>Valore Proposto (VSS) *</label>
+          <input type="number" id="vendita_valore_proposto" value="${vendita.valore_proposto || ''}" step="0.01" min="0" placeholder="0.00" required>
+        </div>
+        
+        <div class="bp-form-group">
+          <label>Data Feedback</label>
+          <input type="date" id="vendita_data_feedback" value="${vendita.data_feedback || tomorrowStr}">
+        </div>
+        
+        <div class="bp-form-group">
+          <label>Stato</label>
+          <select id="vendita_stato">
+            <option value="da_presentare" ${vendita.stato === 'da_presentare' ? 'selected' : ''}>Da Presentare</option>
+            <option value="proposto" ${vendita.stato === 'proposto' ? 'selected' : ''}>Proposto</option>
+            <option value="confermato" ${vendita.stato === 'confermato' ? 'selected' : ''}>Confermato</option>
+            <option value="rifiutato" ${vendita.stato === 'rifiutato' ? 'selected' : ''}>Rifiutato</option>
+          </select>
+        </div>
+        
+        ${isEdit ? `
+        <div class="bp-form-group">
+          <label>Valore Confermato (VSS)</label>
+          <input type="number" id="vendita_valore_confermato" value="${vendita.valore_confermato || ''}" step="0.01" min="0" placeholder="0.00" ${vendita.stato !== 'confermato' ? 'disabled' : ''}>
+        </div>
+        ` : ''}
+      </div>
+      <div class="bp-modal-footer">
+        <button class="bp-btn-secondary" onclick="closeVenditeRiordiniModal()">Annulla</button>
+        <button class="bp-btn-primary" onclick="saveVenditaRiordini('${isEdit ? vendita.id : ''}')">
+          ${isEdit ? 'Aggiorna' : 'Crea'}
+        </button>
       </div>
     </div>
   `;
   
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  // Usa il sistema di overlay globale per centrare la modal
+  showOverlay(modalHTML);
   
   // Auto-fill valore confermato quando stato = confermato
   if(isEdit) {
@@ -8370,8 +8369,7 @@ window.showVenditaRiordiniModal = function(opts = {}) {
 
 // Funzioni di supporto per modal vendite riordini
 window.closeVenditeRiordiniModal = function(){
-  var overlay = document.querySelector('.bp-overlay');
-  if(overlay) overlay.remove();
+  hideOverlay();
 };
 
 window.saveVenditaRiordini = function(venditaId){
