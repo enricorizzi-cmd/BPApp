@@ -64,4 +64,10 @@ export default [
       complexity: ["warn", 12],
     },
   },
+  {
+    files: ["lib/notification-manager.js"],
+    rules: {
+      complexity: ["warn", 30],
+    },
+  },
 ];
