@@ -1515,17 +1515,22 @@ app.get("/api/commissions/summary", auth, async (req,res)=>{
 
 // ---------- GI & Scadenzario ----------
 app.get("/api/gi", auth, async (req,res)=>{
-  const { from, to, userId } = req.query || {};
+  const { from, to, userId, global, user } = req.query || {};
   const isAdmin = (req.user.role === "admin");
 
   const db = await readJSON("gi.json");
   let rows = (db.sales||[]);
 
-  // visibilità
+  // visibilità - supporta sia userId che user per compatibilità
+  const targetUserId = userId || user;
+  
   if(!isAdmin){
     rows = rows.filter(r => String(r.consultantId||'') === String(req.user.id));
-  } else if (userId){
-    rows = rows.filter(r => String(r.consultantId||'') === String(userId));
+  } else if (global === '1') {
+    // Admin con global=1: mostra tutti i dati
+    rows = rows;
+  } else if (targetUserId){
+    rows = rows.filter(r => String(r.consultantId||'') === String(targetUserId));
   }
 
   // filtro data (se passato)
