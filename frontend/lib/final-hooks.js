@@ -2081,8 +2081,10 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     // window.BP.Coach.say è già definito in coach.js
   }catch(_){ }
 
-// -------- Banner “È diventato cliente?” (NNCF) --------
+// -------- Banner "È diventato cliente?" (NNCF) --------
 (function(){
+  // export safe
+  var F = (window.BPFinal = window.BPFinal || {});
   var BANNER_ID = 'bp-nncf-banner';
 
   function injectBannerCSS(){
