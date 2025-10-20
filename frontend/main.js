@@ -7346,74 +7346,23 @@ appEl.innerHTML = topbarHTML() + `
     const defaultMode = (rest.length && eqAmt) ? 'rate' : 'manual';
     const today = ymd(new Date());
 
+    // Carica CSS esterno per il modal GI
+    if (!document.getElementById('gi-modal-css')) {
+      const link = document.createElement('link');
+      link.id = 'gi-modal-css';
+      link.rel = 'stylesheet';
+      link.href = '/css/gi-modal.css';
+      document.head.appendChild(link);
+    }
+
     const html =
     '<div class="modal"><div class="card gi-modal">'+
-      '<style>'+
-        '.gi-modal{min-width:min(800px,96vw);max-width:1000px;max-height:90vh;overflow:auto;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));border:1px solid var(--hair2);box-shadow:0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);padding:24px;margin:20px auto;position:relative;transform:translateY(0);transition:all 0.3s ease}'+
-        '@media (max-width:768px){ .gi-modal{min-width:98vw;max-width:98vw;width:98vw;padding:16px;max-height:96vh;margin:10px auto;border-radius:16px} .gi-grid{display:block;gap:16px} .gi-col{width:100%;min-width:0} .gi-foot{flex-direction:column !important;gap:16px !important;align-items:stretch !important} .gi-foot>div:last-child{justify-content:center} .pilltabs{flex-direction:column !important;gap:10px !important} .pilltabs label{width:100% !important;justify-content:center !important;padding:14px 20px !important;font-size:15px !important} }'+
-        '@media (max-width:480px){ .gi-modal{padding:12px;min-width:100vw;max-width:100vw;width:100vw;height:calc(100vh - 60px);max-height:calc(100vh - 60px);margin:0;border-radius:0;position:fixed;top:60px;left:0;z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch} .gi-section{margin-top:20px !important;padding-top:20px !important} .mrow{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow label{min-width:0 !important;font-size:14px !important} .mrow input,.mrow select{min-width:0 !important;max-width:100% !important;padding:14px 16px !important;font-size:16px !important;border-radius:12px !important} .mrow.mini{flex-direction:column !important;align-items:stretch !important;gap:10px !important} .mrow.mini button{width:100% !important;max-width:none !important;padding:14px 20px !important;font-size:15px !important} .gi-totals{flex-direction:column !important;gap:12px !important;text-align:center !important;padding:16px !important} .gi-foot button{padding:16px 24px !important;font-size:16px !important;border-radius:12px !important} .pilltabs label{padding:16px 20px !important;font-size:16px !important} }'+
-        '.gi-grid{display:flex; gap:16px; flex-wrap:wrap} .gi-col{flex:1; min-width:240px}'+
-        /* Keep inputs constrained to their columns to avoid overflow */
-        '.gi-col input, .gi-col select, .gi-col textarea{width:100%; min-width:0;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease}'+
-        '.gi-col input:focus, .gi-col select:focus, .gi-col textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
-        '.gi-col label{font-weight:600;color:var(--accent);margin-bottom:8px;display:block;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}'+
-        /* Client dropdown styles - uniformi al resto del form */
-        '.client-dropdown{position:relative;width:100%}'+
-        '.client-dropdown-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:12px;padding:12px 16px;transition:all 0.2s ease;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text)}'+
-        '.client-dropdown-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
-        '.client-dropdown-arrow{transition:transform 0.2s ease;color:var(--muted);font-size:12px}'+
-        '.client-dropdown.open .client-dropdown-arrow{transform:rotate(180deg)}'+
-        '.client-dropdown-list{position:absolute;top:100%;left:0;right:0;background:rgba(255,255,255,.08);border:1px solid var(--hair2);border-radius:12px;max-height:300px;overflow-y:auto;z-index:1000;margin-top:4px;box-shadow:0 20px 60px rgba(0,0,0,.3);backdrop-filter:blur(10px)}'+
-        '.client-dropdown-search{padding:12px;border-bottom:1px solid var(--hair2);background:rgba(255,255,255,.03)}'+
-        '.client-dropdown-search input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px}'+
-        '.client-dropdown-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(93,211,255,.1);background:rgba(255,255,255,.08)}'+
-        '.client-dropdown-options{max-height:250px;overflow-y:auto}'+
-        '.client-option{padding:12px 16px;cursor:pointer;transition:all 0.2s ease;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:12px;color:var(--text)}'+
-        '.client-option:hover{background:rgba(93,211,255,.1);color:var(--accent)}'+
-        '.client-option:last-child{border-bottom:none}'+
-        '.client-option.selected{background:rgba(93,211,255,.15);color:var(--accent);font-weight:600}'+
-        '.client-option-icon{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0}'+
-        '.client-option-text{flex:1;font-size:14px}'+
-        '.client-option-name{font-weight:500;margin-bottom:2px;color:var(--text)}'+
-        '.client-option-consultant{font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:500;opacity:0.8}'+
-        '.client-option-status{font-size:12px;color:var(--muted);text-transform:capitalize}'+
-        '.gi-section{border-top:1px solid var(--hair2); padding-top:20px; margin-top:24px;position:relative}'+
-        '.gi-section::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg, var(--accent), var(--accent2));border-radius:1px}'+
-        '.gi-section b{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;display:block}'+
-        '.pilltabs{display:flex; gap:12px; align-items:center;margin:12px 0 16px} .pilltabs label{display:flex; align-items:center; gap:8px; cursor:pointer; padding:10px 16px; border:1px solid var(--hair2); border-radius:999px;background:rgba(255,255,255,.03);transition:all 0.2s ease;font-weight:500}'+
-        '.pilltabs label:hover{border-color:var(--accent);background:rgba(93,211,255,.05)}'+
-        '.pilltabs input:checked + span, .pilltabs label:has(input:checked){background:linear-gradient(135deg, var(--accent), var(--accent2));border-color:var(--accent);color:#fff}'+
-        '.mrow{display:flex; gap:12px; align-items:center; flex-wrap:wrap;margin-top:12px}'+
-        '.mrow label{min-width:100px;font-weight:500;color:var(--muted);font-size:13px}'+
-        '.mrow input[type=date], .mrow select{min-width:160px; max-width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px}'+
-        '.mrow input[type=text]{flex:1; min-width:220px; max-width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px}'+
-        '.mrow input[type=number]{background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px}'+
-        '.mini input[type=number]{width:120px}'+
-        '.gi-rlist{margin-top:12px; max-height:250px; overflow:auto; border:1px solid var(--hair2); border-radius:12px; padding:12px;background:rgba(255,255,255,.02)}'+
-        '.gi-r{display:flex; gap:8px; align-items:center; padding:8px 0;border-bottom:1px solid var(--hair);transition:all 0.2s ease}'+
-        '.gi-r:hover{background:rgba(255,255,255,.03);border-radius:8px;padding:8px;margin:0 -8px}'+
-        '.gi-r:last-child{border-bottom:none}'+
-        '.gi-r input[type=date]{min-width:160px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px} .gi-r input[type=number]{width:120px;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px} .gi-r input[type=text]{flex:1; min-width:220px; max-width:100%;background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:6px;padding:6px 10px}'+
-        '.gi-r button{background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.3);color:var(--danger);border-radius:6px;padding:4px 8px;cursor:pointer;transition:all 0.2s ease}'+
-        '.gi-r button:hover{background:rgba(255,92,92,.2);transform:scale(1.05)}'+
-        '.gi-foot{display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:24px;padding-top:20px;border-top:1px solid var(--hair2)}'+
-        '.gi-foot button{background:linear-gradient(135deg, var(--accent), var(--accent2));border:none;color:#fff;border-radius:12px;padding:12px 24px;font-weight:600;cursor:pointer;transition:all 0.2s ease;box-shadow:0 4px 12px rgba(93,211,255,.3)}'+
-        '.gi-foot button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(93,211,255,.4)}'+
-        '.gi-foot button.ghost{background:transparent;border:1px solid var(--hair2);color:var(--text);box-shadow:none}'+
-        '.gi-foot button.ghost:hover{border-color:var(--accent);background:rgba(93,211,255,.05)}'+
-        '.gi-foot button.danger{background:linear-gradient(135deg, var(--danger), #ff4444);box-shadow:0 4px 12px rgba(255,92,92,.3)}'+
-        '.gi-foot button.danger:hover{box-shadow:0 6px 20px rgba(255,92,92,.4)}'+
-        '.gi-totals{background:rgba(93,211,255,.05);border:1px solid rgba(93,211,255,.2);border-radius:8px;padding:12px;margin-top:8px}'+
-        '.gi-totals div{font-weight:600;color:var(--accent)}'+
-        '.gi-totals div:first-child{font-size:14px;margin-bottom:4px}'+
-        '.gi-totals div:last-child{font-size:16px}'+
-      '</style>'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--hair2)">'+
-        '<div style="display:flex;align-items:center;gap:12px">'+
-          '<div style="width:4px;height:24px;background:linear-gradient(180deg, var(--accent), var(--accent2));border-radius:2px"></div>'+
-          '<b style="font-size:20px;font-weight:800;color:var(--text)">'+(opts.title || (it.id?'Modifica vendita':'Nuova vendita'))+'</b>'+
+      '<div class="gi-modal-header">'+
+        '<div class="gi-modal-title">'+
+          '<div class="gi-modal-title-bar"></div>'+
+          '<h2 class="gi-modal-title-text">'+(opts.title || (it.id?'Modifica vendita':'Nuova vendita'))+'</h2>'+
         '</div>'+
-        '<button class="ghost" id="m_close" style="background:rgba(255,255,255,.05);border:1px solid var(--hair2);border-radius:8px;padding:8px 12px;transition:all 0.2s ease">'+
+        '<button class="gi-modal-close ghost" id="m_close">'+
           '<span style="margin-right:6px">✕</span>Chiudi'+
         '</button>'+
       '</div>'+
@@ -7440,11 +7389,14 @@ appEl.innerHTML = topbarHTML() + `
         '<div class="gi-col"><label>Totale VSS</label><input id="m_vss" type="number" step="1" value="'+esc(Number(it.vssTotal||0))+'"></div>'+
       '</div>'+
 
-      '<div class="gi-section"><label>Servizi</label><textarea id="m_srv" rows="2">'+esc(it.services||'')+'</textarea></div>'+
+      '<div class="gi-section">'+
+        '<label>Servizi</label>'+
+        '<textarea id="m_srv" rows="3">'+esc(it.services||'')+'</textarea>'+
+      '</div>'+
 
       '<div class="gi-section">'+
         '<b>Acconto</b>'+
-        '<div class="mrow mini" style="margin-top:6px">'+
+        '<div class="mrow mini">'+
           '<label><input id="acc_enable" type="checkbox" '+(dep?'checked':'')+'> Abilita</label>'+
           '<label>Tipo</label>'+
           '<select id="acc_type"><option value="abs">Valore assoluto</option><option value="perc">Percentuale</option></select>'+
@@ -7456,7 +7408,7 @@ appEl.innerHTML = topbarHTML() + `
 
       '<div class="gi-section">'+
         '<b>Modalità pagamenti</b>'+
-        '<div class="pilltabs" style="margin:6px 0 8px">'+
+        '<div class="pilltabs">'+
           '<label><input type="radio" name="pmode" value="rate" '+(defaultMode==='rate'?'checked':'')+'><span>📅 Rateale</span></label>'+
           '<label><input type="radio" name="pmode" value="manual" '+(defaultMode!=='rate'?'checked':'')+'><span>⚙️ Scaglioni manuali</span></label>'+
         '</div>'+
@@ -7466,12 +7418,12 @@ appEl.innerHTML = topbarHTML() + `
             '<label>Frequenza</label>'+
               '<select id="rt_freq"><option value="M">Mensile</option><option value="Q">Trimestrale</option><option value="W">Settimanale</option><option value="Y">Annuale</option></select>'+
             '<label>Prima scadenza</label><input id="rt_first" type="date" value="'+esc(rest[0]? ymd(rest[0].dueDate) : ymd(it.date||today))+'">'+
-            '<button class="ghost" id="rt_build" style="background:rgba(93,211,255,.1);border:1px solid rgba(93,211,255,.3);color:var(--accent);border-radius:8px;padding:8px 16px;font-weight:500;transition:all 0.2s ease"><span style="margin-right:6px">🔄</span>Ricalcola rate</button>'+
+            '<button class="ghost" id="rt_build"><span style="margin-right:6px">🔄</span>Ricalcola rate</button>'+
           '</div>'+
           '<div id="rt_preview" class="gi-rlist muted small">—</div>'+
         '</div>'+
         '<div id="p_manual" style="display:'+(defaultMode!=='rate'?'block':'none')+'">'+
-          '<div class="mrow mini"><button class="ghost" id="mn_add" style="background:rgba(93,211,255,.1);border:1px solid rgba(93,211,255,.3);color:var(--accent);border-radius:8px;padding:8px 16px;font-weight:500;transition:all 0.2s ease"><span style="margin-right:6px">➕</span>Aggiungi scaglione</button></div>'+
+          '<div class="mrow mini"><button class="ghost" id="mn_add"><span style="margin-right:6px">➕</span>Aggiungi scaglione</button></div>'+
           '<div id="mn_list" class="gi-rlist"></div>'+
         '</div>'+
       '</div>'+
@@ -7481,7 +7433,7 @@ appEl.innerHTML = topbarHTML() + `
           '<div id="tot_prog">Programmato: 0€</div>'+
           '<div id="tot_chk">Totale VSS: 0€</div>'+
         '</div>'+
-        '<div style="display:flex;gap:12px">'+
+        '<div class="gi-foot-buttons">'+
           (it.id ? '<button class="ghost danger" id="m_del"><span style="margin-right:6px">🗑️</span>Elimina</button>' : '')+
           '<button id="m_save"><span style="margin-right:6px">💾</span>Salva</button>'+
         '</div>'+
