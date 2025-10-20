@@ -1,26 +1,80 @@
-# Prevent secret envs and unnecessary files from being copied into Docker context
-.env
-**/.env*
-backend/.env
-frontend/.env
+# Docker ignore file for BP App
+# Optimizes build by excluding unnecessary files
 
-# Git and builds
+# Node modules (will be installed fresh)
+**/node_modules
+node_modules/
+
+# Development files
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Git
 .git
 .gitignore
-node_modules
-**/node_modules
-npm-debug.log*
-yarn.lock
-pnpm-lock.yaml
+.gitattributes
 
-# Build caches
-.cache
-**/.vitepress/cache
-**/.vitepress/dist
-dist
-frontend/dist
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS/IDE
+# Test files
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+test/
+tests/
+__tests__/
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build artifacts (except dist)
+build/
+coverage/
+.nyc_output/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# OS generated files
 .DS_Store
-.vscode
-*.log
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Large data files
+*.sqlite
+*.db
+*.sql
+backups/
+tmp_bp_exports/
+
+# Render specific
+render.yaml
