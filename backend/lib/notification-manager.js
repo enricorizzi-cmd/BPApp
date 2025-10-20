@@ -397,12 +397,170 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     }
   }
 
+  // Processa notifiche per feedback vendite riordini
+  async function processVenditeRiordiniNotifications() {
+    try {
+      console.log('[NotificationManager] Processing vendite riordini notifications...');
+      
+      // Trova preventivi con data_feedback = oggi alle 19:00
+      const now = new Date();
+      const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const currentHour = now.getHours();
+      
+      // Solo se siamo alle 19:00 (con tolleranza di 1 minuto)
+      if (currentHour !== 19) {
+        console.log(`[VenditeRiordini] Not 19:00 yet (current: ${currentHour}:${now.getMinutes()}), skipping`);
+        return 0;
+      }
+      
+      console.log(`[VenditeRiordini] Processing feedback notifications for ${today}`);
+      
+      // Trova preventivi con data_feedback = oggi e stato != 'confermato' e != 'rifiutato'
+      const { data: vendite, error } = await supabase
+        .from('vendite_riordini')
+        .select('id, consultantid, cliente, valore_proposto, data_feedback, stato')
+        .eq('data_feedback', today)
+        .not('stato', 'in', '(confermato,rifiutato)')
+        .limit(100);
+      
+      if (error) {
+        console.error('[VenditeRiordini] Query error:', error);
+        throw error;
+      }
+      
+      if (!vendite || vendite.length === 0) {
+        console.log('[VenditeRiordini] No vendite found for today');
+        return 0;
+      }
+      
+      console.log(`[VenditeRiordini] Found ${vendite.length} vendite for feedback notification`);
+      
+      let processed = 0;
+      
+      // Processa ogni vendita
+      for (const vendita of vendite) {
+        try {
+          // Verifica se notifica già inviata
+          const alreadySent = await isVenditeRiordiniNotificationSent(vendita.id);
+          if (alreadySent) {
+            console.log(`[VenditeRiordini] Notification already sent for ${vendita.id}`);
+            continue;
+          }
+          
+          // Ottieni nome utente per personalizzazione
+          const { data: user, error: userError } = await supabase
+            .from('app_users')
+            .select('name')
+            .eq('id', vendita.consultantid)
+            .single();
+          
+          if (userError) {
+            console.error(`[VenditeRiordini] Error getting user name for ${vendita.consultantid}:`, userError);
+            continue;
+          }
+          
+          const userName = user?.name || 'Consulente';
+          
+          // Crea payload notifica
+          const payload = {
+            title: "📋 Feedback Preventivo",
+            body: `Hey ${userName}! come è andata la proposta piano a "${vendita.cliente}"? VSS:${vendita.valore_proposto}€`,
+            url: "/#vendite-riordini",
+            tag: 'bp-vendite-feedback',
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            data: {
+              venditaId: vendita.id,
+              cliente: vendita.cliente,
+              valoreProposto: vendita.valore_proposto,
+              type: 'vendite-feedback',
+              url: "/#vendite-riordini"
+            }
+          };
+          
+          console.log(`[VenditeRiordini] Sending notification to user ${vendita.consultantid} for vendita ${vendita.id}`);
+          const result = await sendPushNotification(vendita.consultantid, payload);
+          console.log(`[VenditeRiordini] Send result for ${vendita.id}: sent=${result.sent}, failed=${result.failed}, cleaned=${result.cleaned}`);
+          
+          // Marca come inviata solo se almeno una delivery è riuscita
+          if (result.sent > 0) {
+            console.log(`[VenditeRiordini] Marking notification as sent for ${vendita.id}`);
+            const marked = await markVenditeRiordiniNotificationSent(vendita.consultantid, vendita.id);
+            console.log(`[VenditeRiordini] Mark result for ${vendita.id}: ${marked ? 'SUCCESS' : 'FAILED'}`);
+            if (marked) processed++;
+          } else {
+            console.log(`[VenditeRiordini] Not marking ${vendita.id} as sent - no successful deliveries`);
+          }
+          
+        } catch (error) {
+          console.error(`[VenditeRiordini] Error processing vendita ${vendita.id}:`, error);
+        }
+      }
+      
+      console.log(`[VenditeRiordini] Processed ${processed} notifications`);
+      return processed;
+      
+    } catch (error) {
+      console.error('[NotificationManager] Error processing vendite riordini notifications:', error);
+      return 0;
+    }
+  }
+  
+  // Verifica se notifica vendite riordini è già stata inviata
+  async function isVenditeRiordiniNotificationSent(venditaId) {
+    try {
+      const { data, error } = await supabase
+        .from('push_notifications_sent')
+        .select('id')
+        .eq('appointmentid', venditaId)
+        .eq('notification_type', 'vendite-feedback')
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error(`[VenditeRiordini] Error checking notification status:`, error);
+        throw error;
+      }
+      
+      return !!data;
+    } catch (error) {
+      console.error(`[VenditeRiordini] Error checking notification status:`, error);
+      return true; // Fail-safe: assume già inviata
+    }
+  }
+  
+  // Marca notifica vendite riordini come inviata
+  async function markVenditeRiordiniNotificationSent(userId, venditaId) {
+    try {
+      const { error } = await supabase
+        .from('push_notifications_sent')
+        .insert([{
+          userid: userId,
+          appointmentid: venditaId,
+          notification_type: 'vendite-feedback',
+          sent_at: new Date().toISOString()
+        }]);
+      
+      if (error) {
+        console.error(`[VenditeRiordini] Error marking notification as sent:`, error);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`[VenditeRiordini] Error marking notification as sent:`, error);
+      return false;
+    }
+  }
+
   return {
     sendPushNotification,
     markNotificationSent,
     isNotificationSent,
     processPostAppointmentNotifications,
     cleanupInvalidSubscriptions,
-    sendBPReminderNotification
+    sendBPReminderNotification,
+    processVenditeRiordiniNotifications,
+    isVenditeRiordiniNotificationSent,
+    markVenditeRiordiniNotificationSent
   };
 };

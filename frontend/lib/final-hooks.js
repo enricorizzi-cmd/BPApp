@@ -2191,12 +2191,240 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     }).catch(function(_){ /* silenzioso */ });
   }
 
-  // export safe
-  var F = (window.BPFinal = window.BPFinal || {});
-  F.injectBannerCSS = injectBannerCSS;
-  F.updateClientStatusByName = updateClientStatusByName;
-  F.scanNNCF = scanNNCF;
-  if (!window.scanNNCF) window.scanNNCF = scanNNCF;
+  // === Banner Vendite Riordini ===
+  function scanVenditeRiordini(){
+    // Mostra banner per preventivi con data_feedback = oggi
+    return GET('/api/vendite-riordini').then(function(r){
+      var today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      var currentUserId = window.getUser ? window.getUser().id : null;
+      var list = (r && r.vendite) || [];
+      
+      // Filtra per data_feedback = oggi e stato != confermato/rifiutato
+      var vendite = list.filter(function(v){
+        if(!v || !v.data_feedback) return false;
+        // FILTRA PER UTENTE: mostra solo i banner del consulente corrente
+        if (currentUserId && v.consultantid && String(v.consultantid) !== String(currentUserId)) return false;
+        return v.data_feedback === today && 
+               v.stato !== 'confermato' && 
+               v.stato !== 'rifiutato';
+      });
+
+      if(!vendite.length) return;
+      
+      // Mostra banner per la prima vendita trovata
+      var vendita = vendite[0];
+      console.log(`[VenditeRiordini] Showing banner for vendita: ${vendita.id}`);
+      showVenditeRiordiniBanner(vendita);
+    }).catch(function(_){ /* silenzioso */ });
+  }
+
+  function showVenditeRiordiniBanner(vendita){
+    // Rimuovi banner esistenti
+    var existing = document.getElementById('bp_vendite_banner');
+    if(existing) existing.remove();
+
+    var banner = document.createElement('div');
+    banner.id = 'bp_vendite_banner';
+    banner.className = 'bp-banner';
+    banner.innerHTML = `
+      <div class="bp-banner-content">
+        <div class="bp-banner-header">
+          <span class="bp-banner-icon">📋</span>
+          <span class="bp-banner-title">Feedback Preventivo</span>
+          <button class="bp-banner-close" onclick="closeVenditeRiordiniBanner()">✕</button>
+        </div>
+        <div class="bp-banner-body">
+          <p>Come è andata la proposta piano a <strong>"${vendita.cliente}"</strong>?</p>
+          <p class="bp-banner-vss">VSS: <strong>${fmtEuro(vendita.valore_proposto || 0)}</strong></p>
+        </div>
+        <div class="bp-banner-actions">
+          <button class="bp-banner-btn bp-banner-btn-postpone" onclick="postponeVenditaRiordini('${vendita.id}')">
+            <span>📅</span> Posticipa
+          </button>
+          <button class="bp-banner-btn bp-banner-btn-reject" onclick="rejectVenditaRiordini('${vendita.id}')">
+            <span>❌</span> No
+          </button>
+          <button class="bp-banner-btn bp-banner-btn-accept" onclick="acceptVenditaRiordini('${vendita.id}')">
+            <span>✅</span> Si
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(banner);
+    
+    // Auto-close dopo 30 secondi se non interagito
+    setTimeout(function(){
+      if(document.getElementById('bp_vendite_banner')){
+        closeVenditeRiordiniBanner();
+      }
+    }, 30000);
+  }
+
+  function closeVenditeRiordiniBanner(){
+    var banner = document.getElementById('bp_vendite_banner');
+    if(banner) banner.remove();
+  }
+
+  // Funzioni globali per azioni banner
+  window.postponeVenditaRiordini = function(venditaId){
+    // Posticipa al giorno dopo
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var tomorrowStr = tomorrow.toISOString().split('T')[0];
+    
+    PUT('/api/vendite-riordini', {
+      id: venditaId,
+      data_feedback: tomorrowStr
+    }).then(function(){
+      closeVenditeRiordiniBanner();
+      toast('Preventivo posticipato a domani');
+    }).catch(function(error){
+      console.error('Error postponing vendita:', error);
+      toast('Errore nel posticipare il preventivo');
+    });
+  };
+
+  window.rejectVenditaRiordini = function(venditaId){
+    // Cambia stato a rifiutato
+    PUT('/api/vendite-riordini', {
+      id: venditaId,
+      stato: 'rifiutato'
+    }).then(function(){
+      closeVenditeRiordiniBanner();
+      toast('Preventivo rifiutato');
+    }).catch(function(error){
+      console.error('Error rejecting vendita:', error);
+      toast('Errore nel rifiutare il preventivo');
+    });
+  };
+
+  window.acceptVenditaRiordini = function(venditaId){
+    // Mostra mini form per conferma
+    showVenditeRiordiniConfirmForm(venditaId);
+  };
+
+  function showVenditeRiordiniConfirmForm(venditaId){
+    // Ottieni dati vendita
+    GET('/api/vendite-riordini').then(function(r){
+      var vendite = (r && r.vendite) || [];
+      var vendita = vendite.find(v => v.id === venditaId);
+      
+      if(!vendita) {
+        toast('Preventivo non trovato');
+        return;
+      }
+
+      // Crea form overlay
+      var overlay = document.createElement('div');
+      overlay.className = 'bp-overlay';
+      overlay.innerHTML = `
+        <div class="bp-modal">
+          <div class="bp-modal-header">
+            <h3>Conferma Preventivo</h3>
+            <button onclick="closeVenditeRiordiniForm()">✕</button>
+          </div>
+          <div class="bp-modal-body">
+            <div class="bp-form-group">
+              <label>Descrizione Servizi</label>
+              <textarea id="vendita_descrizione" rows="3">${vendita.descrizione_servizi || ''}</textarea>
+            </div>
+            <div class="bp-form-group">
+              <label>Valore Confermato (VSS)</label>
+              <input type="number" id="vendita_valore_confermato" value="${vendita.valore_proposto || 0}" step="0.01">
+            </div>
+          </div>
+          <div class="bp-modal-footer">
+            <button class="bp-btn-secondary" onclick="closeVenditeRiordiniForm()">Annulla</button>
+            <button class="bp-btn-primary" onclick="confirmVenditaRiordini('${venditaId}')">Continua</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(overlay);
+    }).catch(function(error){
+      console.error('Error loading vendita:', error);
+      toast('Errore nel caricare il preventivo');
+    });
+  }
+
+  window.closeVenditeRiordiniForm = function(){
+    var overlay = document.querySelector('.bp-overlay');
+    if(overlay) overlay.remove();
+  };
+
+  window.confirmVenditaRiordini = function(venditaId){
+    var descrizione = document.getElementById('vendita_descrizione').value;
+    var valoreConfermato = parseFloat(document.getElementById('vendita_valore_confermato').value) || 0;
+    
+    // Aggiorna vendita
+    PUT('/api/vendite-riordini', {
+      id: venditaId,
+      stato: 'confermato',
+      descrizione_servizi: descrizione,
+      valore_confermato: valoreConfermato
+    }).then(function(){
+      closeVenditeRiordiniBanner();
+      closeVenditeRiordiniForm();
+      toast('Preventivo confermato!');
+      
+      // Integra VSS nel calendario
+      integrateVSSInCalendar(venditaId, valoreConfermato);
+    }).catch(function(error){
+      console.error('Error confirming vendita:', error);
+      toast('Errore nel confermare il preventivo');
+    });
+  };
+
+  function integrateVSSInCalendar(venditaId, valoreConfermato){
+    // Ottieni dati vendita per la data
+    GET('/api/vendite-riordini').then(function(r){
+      var vendite = (r && r.vendite) || [];
+      var vendita = vendite.find(v => v.id === venditaId);
+      
+      if(!vendita) {
+        console.error('Vendita not found for VSS integration:', venditaId);
+        return;
+      }
+
+      // Crea un appuntamento "virtuale" per il VSS nel calendario
+      var today = new Date();
+      var appointmentData = {
+        id: 'vr_' + venditaId + '_' + Date.now(), // ID univoco
+        client: vendita.cliente,
+        consultant: vendita.consulente,
+        consultantid: vendita.consultantid,
+        start: today.toISOString(),
+        end: today.toISOString(),
+        type: 'vendita',
+        vss: valoreConfermato,
+        annotation: `Preventivo confermato: ${vendita.descrizione_servizi || ''}`,
+        userid: vendita.consultantid,
+        createdat: today.toISOString(),
+        updatedat: today.toISOString()
+      };
+
+      // Salva appuntamento nel calendario
+      POST('/api/appointments', appointmentData).then(function(){
+        console.log('VSS integrato nel calendario per vendita:', venditaId);
+        toast('VSS integrato nel calendario');
+        
+        // Trigger refresh calendario se visibile
+        if (typeof document.dispatchEvent === 'function') {
+          document.dispatchEvent(new Event('bp:saved'));
+        }
+      }).catch(function(error){
+        console.error('Error integrating VSS in calendar:', error);
+        toast('Errore nell\'integrazione VSS nel calendario');
+      });
+    }).catch(function(error){
+      console.error('Error loading vendita for VSS integration:', error);
+    });
+  }
+
+  // Export funzioni
+  F.scanVenditeRiordini = scanVenditeRiordini;
+  if (!window.scanVenditeRiordini) window.scanVenditeRiordini = scanVenditeRiordini;
 })();
 
 // -------- Undo + Haptics globali --------
@@ -2383,6 +2611,7 @@ if (typeof viewGI !== 'undefined') expose('viewGI', viewGI);
   if (typeof showClientAppointments !== 'undefined') expose('showClientAppointments', showClientAppointments);
   if (typeof wireReportButtons      !== 'undefined') expose('wireReportButtons',      wireReportButtons);
   if (typeof scanNNCF               !== 'undefined') expose('scanNNCF',               scanNNCF);
+  if (typeof scanVenditeRiordini    !== 'undefined') expose('scanVenditeRiordini',    scanVenditeRiordini);
   if (typeof ensureNNCFChip         !== 'undefined') expose('ensureNNCFChip',         ensureNNCFChip);
 
   if (typeof markToday              !== 'undefined') expose('markToday',              markToday);
@@ -2435,6 +2664,8 @@ onceReady(async ()=>{
   if (typeof wireCoachUndoHaptics==='function') wireCoachUndoHaptics();
 // Coach per banner NNCF (legacy): disabilitato per rimuovere banner duplicato "Non ancora"
 //  if (typeof scanNNCF==='function') scanNNCF();
+  // Banner vendite riordini
+  if (typeof scanVenditeRiordini==='function') scanVenditeRiordini();
   // Saluto iniziale (una volta al giorno)
   try{
     const k='bpCoachGreetedDate';

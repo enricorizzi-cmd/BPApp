@@ -2259,6 +2259,21 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
       });
   }, 7*60*1000); // Ogni 7 minuti (riduce carico 57%)
   
+  // Job per notifiche vendite riordini (alle 19:00)
+  setInterval(()=>{ 
+    const startTime = Date.now();
+    console.log(`[JobMetrics] Vendite riordini job started at ${new Date().toISOString()}`);
+    notificationManager.processVenditeRiordiniNotifications()
+      .then(processed => {
+        const duration = Date.now() - startTime;
+        console.log(`[JobMetrics] Vendite riordini job completed in ${duration}ms, processed ${processed} notifications`);
+      })
+      .catch(error => {
+        const duration = Date.now() - startTime;
+        console.error(`[JobMetrics] Vendite riordini job failed after ${duration}ms:`, error);
+      });
+  }, 60*1000); // Ogni minuto per catturare le 19:00
+  
   // Cleanup subscription invalide (ottimizzato per scalabilità)
   setInterval(()=>{ 
     const startTime = Date.now();
