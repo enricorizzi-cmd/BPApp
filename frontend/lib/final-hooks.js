@@ -374,9 +374,49 @@ window.pipelineNo  = pipelineNo;
     try{ await POST('/api/clients', { id, status }); }catch(_){}
   }
 
-  // salva VSS sull’appuntamento
+  // salva VSS sull'appuntamento
   async function saveApptVSS(apptId, vss){
     return POST('/api/appointments', { id: apptId, vss: Math.max(0, Number(vss||0)) });
+  }
+
+  // === NUOVA FUNZIONALITÀ: Apri modal nuovo preventivo con valori pre-compilati ===
+  function openNewPreventivoModalFromAppt(appt){
+    try {
+      // Calcola data feedback (oggi + 6 giorni)
+      const today = new Date();
+      const feedbackDate = new Date(today);
+      feedbackDate.setDate(today.getDate() + 6);
+      const feedbackDateStr = feedbackDate.toISOString().split('T')[0];
+      
+      // Ottieni VSS originale prima dell'azzeramento (dal campo description o vss)
+      const originalVSS = appt.vss || 0;
+      
+      // Crea oggetto vendita pre-compilato
+      const venditaPrecompilata = {
+        data: today.toISOString().split('T')[0], // oggi
+        cliente: appt.client || '',
+        consulente: appt.consultant || '',
+        descrizione_servizi: appt.description || '',
+        valore_proposto: originalVSS,
+        data_feedback: feedbackDateStr,
+        stato: 'proposto',
+        valore_confermato: 0
+      };
+      
+      // Apri modal Vendite & Riordini in modalità nuovo preventivo
+      if (typeof window.showVenditaRiordiniModal === 'function') {
+        window.showVenditaRiordiniModal({ 
+          vendita: venditaPrecompilata,
+          mode: 'new'
+        });
+      } else {
+        console.error('showVenditaRiordiniModal function not found');
+        toast('Errore: funzione modal non trovata', 'error');
+      }
+    } catch(e) {
+      logger.error('Error opening new preventivo modal:', e);
+      toast('Errore nell\'apertura della modal', 'error');
+    }
   }
 
   // crea riga GI a partire dall’appuntamento
@@ -486,6 +526,17 @@ function esc(s){
       await saveApptVSS(appt.id, 0);
       hapticImpact('light');
       toast('Segnato VSS 0');
+      
+      // === NUOVA FUNZIONALITÀ: Toast motivazionale + Modal nuovo preventivo ===
+      setTimeout(() => {
+        toast('Dai non ti scoraggiare che comprerà!', 'success');
+        
+        // Apri modal nuovo preventivo con valori pre-compilati
+        setTimeout(() => {
+          openNewPreventivoModalFromAppt(appt);
+        }, 1000);
+      }, 500);
+      
     }catch(e){ logger.error(e); }
   };
 })();

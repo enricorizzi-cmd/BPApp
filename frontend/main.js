@@ -8302,7 +8302,21 @@ window.showVenditaRiordiniModal = function(opts = {}) {
         
         <div class="bp-form-group">
           <label>Cliente *</label>
-          <input type="text" id="vendita_cliente" value="${vendita.cliente || ''}" placeholder="Nome cliente" required>
+          <div class="client-dropdown">
+            <div class="client-dropdown-input" id="vendita_client_input">
+              <span id="vendita_client_display">— seleziona cliente —</span>
+              <span class="client-dropdown-arrow">▼</span>
+            </div>
+            <input type="hidden" id="vendita_client_select" value="${vendita.cliente_id || ''}">
+            <div class="client-dropdown-list" id="vendita_client_list" style="display:none">
+              <div class="client-dropdown-search">
+                <input type="text" id="vendita_client_search" placeholder="Cerca cliente..." autocomplete="off">
+              </div>
+              <div class="client-dropdown-options" id="vendita_client_options">
+                <div style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div class="bp-form-group">
@@ -8330,12 +8344,10 @@ window.showVenditaRiordiniModal = function(opts = {}) {
           </select>
         </div>
         
-        ${isEdit ? `
         <div class="bp-form-group">
           <label>Valore Confermato (VSS)</label>
-          <input type="number" id="vendita_valore_confermato" value="${vendita.valore_confermato || ''}" step="0.01" min="0" placeholder="0.00" ${vendita.stato !== 'confermato' ? 'disabled' : ''}>
+          <input type="number" id="vendita_valore_confermato" value="${vendita.valore_confermato || '0'}" step="0.01" min="0" placeholder="0.00" ${vendita.stato !== 'confermato' ? 'readonly' : ''}>
         </div>
-        ` : ''}
       </div>
       <div class="bp-modal-footer">
         <button class="bp-btn-secondary" onclick="closeVenditeRiordiniModal()">Annulla</button>
@@ -8349,22 +8361,126 @@ window.showVenditaRiordiniModal = function(opts = {}) {
   // Usa il sistema di overlay globale per centrare la modal
   showOverlay(modalHTML);
   
-  // Auto-fill valore confermato quando stato = confermato
-  if(isEdit) {
-    const statoSelect = document.getElementById('vendita_stato');
-    const valoreConfermatoInput = document.getElementById('vendita_valore_confermato');
+  // Inizializza dropdown clienti per Vendite & Riordini
+  (async function fillVenditeClients(){
+    const input = document.getElementById('vendita_client_input');
+    const display = document.getElementById('vendita_client_display');
+    const hidden = document.getElementById('vendita_client_select');
+    const list = document.getElementById('vendita_client_list');
+    const options = document.getElementById('vendita_client_options');
+    const search = document.getElementById('vendita_client_search');
     
-    statoSelect.addEventListener('change', function(){
-      if(this.value === 'confermato') {
-        valoreConfermatoInput.disabled = false;
-        if(!valoreConfermatoInput.value) {
-          valoreConfermatoInput.value = document.getElementById('vendita_valore_proposto').value;
+    if (!input || !display || !hidden || !list || !options || !search) return;
+    
+    // Carica clienti
+    try {
+      const clients = await GET('/api/clients');
+      const clientList = clients.clients || [];
+      
+      // Se c'è un cliente pre-selezionato (edit o nuovo con cliente pre-compilato), mostra il nome
+      if (vendita.cliente) {
+        display.textContent = vendita.cliente;
+        // Trova e seleziona il cliente corrispondente
+        const matchingClient = clientList.find(client => 
+          client.name.toLowerCase() === vendita.cliente.toLowerCase()
+        );
+        if (matchingClient) {
+          hidden.value = matchingClient.id;
         }
-      } else {
-        valoreConfermatoInput.disabled = true;
       }
-    });
+      
+      // Popola opzioni
+      options.innerHTML = clientList.map(client => `
+        <div class="client-option" data-id="${client.id}" data-name="${client.name}">
+          <div class="client-option-icon">${client.name.charAt(0).toUpperCase()}</div>
+          <div class="client-option-text">
+            <div class="client-option-name">${client.name}</div>
+            <div class="client-option-consultant">${client.consultant || 'N/A'}</div>
+            <div class="client-option-status">${client.status || 'prospect'}</div>
+          </div>
+        </div>
+      `).join('');
+      
+      // Event listeners
+      input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        list.style.display = list.style.display === 'none' ? 'block' : 'none';
+        input.parentElement.classList.toggle('open');
+        if (list.style.display === 'block') {
+          search.focus();
+        }
+      });
+      
+      search.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        const allOptions = options.querySelectorAll('.client-option');
+        allOptions.forEach(option => {
+          const name = option.dataset.name.toLowerCase();
+          option.style.display = name.includes(query) ? 'flex' : 'none';
+        });
+      });
+      
+      options.addEventListener('click', function(e) {
+        const option = e.target.closest('.client-option');
+        if (!option) return;
+        
+        const clientId = option.dataset.id;
+        const clientName = option.dataset.name;
+        
+        hidden.value = clientId;
+        display.textContent = clientName;
+        list.style.display = 'none';
+        input.parentElement.classList.remove('open');
+        
+        // Rimuovi selezione precedente
+        options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+      });
+      
+      // Chiudi dropdown quando si clicca fuori
+      document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !list.contains(e.target)) {
+          list.style.display = 'none';
+          input.parentElement.classList.remove('open');
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore nel caricamento clienti</div>';
+    }
+  })();
+  
+  // Auto-fill valore confermato quando stato = confermato
+  const statoSelect = document.getElementById('vendita_stato');
+  const valoreConfermatoInput = document.getElementById('vendita_valore_confermato');
+  
+  function updateValoreConfermatoField() {
+    const stato = statoSelect.value;
+    const valoreProposto = document.getElementById('vendita_valore_proposto').value;
+    
+    if (stato === 'confermato') {
+      valoreConfermatoInput.removeAttribute('readonly');
+      if (!valoreConfermatoInput.value || valoreConfermatoInput.value === '0') {
+        valoreConfermatoInput.value = valoreProposto || '0';
+      }
+    } else {
+      valoreConfermatoInput.setAttribute('readonly', 'readonly');
+      valoreConfermatoInput.value = '0';
+    }
   }
+  
+  statoSelect.addEventListener('change', updateValoreConfermatoField);
+  
+  // Auto-fill valore_confermato quando cambia valore_proposto
+  document.getElementById('vendita_valore_proposto').addEventListener('input', function() {
+    if (statoSelect.value === 'confermato' && (!valoreConfermatoInput.value || valoreConfermatoInput.value === '0')) {
+      valoreConfermatoInput.value = this.value || '0';
+    }
+  });
+  
+  // Inizializza lo stato del campo
+  updateValoreConfermatoField();
 };
 
 // Funzioni di supporto per modal vendite riordini
@@ -8374,21 +8490,23 @@ window.closeVenditeRiordiniModal = function(){
 
 window.saveVenditaRiordini = function(venditaId){
   const data = document.getElementById('vendita_data').value;
-  const cliente = document.getElementById('vendita_cliente').value;
+  const cliente_id = document.getElementById('vendita_client_select').value;
+  const cliente_display = document.getElementById('vendita_client_display').textContent;
   const descrizione_servizi = document.getElementById('vendita_descrizione').value;
   const valore_proposto = parseFloat(document.getElementById('vendita_valore_proposto').value) || 0;
   const data_feedback = document.getElementById('vendita_data_feedback').value;
   const stato = document.getElementById('vendita_stato').value;
   
   // Validazione
-  if(!data || !cliente || valore_proposto <= 0) {
+  if(!data || !cliente_id || valore_proposto <= 0) {
     toast('Compila tutti i campi obbligatori');
     return;
   }
   
   const venditaData = {
     data,
-    cliente,
+    cliente_id,
+    cliente: cliente_display,
     descrizione_servizi,
     valore_proposto,
     data_feedback,

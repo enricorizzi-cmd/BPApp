@@ -147,7 +147,7 @@
   background: rgba(255,255,255,.05);
   border: 1px solid var(--hair2);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 16px;
   transition: all 0.2s ease;
   cursor: pointer;
   display: flex;
@@ -190,7 +190,7 @@
 }
 
 .client-dropdown-search {
-  padding: 16px;
+  padding: 12px;
   border-bottom: 1px solid var(--hair2);
   background: rgba(255,255,255,.03);
 }
@@ -200,7 +200,7 @@
   background: rgba(255,255,255,.05);
   border: 1px solid var(--hair2);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   color: var(--text);
   font-size: 14px;
 }
@@ -217,7 +217,7 @@
 }
 
 .client-option {
-  padding: 14px 16px;
+  padding: 12px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   border-bottom: 1px solid var(--hair);
@@ -243,8 +243,8 @@
 }
 
 .client-option-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   display: flex;
@@ -527,25 +527,30 @@
 }
 
 .gi-totals {
-  background: rgba(93,211,255,.05);
-  border: 1px solid rgba(93,211,255,.2);
+  background: linear-gradient(135deg, rgba(93,211,255,.12), rgba(93,211,255,.08));
+  border: 1px solid rgba(93,211,255,.3);
   border-radius: 12px;
-  padding: 16px 20px;
-  min-width: 200px;
+  padding: 20px 24px;
+  min-width: 220px;
+  box-shadow: 0 4px 12px rgba(93,211,255,.15);
 }
 
 .gi-totals div {
   font-weight: 600;
   color: var(--accent);
+  text-align: center;
 }
 
 .gi-totals div:first-child {
   font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  opacity: 0.9;
 }
 
 .gi-totals div:last-child {
-  font-size: 18px;
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(93,211,255,.2);
 }
 
 .gi-foot-buttons {

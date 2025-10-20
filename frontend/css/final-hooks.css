@@ -35,6 +35,246 @@
 #bp-overlay textarea,
 #bp-overlay select { width: 100%; }
 
+/* Modal Vendite & Riordini */
+#bp-overlay .bp-modal {
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  border: 1px solid var(--hair2);
+  box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+  border-radius: 20px;
+  padding: 32px;
+  margin: 0;
+  max-width: 600px;
+  width: 100%;
+}
+
+#bp-overlay .bp-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--hair2);
+}
+
+#bp-overlay .bp-modal-header h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0;
+}
+
+#bp-overlay .bp-modal-header button {
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--hair2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#bp-overlay .bp-modal-header button:hover {
+  border-color: var(--accent);
+  background: rgba(93,211,255,.05);
+  transform: translateY(-1px);
+}
+
+#bp-overlay .bp-modal-body {
+  margin-bottom: 32px;
+}
+
+#bp-overlay .bp-form-group {
+  margin-bottom: 24px;
+}
+
+#bp-overlay .bp-form-group label {
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+  display: block;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#bp-overlay .bp-form-group input,
+#bp-overlay .bp-form-group select,
+#bp-overlay .bp-form-group textarea {
+  width: 100%;
+  min-width: 0;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--hair2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-size: 15px;
+}
+
+#bp-overlay .bp-form-group input:focus,
+#bp-overlay .bp-form-group select:focus,
+#bp-overlay .bp-form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+  background: rgba(255,255,255,.08);
+  outline: none;
+}
+
+#bp-overlay .bp-form-group input[readonly] {
+  background: rgba(255,255,255,.02);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+#bp-overlay .bp-form-group input[readonly]:focus {
+  border-color: var(--hair2);
+  box-shadow: none;
+  background: rgba(255,255,255,.02);
+}
+
+#bp-overlay .bp-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+#bp-overlay .bp-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hair2);
+}
+
+#bp-overlay .bp-btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none;
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(93,211,255,.3);
+  font-size: 15px;
+}
+
+#bp-overlay .bp-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(93,211,255,.4);
+}
+
+#bp-overlay .bp-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--hair2);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+#bp-overlay .bp-btn-secondary:hover {
+  border-color: var(--accent);
+  background: rgba(93,211,255,.05);
+}
+
+/* Mobile responsive per modal Vendite & Riordini */
+@media (max-width: 768px) {
+  #bp-overlay .bp-overlay-panel {
+    max-width: 95vw;
+    margin: 8px;
+    padding: 12px;
+  }
+  
+  #bp-overlay .bp-modal {
+    padding: 20px;
+    border-radius: 16px;
+  }
+  
+  #bp-overlay .bp-modal-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+  }
+  
+  #bp-overlay .bp-modal-header h3 {
+    font-size: 18px;
+  }
+  
+  #bp-overlay .bp-modal-header button {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  #bp-overlay .bp-form-group {
+    margin-bottom: 20px;
+  }
+  
+  #bp-overlay .bp-form-group label {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  
+  #bp-overlay .bp-form-group input,
+  #bp-overlay .bp-form-group select,
+  #bp-overlay .bp-form-group textarea {
+    padding: 12px 14px;
+    font-size: 16px; /* Previene zoom su iOS */
+    border-radius: 10px;
+  }
+  
+  #bp-overlay .bp-form-group textarea {
+    min-height: 70px;
+  }
+  
+  #bp-overlay .bp-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 20px;
+  }
+  
+  #bp-overlay .bp-btn-primary,
+  #bp-overlay .bp-btn-secondary {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 16px;
+    border-radius: 10px;
+  }
+  
+  /* Client dropdown mobile */
+  #bp-overlay .client-dropdown {
+    position: relative;
+  }
+  
+  #bp-overlay .client-dropdown-input {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+  
+  #bp-overlay .client-dropdown-search {
+    padding: 10px;
+  }
+  
+  #bp-overlay .client-dropdown-search input {
+    padding: 8px 10px;
+    font-size: 16px;
+  }
+  
+  #bp-overlay .client-option {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+  
+  #bp-overlay .client-option-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 
 /* final-hooks.css — piccoli ritocchi UI */
 .chip-nncf{
