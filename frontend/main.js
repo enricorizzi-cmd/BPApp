@@ -6991,46 +6991,10 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
   fillUsers();
   compute();
 }
-// ===== VENDITE E RIORDINI =====
+// ===== VENDITE E RIORDINI (LEGACY REDIRECT) =====
 function viewVendite(){
-  if(!getUser()) return viewLogin();
-  document.title = 'Battle Plan – Vendite e Riordini';
-  setActiveSidebarItem('viewVendite');
-  const isAdmin = getUser().role==='admin';
-
-  appEl.innerHTML = topbarHTML()+`
-    <div class="wrap">
-
-      <div class="card">
-        <b>Filtro</b>
-        <div class="row" style="margin-top:6px;align-items:flex-end;gap:16px;flex-wrap:wrap">
-          ${isAdmin ? `<div><label>Consulente</label><select id="vr_cons"><option value="">Tutti</option></select></div>` : ''}
-        </div>
-        ${unifiedFiltersHTML("vr")}
-      </div>
-
-      <div class="card">
-        <b>Vendite e Riordini</b>
-        <div class="table" style="overflow:auto">
-          <table class="simple" style="min-width:980px">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Cliente</th>
-                <th>Consulente</th>
-              </tr>
-            </thead>
-            <tbody id="vr_rows">
-              <tr><td colspan="3" class="muted">Nessun dato</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>`;
-
-  renderTopbar();
-  bindUnifiedFilters('vr', ()=>{});
+  // Redirect alla nuova implementazione
+  viewVenditeRiordini();
 }
 // ===== GI & SCADENZARIO =====
 function viewGI(){
@@ -7918,6 +7882,387 @@ appEl.innerHTML = topbarHTML() + `
   load();
 }
 window.viewGI = window.viewGI || viewGI;
+
+// ===== VENDITE & RIORDINI =====
+function viewVenditeRiordini(){
+  if(!getUser()) return viewLogin();
+  document.title = 'Battle Plan – Vendite & Riordini';
+  setActiveSidebarItem('viewVenditeRiordini');
+  const isAdmin = getUser().role==='admin';
+
+  // Stato per granularità e periodo
+  let currentGranularity = 'mensile';
+  let currentPeriod = new Date();
+  let currentConsultant = '';
+
+  appEl.innerHTML = topbarHTML() + `
+    <div class="wrap">
+
+      <!-- Hero Section -->
+      <div class="gi-card" style="background: linear-gradient(135deg, rgba(46,204,113,.12), rgba(93,211,255,.08)); border: 1px solid rgba(46,204,113,.3);">
+        <div class="gi-card-header">
+          <h1 class="gi-card-title">Vendite & Riordini</h1>
+          <div class="gi-card-actions">
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+              ${isAdmin ? `
+                <div style="margin-right: 16px;">
+                  <label style="font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block;">Consulente</label>
+                  <select id="vr-global-consultant" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px 12px; border-radius: 8px; min-width: 140px;">
+                    <option value="">Tutti</option>
+                  </select>
+                </div>
+              ` : ''}
+              
+              <!-- Granularità -->
+              <div>
+                <label style="font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block;">Granularità</label>
+                <select id="vr-granularity" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px 12px; border-radius: 8px; min-width: 120px;">
+                  <option value="settimanale">Settimanale</option>
+                  <option value="mensile" selected>Mensile</option>
+                  <option value="trimestrale">Trimestrale</option>
+                  <option value="semestrale">Semestrale</option>
+                  <option value="annuale">Annuale</option>
+                </select>
+              </div>
+
+              <!-- Periodo -->
+              <div>
+                <label style="font-size: 12px; color: var(--muted); margin-bottom: 4px; display: block;">Periodo</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button id="vr-prev-period" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">‹</button>
+                  <span id="vr-current-period" style="color: var(--text); font-weight: 600; min-width: 120px; text-align: center;">Ottobre 2025</span>
+                  <button id="vr-next-period" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">›</button>
+                </div>
+              </div>
+
+              <button class="ghost" id="vr_add" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                <span style="margin-right: 8px;">+</span>Nuovo preventivo
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="gi-stats-grid">
+          <div class="gi-stat-card">
+            <div class="gi-stat-value" id="vr-n-proposte">-</div>
+            <div class="gi-stat-label">N. Proposte</div>
+          </div>
+          <div class="gi-stat-card">
+            <div class="gi-stat-value" id="vr-valore-proposto">-</div>
+            <div class="gi-stat-label">Valore Proposto</div>
+          </div>
+          <div class="gi-stat-card">
+            <div class="gi-stat-value" id="vr-tasso-accettazione">-</div>
+            <div class="gi-stat-label">Tasso Accettazione</div>
+          </div>
+          <div class="gi-stat-card">
+            <div class="gi-stat-value" id="vr-valore-confermato">-</div>
+            <div class="gi-stat-label">Valore Confermato</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vendite Table -->
+      <div class="gi-card">
+        <div class="gi-card-header">
+          <h2 class="gi-card-title">Preventivi</h2>
+          <div class="gi-card-actions">
+            <button class="ghost" onclick="refreshVenditeRiordiniData()" style="background: rgba(255,255,255,.05);">
+              <span style="margin-right: 6px;">↻</span>Aggiorna
+            </button>
+          </div>
+        </div>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Cliente</th>
+                <th>Consulente</th>
+                <th>Descrizione Servizi</th>
+                <th style="text-align:right">Valore Proposto</th>
+                <th>Data Feedback</th>
+                <th>Stato</th>
+                <th style="text-align:right">Valore Confermato</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="vr_rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    
+    <!-- Floating Action Button -->
+    <button class="fab" id="vr_fab" onclick="document.getElementById('vr_add').click()" title="Nuovo preventivo">
+      +
+    </button>`;
+
+  renderTopbar();
+
+  // ========== helpers ==========
+  const $ = id => document.getElementById(id);
+
+  // Funzione per aggiornare il periodo visualizzato
+  function updatePeriodDisplay() {
+    const periodElement = $('vr-current-period');
+    if (!periodElement) return;
+
+    const granularity = currentGranularity;
+    const date = currentPeriod;
+
+    let periodText = '';
+    switch (granularity) {
+      case 'settimanale':
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay() + 1); // Lunedì
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6); // Domenica
+        periodText = `${weekStart.getDate()}/${weekStart.getMonth()+1} - ${weekEnd.getDate()}/${weekEnd.getMonth()+1}`;
+        break;
+      case 'mensile':
+        periodText = date.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        break;
+      case 'trimestrale':
+        const quarter = Math.floor(date.getMonth() / 3) + 1;
+        periodText = `Q${quarter} ${date.getFullYear()}`;
+        break;
+      case 'semestrale':
+        const semester = date.getMonth() < 6 ? 1 : 2;
+        periodText = `S${semester} ${date.getFullYear()}`;
+        break;
+      case 'annuale':
+        periodText = date.getFullYear().toString();
+        break;
+    }
+
+    periodElement.textContent = periodText;
+  }
+
+  // Funzione per calcolare range date in base a granularità
+  function getDateRange() {
+    const granularity = currentGranularity;
+    const date = currentPeriod;
+
+    let from, to;
+    switch (granularity) {
+      case 'settimanale':
+        from = new Date(date);
+        from.setDate(date.getDate() - date.getDay() + 1); // Lunedì
+        from.setHours(0, 0, 0, 0);
+        to = new Date(from);
+        to.setDate(from.getDate() + 6); // Domenica
+        to.setHours(23, 59, 59, 999);
+        break;
+      case 'mensile':
+        from = new Date(date.getFullYear(), date.getMonth(), 1);
+        to = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+        break;
+      case 'trimestrale':
+        const quarterStart = Math.floor(date.getMonth() / 3) * 3;
+        from = new Date(date.getFullYear(), quarterStart, 1);
+        to = new Date(date.getFullYear(), quarterStart + 3, 0, 23, 59, 59, 999);
+        break;
+      case 'semestrale':
+        const semesterStart = date.getMonth() < 6 ? 0 : 6;
+        from = new Date(date.getFullYear(), semesterStart, 1);
+        to = new Date(date.getFullYear(), semesterStart + 6, 0, 23, 59, 59, 999);
+        break;
+      case 'annuale':
+        from = new Date(date.getFullYear(), 0, 1);
+        to = new Date(date.getFullYear(), 11, 31, 23, 59, 59, 999);
+        break;
+    }
+
+    return {
+      from: from.toISOString().split('T')[0],
+      to: to.toISOString().split('T')[0]
+    };
+  }
+
+  // Funzione per caricare dati
+  async function load() {
+    try {
+      const { from, to } = getDateRange();
+      const consultant = currentConsultant;
+
+      // Costruisci URL con parametri
+      let url = `/api/vendite-riordini?from=${from}&to=${to}`;
+      if (consultant === 'all') {
+        url += '&global=1';
+      } else if (consultant && consultant !== getUser().id) {
+        url += `&user=${consultant}`;
+      }
+
+      // Carica dati e statistiche in parallelo
+      const [venditeResponse, statsResponse] = await Promise.all([
+        GET(url),
+        GET(url.replace('/api/vendite-riordini', '/api/vendite-riordini/stats'))
+      ]);
+
+      const vendite = (venditeResponse && venditeResponse.vendite) ? venditeResponse.vendite : [];
+      const stats = (statsResponse && statsResponse.stats) ? statsResponse.stats : {};
+
+      // Aggiorna statistiche
+      $('vr-n-proposte').textContent = stats.n_proposte || 0;
+      $('vr-valore-proposto').textContent = fmtEuro(stats.valore_proposto || 0);
+      $('vr-tasso-accettazione').textContent = (stats.tasso_accettazione || 0) + '%';
+      $('vr-valore-confermato').textContent = fmtEuro(stats.valore_confermato || 0);
+
+      // Popola tabella
+      $('vr_rows').innerHTML = vendite.length ? vendite.map(rowHTML).join('') :
+        '<tr><td colspan="9" class="muted" style="text-align: center; padding: 40px;">Nessun preventivo trovato</td></tr>';
+
+      bindRowActions();
+
+    } catch (error) {
+      console.error('[VenditeRiordini] Load error:', error);
+      logger.error(error);
+    }
+  }
+
+  // Funzione per generare HTML riga tabella
+  function rowHTML(row) {
+    const statoClass = {
+      'da_presentare': 'pending',
+      'proposto': 'started', 
+      'confermato': 'completed',
+      'rifiutato': 'overdue'
+    }[row.stato] || 'pending';
+
+    const statoText = {
+      'da_presentare': 'Da Presentare',
+      'proposto': 'Proposto',
+      'confermato': 'Confermato', 
+      'rifiutato': 'Rifiutato'
+    }[row.stato] || row.stato;
+
+    return `
+      <tr data-id="${row.id}">
+        <td>${formatDate(row.data)}</td>
+        <td>${row.cliente}</td>
+        <td>${row.consulente}</td>
+        <td>${row.descrizione_servizi || '-'}</td>
+        <td style="text-align:right">${fmtEuro(row.valore_proposto || 0)}</td>
+        <td>${formatDate(row.data_feedback)}</td>
+        <td><span class="status ${statoClass}">${statoText}</span></td>
+        <td style="text-align:right">${fmtEuro(row.valore_confermato || 0)}</td>
+        <td>
+          <button class="ghost" onclick="editVenditaRiordini('${row.id}')" style="padding: 4px 8px; font-size: 12px;">✏️</button>
+          <button class="ghost" onclick="deleteVenditaRiordini('${row.id}')" style="padding: 4px 8px; font-size: 12px; color: var(--danger);">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Funzione per bindare azioni righe
+  function bindRowActions() {
+    // Le azioni sono già bindate tramite onclick inline
+  }
+
+  // Event listeners
+  $('vr-granularity').addEventListener('change', (e) => {
+    currentGranularity = e.target.value;
+    updatePeriodDisplay();
+    load();
+  });
+
+  $('vr-prev-period').addEventListener('click', () => {
+    const granularity = currentGranularity;
+    const date = currentPeriod;
+
+    switch (granularity) {
+      case 'settimanale':
+        date.setDate(date.getDate() - 7);
+        break;
+      case 'mensile':
+        date.setMonth(date.getMonth() - 1);
+        break;
+      case 'trimestrale':
+        date.setMonth(date.getMonth() - 3);
+        break;
+      case 'semestrale':
+        date.setMonth(date.getMonth() - 6);
+        break;
+      case 'annuale':
+        date.setFullYear(date.getFullYear() - 1);
+        break;
+    }
+
+    updatePeriodDisplay();
+    load();
+  });
+
+  $('vr-next-period').addEventListener('click', () => {
+    const granularity = currentGranularity;
+    const date = currentPeriod;
+
+    switch (granularity) {
+      case 'settimanale':
+        date.setDate(date.getDate() + 7);
+        break;
+      case 'mensile':
+        date.setMonth(date.getMonth() + 1);
+        break;
+      case 'trimestrale':
+        date.setMonth(date.getMonth() + 3);
+        break;
+      case 'semestrale':
+        date.setMonth(date.getMonth() + 6);
+        break;
+      case 'annuale':
+        date.setFullYear(date.getFullYear() + 1);
+        break;
+    }
+
+    updatePeriodDisplay();
+    load();
+  });
+
+  $('vr-global-consultant').addEventListener('change', (e) => {
+    currentConsultant = e.target.value;
+    load();
+  });
+
+  $('vr_add').addEventListener('click', () => {
+    showVenditaRiordiniModal();
+  });
+
+  // Inizializza display periodo
+  updatePeriodDisplay();
+
+  // Carica i dati iniziali
+  load();
+}
+
+// Funzioni globali per azioni
+window.refreshVenditeRiordiniData = function() {
+  if (window.viewVenditeRiordini) {
+    // Ricarica la view
+    viewVenditeRiordini();
+  }
+};
+
+window.editVenditaRiordini = function(id) {
+  // TODO: Implementare modifica
+  console.log('Edit vendita:', id);
+};
+
+window.deleteVenditaRiordini = function(id) {
+  if (confirm('Sei sicuro di voler eliminare questo preventivo?')) {
+    // TODO: Implementare eliminazione
+    console.log('Delete vendita:', id);
+  }
+};
+
+window.showVenditaRiordiniModal = function(opts = {}) {
+  // TODO: Implementare modal per nuovo preventivo
+  console.log('Show vendita modal:', opts);
+};
+
+window.viewVenditeRiordini = window.viewVenditeRiordini || viewVenditeRiordini;
 
 // ===== REPORT =====
 function viewReport(){

@@ -1528,7 +1528,7 @@ app.get("/api/gi", auth, async (req,res)=>{
     rows = rows.filter(r => String(r.consultantId||'') === String(req.user.id));
   } else if (global === '1') {
     // Admin con global=1: mostra tutti i dati
-    rows = rows;
+    // rows rimane invariato
   } else if (targetUserId){
     rows = rows.filter(r => String(r.consultantId||'') === String(targetUserId));
   }
@@ -1916,6 +1916,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const cycleNotificationsRoutes = require("./routes/cycle-notifications")({ auth, supabase });
+  const venditeRiordiniRoutes = require("./routes/vendite-riordini")(app);
   
   // Route che dipendono da Supabase (dopo inizializzazione)
   const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase });
