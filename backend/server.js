@@ -1802,6 +1802,13 @@ async function setupStatic(){
       app.use('/css', express.static(cssDir, { maxAge: '1h' }));
     }
   }catch(_){ }
+  // Serve CSS anche da dist/css quando si usa dist/
+  try{
+    const distCssDir = path.join(dist, 'css');
+    if(await fs.pathExists(distCssDir)){
+      app.use('/css', express.static(distCssDir, { maxAge: '1h' }));
+    }
+  }catch(_){ }
   // serve esplicitamente il Service Worker dalla root del frontend anche quando si usa dist/
   try{
     const swFromFrontRoot = path.join(frontRoot, 'push-sw.js');
