@@ -2483,28 +2483,141 @@ BPFinal.ensureClientSection = function ensureClientSection(){
         return;
       }
 
-      // Crea form overlay
+      // Crea form overlay con CSS per centramento
       var overlay = document.createElement('div');
       overlay.className = 'bp-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+        box-sizing: border-box;
+      `;
       overlay.innerHTML = `
-        <div class="bp-modal">
-          <div class="bp-modal-header">
-            <h3>Conferma Preventivo</h3>
-            <button onclick="closeVenditeRiordiniForm()">✕</button>
+        <div class="bp-modal" style="
+          background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+          border: 1px solid var(--hair2);
+          box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+          border-radius: 20px;
+          padding: 32px;
+          margin: 0;
+          max-width: 600px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+        ">
+          <div class="bp-modal-header" style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--hair2);
+          ">
+            <h3 style="
+              font-size: 22px;
+              font-weight: 800;
+              color: var(--text);
+              margin: 0;
+            ">Conferma Preventivo</h3>
+            <button onclick="closeVenditeRiordiniForm()" style="
+              background: rgba(255,255,255,.05);
+              border: 1px solid var(--hair2);
+              border-radius: 12px;
+              padding: 12px 16px;
+              transition: all 0.2s ease;
+              color: var(--text);
+              font-weight: 500;
+              cursor: pointer;
+            ">✕</button>
           </div>
-          <div class="bp-modal-body">
-            <div class="bp-form-group">
-              <label>Descrizione Servizi</label>
-              <textarea id="vendita_descrizione" rows="3">${vendita.descrizione_servizi || ''}</textarea>
+          <div class="bp-modal-body" style="margin-bottom: 32px;">
+            <div class="bp-form-group" style="margin-bottom: 24px;">
+              <label style="
+                font-weight: 600;
+                color: var(--accent);
+                margin-bottom: 12px;
+                display: block;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              ">Descrizione Servizi</label>
+              <textarea id="vendita_descrizione" rows="3" style="
+                width: 100%;
+                min-width: 0;
+                background: rgba(255,255,255,.05);
+                border: 1px solid var(--hair2);
+                border-radius: 12px;
+                padding: 14px 16px;
+                transition: all 0.2s ease;
+                color: var(--text);
+                font-size: 15px;
+                resize: vertical;
+                min-height: 80px;
+              ">${vendita.descrizione_servizi || ''}</textarea>
             </div>
-            <div class="bp-form-group">
-              <label>Valore Confermato (VSS)</label>
-              <input type="number" id="vendita_valore_confermato" value="${vendita.valore_proposto || 0}" step="0.01">
+            <div class="bp-form-group" style="margin-bottom: 24px;">
+              <label style="
+                font-weight: 600;
+                color: var(--accent);
+                margin-bottom: 12px;
+                display: block;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              ">Valore Confermato (VSS)</label>
+              <input type="number" id="vendita_valore_confermato" value="${vendita.valore_proposto || 0}" step="0.01" style="
+                width: 100%;
+                min-width: 0;
+                background: rgba(255,255,255,.05);
+                border: 1px solid var(--hair2);
+                border-radius: 12px;
+                padding: 14px 16px;
+                transition: all 0.2s ease;
+                color: var(--text);
+                font-size: 15px;
+              ">
             </div>
           </div>
-          <div class="bp-modal-footer">
-            <button class="bp-btn-secondary" onclick="closeVenditeRiordiniForm()">Annulla</button>
-            <button class="bp-btn-primary" onclick="confirmVenditaRiordini('${venditaId}')">Continua</button>
+          <div class="bp-modal-footer" style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding-top: 24px;
+            border-top: 1px solid var(--hair2);
+          ">
+            <button class="bp-btn-secondary" onclick="closeVenditeRiordiniForm()" style="
+              background: transparent;
+              border: 1px solid var(--hair2);
+              color: var(--text);
+              border-radius: 12px;
+              padding: 14px 28px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              font-size: 15px;
+            ">Annulla</button>
+            <button class="bp-btn-primary" onclick="confirmVenditaRiordini('${venditaId}')" style="
+              background: linear-gradient(135deg, var(--accent), var(--accent2));
+              border: none;
+              color: #fff;
+              border-radius: 12px;
+              padding: 14px 28px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              box-shadow: 0 4px 12px rgba(93,211,255,.3);
+              font-size: 15px;
+            ">Continua</button>
           </div>
         </div>
       `;
