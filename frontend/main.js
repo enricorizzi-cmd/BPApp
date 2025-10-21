@@ -8679,6 +8679,9 @@ function viewVenditeRiordini(){
       const { from, to } = getDateRange();
       const consultant = currentConsultant;
 
+      // Debug: log dei parametri per verificare il range
+      console.log('[VenditeRiordini] Loading with range:', { from, to, consultant, granularity: currentGranularity });
+
       // Costruisci URL con parametri
       let url = `/api/vendite-riordini?from=${from}&to=${to}`;
       if (consultant === 'all') {
@@ -8686,6 +8689,8 @@ function viewVenditeRiordini(){
       } else if (consultant && consultant !== getUser().id) {
         url += `&user=${consultant}`;
       }
+
+      console.log('[VenditeRiordini] Request URL:', url);
 
       // Carica dati e statistiche in parallelo
       const [venditeResponse, statsResponse] = await Promise.all([
@@ -8695,6 +8700,8 @@ function viewVenditeRiordini(){
 
       const vendite = (venditeResponse && venditeResponse.vendite) ? venditeResponse.vendite : [];
       const stats = (statsResponse && statsResponse.stats) ? statsResponse.stats : {};
+
+      console.log('[VenditeRiordini] Loaded vendite:', vendite.length, 'items');
 
       // Aggiorna statistiche
       $('vr-n-proposte').textContent = stats.n_proposte || 0;

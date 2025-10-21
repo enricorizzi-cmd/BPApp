@@ -734,6 +734,7 @@
   }
   if (typeof global !== 'undefined') {
     global.initPostSaleBanners = initPostSaleBanners;
+    global.enqueueBanner = enqueueBanner; // Export per altri banner
     // Auto-initialize when module loads
     try {
       initPostSaleBanners();

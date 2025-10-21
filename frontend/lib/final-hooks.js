@@ -2294,95 +2294,125 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   }
 
   function showVenditeRiordiniBanner(vendita){
-    // Rimuovi banner esistenti
-    var existing = document.getElementById('bp_vendite_banner');
-    if(existing) existing.remove();
+    // Usa lo stesso sistema degli altri banner (postSaleBanners.js)
+    if(typeof window.enqueueBanner !== 'function'){
+      console.error('[VenditeRiordini] Banner system not available');
+      return;
+    }
 
-    var banner = document.createElement('div');
-    banner.id = 'bp_vendite_banner';
-    banner.className = 'bp-banner';
-    banner.innerHTML = `
-      <div class="bp-banner-content">
-        <div class="bp-banner-header">
-          <span class="bp-banner-icon">📋</span>
-          <span class="bp-banner-title">Feedback Preventivo</span>
-          <button class="bp-banner-close" onclick="closeVenditeRiordiniBanner()">✕</button>
+    // Crea il banner usando la stessa struttura degli altri
+    function createBannerCard(close){
+      const card = document.createElement('div');
+      card.className = 'bp-banner-card';
+      card.setAttribute('role','alertdialog');
+      card.setAttribute('aria-live','assertive');
+      
+      card.innerHTML = `
+        <div class="msg">
+          <b>Come è andata la proposta piano a "${vendita.cliente}"? VSS: ${fmtEuro(vendita.valore_proposto || 0)}</b>
         </div>
-        <div class="bp-banner-body">
-          <p>Come è andata la proposta piano a <strong>"${vendita.cliente}"</strong>?</p>
-          <p class="bp-banner-vss">VSS: <strong>${fmtEuro(vendita.valore_proposto || 0)}</strong></p>
+        <div class="row">
+          <button class="ghost" data-act="postpone">Posticipa</button>
+          <button class="ghost" data-act="reject">No</button>
+          <button data-act="accept">Sì</button>
         </div>
-        <div class="bp-banner-actions">
-          <button class="bp-banner-btn bp-banner-btn-postpone" onclick="postponeVenditaRiordini('${vendita.id}')">
-            <span>📅</span> Posticipa
-          </button>
-          <button class="bp-banner-btn bp-banner-btn-reject" onclick="rejectVenditaRiordini('${vendita.id}')">
-            <span>❌</span> No
-          </button>
-          <button class="bp-banner-btn bp-banner-btn-accept" onclick="acceptVenditaRiordini('${vendita.id}')">
-            <span>✅</span> Si
-          </button>
-        </div>
-      </div>
-    `;
+      `;
 
-    document.body.appendChild(banner);
-    
-    // Auto-close dopo 30 secondi se non interagito
-    setTimeout(function(){
-      if(document.getElementById('bp_vendite_banner')){
-        closeVenditeRiordiniBanner();
-      }
-    }, 30000);
+      // Bind degli eventi per i 3 tasti
+      card.querySelector('[data-act="postpone"]').onclick = async function(){
+        try {
+          await postponeVenditaRiordini(vendita.id);
+          if (typeof close === 'function') close();
+        } catch(e) {
+          console.error('[VenditeRiordini] Error postponing:', e);
+        }
+      };
+
+      card.querySelector('[data-act="reject"]').onclick = async function(){
+        try {
+          await rejectVenditaRiordini(vendita.id);
+          if (typeof close === 'function') close();
+        } catch(e) {
+          console.error('[VenditeRiordini] Error rejecting:', e);
+        }
+      };
+
+      card.querySelector('[data-act="accept"]').onclick = async function(){
+        try {
+          await acceptVenditaRiordini(vendita.id);
+          if (typeof close === 'function') close();
+        } catch(e) {
+          console.error('[VenditeRiordini] Error accepting:', e);
+        }
+      };
+
+      return card;
+    }
+
+    // Aggiungi alla coda dei banner
+    window.enqueueBanner(createBannerCard);
   }
 
-  function closeVenditeRiordiniBanner(){
-    var banner = document.getElementById('bp_vendite_banner');
-    if(banner) banner.remove();
-  }
+  // Funzione di test per mostrare il banner manualmente
+  window.testVenditeRiordiniBanner = function(){
+    var testVendita = {
+      id: 'test_vendita_123',
+      cliente: 'Test Cliente',
+      valore_proposto: 1500,
+      data_feedback: new Date().toISOString().split('T')[0]
+    };
+    showVenditeRiordiniBanner(testVendita);
+  };
 
-  // Funzioni globali per azioni banner
-  window.postponeVenditaRiordini = function(venditaId){
-    // Posticipa al giorno dopo
-    var tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    var tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    PUT('/api/vendite-riordini', {
-      id: venditaId,
-      data_feedback: tomorrowStr
-    }).then(function(){
-      closeVenditeRiordiniBanner();
+  // Funzioni globali per azioni banner (async/await)
+  window.postponeVenditaRiordini = async function(venditaId){
+    try {
+      // Posticipa al giorno dopo
+      var tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      var tomorrowStr = tomorrow.toISOString().split('T')[0];
+      
+      await PUT('/api/vendite-riordini', {
+        id: venditaId,
+        data_feedback: tomorrowStr
+      });
+      
       toast('📅 Preventivo posticipato a domani! Riceverai un nuovo reminder.');
       
       // Marca notifica come inviata per evitare duplicati
-      markVenditeRiordiniNotificationSent(venditaId);
-    }).catch(function(error){
+      await markVenditeRiordiniNotificationSent(venditaId);
+    } catch(error) {
       console.error('Error postponing vendita:', error);
       toast('❌ Errore nel posticipare il preventivo');
-    });
+    }
   };
 
-  window.rejectVenditaRiordini = function(venditaId){
-    // Cambia stato a rifiutato
-    PUT('/api/vendite-riordini', {
-      id: venditaId,
-      stato: 'rifiutato'
-    }).then(function(){
-      closeVenditeRiordiniBanner();
+  window.rejectVenditaRiordini = async function(venditaId){
+    try {
+      // Cambia stato a rifiutato
+      await PUT('/api/vendite-riordini', {
+        id: venditaId,
+        stato: 'rifiutato'
+      });
+      
       toast('❌ Preventivo rifiutato! Il cliente non è interessato.');
       
       // Marca notifica come inviata per evitare duplicati
-      markVenditeRiordiniNotificationSent(venditaId);
-    }).catch(function(error){
+      await markVenditeRiordiniNotificationSent(venditaId);
+    } catch(error) {
       console.error('Error rejecting vendita:', error);
       toast('❌ Errore nel rifiutare il preventivo');
-    });
+    }
   };
 
-  window.acceptVenditaRiordini = function(venditaId){
-    // Mostra mini form per conferma
-    showVenditeRiordiniConfirmForm(venditaId);
+  window.acceptVenditaRiordini = async function(venditaId){
+    try {
+      // Mostra mini form per conferma
+      showVenditeRiordiniConfirmForm(venditaId);
+    } catch(error) {
+      console.error('Error accepting vendita:', error);
+      toast('❌ Errore nell\'accettare il preventivo');
+    }
   };
 
   function showVenditeRiordiniConfirmForm(venditaId){
