@@ -7426,19 +7426,18 @@ appEl.innerHTML = topbarHTML() + `
         /* Fix per overlay della modal GI */
         .gi-modal-overlay .bp-overlay-panel {
           max-width: 100vw;
-          max-height: none;
+          max-height: 100vh;
           margin: 0;
           padding: 20px;
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: center;
-          overflow-y: auto;
-          overflow-x: hidden;
+          overflow: hidden;
         }
         
         .gi-modal-overlay .gi-modal {
           margin: 0;
-          max-height: none;
+          max-height: calc(100vh - 40px);
           min-height: 600px;
           overflow-y: auto !important;
           overflow-x: hidden;
@@ -7448,12 +7447,6 @@ appEl.innerHTML = topbarHTML() + `
         .gi-modal-overlay .gi-modal .gi-foot {
           margin-top: 20px;
           padding-top: 20px;
-        }
-        
-        /* FORZA la modal GI a non avere limiti di altezza */
-        .gi-modal-overlay .gi-modal {
-          max-height: none !important;
-          height: auto !important;
         }
         
         .gi-modal::-webkit-scrollbar {
@@ -8896,7 +8889,7 @@ window.showVenditaRiordiniModal = function(opts = {}) {
         margin: 0;
         max-width: 600px;
         width: 100%;
-        max-height: none;
+        max-height: 90vh;
         overflow-y: auto;
         overflow-x: hidden;
       }
