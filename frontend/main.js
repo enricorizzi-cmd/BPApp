@@ -9478,7 +9478,7 @@ window.showVenditaRiordiniModal = function(opts = {}) {
           <div class="client-option-icon">${client.name.charAt(0).toUpperCase()}</div>
           <div class="client-option-text">
             <div class="client-option-name">${client.name}</div>
-            <div class="client-option-consultant">${client.consultant || 'N/A'}</div>
+            <div class="client-option-consultant">${client.consultantName || 'N/A'}</div>
             <div class="client-option-status">${client.status || 'prospect'}</div>
           </div>
         </div>
