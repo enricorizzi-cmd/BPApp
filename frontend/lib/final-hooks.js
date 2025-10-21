@@ -986,6 +986,36 @@ function __readMode(scope){
     if (r.status===204) return null;
     return r.json();
   }
+  async function PUT(url, body, opt={}){
+    if (typeof window.PUT==='function' && !opt.forceFetch) { try{ return await window.PUT(url,body);}catch(_){} }
+    const t = bpAuthToken();
+    const r = await fetch(url,{ method:'PUT', headers:{ 'Content-Type':'application/json', ...(t?{Authorization:'Bearer '+t}:{}) }, body:JSON.stringify(body||{}) });
+    if (!r.ok && r.status===401 && window.PUT) return window.PUT(url,body);
+    if (r.status===204) return null;
+    return r.json();
+  }
+
+  // Funzione formatDate per formattare le date
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  // Esponi le funzioni globalmente
+  window.GET = GET;
+  window.POST = POST;
+  window.PUT = PUT;
+  window.formatDate = formatDate;
 
   // --------- Patch drawFullLine (Chart.js safe) + canvas puro ----------
   function _drawLineCanvas(canvasId, labels, data){
