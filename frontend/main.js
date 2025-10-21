@@ -7415,7 +7415,7 @@ appEl.innerHTML = topbarHTML() + `
           background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
           border: 1px solid var(--hair2);
           box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
-          padding: 32px 32px 50px 32px;
+          padding: 32px 32px 80px 32px;
           margin: 0;
           position: relative;
           transform: translateY(0);
@@ -7437,7 +7437,16 @@ appEl.innerHTML = topbarHTML() + `
         
         .gi-modal-overlay .gi-modal {
           margin: 0;
-          max-height: calc(100vh - 40px);
+          max-height: calc(100vh - 20px);
+          min-height: 600px;
+          overflow-y: auto !important;
+          overflow-x: hidden;
+        }
+        
+        /* Assicura che tutto il contenuto sia visibile */
+        .gi-modal-overlay .gi-modal .gi-foot {
+          margin-top: 20px;
+          padding-top: 20px;
         }
         
         .gi-modal::-webkit-scrollbar {
