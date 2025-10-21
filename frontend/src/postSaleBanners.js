@@ -487,6 +487,15 @@
           }
           await markBannerAnswered(appt.id, KIND_SALE, 'no');
           try{ await POST('/api/appointments', { id: appt.id, vss: 0 }); toast('Registrato: nessuna vendita'); }catch(_){}
+          
+          // === NUOVA FUNZIONALITÀ: Toast motivazionale + Modal nuovo preventivo ===
+          setTimeout(() => {
+            toast('Dai non ti scoraggiare che comprerà!', 'success');
+            setTimeout(() => {
+              openNewPreventivoModalFromAppt(appt);
+            }, 1000);
+          }, 500);
+          
         } catch(e) {
           console.error('[BANNER_NO] Error in no click handler:', e);
         }
@@ -652,6 +661,49 @@
         }catch(_){}
       });
     }catch(_){}
+  }
+
+  // Funzione per aprire modal nuovo preventivo con dati pre-compilati
+  function openNewPreventivoModalFromAppt(appt) {
+    try {
+      // Calcola data oggi
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      // Calcola data feedback (oggi + 6 giorni)
+      const feedbackDate = new Date(today);
+      feedbackDate.setDate(feedbackDate.getDate() + 6);
+      const feedbackDateStr = feedbackDate.toISOString().split('T')[0];
+      
+      // Ottieni VSS originale dall'appuntamento
+      const originalVSS = appt.vss || 0;
+      
+      // Pre-compila i dati per la modal Vendite & Riordini
+      const venditaPrecompilata = {
+        data: todayStr,
+        cliente: appt.client || '',
+        consulente: appt.consultant || '',
+        descrizione_servizi: appt.description || '',
+        valore_proposto: originalVSS,
+        data_feedback: feedbackDateStr,
+        stato: 'proposto',
+        valore_confermato: 0
+      };
+      
+      // Apri la modal Vendite & Riordini con dati pre-compilati
+      if (typeof window.showVenditaRiordiniModal === 'function') {
+        window.showVenditaRiordiniModal({
+          vendita: venditaPrecompilata,
+          mode: 'new'
+        });
+      } else {
+        console.error('[BANNER] showVenditaRiordiniModal function not available');
+        toast('Errore: impossibile aprire la modal preventivo', 'error');
+      }
+    } catch (e) {
+      console.error('[BANNER] Error opening new preventivo modal:', e);
+      toast('Errore nell\'apertura della modal preventivo', 'error');
+    }
   }
 
   window.scanBanners = scan;
