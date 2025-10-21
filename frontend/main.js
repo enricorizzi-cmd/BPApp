@@ -7004,7 +7004,7 @@ function viewGI(){
   const isAdmin = getUser().role==='admin';
 
 appEl.innerHTML = topbarHTML() + `
-  <div class="wrap">
+  <div class="wrap" style="overflow-y: auto; height: calc(100vh - 56px);">
 
     <!-- Hero Section -->
     <div class="gi-card" style="background: linear-gradient(135deg, rgba(93,211,255,.12), rgba(141,123,255,.08)); border: 1px solid rgba(93,211,255,.3);">
@@ -7397,13 +7397,568 @@ appEl.innerHTML = topbarHTML() + `
     const defaultMode = (rest.length && eqAmt) ? 'rate' : 'manual';
     const today = ymd(new Date());
 
-    // Carica CSS esterno per il modal GI
+    // CSS integrato per il modal GI (più robusto e performante)
     if (!document.getElementById('gi-modal-css')) {
-      const link = document.createElement('link');
-      link.id = 'gi-modal-css';
-      link.rel = 'stylesheet';
-      link.href = '/css/gi-modal.css';
-      document.head.appendChild(link);
+      const style = document.createElement('style');
+      style.id = 'gi-modal-css';
+      style.textContent = `
+        /* GI Modal Styles - Integrated for reliability */
+        .gi-modal {
+          min-width: min(900px, 96vw);
+          max-width: 1000px;
+          max-height: 85vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+          background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+          border: 1px solid var(--hair2);
+          box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+          padding: 32px;
+          margin: 20px auto;
+          position: relative;
+          transform: translateY(0);
+          transition: all 0.3s ease;
+          border-radius: 20px;
+        }
+        
+        .gi-modal::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .gi-modal::-webkit-scrollbar-track {
+          background: rgba(255,255,255,.05);
+          border-radius: 4px;
+        }
+        
+        .gi-modal::-webkit-scrollbar-thumb {
+          background: rgba(93,211,255,.3);
+          border-radius: 4px;
+        }
+        
+        .gi-modal::-webkit-scrollbar-thumb:hover {
+          background: rgba(93,211,255,.5);
+        }
+        
+        .gi-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid var(--hair2);
+        }
+        
+        .gi-modal-title {
+          font-size: 22px;
+          font-weight: 800;
+          color: var(--text);
+          margin: 0;
+        }
+        
+        .gi-modal-close {
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 12px;
+          padding: 12px 16px;
+          transition: all 0.2s ease;
+          color: var(--text);
+          font-weight: 500;
+          cursor: pointer;
+        }
+        
+        .gi-modal-close:hover {
+          border-color: var(--accent);
+          background: rgba(93,211,255,.05);
+          transform: translateY(-1px);
+        }
+        
+        .gi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 24px;
+          margin-bottom: 32px;
+        }
+        
+        .gi-col {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .gi-col label {
+          font-weight: 600;
+          color: var(--accent);
+          margin-bottom: 12px;
+          display: block;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .gi-col input,
+        .gi-col select,
+        .gi-col textarea {
+          width: 100%;
+          min-width: 0;
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 12px;
+          padding: 14px 16px;
+          transition: all 0.2s ease;
+          color: var(--text);
+          font-size: 15px;
+        }
+        
+        .gi-col input:focus,
+        .gi-col select:focus,
+        .gi-col textarea:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+          background: rgba(255,255,255,.08);
+          outline: none;
+        }
+        
+        .gi-col textarea {
+          resize: vertical;
+          min-height: 80px;
+        }
+        
+        /* Client Dropdown */
+        .client-dropdown {
+          position: relative;
+          width: 100%;
+        }
+        
+        .client-dropdown-input {
+          width: 100%;
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 12px;
+          padding: 12px 16px;
+          transition: all 0.2s ease;
+          cursor: pointer;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: var(--text);
+          font-size: 15px;
+        }
+        
+        .client-dropdown-input:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+          background: rgba(255,255,255,.08);
+        }
+        
+        .client-dropdown-arrow {
+          transition: transform 0.2s ease;
+          color: var(--muted);
+          font-size: 12px;
+        }
+        
+        .client-dropdown.open .client-dropdown-arrow {
+          transform: rotate(180deg);
+        }
+        
+        .client-dropdown-list {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: rgba(255,255,255,.08);
+          border: 1px solid var(--hair2);
+          border-radius: 12px;
+          max-height: 300px;
+          overflow-y: auto;
+          z-index: 1000;
+          margin-top: 4px;
+          box-shadow: 0 20px 60px rgba(0,0,0,.3);
+          backdrop-filter: blur(10px);
+        }
+        
+        .client-dropdown-search {
+          padding: 12px;
+          border-bottom: 1px solid var(--hair2);
+          background: rgba(255,255,255,.03);
+        }
+        
+        .client-dropdown-search input {
+          width: 100%;
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 8px;
+          padding: 8px 12px;
+          color: var(--text);
+          font-size: 14px;
+        }
+        
+        .client-dropdown-search input:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+          background: rgba(255,255,255,.08);
+        }
+        
+        .client-dropdown-options {
+          max-height: 250px;
+          overflow-y: auto;
+        }
+        
+        .client-option {
+          padding: 12px 16px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border-bottom: 1px solid var(--hair);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: var(--text);
+        }
+        
+        .client-option:hover {
+          background: rgba(93,211,255,.1);
+          color: var(--accent);
+        }
+        
+        .client-option:last-child {
+          border-bottom: none;
+        }
+        
+        .client-option.selected {
+          background: rgba(93,211,255,.15);
+          color: var(--accent);
+          font-weight: 600;
+        }
+        
+        .client-option-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, var(--accent), var(--accent2));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-weight: 700;
+          font-size: 14px;
+          flex-shrink: 0;
+        }
+        
+        .client-option-text {
+          flex: 1;
+          font-size: 14px;
+        }
+        
+        .client-option-name {
+          font-weight: 500;
+          margin-bottom: 2px;
+          color: var(--text);
+        }
+        
+        .client-option-consultant {
+          font-size: 11px;
+          color: var(--accent);
+          margin-bottom: 2px;
+          font-weight: 500;
+          opacity: 0.8;
+        }
+        
+        .client-option-status {
+          font-size: 12px;
+          color: var(--muted);
+          opacity: 0.7;
+        }
+        
+        .gi-section {
+          margin-bottom: 24px;
+        }
+        
+        .gi-section label {
+          font-weight: 600;
+          color: var(--accent);
+          margin-bottom: 12px;
+          display: block;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .gi-section textarea {
+          width: 100%;
+          background: rgba(255,255,255,.05);
+          border: 1px solid var(--hair2);
+          border-radius: 12px;
+          padding: 14px 16px;
+          transition: all 0.2s ease;
+          color: var(--text);
+          font-size: 15px;
+          resize: vertical;
+          min-height: 80px;
+        }
+        
+        .gi-section textarea:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+          background: rgba(255,255,255,.08);
+          outline: none;
+        }
+        
+        .gi-rlist {
+          max-height: 400px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+        
+        .gi-rlist::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .gi-rlist::-webkit-scrollbar-track {
+          background: rgba(255,255,255,.05);
+          border-radius: 4px;
+        }
+        
+        .gi-rlist::-webkit-scrollbar-thumb {
+          background: rgba(93,211,255,.3);
+          border-radius: 4px;
+        }
+        
+        .gi-rlist::-webkit-scrollbar-thumb:hover {
+          background: rgba(93,211,255,.5);
+        }
+        
+        .gi-foot {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          padding-top: 24px;
+          border-top: 1px solid var(--hair2);
+          margin-top: 32px;
+        }
+        
+        .gi-foot-buttons {
+          display: flex;
+          gap: 12px;
+        }
+        
+        .gi-foot button {
+          background: linear-gradient(135deg, var(--accent), var(--accent2));
+          border: none;
+          color: #fff;
+          border-radius: 12px;
+          padding: 14px 28px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(93,211,255,.3);
+          font-size: 15px;
+        }
+        
+        .gi-foot button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(93,211,255,.4);
+        }
+        
+        .gi-foot button.secondary {
+          background: transparent;
+          border: 1px solid var(--hair2);
+          color: var(--text);
+          box-shadow: none;
+        }
+        
+        .gi-foot button.secondary:hover {
+          border-color: var(--accent);
+          background: rgba(93,211,255,.05);
+          transform: translateY(-2px);
+        }
+        
+        .gi-totals {
+          background: linear-gradient(135deg, rgba(93,211,255,.12), rgba(93,211,255,.08));
+          border: 1px solid rgba(93,211,255,.3);
+          padding: 20px 24px;
+          min-width: 220px;
+          box-shadow: 0 4px 12px rgba(93,211,255,.15);
+          border-radius: 12px;
+        }
+        
+        .gi-totals div {
+          text-align: center;
+        }
+        
+        .gi-totals div:first-child {
+          margin-bottom: 8px;
+          opacity: 0.9;
+        }
+        
+        .gi-totals div:last-child {
+          font-size: 20px;
+          font-weight: 700;
+          text-shadow: 0 1px 2px rgba(93,211,255,.2);
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .gi-modal {
+            padding: 20px;
+            margin: 8px;
+            border-radius: 16px;
+          }
+          
+          .gi-modal-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+          }
+          
+          .gi-modal-title {
+            font-size: 18px;
+          }
+          
+          .gi-modal-close {
+            padding: 10px 14px;
+            font-size: 14px;
+          }
+          
+          .gi-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+          }
+          
+          .gi-col label {
+            font-size: 13px;
+            margin-bottom: 8px;
+          }
+          
+          .gi-col input,
+          .gi-col select,
+          .gi-col textarea {
+            padding: 12px 14px;
+            font-size: 16px;
+            border-radius: 10px;
+          }
+          
+          .gi-section textarea {
+            padding: 12px 14px;
+            font-size: 16px;
+            border-radius: 10px;
+          }
+          
+          .gi-foot {
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 20px;
+          }
+          
+          .gi-foot button {
+            padding: 18px 24px;
+            font-size: 16px;
+            border-radius: 12px;
+          }
+          
+          .gi-totals {
+            padding: 18px 20px;
+          }
+          
+          .gi-totals div:first-child {
+            font-size: 13px;
+          }
+          
+          .gi-totals div:last-child {
+            font-size: 16px;
+          }
+        }
+        
+        /* CSS globale per migliorare usabilità schede */
+        .wrap {
+          padding: 20px;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        /* Scrollbar personalizzata per le schede */
+        .wrap::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        .wrap::-webkit-scrollbar-track {
+          background: rgba(255,255,255,.05);
+          border-radius: 4px;
+        }
+        
+        .wrap::-webkit-scrollbar-thumb {
+          background: rgba(93,211,255,.3);
+          border-radius: 4px;
+        }
+        
+        .wrap::-webkit-scrollbar-thumb:hover {
+          background: rgba(93,211,255,.5);
+        }
+        
+        /* Responsive per le schede */
+        @media (max-width: 768px) {
+          .wrap {
+            padding: 12px;
+            height: calc(100vh - 56px) !important;
+            overflow-y: auto !important;
+          }
+          
+          .gi-card-header {
+            flex-direction: column;
+            gap: 16px;
+            align-items: stretch;
+          }
+          
+          .gi-card-actions {
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+          }
+          
+          .gi-card-actions > div {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          
+          .gi-card-actions select {
+            width: 100%;
+            min-width: auto;
+          }
+          
+          .gi-card-actions button {
+            width: 100%;
+            justify-content: center;
+          }
+          
+          .gi-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+          
+          .gi-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          
+          .gi-table {
+            min-width: 600px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .wrap {
+            padding: 8px;
+          }
+          
+          .gi-stats-grid {
+            grid-template-columns: 1fr;
+            gap: 8px;
+          }
+          
+          .gi-card-title {
+            font-size: 20px;
+          }
+        }
+      `;
+      document.head.appendChild(style);
     }
 
     const html =
@@ -8282,6 +8837,507 @@ window.showVenditaRiordiniModal = function(opts = {}) {
   const mode = opts.mode || 'new';
   const vendita = opts.vendita || {};
   const isEdit = mode === 'edit';
+  
+  // CSS integrato per modal Vendite & Riordini (più robusto e performante)
+  if (!document.getElementById('vendite-modal-css')) {
+    const style = document.createElement('style');
+    style.id = 'vendite-modal-css';
+    style.textContent = `
+      /* Vendite & Riordini Modal Styles - Integrated for reliability */
+      #bp-overlay .bp-modal {
+        background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+        border-radius: 20px;
+        padding: 32px;
+        margin: 0;
+        max-width: 600px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      
+      #bp-overlay .bp-modal::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      #bp-overlay .bp-modal::-webkit-scrollbar-track {
+        background: rgba(255,255,255,.05);
+        border-radius: 4px;
+      }
+      
+      #bp-overlay .bp-modal::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 4px;
+      }
+      
+      #bp-overlay .bp-modal::-webkit-scrollbar-thumb:hover {
+        background: var(--accent2);
+      }
+      
+      #bp-overlay .bp-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--hair2);
+      }
+      
+      #bp-overlay .bp-modal-header h3 {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0;
+      }
+      
+      #bp-overlay .bp-modal-header button {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.2s ease;
+        color: var(--text);
+        font-weight: 500;
+        cursor: pointer;
+      }
+      
+      #bp-overlay .bp-modal-header button:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.05);
+        transform: translateY(-1px);
+      }
+      
+      #bp-overlay .bp-modal-body {
+        margin-bottom: 32px;
+      }
+      
+      #bp-overlay .bp-form-group {
+        margin-bottom: 24px;
+      }
+      
+      #bp-overlay .bp-form-group label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 12px;
+        display: block;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      #bp-overlay .bp-form-group input,
+      #bp-overlay .bp-form-group select,
+      #bp-overlay .bp-form-group textarea {
+        width: 100%;
+        min-width: 0;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition: all 0.2s ease;
+        color: var(--text);
+        font-size: 15px;
+      }
+      
+      #bp-overlay .bp-form-group input:focus,
+      #bp-overlay .bp-form-group select:focus,
+      #bp-overlay .bp-form-group textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      #bp-overlay .bp-form-group input[readonly] {
+        background: rgba(255,255,255,.02);
+        color: var(--text-secondary);
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      
+      #bp-overlay .bp-form-group input[readonly]:focus {
+        border-color: var(--hair2);
+        box-shadow: none;
+        background: rgba(255,255,255,.02);
+      }
+      
+      #bp-overlay .bp-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      
+      #bp-overlay .bp-modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding-top: 24px;
+        border-top: 1px solid var(--hair2);
+      }
+      
+      #bp-overlay .bp-btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        border: none;
+        color: #fff;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+        font-size: 15px;
+      }
+      
+      #bp-overlay .bp-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(93,211,255,.4);
+      }
+      
+      #bp-overlay .bp-btn-secondary {
+        background: transparent;
+        border: 1px solid var(--hair2);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 15px;
+      }
+      
+      #bp-overlay .bp-btn-secondary:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.05);
+      }
+      
+      /* Client Dropdown per Vendite & Riordini */
+      #bp-overlay .client-dropdown {
+        position: relative;
+        width: 100%;
+      }
+      
+      #bp-overlay .client-dropdown-input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text);
+        font-size: 15px;
+      }
+      
+      #bp-overlay .client-dropdown-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      #bp-overlay .client-dropdown-arrow {
+        transition: transform 0.2s ease;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      
+      #bp-overlay .client-dropdown.open .client-dropdown-arrow {
+        transform: rotate(180deg);
+      }
+      
+      #bp-overlay .client-dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,.08);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        backdrop-filter: blur(10px);
+      }
+      
+      #bp-overlay .client-dropdown-search {
+        padding: 12px;
+        border-bottom: 1px solid var(--hair2);
+        background: rgba(255,255,255,.03);
+      }
+      
+      #bp-overlay .client-dropdown-search input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      #bp-overlay .client-dropdown-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      #bp-overlay .client-dropdown-options {
+        max-height: 250px;
+        overflow-y: auto;
+      }
+      
+      #bp-overlay .client-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+      }
+      
+      #bp-overlay .client-option:hover {
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+      }
+      
+      #bp-overlay .client-option:last-child {
+        border-bottom: none;
+      }
+      
+      #bp-overlay .client-option.selected {
+        background: rgba(93,211,255,.15);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      
+      #bp-overlay .client-option-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      
+      #bp-overlay .client-option-text {
+        flex: 1;
+        font-size: 14px;
+      }
+      
+      #bp-overlay .client-option-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+        color: var(--text);
+      }
+      
+      #bp-overlay .client-option-consultant {
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 2px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
+      #bp-overlay .client-option-status {
+        font-size: 12px;
+        color: var(--muted);
+        opacity: 0.7;
+      }
+      
+      /* Mobile responsive per modal Vendite & Riordini */
+      @media (max-width: 768px) {
+        #bp-overlay .bp-overlay-panel {
+          max-width: 95vw;
+          margin: 8px;
+          padding: 12px;
+        }
+        
+        #bp-overlay .bp-modal {
+          padding: 20px;
+          border-radius: 16px;
+        }
+        
+        #bp-overlay .bp-modal-header {
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+        }
+        
+        #bp-overlay .bp-modal-header h3 {
+          font-size: 18px;
+        }
+        
+        #bp-overlay .bp-modal-header button {
+          padding: 10px 14px;
+          font-size: 14px;
+        }
+        
+        #bp-overlay .bp-form-group {
+          margin-bottom: 20px;
+        }
+        
+        #bp-overlay .bp-form-group label {
+          font-size: 13px;
+          margin-bottom: 8px;
+        }
+        
+        #bp-overlay .bp-form-group input,
+        #bp-overlay .bp-form-group select,
+        #bp-overlay .bp-form-group textarea {
+          padding: 12px 14px;
+          font-size: 16px;
+          border-radius: 10px;
+        }
+        
+        #bp-overlay .bp-form-group textarea {
+          min-height: 70px;
+        }
+        
+        #bp-overlay .bp-modal-footer {
+          flex-direction: column;
+          gap: 12px;
+          padding-top: 20px;
+        }
+        
+        #bp-overlay .bp-btn-primary,
+        #bp-overlay .bp-btn-secondary {
+          width: 100%;
+          padding: 16px 24px;
+          font-size: 16px;
+          border-radius: 10px;
+        }
+        
+        #bp-overlay .client-dropdown-input {
+          padding: 12px 14px;
+          font-size: 16px;
+        }
+        
+        #bp-overlay .client-dropdown-search {
+          padding: 10px;
+        }
+        
+        #bp-overlay .client-dropdown-search input {
+          padding: 8px 10px;
+          font-size: 16px;
+        }
+        
+        #bp-overlay .client-option {
+          padding: 12px 14px;
+          font-size: 15px;
+        }
+        
+        #bp-overlay .client-option-icon {
+          width: 32px;
+          height: 32px;
+        }
+      }
+      
+      /* CSS globale per migliorare usabilità schede Vendite & Riordini */
+      .wrap {
+        padding: 20px;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      
+      /* Scrollbar personalizzata per le schede */
+      .wrap::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      .wrap::-webkit-scrollbar-track {
+        background: rgba(255,255,255,.05);
+        border-radius: 4px;
+      }
+      
+      .wrap::-webkit-scrollbar-thumb {
+        background: rgba(46,204,113,.3);
+        border-radius: 4px;
+      }
+      
+      .wrap::-webkit-scrollbar-thumb:hover {
+        background: rgba(46,204,113,.5);
+      }
+      
+      /* Responsive per le schede Vendite & Riordini */
+      @media (max-width: 768px) {
+        .wrap {
+          padding: 12px;
+          height: calc(100vh - 56px) !important;
+          overflow-y: auto !important;
+        }
+        
+        .gi-card-header {
+          flex-direction: column;
+          gap: 16px;
+          align-items: stretch;
+        }
+        
+        .gi-card-actions {
+          flex-direction: column;
+          gap: 12px;
+          align-items: stretch;
+        }
+        
+        .gi-card-actions > div {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .gi-card-actions select {
+          width: 100%;
+          min-width: auto;
+        }
+        
+        .gi-card-actions button {
+          width: 100%;
+          justify-content: center;
+        }
+        
+        .gi-stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        
+        .gi-table-container {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        
+        .gi-table {
+          min-width: 600px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .wrap {
+          padding: 8px;
+        }
+        
+        .gi-stats-grid {
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+        
+        .gi-card-title {
+          font-size: 20px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
   
   // Calcola data feedback di default (domani)
   const tomorrow = new Date();

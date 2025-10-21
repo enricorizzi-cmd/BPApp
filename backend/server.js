@@ -1796,13 +1796,6 @@ async function setupStatic(){
       app.use('/src', express.static(srcDir, { maxAge: '1h' }));
     }
   }catch(_){ }
-  // Serve CSS sempre dalla directory source (più affidabile)
-  try{
-    const cssDir = path.join(root, 'css');
-    if(await fs.pathExists(cssDir)){
-      app.use('/css', express.static(cssDir, { maxAge: '1h' }));
-    }
-  }catch(_){ }
   // serve esplicitamente il Service Worker dalla root del frontend anche quando si usa dist/
   try{
     const swFromFrontRoot = path.join(frontRoot, 'push-sw.js');
