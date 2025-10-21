@@ -2296,7 +2296,15 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   function showVenditeRiordiniBanner(vendita){
     // Usa lo stesso sistema degli altri banner (postSaleBanners.js)
     if(typeof window.enqueueBanner !== 'function'){
-      console.error('[VenditeRiordini] Banner system not available');
+      console.log('[VenditeRiordini] Banner system not ready, waiting...');
+      // Aspetta che il sistema sia pronto
+      setTimeout(() => {
+        if(typeof window.enqueueBanner === 'function'){
+          showVenditeRiordiniBanner(vendita);
+        } else {
+          console.error('[VenditeRiordini] Banner system still not available after timeout');
+        }
+      }, 1000);
       return;
     }
 
@@ -2793,8 +2801,18 @@ onceReady(async ()=>{
   if (typeof wireCoachUndoHaptics==='function') wireCoachUndoHaptics();
 // Coach per banner NNCF (legacy): disabilitato per rimuovere banner duplicato "Non ancora"
 //  if (typeof scanNNCF==='function') scanNNCF();
-  // Banner vendite riordini
-  if (typeof scanVenditeRiordini==='function') scanVenditeRiordini();
+  // Banner vendite riordini - aspetta che il sistema banner sia pronto
+  if (typeof scanVenditeRiordini==='function') {
+    // Aspetta che enqueueBanner sia disponibile
+    function waitForBannerSystem() {
+      if (typeof window.enqueueBanner === 'function') {
+        scanVenditeRiordini();
+      } else {
+        setTimeout(waitForBannerSystem, 500);
+      }
+    }
+    waitForBannerSystem();
+  }
   // Saluto iniziale (una volta al giorno)
   try{
     const k='bpCoachGreetedDate';
