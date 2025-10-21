@@ -2296,15 +2296,23 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   function showVenditeRiordiniBanner(vendita){
     // Usa lo stesso sistema degli altri banner (postSaleBanners.js)
     if(typeof window.enqueueBanner !== 'function'){
-      console.log('[VenditeRiordini] Banner system not ready, waiting...');
-      // Aspetta che il sistema sia pronto
-      setTimeout(() => {
+      console.log('[VenditeRiordini] Banner system not ready, polling...');
+      // Polling più aggressivo per aspettare che il sistema sia pronto
+      let attempts = 0;
+      const maxAttempts = 20; // 10 secondi totali
+      const pollInterval = setInterval(() => {
+        attempts++;
         if(typeof window.enqueueBanner === 'function'){
+          clearInterval(pollInterval);
+          console.log('[VenditeRiordini] Banner system ready, showing banner');
           showVenditeRiordiniBanner(vendita);
-        } else {
-          console.error('[VenditeRiordini] Banner system still not available after timeout');
+        } else if(attempts >= maxAttempts){
+          clearInterval(pollInterval);
+          console.error('[VenditeRiordini] Banner system still not available after', maxAttempts, 'attempts');
+          // Fallback: mostra banner semplice senza sistema di coda
+          showVenditeRiordiniBannerFallback(vendita);
         }
-      }, 1000);
+      }, 500);
       return;
     }
 
@@ -2359,6 +2367,86 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
     // Aggiungi alla coda dei banner
     window.enqueueBanner(createBannerCard);
+  }
+
+  // Funzione di fallback per mostrare banner senza sistema di coda
+  function showVenditeRiordiniBannerFallback(vendita){
+    console.log('[VenditeRiordini] Using fallback banner system');
+    
+    // Rimuovi banner esistenti
+    var existing = document.getElementById('bp_vendite_banner_fallback');
+    if(existing) existing.remove();
+
+    // Crea banner host se non esiste
+    var host = document.getElementById('bp_banner_host');
+    if(!host){
+      host = document.createElement('div');
+      host.id = 'bp_banner_host';
+      host.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;display:flex;justify-content:center;pointer-events:none';
+      document.body.appendChild(host);
+    }
+
+    // Crea banner card
+    var card = document.createElement('div');
+    card.id = 'bp_vendite_banner_fallback';
+    card.className = 'bp-banner-card';
+    card.style.cssText = 'pointer-events:auto;width:100%;max-width:720px;background:var(--card,#fff);color:var(--text,#111);border:1px solid rgba(0,0,0,.12);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.28);padding:12px;display:flex;gap:12px;align-items:center;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s';
+    
+    card.innerHTML = `
+      <div class="msg" style="flex:1">
+        <b>Come è andata la proposta piano a "${vendita.cliente}"? VSS: ${fmtEuro(vendita.valore_proposto || 0)}</b>
+      </div>
+      <div class="row" style="display:flex;gap:8px;align-items:center">
+        <button class="ghost" data-act="postpone" style="background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.12)">Posticipa</button>
+        <button class="ghost" data-act="reject" style="background:rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.12)">No</button>
+        <button data-act="accept">Sì</button>
+      </div>
+    `;
+
+    // Bind eventi
+    card.querySelector('[data-act="postpone"]').onclick = async function(){
+      try {
+        await postponeVenditaRiordini(vendita.id);
+        card.remove();
+      } catch(e) {
+        console.error('[VenditeRiordini] Error postponing:', e);
+      }
+    };
+
+    card.querySelector('[data-act="reject"]').onclick = async function(){
+      try {
+        await rejectVenditaRiordini(vendita.id);
+        card.remove();
+      } catch(e) {
+        console.error('[VenditeRiordini] Error rejecting:', e);
+      }
+    };
+
+    card.querySelector('[data-act="accept"]').onclick = async function(){
+      try {
+        await acceptVenditaRiordini(vendita.id);
+        card.remove();
+      } catch(e) {
+        console.error('[VenditeRiordini] Error accepting:', e);
+      }
+    };
+
+    // Aggiungi al DOM e anima
+    host.innerHTML = '';
+    host.appendChild(card);
+    requestAnimationFrame(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'none';
+    });
+
+    // Auto-close dopo 30 secondi
+    setTimeout(() => {
+      if(document.getElementById('bp_vendite_banner_fallback')){
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(8px)';
+        setTimeout(() => card.remove(), 200);
+      }
+    }, 30000);
   }
 
   // Funzione di test per mostrare il banner manualmente
