@@ -2819,17 +2819,9 @@ onceReady(async ()=>{
   if (typeof wireCoachUndoHaptics==='function') wireCoachUndoHaptics();
 // Coach per banner NNCF (legacy): disabilitato per rimuovere banner duplicato "Non ancora"
 //  if (typeof scanNNCF==='function') scanNNCF();
-  // Banner vendite riordini - aspetta che il sistema banner sia pronto
+  // Banner vendite riordini - usa sempre sistema di fallback
   if (typeof scanVenditeRiordini==='function') {
-    // Aspetta che enqueueBanner sia disponibile
-    function waitForBannerSystem() {
-      if (typeof window.enqueueBanner === 'function') {
-        scanVenditeRiordini();
-      } else {
-        setTimeout(waitForBannerSystem, 500);
-      }
-    }
-    waitForBannerSystem();
+    scanVenditeRiordini();
   }
   // Saluto iniziale (una volta al giorno)
   try{
