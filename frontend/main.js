@@ -7450,6 +7450,12 @@ appEl.innerHTML = topbarHTML() + `
           padding-top: 20px;
         }
         
+        /* FORZA la modal GI a non avere limiti di altezza */
+        .gi-modal-overlay .gi-modal {
+          max-height: none !important;
+          height: auto !important;
+        }
+        
         .gi-modal::-webkit-scrollbar {
           width: 8px;
         }
@@ -8890,7 +8896,7 @@ window.showVenditaRiordiniModal = function(opts = {}) {
         margin: 0;
         max-width: 600px;
         width: 100%;
-        max-height: 85vh;
+        max-height: none;
         overflow-y: auto;
         overflow-x: hidden;
       }
