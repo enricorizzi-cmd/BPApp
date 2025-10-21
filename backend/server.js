@@ -1524,11 +1524,11 @@ app.get("/api/gi", auth, async (req,res)=>{
   // visibilità - supporta sia userId che user per compatibilità
   const targetUserId = userId || user;
   
-  if(!isAdmin){
-    rows = rows.filter(r => String(r.consultantId||'') === String(req.user.id));
-  } else if (global === '1') {
-    // Admin con global=1: mostra tutti i dati
+  if (global === '1') {
+    // Global=1: mostra tutti i dati (indipendentemente dal ruolo)
     // rows rimane invariato
+  } else if(!isAdmin){
+    rows = rows.filter(r => String(r.consultantId||'') === String(req.user.id));
   } else if (targetUserId){
     rows = rows.filter(r => String(r.consultantId||'') === String(targetUserId));
   }
