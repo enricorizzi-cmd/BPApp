@@ -8830,9 +8830,12 @@ function viewVenditeRiordini(){
 
 // Funzioni globali per azioni
 window.refreshVenditeRiordiniData = function() {
+  console.log('[VenditeRiordini] Refreshing data...');
   if (window.viewVenditeRiordini) {
     // Ricarica la view
     viewVenditeRiordini();
+  } else {
+    console.error('[VenditeRiordini] viewVenditeRiordini function not available');
   }
 };
 
@@ -9620,7 +9623,11 @@ window.saveVenditaRiordini = function(venditaId){
   apiCall.then(function(response){
     closeVenditeRiordiniModal();
     toast(venditaId ? '✅ Preventivo aggiornato con successo!' : '🎯 Nuovo preventivo creato! Ora puoi tracciare il feedback.');
-    refreshVenditeRiordiniData();
+    
+    // Refresh con delay per permettere al backend di aggiornarsi
+    setTimeout(() => {
+      refreshVenditeRiordiniData();
+    }, 500);
   }).catch(function(error){
     console.error('Error saving vendita:', error);
     toast('❌ Errore nel salvare il preventivo');
