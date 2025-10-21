@@ -798,3 +798,28 @@
     font-size: 16px;
   }
 }
+
+/* ===== MODAL VENDITE & RIORDINI - SCROLLING FIXES ===== */
+#bp-overlay .bp-modal {
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#bp-overlay .bp-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+#bp-overlay .bp-modal::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.05);
+  border-radius: 4px;
+}
+
+#bp-overlay .bp-modal::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+#bp-overlay .bp-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--accent2);
+}
