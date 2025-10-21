@@ -568,6 +568,15 @@
             await POST('/api/appointments', { id: appt.id, vss: 0 });
             toast('Aggiornato: Lead non chiuso, VSS=0');
           }catch(_){}
+          
+          // === NUOVA FUNZIONALITÀ: Toast motivazionale + Modal nuovo preventivo ===
+          setTimeout(() => {
+            toast('Dai non ti scoraggiare che comprerà!', 'success');
+            setTimeout(() => {
+              openNewPreventivoModalFromAppt(appt);
+            }, 1000);
+          }, 500);
+          
         } catch(e) {
           console.error('[BANNER_NNCF_NO] Error in NNCF no click handler:', e);
         }
