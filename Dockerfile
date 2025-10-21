@@ -29,7 +29,7 @@ COPY frontend ./frontend
 
 # Build with production optimizations and chunk splitting
 RUN cd ./frontend && \
-    npm run build -- --mode production --minify --chunkSizeWarningLimit 1000
+    npm run build -- --mode production --minify
 
 FROM node:20-alpine AS backend
 WORKDIR /app
