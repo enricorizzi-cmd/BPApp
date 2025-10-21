@@ -1,43 +1,25 @@
-services:
-  - type: web
-    name: bpapp
-    env: node
-    autoDeploy: true
-    # Build both frontend and backend, then migrate data to SQLite
-    buildCommand: >-
-      npm ci --prefix frontend &&
-      npm run build --prefix frontend &&
-      npm ci --prefix backend --omit=dev &&
-      npm run migrate --prefix backend
-    startCommand: npm run start:prod --prefix backend
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NODE_VERSION
-        value: "20"
-      - key: TZ
-        value: Europe/Rome
-      - key: BP_STORAGE
-        value: supabase
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: BP_JWT_SECRET
-        sync: false
-      - key: CORS_ORIGIN
-        sync: false
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
-      - key: VAPID_SUBJECT
-        value: mailto:admin@example.com
-      - key: SMTP_URL
-        sync: false
-      - key: SMTP_FROM
-        value: no-reply@example.com
-    disk:
-      name: data
-      mountPath: /app/backend/data
-      sizeGB: 1
+# Render.com deployment configuration
+# Optimized for stability and speed
+
+# Environment variables for build optimization
+NODE_ENV=production
+NPM_CONFIG_FETCH_TIMEOUT=600000
+NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000
+NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
+NPM_CONFIG_FETCH_RETRIES=5
+
+# Build optimization
+NPM_CONFIG_PREFER_OFFLINE=true
+NPM_CONFIG_AUDIT=false
+NPM_CONFIG_FUND=false
+
+# Docker build optimization
+DOCKER_BUILDKIT=1
+DOCKER_CLI_EXPERIMENTAL=enabled
+
+# Health check configuration
+HEALTH_CHECK_PATH=/api/health
+HEALTH_CHECK_TIMEOUT=30
+
+# Logging configuration
+LOG_LEVEL=info

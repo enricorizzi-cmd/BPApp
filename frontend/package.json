@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "vite",
-    "build": "vite build --mode production --minify --sourcemap false",
+    "build": "vite build --mode production --minify --sourcemap false --chunkSizeWarningLimit 1000",
+    "build:fast": "vite build --mode production --minify --sourcemap false --chunkSizeWarningLimit 1000 --emptyOutDir",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest run"
