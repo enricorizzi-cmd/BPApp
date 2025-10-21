@@ -4982,7 +4982,10 @@ function viewLeaderboard(){
 
   window.hideOverlay = function () {
     var ov = document.getElementById('bp-overlay');
-    if (ov) ov.classList.add('hidden');
+    if (ov) {
+      ov.classList.add('hidden');
+      ov.classList.remove('gi-modal-overlay');
+    }
   };
 })();
 
@@ -7413,11 +7416,28 @@ appEl.innerHTML = topbarHTML() + `
           border: 1px solid var(--hair2);
           box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
           padding: 32px 32px 50px 32px;
-          margin: 20px auto;
+          margin: 0;
           position: relative;
           transform: translateY(0);
           transition: all 0.3s ease;
           border-radius: 20px;
+        }
+        
+        /* Fix per overlay della modal GI */
+        .gi-modal-overlay .bp-overlay-panel {
+          max-width: 100vw;
+          max-height: 100vh;
+          margin: 0;
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        
+        .gi-modal-overlay .gi-modal {
+          margin: 0;
+          max-height: calc(100vh - 40px);
         }
         
         .gi-modal::-webkit-scrollbar {
@@ -8052,6 +8072,12 @@ appEl.innerHTML = topbarHTML() + `
     // lock scroll body finché la modale è aperta
     const prev = document.documentElement.style.overflow; document.documentElement.style.overflow='hidden';
     function close(){ document.documentElement.style.overflow=prev; hideOverlay(); }
+    
+    // Aggiungi classe specifica per la modal GI
+    const overlay = document.getElementById('bp-overlay');
+    if (overlay) {
+      overlay.classList.add('gi-modal-overlay');
+    }
 
     // riempi dropdown clienti personalizzato
     (async function fillClients(){
