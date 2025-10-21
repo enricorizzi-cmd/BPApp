@@ -9590,6 +9590,7 @@ window.saveVenditaRiordini = function(venditaId){
     data,
     cliente_id,
     cliente: cliente_display,
+    consulente: getUser().name || getUser().email || 'Utente',
     descrizione_servizi,
     valore_proposto,
     data_feedback,
