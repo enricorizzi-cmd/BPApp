@@ -2664,6 +2664,16 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     if(overlay) overlay.remove();
   };
 
+  window.closeVenditeRiordiniBanner = function(){
+    // Chiude il banner vendite e riordini
+    var banner = document.querySelector('.bp-banner-card');
+    if(banner) {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateY(100px)';
+      setTimeout(() => banner.remove(), 300);
+    }
+  };
+
   window.confirmVenditaRiordini = function(venditaId){
     var descrizione = document.getElementById('vendita_descrizione').value;
     var valoreConfermato = parseFloat(document.getElementById('vendita_valore_confermato').value) || 0;
