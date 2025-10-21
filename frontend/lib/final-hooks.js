@@ -2379,6 +2379,37 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     }, 30000);
   }
 
+  // Protezione globale per intercettare qualsiasi uso di enqueueBanner
+  if (typeof window.enqueueBanner === 'undefined') {
+    window.enqueueBanner = function(renderFunction) {
+      console.log('[VenditeRiordini] Intercepted enqueueBanner call, using fallback');
+      // Se è una funzione di banner vendite e riordini, usa il fallback
+      if (typeof renderFunction === 'function') {
+        try {
+          const bannerElement = renderFunction(() => {}); // Passa funzione close vuota
+          if (bannerElement && bannerElement.className && bannerElement.className.includes('bp-banner-card')) {
+            // È un banner, mostra direttamente
+            const host = document.getElementById('bp_banner_host') || (() => {
+              const h = document.createElement('div');
+              h.id = 'bp_banner_host';
+              h.style.cssText = 'position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;display:flex;justify-content:center;pointer-events:none';
+              document.body.appendChild(h);
+              return h;
+            })();
+            host.innerHTML = '';
+            host.appendChild(bannerElement);
+            requestAnimationFrame(() => {
+              bannerElement.style.opacity = '1';
+              bannerElement.style.transform = 'none';
+            });
+          }
+        } catch (e) {
+          console.error('[VenditeRiordini] Error in intercepted enqueueBanner:', e);
+        }
+      }
+    };
+  }
+
   // Funzione di test per mostrare il banner manualmente
   window.testVenditeRiordiniBanner = function(){
     var testVendita = {
