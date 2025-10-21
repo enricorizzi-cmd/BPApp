@@ -2294,79 +2294,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   }
 
   function showVenditeRiordiniBanner(vendita){
-    // Usa lo stesso sistema degli altri banner (postSaleBanners.js)
-    if(typeof window.enqueueBanner !== 'function'){
-      console.log('[VenditeRiordini] Banner system not ready, polling...');
-      // Polling più aggressivo per aspettare che il sistema sia pronto
-      let attempts = 0;
-      const maxAttempts = 20; // 10 secondi totali
-      const pollInterval = setInterval(() => {
-        attempts++;
-        if(typeof window.enqueueBanner === 'function'){
-          clearInterval(pollInterval);
-          console.log('[VenditeRiordini] Banner system ready, showing banner');
-          showVenditeRiordiniBanner(vendita);
-        } else if(attempts >= maxAttempts){
-          clearInterval(pollInterval);
-          console.error('[VenditeRiordini] Banner system still not available after', maxAttempts, 'attempts');
-          // Fallback: mostra banner semplice senza sistema di coda
-          showVenditeRiordiniBannerFallback(vendita);
-        }
-      }, 500);
-      return;
-    }
-
-    // Crea il banner usando la stessa struttura degli altri
-    function createBannerCard(close){
-      const card = document.createElement('div');
-      card.className = 'bp-banner-card';
-      card.setAttribute('role','alertdialog');
-      card.setAttribute('aria-live','assertive');
-      
-      card.innerHTML = `
-        <div class="msg">
-          <b>Come è andata la proposta piano a "${vendita.cliente}"? VSS: ${fmtEuro(vendita.valore_proposto || 0)}</b>
-        </div>
-        <div class="row">
-          <button class="ghost" data-act="postpone">Posticipa</button>
-          <button class="ghost" data-act="reject">No</button>
-          <button data-act="accept">Sì</button>
-        </div>
-      `;
-
-      // Bind degli eventi per i 3 tasti
-      card.querySelector('[data-act="postpone"]').onclick = async function(){
-        try {
-          await postponeVenditaRiordini(vendita.id);
-          if (typeof close === 'function') close();
-        } catch(e) {
-          console.error('[VenditeRiordini] Error postponing:', e);
-        }
-      };
-
-      card.querySelector('[data-act="reject"]').onclick = async function(){
-        try {
-          await rejectVenditaRiordini(vendita.id);
-          if (typeof close === 'function') close();
-        } catch(e) {
-          console.error('[VenditeRiordini] Error rejecting:', e);
-        }
-      };
-
-      card.querySelector('[data-act="accept"]').onclick = async function(){
-        try {
-          await acceptVenditaRiordini(vendita.id);
-          if (typeof close === 'function') close();
-        } catch(e) {
-          console.error('[VenditeRiordini] Error accepting:', e);
-        }
-      };
-
-      return card;
-    }
-
-    // Aggiungi alla coda dei banner
-    window.enqueueBanner(createBannerCard);
+    // Usa sempre il sistema di fallback per evitare problemi con enqueueBanner
+    console.log('[VenditeRiordini] Showing banner using fallback system');
+    showVenditeRiordiniBannerFallback(vendita);
   }
 
   // Funzione di fallback per mostrare banner senza sistema di coda
