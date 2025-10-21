@@ -7409,7 +7409,7 @@ appEl.innerHTML = topbarHTML() + `
         .gi-modal {
           min-width: min(900px, 96vw);
           max-width: 1000px;
-          max-height: 95vh;
+          max-height: none;
           overflow-y: auto;
           overflow-x: hidden;
           background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
@@ -7426,18 +7426,19 @@ appEl.innerHTML = topbarHTML() + `
         /* Fix per overlay della modal GI */
         .gi-modal-overlay .bp-overlay-panel {
           max-width: 100vw;
-          max-height: 100vh;
+          max-height: none;
           margin: 0;
           padding: 20px;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
-          overflow: hidden;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
         
         .gi-modal-overlay .gi-modal {
           margin: 0;
-          max-height: calc(100vh - 20px);
+          max-height: none;
           min-height: 600px;
           overflow-y: auto !important;
           overflow-x: hidden;
