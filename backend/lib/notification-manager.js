@@ -3,17 +3,19 @@
  * Risolve problemi di delivery inconsistente e duplicati
  */
 
+const logger = require('./production-logger');
+
 module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }) {
   
   // Invia notifica push con cleanup automatico subscription invalide
   async function sendPushNotification(userId, payload, options = {}) {
     try {
-      console.log(`[NotificationManager] Sending push to user ${userId}`);
+      logger.debug(`Sending push to user ${userId}`);
       
       // Ottieni subscription valide per l'utente
       const subscriptions = await getValidSubscriptions(userId);
       if (subscriptions.length === 0) {
-        console.log(`[NotificationManager] No valid subscriptions for user ${userId}`);
+        logger.debug(`No valid subscriptions for user ${userId}`);
         return { sent: 0, failed: 0, cleaned: 0 };
       }
       
@@ -26,10 +28,10 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         try {
           await webpush.sendNotification(sub, JSON.stringify(payload));
           sent++;
-          console.log(`[NotificationManager] Sent to subscription ${sub.endpoint.substring(0, 50)}...`);
+          logger.debug(`Sent to subscription ${sub.endpoint.substring(0, 50)}...`);
         } catch (error) {
           failed++;
-          console.error(`[NotificationManager] Failed to send:`, error.message);
+          logger.error(`Failed to send:`, error.message);
           
           // Cleanup subscription invalida
           if (error.statusCode === 410 || error.statusCode === 404) {

@@ -122,6 +122,7 @@ const { parseDateTime, toUTCString, ymdUTC, timeHMUTC, minutesBetween, addMinute
 const { customAlphabet } = require("nanoid");
 const dotenv = require("dotenv");
 const logger = require("./lib/logger");
+const prodLogger = require("./lib/production-logger");
 let nodemailer = null; try { nodemailer = require("nodemailer"); } catch(_) { /* opzionale */ }
 // middleware opzionale (se non presente, commenta la riga)
 let timing = null; try { timing = require("./mw/timing"); } catch(_) { timing = () => (_req,_res,next)=>next(); }
@@ -1941,16 +1942,19 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
     VAPID_PRIVATE_KEY 
   });
   
-  // Verifica inizializzazione NotificationManager
+  // Log di avvio compatto
+  const startupStatus = {
+    WebPush: !!webpush && !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
+    Supabase: !!supabase,
+    Notifications: !!webpush && !!VAPID_PUBLIC_KEY && !!VAPID_PRIVATE_KEY,
+    Port: PORT
+  };
+  
+  prodLogger.startup(startupStatus);
+  
+  // Log critici solo se necessario
   if (!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    console.error('[CRITICAL] NotificationManager not properly initialized - push notifications disabled');
-    console.error('[CRITICAL] Missing:', {
-      webpush: !!webpush,
-      VAPID_PUBLIC_KEY: !!VAPID_PUBLIC_KEY,
-      VAPID_PRIVATE_KEY: !!VAPID_PRIVATE_KEY
-    });
-  } else {
-    console.log('[SUCCESS] NotificationManager initialized successfully');
+    prodLogger.critical('NotificationManager not properly initialized - push notifications disabled');
   }
 
   function _weekBoundariesISO(d){

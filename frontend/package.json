@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "vite",
-    "build": "vite build",
+    "build": "vite build --mode production --minify --sourcemap false",
+    "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest run"
   },
