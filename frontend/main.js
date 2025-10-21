@@ -7406,13 +7406,13 @@ appEl.innerHTML = topbarHTML() + `
         .gi-modal {
           min-width: min(900px, 96vw);
           max-width: 1000px;
-          max-height: 85vh;
+          max-height: 95vh;
           overflow-y: auto;
           overflow-x: hidden;
           background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
           border: 1px solid var(--hair2);
           box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
-          padding: 32px;
+          padding: 32px 32px 50px 32px;
           margin: 20px auto;
           position: relative;
           transform: translateY(0);
@@ -7797,9 +7797,10 @@ appEl.innerHTML = topbarHTML() + `
         /* Mobile responsive */
         @media (max-width: 768px) {
           .gi-modal {
-            padding: 20px;
+            padding: 20px 20px 40px 20px;
             margin: 8px;
             border-radius: 16px;
+            max-height: 98vh;
           }
           
           .gi-modal-header {
