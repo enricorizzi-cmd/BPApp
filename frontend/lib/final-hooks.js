@@ -2532,9 +2532,9 @@ BPFinal.ensureClientSection = function ensureClientSection(){
       `;
       overlay.innerHTML = `
         <div class="bp-modal" style="
-          background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-          border: 1px solid var(--hair2);
-          box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          box-shadow: 0 20px 60px rgba(0,0,0,.3);
           border-radius: 20px;
           padding: 32px;
           margin: 0;
@@ -2550,21 +2550,21 @@ BPFinal.ensureClientSection = function ensureClientSection(){
             align-items: center;
             margin-bottom: 32px;
             padding-bottom: 20px;
-            border-bottom: 1px solid var(--hair2);
+            border-bottom: 1px solid #e5e7eb;
           ">
             <h3 style="
               font-size: 22px;
               font-weight: 800;
-              color: var(--text);
+              color: #333333;
               margin: 0;
             ">Conferma Preventivo</h3>
             <button onclick="closeVenditeRiordiniForm()" style="
-              background: rgba(255,255,255,.05);
-              border: 1px solid var(--hair2);
+              background: #f5f5f5;
+              border: 1px solid #ddd;
               border-radius: 12px;
               padding: 12px 16px;
               transition: all 0.2s ease;
-              color: var(--text);
+              color: #333333;
               font-weight: 500;
               cursor: pointer;
             ">✕</button>
@@ -2573,7 +2573,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
             <div class="bp-form-group" style="margin-bottom: 24px;">
               <label style="
                 font-weight: 600;
-                color: var(--accent);
+                color: #2563eb;
                 margin-bottom: 12px;
                 display: block;
                 font-size: 14px;
@@ -2583,12 +2583,12 @@ BPFinal.ensureClientSection = function ensureClientSection(){
               <textarea id="vendita_descrizione" rows="3" style="
                 width: 100%;
                 min-width: 0;
-                background: rgba(255,255,255,.05);
-                border: 1px solid var(--hair2);
+                background: #ffffff;
+                border: 1px solid #d1d5db;
                 border-radius: 12px;
                 padding: 14px 16px;
                 transition: all 0.2s ease;
-                color: var(--text);
+                color: #333333;
                 font-size: 15px;
                 resize: vertical;
                 min-height: 80px;
@@ -2597,7 +2597,7 @@ BPFinal.ensureClientSection = function ensureClientSection(){
             <div class="bp-form-group" style="margin-bottom: 24px;">
               <label style="
                 font-weight: 600;
-                color: var(--accent);
+                color: #2563eb;
                 margin-bottom: 12px;
                 display: block;
                 font-size: 14px;
@@ -2607,12 +2607,12 @@ BPFinal.ensureClientSection = function ensureClientSection(){
               <input type="number" id="vendita_valore_confermato" value="${vendita.valore_proposto || 0}" step="0.01" style="
                 width: 100%;
                 min-width: 0;
-                background: rgba(255,255,255,.05);
-                border: 1px solid var(--hair2);
+                background: #ffffff;
+                border: 1px solid #d1d5db;
                 border-radius: 12px;
                 padding: 14px 16px;
                 transition: all 0.2s ease;
-                color: var(--text);
+                color: #333333;
                 font-size: 15px;
               ">
             </div>
@@ -2623,12 +2623,12 @@ BPFinal.ensureClientSection = function ensureClientSection(){
             align-items: center;
             gap: 20px;
             padding-top: 24px;
-            border-top: 1px solid var(--hair2);
+            border-top: 1px solid #e5e7eb;
           ">
             <button class="bp-btn-secondary" onclick="closeVenditeRiordiniForm()" style="
-              background: transparent;
-              border: 1px solid var(--hair2);
-              color: var(--text);
+              background: #f8f9fa;
+              border: 1px solid #d1d5db;
+              color: #374151;
               border-radius: 12px;
               padding: 14px 28px;
               font-weight: 600;
@@ -2637,15 +2637,15 @@ BPFinal.ensureClientSection = function ensureClientSection(){
               font-size: 15px;
             ">Annulla</button>
             <button class="bp-btn-primary" onclick="confirmVenditaRiordini('${venditaId}')" style="
-              background: linear-gradient(135deg, var(--accent), var(--accent2));
+              background: linear-gradient(135deg, #2563eb, #1d4ed8);
               border: none;
-              color: #fff;
+              color: #ffffff;
               border-radius: 12px;
               padding: 14px 28px;
               font-weight: 600;
               cursor: pointer;
               transition: all 0.2s ease;
-              box-shadow: 0 4px 12px rgba(93,211,255,.3);
+              box-shadow: 0 4px 12px rgba(37,99,235,.3);
               font-size: 15px;
             ">Continua</button>
           </div>
