@@ -8,8 +8,7 @@ module.exports = {
       output: {
         manualChunks: {
           // Separate vendor chunks for better caching
-          'vendor-charts': ['chart.js'],
-          'vendor-utils': ['chart.js']
+          'vendor-charts': ['chart.js']
         }
       }
     },
