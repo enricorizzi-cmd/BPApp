@@ -60,6 +60,7 @@ module.exports = function(app) {
     try {
       const {
         data: venditaData,
+        cliente_id, // Nuovo campo
         cliente,
         consulente,
         descrizione_servizi,
@@ -69,7 +70,7 @@ module.exports = function(app) {
       } = req.body;
 
       // Validazione campi obbligatori
-      if (!venditaData || !cliente || !consulente || !data_feedback) {
+      if (!venditaData || !cliente_id || !cliente || !consulente || !data_feedback) {
         return res.status(400).json({ error: 'Campi obbligatori mancanti' });
       }
 
@@ -80,6 +81,7 @@ module.exports = function(app) {
       const venditaRecord = {
         id,
         data: venditaData,
+        cliente_id, // Aggiunto campo cliente_id
         cliente,
         consulente,
         consultantid: req.user.id, // SEMPRE per l'utente corrente
