@@ -2453,12 +2453,18 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   // Funzione DELETE globale
   window.DELETE = function(url, data) {
+    // Se data contiene un ID, aggiungilo come query parameter
+    if (data && data.id) {
+      const urlObj = new URL(url, window.location.origin);
+      urlObj.searchParams.set('id', data.id);
+      url = urlObj.toString();
+    }
+    
     return fetch(url, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: data ? JSON.stringify(data) : undefined
+      }
     }).then(response => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
