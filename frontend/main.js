@@ -9289,16 +9289,6 @@ function viewCorsiInteraziendali(){
   };
 
   // Funzioni per Calendario
-  window.switchCalendarioView = function(view) {
-    // Implementazione cambio vista calendario
-    loadCalendarioData();
-  };
-
-  window.changeCalendarioMonth = function(direction) {
-    // Implementazione cambio mese
-    loadCalendarioData();
-  };
-
   // Funzioni per Iscrizioni
   window.updateIscrizioniFilters = function() {
     loadIscrizioniData();
@@ -9906,6 +9896,7 @@ function viewCorsiInteraziendali(){
     if (!container) return;
 
     const year = calendarioDate.getFullYear();
+    console.log('Rendering annual calendar for year:', year);
     
     // Aggiorna titolo
     const title = document.getElementById('calendario-title');
@@ -9988,10 +9979,12 @@ function viewCorsiInteraziendali(){
     }
     
     annualHtml += '</div>';
+    console.log('Annual HTML generated:', annualHtml.length, 'characters');
     container.innerHTML = annualHtml;
   }
 
   window.switchCalendarioView = function(view) {
+    console.log('Switching to view:', view);
     calendarioView = view;
     
     // Aggiorna bottoni
