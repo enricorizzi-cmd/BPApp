@@ -8475,6 +8475,10 @@ appEl.innerHTML = topbarHTML() + `
 window.viewGI = window.viewGI || viewGI;
 
 // ===== CORSI INTERAZIENDALI =====
+// Variabili globali per Corsi Interaziendali
+let corsiActiveTab = 'catalogo';
+let corsiCurrentPeriod = new Date();
+
 function viewCorsiInteraziendali(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Corsi Interaziendali';
@@ -8482,15 +8486,445 @@ function viewCorsiInteraziendali(){
   const isAdmin = getUser().role==='admin';
 
   // Stato per tab attiva
-  let activeTab = 'catalogo';
+  let activeTab = corsiActiveTab;
 
-  // CSS caricato da file esterno
+  // CSS integrato direttamente
   if(!document.getElementById('corsi-css')){
-    const link = document.createElement('link');
-    link.id = 'corsi-css';
-    link.rel = 'stylesheet';
-    link.href = '/css/corsi-interaziendali.css';
-    document.head.appendChild(link);
+    const style = document.createElement('style');
+    style.id = 'corsi-css';
+    style.textContent = `
+      /* Corsi Interaziendali Styles */
+      .corsi-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
+      }
+      
+      .corsi-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .corsi-tab {
+        padding: 12px 24px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.2s ease;
+      }
+      
+      .corsi-tab.active {
+        color: #1976d2;
+        border-bottom-color: #1976d2;
+        background: rgba(25, 118, 210, 0.05);
+      }
+      
+      .corsi-tab:hover {
+        background: rgba(25, 118, 210, 0.05);
+        color: #1976d2;
+      }
+      
+      .corsi-content {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+      
+      .corsi-filters {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      
+      .corsi-filters select,
+      .corsi-filters input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      
+      .corsi-filters .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .corsi-filters .checkbox-group input[type="checkbox"] {
+        margin: 0;
+      }
+      
+      .corsi-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      .corsi-table th,
+      .corsi-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .corsi-table th {
+        background: #f5f5f5;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .corsi-table tr:hover {
+        background: #f9f9f9;
+      }
+      
+      .corsi-actions {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .corsi-actions button {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      
+      .btn-primary {
+        background: #1976d2;
+        color: white;
+      }
+      
+      .btn-secondary {
+        background: #f5f5f5;
+        color: #333;
+        border: 1px solid #ddd;
+      }
+      
+      .btn-danger {
+        background: #d32f2f;
+        color: white;
+      }
+      
+      .btn-success {
+        background: #388e3c;
+        color: white;
+      }
+      
+      .corsi-modal {
+        background: white;
+        border-radius: 8px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .modal-header h3 {
+        margin: 0;
+        color: #333;
+      }
+      
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+      
+      .modal-body {
+        padding: 20px;
+      }
+      
+      .modal-footer {
+        padding: 20px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+      
+      .form-group {
+        margin-bottom: 16px;
+      }
+      
+      .form-group label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+        color: #333;
+      }
+      
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+      
+      .calendario-container {
+        padding: 20px;
+      }
+      
+      .calendario-view-switch {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      
+      .calendario-view-switch button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      
+      .calendario-view-switch button.active {
+        background: #1976d2;
+        color: white;
+        border-color: #1976d2;
+      }
+      
+      .calendario-mensile {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #ddd;
+        border: 1px solid #ddd;
+      }
+      
+      .calendario-giorno {
+        background: white;
+        padding: 8px;
+        min-height: 40px;
+        cursor: pointer;
+        position: relative;
+      }
+      
+      .calendario-giorno.has-course {
+        background: #ffebee;
+        color: #c62828;
+      }
+      
+      .calendario-giorno.no-course {
+        background: #e8f5e8;
+        color: #2e7d32;
+      }
+      
+      .calendario-giorno:hover {
+        background: #e3f2fd;
+      }
+      
+      .calendario-numero {
+        font-weight: 500;
+        font-size: 14px;
+      }
+      
+      .calendario-corso {
+        font-size: 10px;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .calendario-annuale {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+      
+      .calendario-mese {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      
+      .calendario-mese-header {
+        background: #f5f5f5;
+        padding: 8px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 12px;
+      }
+      
+      .calendario-mese-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #ddd;
+      }
+      
+      .calendario-mese-giorno {
+        background: white;
+        padding: 4px;
+        min-height: 20px;
+        cursor: pointer;
+        font-size: 10px;
+        text-align: center;
+      }
+      
+      .calendario-mese-giorno.has-course {
+        background: #ffebee;
+      }
+      
+      .calendario-mese-giorno.no-course {
+        background: #e8f5e8;
+      }
+      
+      .iscrizione-modal {
+        background: white;
+        border-radius: 8px;
+        max-width: 800px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .cliente-group {
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 16px;
+        background: #f9f9f9;
+      }
+      
+      .cliente-group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      
+      .cliente-group-title {
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .remove-cliente-btn {
+        background: #d32f2f;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      
+      @media (max-width: 768px) {
+        .corsi-wrap {
+          padding: 0 16px;
+        }
+        
+        .corsi-tabs {
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .corsi-tab {
+          padding: 8px 16px;
+          text-align: center;
+        }
+        
+        .corsi-filters {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .corsi-table {
+          font-size: 12px;
+        }
+        
+        .corsi-table th,
+        .corsi-table td {
+          padding: 8px 4px;
+        }
+        
+        .corsi-actions {
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .corsi-actions button {
+          padding: 4px 8px;
+          font-size: 10px;
+        }
+        
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+          padding: 16px;
+        }
+        
+        .calendario-container {
+          padding: 16px;
+        }
+        
+        .calendario-mensile {
+          gap: 0;
+        }
+        
+        .calendario-giorno {
+          padding: 4px;
+          min-height: 30px;
+        }
+        
+        .calendario-numero {
+          font-size: 12px;
+        }
+        
+        .calendario-corso {
+          font-size: 8px;
+        }
+        
+        .calendario-annuale {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        
+        .calendario-mese-giorno {
+          padding: 2px;
+          min-height: 16px;
+          font-size: 8px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   function renderTabs() {
@@ -8780,7 +9214,7 @@ function viewCorsiInteraziendali(){
       const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
       
       // Calcola periodo basato su granularità
-      const { from, to } = calculatePeriod(granularity, currentPeriod);
+      const { from, to } = calculatePeriod(granularity, corsiCurrentPeriod);
       
       const params = new URLSearchParams();
       if (!tuttiCorsi) {
@@ -8906,22 +9340,22 @@ function viewCorsiInteraziendali(){
     
     switch (granularity) {
       case 'giornaliera':
-        currentPeriod.setDate(currentPeriod.getDate() + direction);
+        corsiCurrentPeriod.setDate(corsiCurrentPeriod.getDate() + direction);
         break;
       case 'settimanale':
-        currentPeriod.setDate(currentPeriod.getDate() + (direction * 7));
+        corsiCurrentPeriod.setDate(corsiCurrentPeriod.getDate() + (direction * 7));
         break;
       case 'mensile':
-        currentPeriod.setMonth(currentPeriod.getMonth() + direction);
+        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + direction);
         break;
       case 'trimestrale':
-        currentPeriod.setMonth(currentPeriod.getMonth() + (direction * 3));
+        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + (direction * 3));
         break;
       case 'semestrale':
-        currentPeriod.setMonth(currentPeriod.getMonth() + (direction * 6));
+        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + (direction * 6));
         break;
       case 'annuale':
-        currentPeriod.setFullYear(currentPeriod.getFullYear() + direction);
+        corsiCurrentPeriod.setFullYear(corsiCurrentPeriod.getFullYear() + direction);
         break;
     }
     
@@ -8934,7 +9368,7 @@ function viewCorsiInteraziendali(){
     if (!span) return;
     
     const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
-    const { from, to } = calculatePeriod(granularity, currentPeriod);
+    const { from, to } = calculatePeriod(granularity, corsiCurrentPeriod);
     
     switch (granularity) {
       case 'giornaliera':
@@ -8944,18 +9378,18 @@ function viewCorsiInteraziendali(){
         span.textContent = `${new Date(from).toLocaleDateString('it-IT')} - ${new Date(to).toLocaleDateString('it-IT')}`;
         break;
       case 'mensile':
-        span.textContent = currentPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        span.textContent = corsiCurrentPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
         break;
       case 'trimestrale':
-        const quarter = Math.floor(currentPeriod.getMonth() / 3) + 1;
-        span.textContent = `Q${quarter} ${currentPeriod.getFullYear()}`;
+        const quarter = Math.floor(corsiCurrentPeriod.getMonth() / 3) + 1;
+        span.textContent = `Q${quarter} ${corsiCurrentPeriod.getFullYear()}`;
         break;
       case 'semestrale':
-        const semester = Math.floor(currentPeriod.getMonth() / 6) + 1;
-        span.textContent = `Semestre ${semester} ${currentPeriod.getFullYear()}`;
+        const semester = Math.floor(corsiCurrentPeriod.getMonth() / 6) + 1;
+        span.textContent = `Semestre ${semester} ${corsiCurrentPeriod.getFullYear()}`;
         break;
       case 'annuale':
-        span.textContent = currentPeriod.getFullYear().toString();
+        span.textContent = corsiCurrentPeriod.getFullYear().toString();
         break;
     }
   }
@@ -9874,7 +10308,7 @@ function viewVenditeRiordini(){
 
   // Stato per granularità e periodo
   let currentGranularity = 'mensile';
-  let currentPeriod = new Date();
+  let iscrizioniCurrentPeriod = new Date();
   let currentConsultant = '';
 
   appEl.innerHTML = topbarHTML() + `
@@ -9993,7 +10427,7 @@ function viewVenditeRiordini(){
     if (!periodElement) return;
 
     const granularity = currentGranularity;
-    const date = currentPeriod;
+    const date = iscrizioniCurrentPeriod;
 
     let periodText = '';
     switch (granularity) {
@@ -10026,7 +10460,7 @@ function viewVenditeRiordini(){
   // Funzione per calcolare range date in base a granularità
   function getDateRange() {
     const granularity = currentGranularity;
-    const date = currentPeriod;
+    const date = iscrizioniCurrentPeriod;
 
     let from, to;
     switch (granularity) {
@@ -10160,7 +10594,7 @@ function viewVenditeRiordini(){
 
   $('vr-prev-period').addEventListener('click', () => {
     const granularity = currentGranularity;
-    const date = currentPeriod;
+    const date = iscrizioniCurrentPeriod;
 
     switch (granularity) {
       case 'settimanale':
@@ -10186,7 +10620,7 @@ function viewVenditeRiordini(){
 
   $('vr-next-period').addEventListener('click', () => {
     const granularity = currentGranularity;
-    const date = currentPeriod;
+    const date = iscrizioniCurrentPeriod;
 
     switch (granularity) {
       case 'settimanale':
