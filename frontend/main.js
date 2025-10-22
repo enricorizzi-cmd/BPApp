@@ -9059,45 +9059,46 @@ function viewCorsiInteraziendali(){
   function renderCatalogoTab() {
     return `
       <div id="catalogo-content">
-        <div class="catalogo-header">
-          <div class="catalogo-filters">
-            <div class="filter-group">
-              <label>Granularità:</label>
-              <select id="granularita-catalogo" onchange="updateCatalogoFilters()">
-                <option value="giornaliera">Giornaliera</option>
-                <option value="settimanale">Settimanale</option>
-                <option value="mensile" selected>Mensile</option>
-                <option value="trimestrale">Trimestrale</option>
-                <option value="semestrale">Semestrale</option>
-                <option value="annuale">Annuale</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Periodo:</label>
-              <div class="period-controls">
-                <button onclick="changeCatalogoPeriod(-1)">◀</button>
-                <span id="periodo-catalogo">Gennaio 2025</span>
-                <button onclick="changeCatalogoPeriod(1)">▶</button>
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>
-                <input type="checkbox" id="tutti-corsi" onchange="updateCatalogoFilters()">
-                Tutti i corsi
-              </label>
+        <div class="row" style="margin-top:8px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <label>Granularità</label>
+            <select id="granularita-catalogo" onchange="updateCatalogoFilters()">
+              <option value="giornaliera">Giornaliera</option>
+              <option value="settimanale">Settimanale</option>
+              <option value="mensile" selected>Mensile</option>
+              <option value="trimestrale">Trimestrale</option>
+              <option value="semestrale">Semestrale</option>
+              <option value="annuale">Annuale</option>
+            </select>
+          </div>
+          <div>
+            <label>Periodo</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button onclick="changeCatalogoPeriod(-1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">‹</button>
+              <span id="periodo-catalogo" style="color: var(--text); font-weight: 600; min-width: 120px; text-align: center;">Gennaio 2025</span>
+              <button onclick="changeCatalogoPeriod(1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">›</button>
             </div>
           </div>
+          <div>
+            <label style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="tutti-corsi" onchange="updateCatalogoFilters()" style="margin: 0;">
+              Tutti i corsi
+            </label>
+          </div>
           ${isAdmin ? `
-            <div class="catalogo-actions">
-              <button class="btn-primary" onclick="showAggiungiCorsoModal()">
-                ➕ Aggiungi Corso
+            <div style="margin-left: auto; display: flex; gap: 12px;">
+              <button class="ghost" onclick="showAggiungiCorsoModal()" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                <span style="margin-right: 8px;">+</span>Aggiungi corso
+              </button>
+              <button class="ghost" onclick="showInserisciDataModal()" id="inserisci-data-btn" disabled style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                Inserisci data
               </button>
             </div>
           ` : ''}
         </div>
         
-        <div class="catalogo-table-container">
-          <table class="catalogo-table">
+        <div class="table" style="margin-top: 16px;">
+          <table>
             <thead>
               <tr>
                 <th>Codice</th>
@@ -9123,23 +9124,29 @@ function viewCorsiInteraziendali(){
   function renderCalendarioTab() {
     return `
       <div id="calendario-content">
-        <div class="calendario-header">
-          <div class="calendario-controls">
-            <button class="btn-secondary" onclick="switchCalendarioView('mensile')" id="btn-mensile">
-              📅 Mensile
-            </button>
-            <button class="btn-secondary" onclick="switchCalendarioView('annuale')" id="btn-annuale">
-              📆 Annuale
-            </button>
+        <div class="row" style="margin-top:8px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <label>Visualizzazione</label>
+            <div style="display: flex; gap: 8px;">
+              <button class="ghost ${calendarioView === 'mensile' ? 'active' : ''}" onclick="switchCalendarioView('mensile')" id="btn-mensile" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                📅 Mensile
+              </button>
+              <button class="ghost ${calendarioView === 'annuale' ? 'active' : ''}" onclick="switchCalendarioView('annuale')" id="btn-annuale" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                📆 Annuale
+              </button>
+            </div>
           </div>
-          <div class="calendario-navigation">
-            <button onclick="changeCalendarioMonth(-1)">◀</button>
-            <span id="calendario-title">Gennaio 2025</span>
-            <button onclick="changeCalendarioMonth(1)">▶</button>
+          <div>
+            <label>Navigazione</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button onclick="changeCalendarioMonth(-1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">◀</button>
+              <span id="calendario-title" style="color: var(--text); font-weight: 600; min-width: 120px; text-align: center;">Gennaio 2025</span>
+              <button onclick="changeCalendarioMonth(1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">▶</button>
+            </div>
           </div>
         </div>
         
-        <div id="calendario-container">
+        <div style="margin-top: 16px; padding: 20px; border: 1px solid var(--hair2); border-radius: var(--radius); background: rgba(255,255,255,.02);" id="calendario-container">
           <div class="loading">Caricamento calendario...</div>
         </div>
       </div>
@@ -9149,49 +9156,49 @@ function viewCorsiInteraziendali(){
   function renderIscrizioniTab() {
     return `
       <div id="iscrizioni-content">
-        <div class="iscrizioni-header">
-          <div class="iscrizioni-filters">
-            <div class="filter-group">
-              <label>Nome Corso:</label>
-              <select id="filtro-corso" onchange="updateIscrizioniFilters()">
-                <option value="">Tutti i corsi</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Consulente:</label>
-              <select id="filtro-consulente" onchange="updateIscrizioniFilters()">
-                <option value="">Tutti i consulenti</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Granularità:</label>
-              <select id="granularita-iscrizioni" onchange="updateIscrizioniFilters()">
-                <option value="giornaliera">Giornaliera</option>
-                <option value="settimanale">Settimanale</option>
-                <option value="mensile" selected>Mensile</option>
-                <option value="trimestrale">Trimestrale</option>
-                <option value="semestrale">Semestrale</option>
-                <option value="annuale">Annuale</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Periodo:</label>
-              <div class="period-controls">
-                <button onclick="changeIscrizioniPeriod(-1)">◀</button>
-                <span id="periodo-iscrizioni">Gennaio 2025</span>
-                <button onclick="changeIscrizioniPeriod(1)">▶</button>
-              </div>
+        <div class="row" style="margin-top:8px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <label>Nome Corso</label>
+            <select id="filtro-corso" onchange="updateIscrizioniFilters()">
+              <option value="">Tutti i corsi</option>
+            </select>
+          </div>
+          <div>
+            <label>Consulente</label>
+            <select id="filtro-consulente" onchange="updateIscrizioniFilters()">
+              <option value="">Tutti i consulenti</option>
+            </select>
+          </div>
+          <div>
+            <label>Granularità</label>
+            <select id="granularita-iscrizioni" onchange="updateIscrizioniFilters()">
+              <option value="giornaliera">Giornaliera</option>
+              <option value="settimanale">Settimanale</option>
+              <option value="mensile" selected>Mensile</option>
+              <option value="trimestrale">Trimestrale</option>
+              <option value="semestrale">Semestrale</option>
+              <option value="annuale">Annuale</option>
+            </select>
+          </div>
+          <div>
+            <label>Periodo</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button onclick="changeIscrizioniPeriod(-1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">‹</button>
+              <span id="periodo-iscrizioni" style="color: var(--text); font-weight: 600; min-width: 120px; text-align: center;">Gennaio 2025</span>
+              <button onclick="changeIscrizioniPeriod(1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">›</button>
             </div>
           </div>
-          <div class="iscrizioni-actions">
-            <button class="btn-primary" onclick="showIscrizioneModal()">
-              ➕ Inserisci Iscrizione
-            </button>
-          </div>
+          ${isAdmin ? `
+            <div style="margin-left: auto;">
+              <button class="ghost" onclick="showIscrizioneModal()" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+                <span style="margin-right: 8px;">+</span>Inserisci iscrizione
+              </button>
+            </div>
+          ` : ''}
         </div>
         
-        <div class="iscrizioni-table-container">
-          <table class="iscrizioni-table">
+        <div class="table" style="margin-top: 16px;">
+          <table>
             <thead>
               <tr>
                 <th>Data Corso</th>
@@ -9214,19 +9221,19 @@ function viewCorsiInteraziendali(){
 
   function load() {
     appEl.innerHTML = topbarHTML() + `
-      <div class="wrap" style="overflow-y: auto; height: calc(100vh - 56px);">
-        <div class="corsi-wrap">
-          <div class="corsi-header">
-            <h1 class="corsi-title">🎓 Corsi Interaziendali</h1>
-            ${renderTabs()}
-          </div>
-          <div class="corsi-content">
-            ${renderContent()}
-          </div>
+      <div class="wrap">
+        <div class="card">
+          <b>🎓 Corsi Interaziendali</b>
+          ${renderTabs()}
+        </div>
+        <div class="card">
+          ${renderContent()}
         </div>
       </div>
     `;
 
+    renderTopbar();
+    
     // Inizializza i dati
     initializeCorsiData();
     
