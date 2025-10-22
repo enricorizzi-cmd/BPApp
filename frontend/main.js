@@ -9833,60 +9833,113 @@ function viewCorsiInteraziendali(){
     // Crea calendario usando la struttura del calendario principale
     let calendarHtml = '';
     
-    // Header giorni settimana
+    // Calcola il numero della settimana per il primo giorno del mese
+    const getWeekNumber = (date) => {
+      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+      return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    };
+    
+    // Prima riga: settimane + header giorni
+    calendarHtml += '<div class="weekLabel"></div>'; // Spazio per settimane
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
     dayNames.forEach(day => {
       calendarHtml += `<div class="weekLabel">${day}</div>`;
     });
     
+    // Calcola le settimane del mese
+    const weeks = [];
+    let currentWeek = [];
+    
     // Spazi vuoti per allineare il primo giorno
     for (let i = 0; i < startDay; i++) {
-      calendarHtml += '<div class="day empty"></div>';
+      currentWeek.push(null);
     }
-
+    
     // Giorni del mese
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const hasCourse = corsiDate.some(cd => 
-        cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-      );
+      currentWeek.push(day);
       
-      const coursesOnDay = corsiDate.filter(cd => 
-        cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-      );
-
-      const today = new Date();
-      const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-      
-      // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
-      const dayOfWeek = new Date(year, month, day).getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
-      // Logica colorazione:
-      // - Giorni con corsi = ROSSI (anche weekend)
-      // - Weekend senza corsi = BIANCHI  
-      // - Giorni feriali senza corsi = VERDI
-      let dayClass = '';
-      if (hasCourse) {
-        dayClass = 'busy2'; // Rosso per giorni con corsi
-      } else if (isWeekend) {
-        dayClass = ''; // Bianco per weekend senza corsi
-      } else {
-        dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+      // Se abbiamo 7 giorni nella settimana, iniziamo una nuova settimana
+      if (currentWeek.length === 7) {
+        weeks.push([...currentWeek]);
+        currentWeek = [];
       }
-      
-      if (isToday) {
-        dayClass += ' today';
-      }
-      
-      calendarHtml += `
-        <div class="day ${dayClass}" 
-             onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
-          <div class="dnum">${day}</div>
-          ${hasCourse ? `<div class="small">${coursesOnDay[0].corsi_catalogo.nome_corso}</div>` : ''}
-        </div>
-      `;
     }
+    
+    // Aggiungi l'ultima settimana se non è completa
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) {
+        currentWeek.push(null);
+      }
+      weeks.push(currentWeek);
+    }
+    
+    // Genera le righe del calendario
+    weeks.forEach((week, weekIndex) => {
+      // Numero della settimana
+      const firstDayOfWeek = week.find(day => day !== null);
+      if (firstDayOfWeek) {
+        const weekDate = new Date(year, month, firstDayOfWeek);
+        const weekNumber = getWeekNumber(weekDate);
+        calendarHtml += `<div class="weekLabel">W${weekNumber}</div>`;
+      } else {
+        calendarHtml += '<div class="weekLabel"></div>';
+      }
+      
+      // Giorni della settimana
+      week.forEach(day => {
+        if (day === null) {
+          calendarHtml += '<div class="day empty"></div>';
+        } else {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const hasCourse = corsiDate.some(cd => 
+            cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+          );
+          
+          const coursesOnDay = corsiDate.filter(cd => 
+            cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+          );
+
+          const today = new Date();
+          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          
+          // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
+          const dayOfWeek = new Date(year, month, day).getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+          
+          // Logica colorazione:
+          // - Giorni con corsi = ROSSI (anche weekend)
+          // - Weekend senza corsi = BIANCHI  
+          // - Giorni feriali senza corsi = VERDI
+          let dayClass = '';
+          if (hasCourse) {
+            dayClass = 'busy2'; // Rosso per giorni con corsi
+          } else if (isWeekend) {
+            dayClass = ''; // Bianco per weekend senza corsi
+          } else {
+            dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+          }
+          
+          if (isToday) {
+            dayClass += ' today';
+          }
+          
+          calendarHtml += `
+            <div class="day ${dayClass}" 
+                 onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
+              <div class="dnum">${day}</div>
+              ${hasCourse ? `<div class="small">${coursesOnDay[0].corsi_catalogo.nome_corso}</div>` : ''}
+            </div>
+          `;
+          
+          // Debug log per verificare le classi
+          if (day <= 3) { // Log solo per i primi 3 giorni per debug
+            console.log(`Day ${day}: hasCourse=${hasCourse}, isWeekend=${isWeekend}, dayClass="${dayClass}"`);
+          }
+        }
+      });
+    });
 
     container.innerHTML = calendarHtml;
   }
@@ -10005,56 +10058,69 @@ function viewCorsiInteraziendali(){
   };
 
   window.showDayCourses = function(dateStr, coursesOnDay) {
-    if (!coursesOnDay || coursesOnDay.length === 0) return;
-
-    const date = new Date(dateStr);
-    const dateFormatted = date.toLocaleDateString('it-IT');
+    console.log('Showing courses for date:', dateStr, 'Courses:', coursesOnDay);
     
-    let coursesHtml = `
-      <div class="day-courses-modal">
-        <div class="modal-header">
-          <h3>Corsi del ${dateFormatted}</h3>
-          <button onclick="hideOverlay()" class="close-btn">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="courses-list">
-    `;
-
-    coursesOnDay.forEach(courseData => {
-      const corso = courseData.corsi_catalogo;
-      const giorni = courseData.giorni_dettaglio.filter(gd => gd.data === dateStr);
-      
-      giorni.forEach(giorno => {
-        coursesHtml += `
-          <div class="course-item">
-            <div class="course-header">
-              <h4>${corso.nome_corso}</h4>
-              <span class="course-duration">Giorno ${giorno.giorno}</span>
-            </div>
-            <div class="course-details">
-              <div class="time-info">
-                <span class="time">${giorno.ora_inizio} - ${giorno.ora_fine}</span>
-              </div>
-              <div class="course-meta">
-                <span class="course-code">${corso.codice_corso || 'N/A'}</span>
-                <span class="course-cost">€${Number(corso.costo_corso).toLocaleString()}</span>
-              </div>
-            </div>
+    // Crea modal per mostrare i dettagli del giorno
+    const modalHtml = `
+      <div class="modal-overlay" onclick="closeDayCoursesModal()">
+        <div class="day-courses-modal" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3>Corsi del ${new Date(dateStr).toLocaleDateString('it-IT', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</h3>
+            <button class="close-btn" onclick="closeDayCoursesModal()">×</button>
           </div>
-        `;
-      });
-    });
-
-    coursesHtml += `
+          <div class="modal-content">
+            ${coursesOnDay && coursesOnDay.length > 0 ? `
+              <div class="courses-list">
+                ${coursesOnDay.map(course => `
+                  <div class="course-item">
+                    <div class="course-name">${course.corsi_catalogo.nome_corso}</div>
+                    <div class="course-details">
+                      <div class="course-code">Codice: ${course.corsi_catalogo.codice_corso}</div>
+                      <div class="course-duration">Durata: ${course.corsi_catalogo.durata_giorni} giorni</div>
+                      <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso}</div>
+                    </div>
+                    <div class="course-schedule">
+                      ${course.giorni_dettaglio.map(giorno => `
+                        <div class="schedule-item">
+                          <strong>Giorno ${giorno.giorno_numero}:</strong> 
+                          ${giorno.data} dalle ${giorno.ora_inizio} alle ${giorno.ora_fine}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="no-courses">
+                <div class="no-courses-icon">📅</div>
+                <div class="no-courses-text">Nessun corso programmato per questo giorno</div>
+              </div>
+            `}
           </div>
-        </div>
-        <div class="modal-footer">
-          <button onclick="hideOverlay()" class="btn-primary">Chiudi</button>
         </div>
       </div>
     `;
+    
+    // Rimuovi modal esistente se presente
+    const existingModal = document.querySelector('.modal-overlay');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // Aggiungi nuovo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  };
 
-    showOverlay(coursesHtml, 'day-courses-modal-overlay');
+  window.closeDayCoursesModal = function() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) {
+      modal.remove();
+    }
   };
 
   // Carica consulenti per i filtri
