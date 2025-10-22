@@ -2451,6 +2451,22 @@ BPFinal.ensureClientSection = function ensureClientSection(){
     showVenditeRiordiniBanner(testVendita);
   };
 
+  // Funzione DELETE globale
+  window.DELETE = function(url, data) {
+    return fetch(url, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json().catch(() => ({})); // Gestisce risposte vuote
+    });
+  };
+
   // Funzioni globali per azioni banner (async/await)
   window.postponeVenditaRiordini = async function(venditaId){
     try {

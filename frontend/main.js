@@ -8857,7 +8857,7 @@ window.editVenditaRiordini = function(id) {
       return;
     }
 
-    showVenditeRiordiniModal({ 
+    showVenditaRiordiniModal({ 
       mode: 'edit', 
       vendita: vendita 
     });
