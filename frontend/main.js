@@ -8501,6 +8501,20 @@ function viewCorsiInteraziendali(){
         margin-top: calc(56px + env(safe-area-inset-top) + 32px);
       }
       
+      .corsi-header {
+        margin-bottom: 24px;
+      }
+      
+      .corsi-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      
       .corsi-tabs {
         display: flex;
         gap: 8px;
@@ -8726,6 +8740,92 @@ function viewCorsiInteraziendali(){
         gap: 1px;
         background: #ddd;
         border: 1px solid #ddd;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #ddd;
+        border: 1px solid #ddd;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      
+      .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #f5f5f5;
+      }
+      
+      .calendar-day-header {
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        background: #f5f5f5;
+        border-bottom: 2px solid #ddd;
+        font-size: 14px;
+        color: #333;
+      }
+      
+      .calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+      }
+      
+      .calendar-day {
+        background: white;
+        padding: 12px 8px;
+        min-height: 60px;
+        cursor: pointer;
+        position: relative;
+        border: 1px solid #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      
+      .calendar-day.empty {
+        background: #f9f9f9;
+        cursor: default;
+      }
+      
+      .calendar-day.has-course {
+        background: #ffebee;
+        color: #c62828;
+        border-color: #c62828;
+      }
+      
+      .calendar-day.no-course {
+        background: #e8f5e8;
+        color: #2e7d32;
+        border-color: #2e7d32;
+      }
+      
+      .calendar-day:hover:not(.empty) {
+        background: #e3f2fd;
+        border-color: #1976d2;
+      }
+      
+      .calendar-day-number {
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      .calendar-day-course {
+        font-size: 10px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+        line-height: 1.2;
       }
       
       .calendario-giorno {
@@ -9113,14 +9213,16 @@ function viewCorsiInteraziendali(){
   }
 
   function load() {
-    appEl.innerHTML = `
-      <div class="corsi-wrap">
-        <div class="corsi-header">
-          <h1 class="corsi-title">🎓 Corsi Interaziendali</h1>
-          ${renderTabs()}
-        </div>
-        <div class="corsi-content">
-          ${renderContent()}
+    appEl.innerHTML = topbarHTML() + `
+      <div class="wrap" style="overflow-y: auto; height: calc(100vh - 56px);">
+        <div class="corsi-wrap">
+          <div class="corsi-header">
+            <h1 class="corsi-title">🎓 Corsi Interaziendali</h1>
+            ${renderTabs()}
+          </div>
+          <div class="corsi-content">
+            ${renderContent()}
+          </div>
         </div>
       </div>
     `;
