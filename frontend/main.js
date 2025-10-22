@@ -9865,7 +9865,7 @@ function viewCorsiInteraziendali(){
   load();
   // Fix: Move window assignment inside function scope to prevent syntax error
   window.viewCorsiInteraziendali = window.viewCorsiInteraziendali || viewCorsiInteraziendali;
-};
+}
 
 // ===== VENDITE & RIORDINI =====
 function viewVenditeRiordini(){
