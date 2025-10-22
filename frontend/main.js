@@ -7113,7 +7113,7 @@ appEl.innerHTML = topbarHTML() + `
         <summary style="cursor: pointer; padding: 12px 0; font-weight: 600; color: var(--accent);">
           <span style="margin-right: 8px;">📊</span>Incassi passati
         </summary>
-        <div class="table" style="margin-top: 16px;">
+        <div class="table" style="margin-top: 16px; overflow-x: auto;">
           <table>
             <thead>
               <tr>
@@ -8478,6 +8478,7 @@ window.viewGI = window.viewGI || viewGI;
 // Variabili globali per Corsi Interaziendali
 let corsiActiveTab = 'catalogo';
 let corsiCurrentPeriod = new Date();
+let iscrizioniCurrentPeriod = new Date();
 
 function viewCorsiInteraziendali(){
   if(!getUser()) return viewLogin();
@@ -9097,7 +9098,7 @@ function viewCorsiInteraziendali(){
           ` : ''}
         </div>
         
-        <div class="table" style="margin-top: 16px;">
+        <div class="table" style="margin-top: 16px; overflow-x: auto;">
           <table>
             <thead>
               <tr>
@@ -9146,8 +9147,10 @@ function viewCorsiInteraziendali(){
           </div>
         </div>
         
-        <div style="margin-top: 16px; padding: 20px; border: 1px solid var(--hair2); border-radius: var(--radius); background: rgba(255,255,255,.02);" id="calendario-container">
-          <div class="loading">Caricamento calendario...</div>
+        <div id="cal_container" style="margin-top: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+          <div class="calendar" id="calendario-container" style="min-width: 860px;">
+            <div class="loading">Caricamento calendario...</div>
+          </div>
         </div>
       </div>
     `;
@@ -9197,7 +9200,7 @@ function viewCorsiInteraziendali(){
           ` : ''}
         </div>
         
-        <div class="table" style="margin-top: 16px;">
+        <div class="table" style="margin-top: 16px; overflow-x: auto;">
           <table>
             <thead>
               <tr>
@@ -9837,23 +9840,18 @@ function viewCorsiInteraziendali(){
     const daysInMonth = lastDay.getDate();
     const startDay = firstDay.getDay(); // 0 = Domenica
 
-    // Crea calendario
-    let calendarHtml = '<div class="calendar-grid">';
+    // Crea calendario usando la struttura del calendario principale
+    let calendarHtml = '';
     
     // Header giorni settimana
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
-    calendarHtml += '<div class="calendar-header">';
     dayNames.forEach(day => {
-      calendarHtml += `<div class="calendar-day-header">${day}</div>`;
+      calendarHtml += `<div class="weekLabel">${day}</div>`;
     });
-    calendarHtml += '</div>';
-
-    // Giorni del mese
-    calendarHtml += '<div class="calendar-body">';
     
     // Spazi vuoti per allineare il primo giorno
     for (let i = 0; i < startDay; i++) {
-      calendarHtml += '<div class="calendar-day empty"></div>';
+      calendarHtml += '<div class="day empty"></div>';
     }
 
     // Giorni del mese
@@ -9867,16 +9865,18 @@ function viewCorsiInteraziendali(){
         cd.giorni_dettaglio.some(gd => gd.data === dateStr)
       );
 
+      const today = new Date();
+      const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+      
       calendarHtml += `
-        <div class="calendar-day ${hasCourse ? 'has-course' : ''}" 
+        <div class="day ${hasCourse ? 'busy2' : ''} ${isToday ? 'today' : ''}" 
              onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
-          <div class="day-number">${day}</div>
-          ${hasCourse ? '<div class="course-indicator">📚</div>' : ''}
+          <div class="dnum">${day}</div>
+          ${hasCourse ? `<div class="small">${coursesOnDay[0].corsi_catalogo.nome_corso}</div>` : ''}
         </div>
       `;
     }
 
-    calendarHtml += '</div></div>';
     container.innerHTML = calendarHtml;
   }
 
@@ -10417,7 +10417,6 @@ function viewVenditeRiordini(){
 
   // Stato per granularità e periodo
   let currentGranularity = 'mensile';
-  let iscrizioniCurrentPeriod = new Date();
   let currentConsultant = '';
 
   appEl.innerHTML = topbarHTML() + `
