@@ -9948,7 +9948,7 @@ function viewCorsiInteraziendali(){
       const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
       
       // Calcola periodo basato su granularità
-      const { from, to } = calculatePeriod(granularity, iscrizioniPeriod);
+      const { from, to } = calculatePeriod(granularity, iscrizioniCurrentPeriod);
       
       const params = new URLSearchParams();
       params.append('from', from);
@@ -10009,22 +10009,22 @@ function viewCorsiInteraziendali(){
     
     switch (granularity) {
       case 'giornaliera':
-        iscrizioniPeriod.setDate(iscrizioniPeriod.getDate() + direction);
+        iscrizioniCurrentPeriod.setDate(iscrizioniCurrentPeriod.getDate() + direction);
         break;
       case 'settimanale':
-        iscrizioniPeriod.setDate(iscrizioniPeriod.getDate() + (direction * 7));
+        iscrizioniCurrentPeriod.setDate(iscrizioniCurrentPeriod.getDate() + (direction * 7));
         break;
       case 'mensile':
-        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + direction);
+        iscrizioniCurrentPeriod.setMonth(iscrizioniCurrentPeriod.getMonth() + direction);
         break;
       case 'trimestrale':
-        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + (direction * 3));
+        iscrizioniCurrentPeriod.setMonth(iscrizioniCurrentPeriod.getMonth() + (direction * 3));
         break;
       case 'semestrale':
-        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + (direction * 6));
+        iscrizioniCurrentPeriod.setMonth(iscrizioniCurrentPeriod.getMonth() + (direction * 6));
         break;
       case 'annuale':
-        iscrizioniPeriod.setFullYear(iscrizioniPeriod.getFullYear() + direction);
+        iscrizioniCurrentPeriod.setFullYear(iscrizioniCurrentPeriod.getFullYear() + direction);
         break;
     }
     
@@ -10037,7 +10037,7 @@ function viewCorsiInteraziendali(){
     if (!span) return;
     
     const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
-    const { from, to } = calculatePeriod(granularity, iscrizioniPeriod);
+    const { from, to } = calculatePeriod(granularity, iscrizioniCurrentPeriod);
     
     switch (granularity) {
       case 'giornaliera':
@@ -10047,18 +10047,18 @@ function viewCorsiInteraziendali(){
         span.textContent = `${new Date(from).toLocaleDateString('it-IT')} - ${new Date(to).toLocaleDateString('it-IT')}`;
         break;
       case 'mensile':
-        span.textContent = iscrizioniPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        span.textContent = iscrizioniCurrentPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
         break;
       case 'trimestrale':
-        const quarter = Math.floor(iscrizioniPeriod.getMonth() / 3) + 1;
-        span.textContent = `Q${quarter} ${iscrizioniPeriod.getFullYear()}`;
+        const quarter = Math.floor(iscrizioniCurrentPeriod.getMonth() / 3) + 1;
+        span.textContent = `Q${quarter} ${iscrizioniCurrentPeriod.getFullYear()}`;
         break;
       case 'semestrale':
-        const semester = Math.floor(iscrizioniPeriod.getMonth() / 6) + 1;
-        span.textContent = `Semestre ${semester} ${iscrizioniPeriod.getFullYear()}`;
+        const semester = Math.floor(iscrizioniCurrentPeriod.getMonth() / 6) + 1;
+        span.textContent = `Semestre ${semester} ${iscrizioniCurrentPeriod.getFullYear()}`;
         break;
       case 'annuale':
-        span.textContent = iscrizioniPeriod.getFullYear().toString();
+        span.textContent = iscrizioniCurrentPeriod.getFullYear().toString();
         break;
     }
   }
