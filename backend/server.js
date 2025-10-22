@@ -1912,6 +1912,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const cycleNotificationsRoutes = require("./routes/cycle-notifications")({ auth, supabase });
   const venditeRiordiniRoutes = require("./routes/vendite-riordini")(app);
+  const corsiRoutes = require("./routes/corsi")(app);
   
   // Route che dipendono da Supabase (dopo inizializzazione)
   const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase });
@@ -1922,6 +1923,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   app.use('/api/push-tracking', pushTrackingRoutes);
   app.use('/api/user-preferences', userPreferencesRoutes);
   app.use('/api/cycle-notifications', cycleNotificationsRoutes);
+  
+  // Le route corsi sono già registrate nel modulo stesso (corsiRoutes)
   
   await setupStatic();
   app.listen(PORT, HOST, ()=> logger.info(`BP backend listening on http://${HOST}:${PORT}`));

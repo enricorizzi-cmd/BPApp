@@ -18,6 +18,7 @@ export function topbarHTML(){
           '<button class="ghost" onclick="viewLeaderboard();toggleDrawer(false)">Classifiche</button>'+
           '<button class="ghost" onclick="viewCommissions();toggleDrawer(false)">Provvigioni</button>'+
           '<button class="ghost" onclick="viewVenditeRiordini();toggleDrawer(false)">Vendite e Riordini</button>'+
+          '<button class="ghost" onclick="viewCorsiInteraziendali();toggleDrawer(false)">Corsi Interaziendali</button>'+
           '<button class="ghost" onclick="viewGI();toggleDrawer(false)">GI &amp; Scadenzario</button>'+
           '<button class="ghost" onclick="viewReport();toggleDrawer(false)">Report</button>'+
           '<button class="ghost" onclick="viewClients();toggleDrawer(false)">Clienti</button>'+
@@ -39,6 +40,7 @@ export function topbarHTML(){
     { icon: '🏆', text: 'Classifiche', onclick: 'viewLeaderboard()' },
     { icon: '💰', text: 'Provvigioni', onclick: 'viewCommissions()' },
     { icon: '🛒', text: 'Vendite e Riordini', onclick: 'viewVenditeRiordini()' },
+    { icon: '🎓', text: 'Corsi Interaziendali', onclick: 'viewCorsiInteraziendali()' },
     { icon: '📋', text: 'GI & Scadenzario', onclick: 'viewGI()' },
     { icon: '📈', text: 'Report', onclick: 'viewReport()' },
     { icon: '👤', text: 'Clienti', onclick: 'viewClients()' },
@@ -93,6 +95,7 @@ export function topbarHTML(){
   '<button class="ghost" onclick="viewLeaderboard()">Classifiche</button>'+
   '<button class="ghost" onclick="viewCommissions()">Provvigioni</button>'+
   '<button class="ghost" onclick="viewVenditeRiordini()">Vendite e Riordini</button>'+
+  '<button class="ghost" onclick="viewCorsiInteraziendali()">Corsi Interaziendali</button>'+
   '<button class="ghost" onclick="viewGI()">GI &amp; Scadenzario</button>'+
   '<button class="ghost" onclick="viewReport()">Report</button>'+
   '<button class="ghost" onclick="viewClients()">Clienti</button>'+

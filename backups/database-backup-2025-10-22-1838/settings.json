@@ -1,0 +1,22 @@
+{
+  "indicators": [
+    "VSS",
+    "VSDPersonale",
+    "VSDIndiretto",
+    "GI",
+    "Telefonate",
+    "AppFissati",
+    "AppFatti",
+    "CorsiLeadership",
+    "iProfile",
+    "MBS",
+    "NNCF"
+  ],
+  "weights": {},
+  "commissions": {
+    "gi": 0.15,
+    "vsdJunior": 0.2,
+    "vsdSenior": 0.25
+  },
+  "version": 13
+}

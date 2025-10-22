@@ -8474,6 +8474,2353 @@ appEl.innerHTML = topbarHTML() + `
 }
 window.viewGI = window.viewGI || viewGI;
 
+// ===== CORSI INTERAZIENDALI =====
+function viewCorsiInteraziendali(){
+  if(!getUser()) return viewLogin();
+  document.title = 'Battle Plan – Corsi Interaziendali';
+  setActiveSidebarItem('viewCorsiInteraziendali');
+  const isAdmin = getUser().role==='admin';
+
+  // Stato per tab attiva
+  let activeTab = 'catalogo';
+
+  // CSS per la view
+  if(!document.getElementById('corsi-css')){
+    const style = document.createElement('style');
+    style.id = 'corsi-css';
+    style.textContent = `
+      /* Corsi Interaziendali Styles */
+      .corsi-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
+      }
+      
+      .corsi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      .corsi-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+      }
+      
+      .corsi-tabs {
+        display: flex;
+        background: rgba(255,255,255,.05);
+        border-radius: 12px;
+        padding: 4px;
+        border: 1px solid var(--hair2);
+        overflow-x: auto;
+      }
+      
+      .corsi-tab {
+        padding: 12px 20px;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        font-size: 14px;
+      }
+      
+      .corsi-tab.active {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(93,211,255,.3);
+      }
+      
+      .corsi-tab:hover:not(.active) {
+        background: rgba(255,255,255,.08);
+        color: var(--text);
+      }
+      
+      .corsi-content {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        min-height: 600px;
+      }
+      
+      /* Catalogo Styles */
+      .catalogo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      .catalogo-filters {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      
+      .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .filter-group select {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 14px;
+        min-width: 120px;
+      }
+      
+      .period-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+      
+      .period-controls button {
+        background: transparent;
+        border: none;
+        color: var(--accent);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+      
+      .period-controls button:hover {
+        background: rgba(93,211,255,.1);
+      }
+      
+      .period-controls span {
+        font-weight: 500;
+        color: var(--text);
+        min-width: 120px;
+        text-align: center;
+      }
+      
+      .catalogo-actions {
+        display: flex;
+        gap: 12px;
+      }
+      
+      .catalogo-table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--hair2);
+      }
+      
+      .catalogo-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255,255,255,.02);
+      }
+      
+      .catalogo-table th {
+        background: rgba(255,255,255,.05);
+        padding: 16px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text);
+        border-bottom: 1px solid var(--hair2);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .catalogo-table td {
+        padding: 16px 12px;
+        border-bottom: 1px solid rgba(255,255,255,.05);
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .catalogo-table tr:hover {
+        background: rgba(255,255,255,.03);
+      }
+      
+      .catalogo-table .loading {
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+        padding: 40px;
+      }
+      
+      /* Calendario Styles */
+      .calendario-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      .calendario-controls {
+        display: flex;
+        gap: 8px;
+      }
+      
+      .calendario-navigation {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      
+      .calendario-navigation button {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .calendario-navigation button:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+      
+      .calendario-navigation span {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 18px;
+      }
+      
+      /* Iscrizioni Styles */
+      .iscrizioni-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      .iscrizioni-filters {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      
+      .iscrizioni-actions {
+        display: flex;
+        gap: 12px;
+      }
+      
+      .iscrizioni-table-container {
+        overflow-x: auto;
+        border-radius: 12px;
+        border: 1px solid var(--hair2);
+      }
+      
+      .iscrizioni-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(255,255,255,.02);
+      }
+      
+      .iscrizioni-table th {
+        background: rgba(255,255,255,.05);
+        padding: 16px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text);
+        border-bottom: 1px solid var(--hair2);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .iscrizioni-table td {
+        padding: 16px 12px;
+        border-bottom: 1px solid rgba(255,255,255,.05);
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .iscrizioni-table tr:hover {
+        background: rgba(255,255,255,.03);
+      }
+      
+      .iscrizioni-table .loading {
+        text-align: center;
+        color: var(--muted);
+        font-style: italic;
+        padding: 40px;
+      }
+      
+      /* Button Styles */
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(93,211,255,.3);
+      }
+      
+      .btn-primary:hover {
+        box-shadow: 0 4px 12px rgba(93,211,255,.4);
+        transform: translateY(-1px);
+      }
+      
+      .btn-secondary {
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-secondary:hover {
+        background: rgba(255,255,255,.08);
+        border-color: var(--accent);
+      }
+      
+      .btn-secondary.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      
+      .btn-small {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 12px;
+        margin: 0 2px;
+      }
+      
+      .btn-small:hover {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      
+      .actions {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+      }
+      
+      /* Modal Styles */
+      .corso-modal,
+      .date-modal {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--hair2);
+      }
+      
+      .modal-header h3 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      
+      .close-btn {
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .close-btn:hover {
+        background: rgba(255,255,255,.1);
+        color: var(--text);
+      }
+      
+      .modal-body {
+        margin-bottom: 20px;
+      }
+      
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--hair2);
+      }
+      
+      .form-group {
+        margin-bottom: 16px;
+      }
+      
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
+      
+      .form-group input:focus,
+      .form-group textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      
+      /* Date Modal Specific Styles */
+      .corso-info {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      
+      .corso-info h4 {
+        margin: 0 0 8px 0;
+        color: var(--text);
+        font-size: 18px;
+      }
+      
+      .corso-info p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      
+      .existing-dates {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      
+      .existing-date {
+        background: rgba(255,255,255,.03);
+        border: 1px solid var(--hair2);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+      
+      .existing-date strong {
+        color: var(--text);
+      }
+      
+      .existing-date span {
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      
+      .date-row {
+        background: rgba(255,255,255,.03);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      
+      .date-row h5 {
+        margin: 0 0 12px 0;
+        color: var(--text);
+        font-size: 16px;
+      }
+      
+      .date-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .time-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .day-fields {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        background: rgba(255,255,255,.02);
+        border-radius: 6px;
+      }
+      
+      .day-fields label {
+        min-width: 80px;
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      
+      .time-inputs {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+      }
+      
+      .time-inputs input {
+        flex: 1;
+        margin: 0;
+      }
+      
+      /* Calendar Styles */
+      .calendar-grid {
+        background: rgba(255,255,255,.02);
+        border-radius: 12px;
+        border: 1px solid var(--hair2);
+        overflow: hidden;
+      }
+      
+      .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        background: rgba(255,255,255,.05);
+        border-bottom: 1px solid var(--hair2);
+      }
+      
+      .calendar-day-header {
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: var(--hair2);
+      }
+      
+      .calendar-day {
+        background: rgba(255,255,255,.02);
+        min-height: 80px;
+        padding: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+      }
+      
+      .calendar-day:hover {
+        background: rgba(255,255,255,.05);
+      }
+      
+      .calendar-day.has-course {
+        background: rgba(255,87,87,.1);
+        border: 1px solid rgba(255,87,87,.3);
+      }
+      
+      .calendar-day.has-course:hover {
+        background: rgba(255,87,87,.2);
+      }
+      
+      .calendar-day.empty {
+        background: rgba(255,255,255,.01);
+        cursor: default;
+      }
+      
+      .calendar-day.empty:hover {
+        background: rgba(255,255,255,.01);
+      }
+      
+      .day-number {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      
+      .course-indicator {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+      
+      /* Annual Calendar Styles */
+      .annual-calendar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      
+      .month-container {
+        background: rgba(255,255,255,.02);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      
+      .month-container h4 {
+        margin: 0 0 12px 0;
+        text-align: center;
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 2px;
+      }
+      
+      .mini-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,.02);
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .mini-day:hover {
+        background: rgba(255,255,255,.05);
+      }
+      
+      .mini-day.has-course {
+        background: rgba(255,87,87,.1);
+        color: var(--text);
+        font-weight: 600;
+      }
+      
+      .mini-day.has-course:hover {
+        background: rgba(255,87,87,.2);
+      }
+      
+      .mini-day.empty {
+        background: transparent;
+        cursor: default;
+      }
+      
+      .mini-day.empty:hover {
+        background: transparent;
+      }
+      
+      /* Day Courses Modal */
+      .day-courses-modal {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      
+      .courses-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .course-item {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      
+      .course-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      
+      .course-header h4 {
+        margin: 0;
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 600;
+      }
+      
+      .course-duration {
+        background: var(--accent);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .course-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .time-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .time {
+        background: rgba(255,255,255,.1);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+      }
+      
+      .course-meta {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      
+      .course-code {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      
+      .course-cost {
+        font-size: 12px;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      
+      /* Responsive Calendar */
+      @media (max-width: 768px) {
+        .calendar-day {
+          min-height: 60px;
+          padding: 6px;
+        }
+        
+        .day-number {
+          font-size: 12px;
+        }
+        
+        .course-indicator {
+          font-size: 10px;
+        }
+        
+        .annual-calendar {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        
+        .month-container {
+          padding: 12px;
+        }
+        
+        .mini-day {
+          font-size: 10px;
+        }
+        
+        .day-courses-modal {
+          padding: 16px;
+          max-height: 90vh;
+        }
+        
+        .course-item {
+          padding: 12px;
+        }
+        
+        .course-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        
+        .course-details {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+      
+      /* Iscrizioni Specific Styles */
+      .clienti-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      
+      .cliente-item {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+        color: var(--text);
+      }
+      
+      .iscrizione-modal {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 700px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+      
+      .cliente-group {
+        background: rgba(255,255,255,.03);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        position: relative;
+      }
+      
+      .cliente-group .btn-small {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+      }
+      
+      .cliente-group .form-group {
+        margin-bottom: 12px;
+      }
+      
+      .cliente-group .form-group:last-child {
+        margin-bottom: 0;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .corsi-wrap {
+          padding: 0 16px;
+          margin-top: calc(56px + env(safe-area-inset-top) + 16px);
+        }
+        
+        .corsi-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .corsi-title {
+          font-size: 24px;
+          text-align: center;
+        }
+        
+        .corsi-tabs {
+          justify-content: center;
+        }
+        
+        .corsi-content {
+          padding: 16px;
+        }
+        
+        .catalogo-header,
+        .iscrizioni-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .catalogo-filters,
+        .iscrizioni-filters {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+        }
+        
+        .filter-group {
+          width: 100%;
+        }
+        
+        .filter-group select {
+          width: 100%;
+        }
+        
+        .period-controls {
+          justify-content: center;
+        }
+        
+        .calendario-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .calendario-controls {
+          justify-content: center;
+        }
+        
+        .calendario-navigation {
+          justify-content: center;
+        }
+        
+        .catalogo-table,
+        .iscrizioni-table {
+          font-size: 12px;
+        }
+        
+        .catalogo-table th,
+        .catalogo-table td,
+        .iscrizioni-table th,
+        .iscrizioni-table td {
+          padding: 12px 8px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function renderTabs() {
+    return `
+      <div class="corsi-tabs">
+        <button class="corsi-tab ${activeTab === 'catalogo' ? 'active' : ''}" onclick="switchCorsiTab('catalogo')">
+          📚 Catalogo Corsi
+        </button>
+        <button class="corsi-tab ${activeTab === 'calendario' ? 'active' : ''}" onclick="switchCorsiTab('calendario')">
+          📅 Calendario Corsi
+        </button>
+        <button class="corsi-tab ${activeTab === 'iscrizioni' ? 'active' : ''}" onclick="switchCorsiTab('iscrizioni')">
+          👥 Iscrizioni
+        </button>
+      </div>
+    `;
+  }
+
+  function renderContent() {
+    switch(activeTab) {
+      case 'catalogo':
+        return renderCatalogoTab();
+      case 'calendario':
+        return renderCalendarioTab();
+      case 'iscrizioni':
+        return renderIscrizioniTab();
+      default:
+        return '<div>Tab non trovata</div>';
+    }
+  }
+
+  function renderCatalogoTab() {
+    return `
+      <div id="catalogo-content">
+        <div class="catalogo-header">
+          <div class="catalogo-filters">
+            <div class="filter-group">
+              <label>Granularità:</label>
+              <select id="granularita-catalogo" onchange="updateCatalogoFilters()">
+                <option value="giornaliera">Giornaliera</option>
+                <option value="settimanale">Settimanale</option>
+                <option value="mensile" selected>Mensile</option>
+                <option value="trimestrale">Trimestrale</option>
+                <option value="semestrale">Semestrale</option>
+                <option value="annuale">Annuale</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Periodo:</label>
+              <div class="period-controls">
+                <button onclick="changeCatalogoPeriod(-1)">◀</button>
+                <span id="periodo-catalogo">Gennaio 2025</span>
+                <button onclick="changeCatalogoPeriod(1)">▶</button>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>
+                <input type="checkbox" id="tutti-corsi" onchange="updateCatalogoFilters()">
+                Tutti i corsi
+              </label>
+            </div>
+          </div>
+          ${isAdmin ? `
+            <div class="catalogo-actions">
+              <button class="btn-primary" onclick="showAggiungiCorsoModal()">
+                ➕ Aggiungi Corso
+              </button>
+            </div>
+          ` : ''}
+        </div>
+        
+        <div class="catalogo-table-container">
+          <table class="catalogo-table">
+            <thead>
+              <tr>
+                <th>Codice</th>
+                <th>Nome Corso</th>
+                <th>Durata (giorni)</th>
+                <th>Descrizione</th>
+                <th>Costo (VSD Indiretto)</th>
+                <th>Date Programmate</th>
+                ${isAdmin ? '<th>Azioni</th>' : ''}
+              </tr>
+            </thead>
+            <tbody id="catalogo-tbody">
+              <tr>
+                <td colspan="${isAdmin ? '7' : '6'}" class="loading">Caricamento...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCalendarioTab() {
+    return `
+      <div id="calendario-content">
+        <div class="calendario-header">
+          <div class="calendario-controls">
+            <button class="btn-secondary" onclick="switchCalendarioView('mensile')" id="btn-mensile">
+              📅 Mensile
+            </button>
+            <button class="btn-secondary" onclick="switchCalendarioView('annuale')" id="btn-annuale">
+              📆 Annuale
+            </button>
+          </div>
+          <div class="calendario-navigation">
+            <button onclick="changeCalendarioMonth(-1)">◀</button>
+            <span id="calendario-title">Gennaio 2025</span>
+            <button onclick="changeCalendarioMonth(1)">▶</button>
+          </div>
+        </div>
+        
+        <div id="calendario-container">
+          <div class="loading">Caricamento calendario...</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderIscrizioniTab() {
+    return `
+      <div id="iscrizioni-content">
+        <div class="iscrizioni-header">
+          <div class="iscrizioni-filters">
+            <div class="filter-group">
+              <label>Nome Corso:</label>
+              <select id="filtro-corso" onchange="updateIscrizioniFilters()">
+                <option value="">Tutti i corsi</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Consulente:</label>
+              <select id="filtro-consulente" onchange="updateIscrizioniFilters()">
+                <option value="">Tutti i consulenti</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Granularità:</label>
+              <select id="granularita-iscrizioni" onchange="updateIscrizioniFilters()">
+                <option value="giornaliera">Giornaliera</option>
+                <option value="settimanale">Settimanale</option>
+                <option value="mensile" selected>Mensile</option>
+                <option value="trimestrale">Trimestrale</option>
+                <option value="semestrale">Semestrale</option>
+                <option value="annuale">Annuale</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Periodo:</label>
+              <div class="period-controls">
+                <button onclick="changeIscrizioniPeriod(-1)">◀</button>
+                <span id="periodo-iscrizioni">Gennaio 2025</span>
+                <button onclick="changeIscrizioniPeriod(1)">▶</button>
+              </div>
+            </div>
+          </div>
+          <div class="iscrizioni-actions">
+            <button class="btn-primary" onclick="showIscrizioneModal()">
+              ➕ Inserisci Iscrizione
+            </button>
+          </div>
+        </div>
+        
+        <div class="iscrizioni-table-container">
+          <table class="iscrizioni-table">
+            <thead>
+              <tr>
+                <th>Data Corso</th>
+                <th>Nome Corso</th>
+                <th>Clienti Iscritti</th>
+                <th>Totale Iscritti</th>
+                <th>VSD Indiretto Totale</th>
+              </tr>
+            </thead>
+            <tbody id="iscrizioni-tbody">
+              <tr>
+                <td colspan="5" class="loading">Caricamento...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function load() {
+    appEl.innerHTML = `
+      <div class="corsi-wrap">
+        <div class="corsi-header">
+          <h1 class="corsi-title">🎓 Corsi Interaziendali</h1>
+          ${renderTabs()}
+        </div>
+        <div class="corsi-content">
+          ${renderContent()}
+        </div>
+      </div>
+    `;
+
+    // Inizializza i dati
+    initializeCorsiData();
+    
+    // Aggiorna display periodo per catalogo
+    if (activeTab === 'catalogo') {
+      updateCatalogoPeriodDisplay();
+    }
+    
+    // Aggiorna display periodo per iscrizioni
+    if (activeTab === 'iscrizioni') {
+      updateIscrizioniPeriodDisplay();
+    }
+  }
+
+  function initializeCorsiData() {
+    switch(activeTab) {
+      case 'catalogo':
+        loadCatalogoData();
+        break;
+      case 'calendario':
+        loadCalendarioData();
+        break;
+      case 'iscrizioni':
+        loadIscrizioniData();
+        loadConsulentiOptions();
+        loadCorsiFilterOptions();
+        break;
+    }
+  }
+
+  // Funzioni globali per i tab
+  window.switchCorsiTab = function(tab) {
+    activeTab = tab;
+    load();
+  };
+
+  // Funzioni per Catalogo
+  window.updateCatalogoFilters = function() {
+    loadCatalogoData();
+  };
+
+  window.changeCatalogoPeriod = function(direction) {
+    // Implementazione cambio periodo
+    loadCatalogoData();
+  };
+
+  window.showAggiungiCorsoModal = function() {
+    // Implementazione modal aggiungi corso
+    toast('Modal aggiungi corso - da implementare');
+  };
+
+  // Funzioni per Calendario
+  window.switchCalendarioView = function(view) {
+    // Implementazione cambio vista calendario
+    loadCalendarioData();
+  };
+
+  window.changeCalendarioMonth = function(direction) {
+    // Implementazione cambio mese
+    loadCalendarioData();
+  };
+
+  // Funzioni per Iscrizioni
+  window.updateIscrizioniFilters = function() {
+    loadIscrizioniData();
+  };
+
+  window.changeIscrizioniPeriod = function(direction) {
+    // Implementazione cambio periodo
+    loadIscrizioniData();
+  };
+
+  window.showIscrizioneModal = function() {
+    // Implementazione modal iscrizione
+    toast('Modal iscrizione - da implementare');
+  };
+
+  // Funzioni di caricamento dati
+  async function loadCatalogoData() {
+    try {
+      const tbody = document.getElementById('catalogo-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">Caricamento...</td></tr>';
+
+      const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
+      const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
+      
+      // Calcola periodo basato su granularità
+      const { from, to } = calculatePeriod(granularity, currentPeriod);
+      
+      const params = new URLSearchParams();
+      if (!tuttiCorsi) {
+        params.append('from', from);
+        params.append('to', to);
+      }
+      params.append('tutti_corsi', tuttiCorsi ? 'true' : 'false');
+
+      const response = await GET(`/api/corsi-catalogo?${params}`);
+      
+      if (response.corsi) {
+        renderCatalogoTable(response.corsi);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">Nessun corso trovato</td></tr>';
+      }
+    } catch (error) {
+      console.error('Error loading catalogo data:', error);
+      const tbody = document.getElementById('catalogo-tbody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">Errore nel caricamento</td></tr>';
+      }
+    }
+  }
+
+  function renderCatalogoTable(corsi) {
+    const tbody = document.getElementById('catalogo-tbody');
+    if (!tbody) return;
+
+    if (corsi.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="loading">Nessun corso trovato</td></tr>';
+      return;
+    }
+
+    const isAdmin = getUser().role === 'admin';
+    const rows = corsi.map(corso => `
+      <tr>
+        <td>${corso.codice_corso || '-'}</td>
+        <td>${corso.nome_corso}</td>
+        <td>${corso.durata_giorni}</td>
+        <td>${corso.descrizione || '-'}</td>
+        <td>€${Number(corso.costo_corso).toLocaleString()}</td>
+        <td>${corso.date_programmate || 0}</td>
+        ${isAdmin ? `
+          <td class="actions">
+            <button class="btn-small" onclick="editCorso('${corso.id}')" title="Modifica">
+              ✏️
+            </button>
+            <button class="btn-small" onclick="deleteCorso('${corso.id}')" title="Elimina">
+              🗑️
+            </button>
+            <button class="btn-small" onclick="showInserisciDataModal('${corso.id}')" title="Inserisci Date">
+              📅
+            </button>
+          </td>
+        ` : ''}
+      </tr>
+    `).join('');
+
+    tbody.innerHTML = rows;
+  }
+
+  function calculatePeriod(granularity, date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    switch (granularity) {
+      case 'giornaliera':
+        const day = date.getDate();
+        return {
+          from: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+          to: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        };
+      case 'settimanale':
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        return {
+          from: weekStart.toISOString().split('T')[0],
+          to: weekEnd.toISOString().split('T')[0]
+        };
+      case 'mensile':
+        return {
+          from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+          to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
+        };
+      case 'trimestrale':
+        const quarter = Math.floor(month / 3);
+        const quarterStart = quarter * 3;
+        const quarterEnd = quarterStart + 2;
+        return {
+          from: `${year}-${String(quarterStart + 1).padStart(2, '0')}-01`,
+          to: `${year}-${String(quarterEnd + 1).padStart(2, '0')}-${new Date(year, quarterEnd + 1, 0).getDate()}`
+        };
+      case 'semestrale':
+        const semester = Math.floor(month / 6);
+        const semesterStart = semester * 6;
+        const semesterEnd = semesterStart + 5;
+        return {
+          from: `${year}-${String(semesterStart + 1).padStart(2, '0')}-01`,
+          to: `${year}-${String(semesterEnd + 1).padStart(2, '0')}-${new Date(year, semesterEnd + 1, 0).getDate()}`
+        };
+      case 'annuale':
+        return {
+          from: `${year}-01-01`,
+          to: `${year}-12-31`
+        };
+      default:
+        return {
+          from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+          to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
+        };
+    }
+  }
+
+  // Funzioni globali per Catalogo
+  window.updateCatalogoFilters = function() {
+    loadCatalogoData();
+  };
+
+  window.changeCatalogoPeriod = function(direction) {
+    const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
+    
+    switch (granularity) {
+      case 'giornaliera':
+        currentPeriod.setDate(currentPeriod.getDate() + direction);
+        break;
+      case 'settimanale':
+        currentPeriod.setDate(currentPeriod.getDate() + (direction * 7));
+        break;
+      case 'mensile':
+        currentPeriod.setMonth(currentPeriod.getMonth() + direction);
+        break;
+      case 'trimestrale':
+        currentPeriod.setMonth(currentPeriod.getMonth() + (direction * 3));
+        break;
+      case 'semestrale':
+        currentPeriod.setMonth(currentPeriod.getMonth() + (direction * 6));
+        break;
+      case 'annuale':
+        currentPeriod.setFullYear(currentPeriod.getFullYear() + direction);
+        break;
+    }
+    
+    updateCatalogoPeriodDisplay();
+    loadCatalogoData();
+  };
+
+  function updateCatalogoPeriodDisplay() {
+    const span = document.getElementById('periodo-catalogo');
+    if (!span) return;
+    
+    const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
+    const { from, to } = calculatePeriod(granularity, currentPeriod);
+    
+    switch (granularity) {
+      case 'giornaliera':
+        span.textContent = new Date(from).toLocaleDateString('it-IT');
+        break;
+      case 'settimanale':
+        span.textContent = `${new Date(from).toLocaleDateString('it-IT')} - ${new Date(to).toLocaleDateString('it-IT')}`;
+        break;
+      case 'mensile':
+        span.textContent = currentPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        break;
+      case 'trimestrale':
+        const quarter = Math.floor(currentPeriod.getMonth() / 3) + 1;
+        span.textContent = `Q${quarter} ${currentPeriod.getFullYear()}`;
+        break;
+      case 'semestrale':
+        const semester = Math.floor(currentPeriod.getMonth() / 6) + 1;
+        span.textContent = `Semestre ${semester} ${currentPeriod.getFullYear()}`;
+        break;
+      case 'annuale':
+        span.textContent = currentPeriod.getFullYear().toString();
+        break;
+    }
+  }
+
+  window.showAggiungiCorsoModal = function() {
+    showCorsoModal();
+  };
+
+  window.editCorso = function(corsoId) {
+    showCorsoModal(corsoId);
+  };
+
+  window.deleteCorso = async function(corsoId) {
+    if (!confirm('Sei sicuro di voler eliminare questo corso?')) return;
+    
+    try {
+      await DELETE(`/api/corsi-catalogo/${corsoId}`);
+      toast('Corso eliminato con successo');
+      loadCatalogoData();
+    } catch (error) {
+      console.error('Error deleting corso:', error);
+      toast('Errore nell\'eliminazione del corso', 'error');
+    }
+  };
+
+  window.showInserisciDataModal = function(corsoId) {
+    showDateModal(corsoId);
+  };
+
+  // Modal per aggiungere/modificare corso
+  function showCorsoModal(corsoId = null) {
+    const isEdit = !!corsoId;
+    const title = isEdit ? 'Modifica Corso' : 'Aggiungi Corso';
+    
+    const modalHtml = `
+      <div class="corso-modal">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button onclick="hideOverlay()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="corso-form">
+            <div class="form-group">
+              <label for="codice-corso">Codice Corso *</label>
+              <input type="text" id="codice-corso" required>
+            </div>
+            <div class="form-group">
+              <label for="nome-corso">Nome Corso *</label>
+              <input type="text" id="nome-corso" required>
+            </div>
+            <div class="form-group">
+              <label for="descrizione-corso">Descrizione</label>
+              <textarea id="descrizione-corso" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="durata-corso">Durata (giorni) *</label>
+              <input type="number" id="durata-corso" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="costo-corso">Costo (VSD Indiretto)</label>
+              <input type="number" id="costo-corso" min="0" step="0.01" value="0">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button onclick="hideOverlay()" class="btn-secondary">Annulla</button>
+          <button onclick="saveCorso('${corsoId || ''}')" class="btn-primary">Salva</button>
+        </div>
+      </div>
+    `;
+
+    showOverlay(modalHtml, 'corso-modal-overlay');
+    
+    if (isEdit) {
+      loadCorsoData(corsoId);
+    }
+  }
+
+  async function loadCorsoData(corsoId) {
+    try {
+      const response = await GET(`/api/corsi-catalogo/${corsoId}`);
+      if (response.corso) {
+        const corso = response.corso;
+        document.getElementById('codice-corso').value = corso.codice_corso || '';
+        document.getElementById('nome-corso').value = corso.nome_corso || '';
+        document.getElementById('descrizione-corso').value = corso.descrizione || '';
+        document.getElementById('durata-corso').value = corso.durata_giorni || '';
+        document.getElementById('costo-corso').value = corso.costo_corso || 0;
+      }
+    } catch (error) {
+      console.error('Error loading corso data:', error);
+      toast('Errore nel caricamento del corso', 'error');
+    }
+  }
+
+  window.saveCorso = async function(corsoId) {
+    try {
+      const form = document.getElementById('corso-form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const data = {
+        codice_corso: document.getElementById('codice-corso').value,
+        nome_corso: document.getElementById('nome-corso').value,
+        descrizione: document.getElementById('descrizione-corso').value,
+        durata_giorni: Number(document.getElementById('durata-corso').value),
+        costo_corso: Number(document.getElementById('costo-corso').value)
+      };
+
+      if (corsoId) {
+        await PUT(`/api/corsi-catalogo/${corsoId}`, data);
+        toast('Corso modificato con successo');
+      } else {
+        await POST('/api/corsi-catalogo', data);
+        toast('Corso creato con successo');
+      }
+
+      hideOverlay();
+      loadCatalogoData();
+    } catch (error) {
+      console.error('Error saving corso:', error);
+      toast('Errore nel salvataggio del corso', 'error');
+    }
+  };
+
+  // Modal per inserire date corso
+  function showDateModal(corsoId) {
+    const modalHtml = `
+      <div class="date-modal">
+        <div class="modal-header">
+          <h3>Inserisci Date Corso</h3>
+          <button onclick="hideOverlay()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="corso-info"></div>
+          <div id="date-list"></div>
+          <button onclick="addDateRow()" class="btn-primary">+ Aggiungi Data</button>
+        </div>
+        <div class="modal-footer">
+          <button onclick="hideOverlay()" class="btn-secondary">Annulla</button>
+          <button onclick="saveCorsoDates('${corsoId}')" class="btn-primary">Salva Date</button>
+        </div>
+      </div>
+    `;
+
+    showOverlay(modalHtml, 'date-modal-overlay');
+    loadCorsoInfo(corsoId);
+    loadExistingDates(corsoId);
+  }
+
+  async function loadCorsoInfo(corsoId) {
+    try {
+      const response = await GET(`/api/corsi-catalogo/${corsoId}`);
+      if (response.corso) {
+        const corso = response.corso;
+        document.getElementById('corso-info').innerHTML = `
+          <div class="corso-info">
+            <h4>${corso.nome_corso}</h4>
+            <p>Durata: ${corso.durata_giorni} giorno${corso.durata_giorni > 1 ? 'i' : ''}</p>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Error loading corso info:', error);
+    }
+  }
+
+  async function loadExistingDates(corsoId) {
+    try {
+      const response = await GET(`/api/corsi-date?corso_id=${corsoId}`);
+      const container = document.getElementById('date-list');
+      
+      if (response.date && response.date.length > 0) {
+        const datesHtml = response.date.map(data => `
+          <div class="existing-date">
+            <strong>${new Date(data.data_inizio).toLocaleDateString('it-IT')}</strong>
+            <span>(${data.giorni_dettaglio.length} giorno${data.giorni_dettaglio.length > 1 ? 'i' : ''})</span>
+          </div>
+        `).join('');
+        
+        container.innerHTML = `
+          <h5>Date esistenti:</h5>
+          <div class="existing-dates">${datesHtml}</div>
+          <hr>
+        `;
+      } else {
+        container.innerHTML = '<p>Nessuna data programmata</p><hr>';
+      }
+    } catch (error) {
+      console.error('Error loading existing dates:', error);
+    }
+  }
+
+  window.addDateRow = function() {
+    const container = document.getElementById('date-list');
+    const dateRowHtml = `
+      <div class="date-row">
+        <h5>Nuova Data</h5>
+        <div class="date-fields">
+          <div class="form-group">
+            <label>Data Inizio</label>
+            <input type="date" class="date-input" required>
+          </div>
+          <div class="time-fields"></div>
+        </div>
+      </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', dateRowHtml);
+    
+    // Genera campi per ogni giorno
+    const durata = parseInt(document.querySelector('.corso-info p').textContent.match(/\d+/)[0]);
+    const timeFields = container.querySelector('.date-row:last-child .time-fields');
+    
+    for (let i = 1; i <= durata; i++) {
+      const dayHtml = `
+        <div class="day-fields">
+          <label>Giorno ${i}</label>
+          <div class="time-inputs">
+            <input type="time" placeholder="Inizio" required>
+            <input type="time" placeholder="Fine" required>
+          </div>
+        </div>
+      `;
+      timeFields.insertAdjacentHTML('beforeend', dayHtml);
+    }
+  };
+
+  window.saveCorsoDates = async function(corsoId) {
+    try {
+      const dateRows = document.querySelectorAll('.date-row');
+      const datesToSave = [];
+      
+      for (const row of dateRows) {
+        const dataInizio = row.querySelector('.date-input').value;
+        if (!dataInizio) continue;
+        
+        const giorniDettaglio = [];
+        const dayFields = row.querySelectorAll('.day-fields');
+        
+        for (let i = 0; i < dayFields.length; i++) {
+          const timeInputs = dayFields[i].querySelectorAll('input[type="time"]');
+          const oraInizio = timeInputs[0].value;
+          const oraFine = timeInputs[1].value;
+          
+          if (oraInizio && oraFine) {
+            giorniDettaglio.push({
+              giorno: i + 1,
+              data: dataInizio,
+              ora_inizio: oraInizio,
+              ora_fine: oraFine
+            });
+          }
+        }
+        
+        if (giorniDettaglio.length > 0) {
+          datesToSave.push({
+            corso_id: corsoId,
+            data_inizio: dataInizio,
+            giorni_dettaglio: giorniDettaglio
+          });
+        }
+      }
+      
+      if (datesToSave.length === 0) {
+        toast('Inserisci almeno una data valida', 'error');
+        return;
+      }
+      
+      for (const dateData of datesToSave) {
+        await POST('/api/corsi-date', dateData);
+      }
+      
+      toast('Date salvate con successo');
+      hideOverlay();
+      loadCatalogoData();
+    } catch (error) {
+      console.error('Error saving corso dates:', error);
+      toast('Errore nel salvataggio delle date', 'error');
+    }
+  };
+
+  // Funzioni per Calendario
+  let calendarioView = 'mensile'; // 'mensile' o 'annuale'
+  let calendarioDate = new Date();
+
+  async function loadCalendarioData() {
+    try {
+      const container = document.getElementById('calendario-container');
+      if (!container) return;
+
+      container.innerHTML = '<div class="loading">Caricamento calendario...</div>';
+
+      // Carica tutte le date dei corsi
+      const response = await GET('/api/corsi-date');
+      
+      if (response.date) {
+        if (calendarioView === 'mensile') {
+          renderCalendarioMensile(response.date);
+        } else {
+          renderCalendarioAnnuale(response.date);
+        }
+      } else {
+        container.innerHTML = '<div class="loading">Nessun corso programmato</div>';
+      }
+    } catch (error) {
+      console.error('Error loading calendario data:', error);
+      const container = document.getElementById('calendario-container');
+      if (container) {
+        container.innerHTML = '<div class="loading">Errore nel caricamento</div>';
+      }
+    }
+  }
+
+  function renderCalendarioMensile(corsiDate) {
+    const container = document.getElementById('calendario-container');
+    if (!container) return;
+
+    const year = calendarioDate.getFullYear();
+    const month = calendarioDate.getMonth();
+    
+    // Aggiorna titolo
+    const title = document.getElementById('calendario-title');
+    if (title) {
+      title.textContent = calendarioDate.toLocaleDateString('it-IT', { 
+        month: 'long', 
+        year: 'numeric' 
+      });
+    }
+
+    // Calcola giorni del mese
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startDay = firstDay.getDay(); // 0 = Domenica
+
+    // Crea calendario
+    let calendarHtml = '<div class="calendar-grid">';
+    
+    // Header giorni settimana
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    calendarHtml += '<div class="calendar-header">';
+    dayNames.forEach(day => {
+      calendarHtml += `<div class="calendar-day-header">${day}</div>`;
+    });
+    calendarHtml += '</div>';
+
+    // Giorni del mese
+    calendarHtml += '<div class="calendar-body">';
+    
+    // Spazi vuoti per allineare il primo giorno
+    for (let i = 0; i < startDay; i++) {
+      calendarHtml += '<div class="calendar-day empty"></div>';
+    }
+
+    // Giorni del mese
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const hasCourse = corsiDate.some(cd => 
+        cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+      );
+      
+      const coursesOnDay = corsiDate.filter(cd => 
+        cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+      );
+
+      calendarHtml += `
+        <div class="calendar-day ${hasCourse ? 'has-course' : ''}" 
+             onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
+          <div class="day-number">${day}</div>
+          ${hasCourse ? '<div class="course-indicator">📚</div>' : ''}
+        </div>
+      `;
+    }
+
+    calendarHtml += '</div></div>';
+    container.innerHTML = calendarHtml;
+  }
+
+  function renderCalendarioAnnuale(corsiDate) {
+    const container = document.getElementById('calendario-container');
+    if (!container) return;
+
+    const year = calendarioDate.getFullYear();
+    
+    // Aggiorna titolo
+    const title = document.getElementById('calendario-title');
+    if (title) {
+      title.textContent = year.toString();
+    }
+
+    let calendarHtml = '<div class="annual-calendar">';
+    
+    // Genera 12 mesi
+    for (let month = 0; month < 12; month++) {
+      calendarHtml += `<div class="month-container">
+        <h4>${new Date(year, month).toLocaleDateString('it-IT', { month: 'long' })}</h4>
+        <div class="month-grid">`;
+      
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDay = firstDay.getDay();
+
+      // Spazi vuoti
+      for (let i = 0; i < startDay; i++) {
+        calendarHtml += '<div class="mini-day empty"></div>';
+      }
+
+      // Giorni del mese
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hasCourse = corsiDate.some(cd => 
+          cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+        );
+        
+        const coursesOnDay = corsiDate.filter(cd => 
+          cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+        );
+
+        calendarHtml += `
+          <div class="mini-day ${hasCourse ? 'has-course' : ''}" 
+               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
+            ${day}
+          </div>
+        `;
+      }
+
+      calendarHtml += '</div></div>';
+    }
+
+    calendarHtml += '</div>';
+    container.innerHTML = calendarHtml;
+  }
+
+  window.switchCalendarioView = function(view) {
+    calendarioView = view;
+    
+    // Aggiorna bottoni
+    document.getElementById('btn-mensile')?.classList.toggle('active', view === 'mensile');
+    document.getElementById('btn-annuale')?.classList.toggle('active', view === 'annuale');
+    
+    loadCalendarioData();
+  };
+
+  window.changeCalendarioMonth = function(direction) {
+    if (calendarioView === 'mensile') {
+      calendarioDate.setMonth(calendarioDate.getMonth() + direction);
+    } else {
+      calendarioDate.setFullYear(calendarioDate.getFullYear() + direction);
+    }
+    
+    loadCalendarioData();
+  };
+
+  window.showDayCourses = function(dateStr, coursesOnDay) {
+    if (!coursesOnDay || coursesOnDay.length === 0) return;
+
+    const date = new Date(dateStr);
+    const dateFormatted = date.toLocaleDateString('it-IT');
+    
+    let coursesHtml = `
+      <div class="day-courses-modal">
+        <div class="modal-header">
+          <h3>Corsi del ${dateFormatted}</h3>
+          <button onclick="hideOverlay()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="courses-list">
+    `;
+
+    coursesOnDay.forEach(courseData => {
+      const corso = courseData.corsi_catalogo;
+      const giorni = courseData.giorni_dettaglio.filter(gd => gd.data === dateStr);
+      
+      giorni.forEach(giorno => {
+        coursesHtml += `
+          <div class="course-item">
+            <div class="course-header">
+              <h4>${corso.nome_corso}</h4>
+              <span class="course-duration">Giorno ${giorno.giorno}</span>
+            </div>
+            <div class="course-details">
+              <div class="time-info">
+                <span class="time">${giorno.ora_inizio} - ${giorno.ora_fine}</span>
+              </div>
+              <div class="course-meta">
+                <span class="course-code">${corso.codice_corso || 'N/A'}</span>
+                <span class="course-cost">€${Number(corso.costo_corso).toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    });
+
+    coursesHtml += `
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="hideOverlay()" class="btn-primary">Chiudi</button>
+        </div>
+      </div>
+    `;
+
+    showOverlay(coursesHtml, 'day-courses-modal-overlay');
+  };
+
+  // Carica consulenti per i filtri
+  async function loadConsulentiOptions() {
+    try {
+      const response = await GET('/api/corsi-consulenti');
+      const select = document.getElementById('filtro-consulente');
+      
+      if (response.consulenti && select) {
+        const options = response.consulenti.map(consulente => 
+          `<option value="${consulente.id}">${consulente.name}</option>`
+        ).join('');
+        
+        select.innerHTML = '<option value="">Tutti i consulenti</option>' + options;
+      }
+    } catch (error) {
+      console.error('Error loading consulenti options:', error);
+    }
+  }
+
+  // Carica corsi per i filtri
+  async function loadCorsiFilterOptions() {
+    try {
+      const response = await GET('/api/corsi-catalogo?tutti_corsi=true');
+      const select = document.getElementById('filtro-corso');
+      
+      if (response.corsi && select) {
+        const options = response.corsi.map(corso => 
+          `<option value="${corso.nome_corso}">${corso.nome_corso}</option>`
+        ).join('');
+        
+        select.innerHTML = '<option value="">Tutti i corsi</option>' + options;
+      }
+    } catch (error) {
+      console.error('Error loading corsi filter options:', error);
+    }
+  }
+
+  async function loadIscrizioniData() {
+    try {
+      const tbody = document.getElementById('iscrizioni-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">Caricamento...</td></tr>';
+
+      const corsoNome = document.getElementById('filtro-corso')?.value || '';
+      const consulenteId = document.getElementById('filtro-consulente')?.value || '';
+      const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
+      
+      // Calcola periodo basato su granularità
+      const { from, to } = calculatePeriod(granularity, iscrizioniPeriod);
+      
+      const params = new URLSearchParams();
+      params.append('from', from);
+      params.append('to', to);
+      if (corsoNome) params.append('corso_nome', corsoNome);
+      if (consulenteId) params.append('consulente_id', consulenteId);
+
+      const response = await GET(`/api/corsi-iscrizioni?${params}`);
+      
+      if (response.iscrizioni) {
+        renderIscrizioniTable(response.iscrizioni);
+      } else {
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">Nessuna iscrizione trovata</td></tr>';
+      }
+    } catch (error) {
+      console.error('Error loading iscrizioni data:', error);
+      const tbody = document.getElementById('iscrizioni-tbody');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">Errore nel caricamento</td></tr>';
+      }
+    }
+  }
+
+  function renderIscrizioniTable(iscrizioni) {
+    const tbody = document.getElementById('iscrizioni-tbody');
+    if (!tbody) return;
+
+    if (iscrizioni.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="loading">Nessuna iscrizione trovata</td></tr>';
+      return;
+    }
+
+    const rows = iscrizioni.map(iscrizione => `
+      <tr>
+        <td>${new Date(iscrizione.data_corso).toLocaleDateString('it-IT')}</td>
+        <td>${iscrizione.nome_corso}</td>
+        <td>
+          <div class="clienti-list">
+            ${iscrizione.clienti_iscritti.map(cliente => 
+              `<div class="cliente-item">${cliente}</div>`
+            ).join('')}
+          </div>
+        </td>
+        <td>${iscrizione.totale_iscritti}</td>
+        <td>€${Number(iscrizione.vsd_totale).toLocaleString()}</td>
+      </tr>
+    `).join('');
+
+    tbody.innerHTML = rows;
+  }
+
+  window.updateIscrizioniFilters = function() {
+    loadIscrizioniData();
+  };
+
+  window.changeIscrizioniPeriod = function(direction) {
+    const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
+    
+    switch (granularity) {
+      case 'giornaliera':
+        iscrizioniPeriod.setDate(iscrizioniPeriod.getDate() + direction);
+        break;
+      case 'settimanale':
+        iscrizioniPeriod.setDate(iscrizioniPeriod.getDate() + (direction * 7));
+        break;
+      case 'mensile':
+        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + direction);
+        break;
+      case 'trimestrale':
+        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + (direction * 3));
+        break;
+      case 'semestrale':
+        iscrizioniPeriod.setMonth(iscrizioniPeriod.getMonth() + (direction * 6));
+        break;
+      case 'annuale':
+        iscrizioniPeriod.setFullYear(iscrizioniPeriod.getFullYear() + direction);
+        break;
+    }
+    
+    updateIscrizioniPeriodDisplay();
+    loadIscrizioniData();
+  };
+
+  function updateIscrizioniPeriodDisplay() {
+    const span = document.getElementById('periodo-iscrizioni');
+    if (!span) return;
+    
+    const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
+    const { from, to } = calculatePeriod(granularity, iscrizioniPeriod);
+    
+    switch (granularity) {
+      case 'giornaliera':
+        span.textContent = new Date(from).toLocaleDateString('it-IT');
+        break;
+      case 'settimanale':
+        span.textContent = `${new Date(from).toLocaleDateString('it-IT')} - ${new Date(to).toLocaleDateString('it-IT')}`;
+        break;
+      case 'mensile':
+        span.textContent = iscrizioniPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        break;
+      case 'trimestrale':
+        const quarter = Math.floor(iscrizioniPeriod.getMonth() / 3) + 1;
+        span.textContent = `Q${quarter} ${iscrizioniPeriod.getFullYear()}`;
+        break;
+      case 'semestrale':
+        const semester = Math.floor(iscrizioniPeriod.getMonth() / 6) + 1;
+        span.textContent = `Semestre ${semester} ${iscrizioniPeriod.getFullYear()}`;
+        break;
+      case 'annuale':
+        span.textContent = iscrizioniPeriod.getFullYear().toString();
+        break;
+    }
+  }
+
+  window.showIscrizioneModal = function() {
+    showIscrizioneModalInternal();
+  };
+
+  // Modal per iscrizione
+  function showIscrizioneModalInternal() {
+    const modalHtml = `
+      <div class="iscrizione-modal">
+        <div class="modal-header">
+          <h3>Inserisci Iscrizione</h3>
+          <button onclick="hideOverlay()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="iscrizione-form">
+            <div class="form-group">
+              <label for="corso-select">Corso *</label>
+              <select id="corso-select" required onchange="loadCorsoDates()">
+                <option value="">Seleziona corso...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="data-corso">Data Corso *</label>
+              <select id="data-corso" required>
+                <option value="">Seleziona prima un corso...</option>
+              </select>
+            </div>
+            <div id="clienti-container">
+              <div class="cliente-group">
+                <div class="form-group">
+                  <label for="cliente-1">Cliente *</label>
+                  <select id="cliente-1" required onchange="loadClienteInfo(1)">
+                    <option value="">Seleziona cliente...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="consulente-1">Consulente</label>
+                  <input type="text" id="consulente-1" readonly>
+                </div>
+                <div class="form-group">
+                  <label for="costo-1">Costo Corso</label>
+                  <input type="number" id="costo-1" min="0" step="0.01" value="0">
+                </div>
+              </div>
+            </div>
+            <button type="button" onclick="addCliente()" class="btn-secondary">+ Aggiungi Cliente</button>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button onclick="hideOverlay()" class="btn-secondary">Annulla</button>
+          <button onclick="saveIscrizione()" class="btn-primary">Salva Iscrizione</button>
+        </div>
+      </div>
+    `;
+
+    showOverlay(modalHtml, 'iscrizione-modal-overlay');
+    loadCorsiOptions();
+    loadClientiOptions();
+  }
+
+  async function loadCorsiOptions() {
+    try {
+      const response = await GET('/api/corsi-catalogo?tutti_corsi=true');
+      const select = document.getElementById('corso-select');
+      
+      if (response.corsi) {
+        const options = response.corsi.map(corso => 
+          `<option value="${corso.id}" data-costo="${corso.costo_corso}">${corso.nome_corso}</option>`
+        ).join('');
+        
+        select.innerHTML = '<option value="">Seleziona corso...</option>' + options;
+      }
+    } catch (error) {
+      console.error('Error loading corsi options:', error);
+    }
+  }
+
+  async function loadClientiOptions() {
+    try {
+      const response = await GET('/api/clients');
+      const selects = document.querySelectorAll('[id^="cliente-"]');
+      
+      if (response.clients) {
+        const options = response.clients.map(client => 
+          `<option value="${client.id}" data-consulente="${client.consultantname || ''}" data-consulente-id="${client.consultantid || ''}">${client.name}</option>`
+        ).join('');
+        
+        selects.forEach(select => {
+          select.innerHTML = '<option value="">Seleziona cliente...</option>' + options;
+        });
+      }
+    } catch (error) {
+      console.error('Error loading clienti options:', error);
+    }
+  }
+
+  async function loadCorsoDates() {
+    const corsoId = document.getElementById('corso-select').value;
+    const dataSelect = document.getElementById('data-corso');
+    
+    if (!corsoId) {
+      dataSelect.innerHTML = '<option value="">Seleziona prima un corso...</option>';
+      return;
+    }
+
+    try {
+      const response = await GET(`/api/corsi-date-disponibili?corso_id=${corsoId}`);
+      
+      if (response.date) {
+        const options = response.date.map(data => {
+          const dateStr = new Date(data.data_inizio).toLocaleDateString('it-IT');
+          return `<option value="${data.id}">${dateStr}</option>`;
+        }).join('');
+        
+        dataSelect.innerHTML = '<option value="">Seleziona data...</option>' + options;
+      } else {
+        dataSelect.innerHTML = '<option value="">Nessuna data disponibile</option>';
+      }
+    } catch (error) {
+      console.error('Error loading corso dates:', error);
+      dataSelect.innerHTML = '<option value="">Errore nel caricamento</option>';
+    }
+  }
+
+  function loadClienteInfo(index) {
+    const clienteSelect = document.getElementById(`cliente-${index}`);
+    const consulenteInput = document.getElementById(`consulente-${index}`);
+    const costoInput = document.getElementById(`costo-${index}`);
+    const corsoSelect = document.getElementById('corso-select');
+    
+    const selectedOption = clienteSelect.selectedOptions[0];
+    if (selectedOption && selectedOption.dataset.consulente) {
+      consulenteInput.value = selectedOption.dataset.consulente;
+    }
+    
+    // Imposta costo base del corso
+    if (corsoSelect.selectedOptions[0] && corsoSelect.selectedOptions[0].dataset.costo) {
+      costoInput.value = corsoSelect.selectedOptions[0].dataset.costo;
+    }
+  }
+
+  let clienteCount = 1;
+
+  window.addCliente = function() {
+    clienteCount++;
+    const container = document.getElementById('clienti-container');
+    
+    const clienteGroupHtml = `
+      <div class="cliente-group">
+        <div class="form-group">
+          <label for="cliente-${clienteCount}">Cliente *</label>
+          <select id="cliente-${clienteCount}" required onchange="loadClienteInfo(${clienteCount})">
+            <option value="">Seleziona cliente...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="consulente-${clienteCount}">Consulente</label>
+          <input type="text" id="consulente-${clienteCount}" readonly>
+        </div>
+        <div class="form-group">
+          <label for="costo-${clienteCount}">Costo Corso</label>
+          <input type="number" id="costo-${clienteCount}" min="0" step="0.01" value="0">
+        </div>
+        <button type="button" onclick="removeCliente(${clienteCount})" class="btn-small">🗑️</button>
+      </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', clienteGroupHtml);
+    
+    // Carica opzioni clienti per il nuovo select
+    loadClientiOptions();
+  };
+
+  window.removeCliente = function(index) {
+    const clienteGroup = document.querySelector(`#cliente-${index}`).closest('.cliente-group');
+    if (clienteGroup) {
+      clienteGroup.remove();
+    }
+  };
+
+  window.saveIscrizione = async function() {
+    try {
+      const form = document.getElementById('iscrizione-form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const corsoDataId = document.getElementById('data-corso').value;
+      if (!corsoDataId) {
+        toast('Seleziona una data corso', 'error');
+        return;
+      }
+
+      const clienti = [];
+      const clienteGroups = document.querySelectorAll('.cliente-group');
+      
+      for (const group of clienteGroups) {
+        const clienteSelect = group.querySelector('select[id^="cliente-"]');
+        const consulenteInput = group.querySelector('input[id^="consulente-"]');
+        const costoInput = group.querySelector('input[id^="costo-"]');
+        
+        if (clienteSelect.value && consulenteInput.value && costoInput.value) {
+          const selectedOption = clienteSelect.selectedOptions[0];
+          clienti.push({
+            cliente_id: clienteSelect.value,
+            cliente_nome: selectedOption.textContent,
+            consulente_id: selectedOption.dataset.consulenteId,
+            consulente_nome: consulenteInput.value,
+            costo_personalizzato: Number(costoInput.value)
+          });
+        }
+      }
+
+      if (clienti.length === 0) {
+        toast('Inserisci almeno un cliente', 'error');
+        return;
+      }
+
+      await POST('/api/corsi-iscrizioni', {
+        corso_data_id: corsoDataId,
+        clienti: clienti
+      });
+
+      toast('Iscrizione salvata con successo');
+      hideOverlay();
+      loadIscrizioniData();
+    } catch (error) {
+      console.error('Error saving iscrizione:', error);
+      toast('Errore nel salvataggio dell\'iscrizione', 'error');
+    }
+  };
+
+  load();
+}
+window.viewCorsiInteraziendali = window.viewCorsiInteraziendali || viewCorsiInteraziendali;
+
 // ===== VENDITE & RIORDINI =====
 function viewVenditeRiordini(){
   if(!getUser()) return viewLogin();
