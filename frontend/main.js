@@ -9868,8 +9868,29 @@ function viewCorsiInteraziendali(){
       const today = new Date();
       const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
       
+      // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
+      const dayOfWeek = new Date(year, month, day).getDay();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      
+      // Logica colorazione:
+      // - Giorni con corsi = ROSSI (anche weekend)
+      // - Weekend senza corsi = BIANCHI  
+      // - Giorni feriali senza corsi = VERDI
+      let dayClass = '';
+      if (hasCourse) {
+        dayClass = 'busy2'; // Rosso per giorni con corsi
+      } else if (isWeekend) {
+        dayClass = ''; // Bianco per weekend senza corsi
+      } else {
+        dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+      }
+      
+      if (isToday) {
+        dayClass += ' today';
+      }
+      
       calendarHtml += `
-        <div class="day ${hasCourse ? 'busy2' : ''} ${isToday ? 'today' : ''}" 
+        <div class="day ${dayClass}" 
              onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
           <div class="dnum">${day}</div>
           ${hasCourse ? `<div class="small">${coursesOnDay[0].corsi_catalogo.nome_corso}</div>` : ''}
@@ -9892,22 +9913,31 @@ function viewCorsiInteraziendali(){
       title.textContent = year.toString();
     }
 
-    let calendarHtml = '<div class="annual-calendar">';
+    // Crea matrice annuale con 12 mesi
+    let annualHtml = '<div class="annual-matrix">';
     
-    // Genera 12 mesi
     for (let month = 0; month < 12; month++) {
-      calendarHtml += `<div class="month-container">
-        <h4>${new Date(year, month).toLocaleDateString('it-IT', { month: 'long' })}</h4>
-        <div class="month-grid">`;
-      
+      const monthName = new Date(year, month).toLocaleDateString('it-IT', { month: 'long' });
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const daysInMonth = lastDay.getDate();
-      const startDay = firstDay.getDay();
-
-      // Spazi vuoti
+      const startDay = firstDay.getDay(); // 0 = Domenica
+      
+      annualHtml += `
+        <div class="mini-month">
+          <div class="mini-month-title">${monthName}</div>
+          <div class="mini-calendar">
+      `;
+      
+      // Header giorni settimana (mini)
+      const dayNames = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
+      dayNames.forEach(day => {
+        annualHtml += `<div class="mini-weekLabel">${day}</div>`;
+      });
+      
+      // Spazi vuoti per allineare il primo giorno
       for (let i = 0; i < startDay; i++) {
-        calendarHtml += '<div class="mini-day empty"></div>';
+        annualHtml += '<div class="mini-day empty"></div>';
       }
 
       // Giorni del mese
@@ -9921,19 +9951,44 @@ function viewCorsiInteraziendali(){
           cd.giorni_dettaglio.some(gd => gd.data === dateStr)
         );
 
-        calendarHtml += `
-          <div class="mini-day ${hasCourse ? 'has-course' : ''}" 
-               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
+        const today = new Date();
+        const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        
+        // Determina il giorno della settimana
+        const dayOfWeek = new Date(year, month, day).getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        
+        // Logica colorazione identica al calendario mensile
+        let dayClass = '';
+        if (hasCourse) {
+          dayClass = 'busy2'; // Rosso per giorni con corsi
+        } else if (isWeekend) {
+          dayClass = ''; // Bianco per weekend senza corsi
+        } else {
+          dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+        }
+        
+        if (isToday) {
+          dayClass += ' today';
+        }
+        
+        annualHtml += `
+          <div class="mini-day ${dayClass}" 
+               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})"
+               title="${hasCourse ? coursesOnDay.map(c => c.corsi_catalogo.nome_corso).join(', ') : ''}">
             ${day}
           </div>
         `;
       }
-
-      calendarHtml += '</div></div>';
+      
+      annualHtml += `
+          </div>
+        </div>
+      `;
     }
-
-    calendarHtml += '</div>';
-    container.innerHTML = calendarHtml;
+    
+    annualHtml += '</div>';
+    container.innerHTML = annualHtml;
   }
 
   window.switchCalendarioView = function(view) {

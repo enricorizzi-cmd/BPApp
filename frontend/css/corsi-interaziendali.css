@@ -272,6 +272,115 @@
   padding: 40px;
 }
 
+/* Annual Matrix Styles */
+.annual-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.mini-month {
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--hair2);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.mini-month-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.mini-weekLabel {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 20px;
+}
+
+.mini-day.empty {
+  background: transparent;
+}
+
+.mini-day:hover {
+  transform: scale(1.1);
+  z-index: 1;
+}
+
+.mini-day.busy0 {
+  background: rgba(39,174,96,.2);
+  border: 1px solid rgba(39,174,96,.3);
+  color: var(--ok);
+}
+
+.mini-day.busy2 {
+  background: rgba(125,23,49,.2);
+  border: 1px solid rgba(125,23,49,.3);
+  color: var(--danger);
+}
+
+.mini-day.today {
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.06) inset;
+}
+
+@media (max-width: 1200px) {
+  .annual-matrix {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .annual-matrix {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .mini-month {
+    padding: 8px;
+  }
+  
+  .mini-month-title {
+    font-size: 12px;
+  }
+  
+  .mini-day {
+    font-size: 10px;
+    min-height: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .annual-matrix {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 /* Modal Styles */
 .corso-modal, .date-modal, .iscrizione-modal {
   background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
