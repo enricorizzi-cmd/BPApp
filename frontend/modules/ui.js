@@ -25,6 +25,7 @@ export function topbarHTML(){
           '<button class="ghost" onclick="viewTeam();toggleDrawer(false)">Squadra</button>'+
           (isAdmin? '<button class="ghost" onclick="viewUsers();toggleDrawer(false)">Utenti</button>' : '')+
           (isAdmin? '<button class="ghost" onclick="viewSettings();toggleDrawer(false)">Impostazioni</button>' : '')+
+          '<button class="ghost" id="install-app-button-mobile" onclick="installApp();toggleDrawer(false)" style="display: none;">📱 Installa App</button>'+
           '<button onclick="logout()">Logout</button>'+
         '</div>'+
       '</div>'+
@@ -71,6 +72,10 @@ export function topbarHTML(){
             <span class="sidebar-text">${item.text}</span>
           </button>
         `).join('')}
+        <button class="sidebar-item sidebar-install" id="install-app-button" onclick="installApp()" title="Installa App" style="display: none;">
+          <span class="sidebar-icon">📱</span>
+          <span class="sidebar-text">Installa App</span>
+        </button>
         <button class="sidebar-item sidebar-logout" onclick="logout()" title="Logout">
           <span class="sidebar-icon">🚪</span>
           <span class="sidebar-text">Logout</span>
@@ -102,6 +107,7 @@ export function topbarHTML(){
   '<button class="ghost" onclick="viewTeam()">Squadra</button>'+
   (isAdmin? '<button class="ghost" onclick="viewUsers()">Utenti</button>':'' )+
   (isAdmin? '<button class="ghost" onclick="viewSettings()">Impostazioni</button>':'' )+
+  '<button class="ghost" id="install-app-button-topbar" onclick="installApp()" style="display: none;">📱 Installa App</button>'+
   '<button onclick="logout()">Logout</button>'+
 '</div>'+
 
@@ -306,6 +312,22 @@ function injectSidebarCSS(){
           background: transparent;
         }
         
+        .sidebar-install {
+          border-top: 1px solid var(--hair2);
+          background: transparent;
+        }
+        
+        .sidebar-install:hover {
+          background: var(--accent);
+          color: #fff;
+        }
+        
+        .sidebar-logout {
+          border-top: 1px solid var(--hair2);
+          margin-top: auto;
+          background: transparent;
+        }
+        
         .sidebar-logout:hover {
           background: var(--danger);
           color: #fff;
@@ -440,6 +462,13 @@ export function renderTopbar(){
   // Fix visivi mobile/light/badge (idempotenti)
   try{ injectMobileDrawerCSS(); }catch{ /* ignore */ }
   try{ injectMobileLightModeCSS(); }catch{ /* ignore */ }
+  
+  // Aggiorna la visibilità del pulsante installazione dopo il rendering
+  try{ 
+    import('./installPrompt.js').then(module => {
+      module.updateInstallButtonVisibility();
+    });
+  }catch{ /* ignore */ }
   try{ injectLightBadgesCSS(); }catch{ /* ignore */ }
   try{ injectSummaryClickableCSS(); }catch{ /* ignore */ }
   

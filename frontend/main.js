@@ -36,7 +36,7 @@ import "./lib/push-client.js";
 import "./lib/test-banner-persistence.js";
 import "./lib/timezone.js";
 import "./lib/user-preferences-sync.js";
-import { showAddToHomePrompt } from "./modules/installPrompt.js";
+import { installPWA, showAddToHomePrompt, updateInstallButtonVisibility } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
 import { renderTopbar, rerenderTopbarSoon, setActiveSidebarItem, toggleDrawer, topbarHTML } from "./modules/ui.js";
 import { fmtInt } from "./modules/utils.js";
@@ -13037,6 +13037,23 @@ window.toggleDrawer     = toggleDrawer;
 window.logout           = logout;
 window.rerenderTopbarSoon = rerenderTopbarSoon;
 
+// Funzione per installare l'app PWA
+window.installApp = async function() {
+  try {
+    const success = await installPWA();
+    if (success) {
+      toast('App installata con successo!', 'success');
+      // Aggiorna la visibilità dei pulsanti dopo l'installazione
+      updateInstallButtonVisibility();
+    } else {
+      toast('Installazione annullata', 'info');
+    }
+  } catch (error) {
+    console.error('[PWA] Error during app installation:', error);
+    toast('Errore durante l\'installazione', 'error');
+  }
+};
+
 // boot
 document.addEventListener('DOMContentLoaded', async function () {
   showAddToHomePrompt();
@@ -13046,6 +13063,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     try {
       await GET('/api/usernames'); // Test endpoint per verificare token
       renderTopbar();
+      // Aggiorna la visibilità del pulsante installazione dopo il rendering
+      setTimeout(updateInstallButtonVisibility, 100);
       viewHome();
     } catch (error) {
       // Token scaduto o non valido, reindirizza al login
