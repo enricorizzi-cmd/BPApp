@@ -8492,7 +8492,6 @@ function viewCorsiInteraziendali(){
     link.href = '/css/corsi-interaziendali.css';
     document.head.appendChild(link);
   }
-  }
 
   function renderTabs() {
     return `
