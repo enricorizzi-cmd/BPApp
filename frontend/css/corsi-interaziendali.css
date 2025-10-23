@@ -510,7 +510,7 @@
 
 .mini-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: 32px repeat(7, 1fr);
   gap: 4px;
 }
 
@@ -520,6 +520,17 @@
   color: var(--muted);
   text-align: center;
   padding: 4px;
+}
+
+.mini-week-number {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  padding: 2px;
+  background: rgba(93,211,255,.1);
+  border-radius: 4px;
+  margin-bottom: 2px;
 }
 
 .mini-day {

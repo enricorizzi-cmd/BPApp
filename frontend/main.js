@@ -10078,6 +10078,15 @@ function viewCorsiInteraziendali(){
     container.innerHTML = calendarHtml;
   }
 
+  // Funzione per calcolare il numero della settimana ISO
+  function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  }
+
   function renderCalendarioAnnuale(corsiDate, iscrizioniData = []) {
     console.log('Rendering calendario annuale con dati:', corsiDate);
     console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
@@ -10122,77 +10131,117 @@ function viewCorsiInteraziendali(){
         annualHtml += `<div class="mini-week-label">${day}</div>`;
       });
 
+      // Calcola le settimane del mese per il mini-calendario
+      const weeks = [];
+      let currentWeek = [];
+      
       // Spazi vuoti per allineare il primo giorno
       for (let i = 0; i < startDay; i++) {
-        annualHtml += '<div class="mini-day empty"></div>';
+        currentWeek.push(null);
       }
-
+      
       // Giorni del mese
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasCourse = corsiDate && corsiDate.some(cd => {
-          if (!cd.giorni_dettaglio) return false;
-          
-          return cd.giorni_dettaglio.some(gd => {
-            if (gd.giorno && gd.giorno > 1) {
-              const dataInizio = new Date(cd.data_inizio);
-              const giornoCorso = new Date(dataInizio);
-              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
-              const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
-              return dataCorsoStr === dateStr;
-            } else {
-              return gd.data === dateStr;
-            }
-          });
-        });
+        currentWeek.push(day);
         
-        const coursesOnDay = corsiDate ? corsiDate.filter(cd => {
-          if (!cd.giorni_dettaglio) return false;
-          
-          return cd.giorni_dettaglio.some(gd => {
-            if (gd.giorno && gd.giorno > 1) {
-              const dataInizio = new Date(cd.data_inizio);
-              const giornoCorso = new Date(dataInizio);
-              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
-              const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
-              return dataCorsoStr === dateStr;
-            } else {
-              return gd.data === dateStr;
-            }
-          });
-        }) : [];
-
-        const today = new Date();
-        const isToday = day === today.getDate() && monthIndex === today.getMonth() && currentYear === today.getFullYear();
-        
-        // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
-        const dayOfWeek = new Date(currentYear, monthIndex, day).getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        
-        // Logica colorazione:
-        // - Giorni con corsi = ROSSI (anche weekend)
-        // - Weekend senza corsi = BIANCHI  
-        // - Giorni feriali senza corsi = VERDI
-        let dayClass = '';
-        if (hasCourse) {
-          dayClass = 'busy2'; // Rosso per giorni con corsi
-        } else if (isWeekend) {
-          dayClass = ''; // Bianco per weekend senza corsi
-        } else {
-          dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+        // Se abbiamo 7 giorni nella settimana, iniziamo una nuova settimana
+        if (currentWeek.length === 7) {
+          weeks.push([...currentWeek]);
+          currentWeek = [];
         }
-        
-        if (isToday) {
-          dayClass += ' today';
-        }
-        
-        annualHtml += `
-          <div class="mini-day ${dayClass}" 
-               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
-            ${day}
-          </div>
-        `;
       }
+      
+      // Aggiungi l'ultima settimana se non è completa
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) {
+          currentWeek.push(null);
+        }
+        weeks.push(currentWeek);
+      }
+
+      // Genera le righe del mini-calendario con numeri settimana
+      weeks.forEach((week, weekIndex) => {
+        // Numero della settimana
+        const firstDayOfWeek = week.find(day => day !== null);
+        if (firstDayOfWeek) {
+          const weekDate = new Date(currentYear, monthIndex, firstDayOfWeek);
+          const weekNumber = getWeekNumber(weekDate);
+          annualHtml += `<div class="mini-week-number">W${weekNumber}</div>`;
+        } else {
+          annualHtml += '<div class="mini-week-number"></div>';
+        }
+        
+        // Giorni della settimana
+        week.forEach(day => {
+          if (day === null) {
+            annualHtml += '<div class="mini-day empty"></div>';
+          } else {
+            const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const hasCourse = corsiDate && corsiDate.some(cd => {
+              if (!cd.giorni_dettaglio) return false;
+              
+              return cd.giorni_dettaglio.some(gd => {
+                if (gd.giorno && gd.giorno > 1) {
+                  const dataInizio = new Date(cd.data_inizio);
+                  const giornoCorso = new Date(dataInizio);
+                  giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
+                  const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+                  return dataCorsoStr === dateStr;
+                } else {
+                  return gd.data === dateStr;
+                }
+              });
+            });
+            
+            const coursesOnDay = corsiDate ? corsiDate.filter(cd => {
+              if (!cd.giorni_dettaglio) return false;
+              
+              return cd.giorni_dettaglio.some(gd => {
+                if (gd.giorno && gd.giorno > 1) {
+                  const dataInizio = new Date(cd.data_inizio);
+                  const giornoCorso = new Date(dataInizio);
+                  giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
+                  const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+                  return dataCorsoStr === dateStr;
+                } else {
+                  return gd.data === dateStr;
+                }
+              });
+            }) : [];
+
+            const today = new Date();
+            const isToday = day === today.getDate() && monthIndex === today.getMonth() && currentYear === today.getFullYear();
+            
+            // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
+            const dayOfWeek = new Date(currentYear, monthIndex, day).getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            
+            // Logica colorazione:
+            // - Giorni con corsi = ROSSI (anche weekend)
+            // - Weekend senza corsi = BIANCHI  
+            // - Giorni feriali senza corsi = VERDI
+            let dayClass = '';
+            if (hasCourse) {
+              dayClass = 'busy2'; // Rosso per giorni con corsi
+            } else if (isWeekend) {
+              dayClass = ''; // Bianco per weekend senza corsi
+            } else {
+              dayClass = 'busy0'; // Verde per giorni feriali senza corsi
+            }
+            
+            if (isToday) {
+              dayClass += ' today';
+            }
+            
+            annualHtml += `
+              <div class="mini-day ${dayClass}" 
+                   onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
+                ${day}
+              </div>
+            `;
+          }
+        });
+      });
 
       annualHtml += `
           </div>
