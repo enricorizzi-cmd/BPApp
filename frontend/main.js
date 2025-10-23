@@ -10620,7 +10620,9 @@ function viewCorsiInteraziendali(){
                 </div>
                 <div class="form-group">
                   <label for="consulente-1">Consulente</label>
-                  <input type="text" id="consulente-1" readonly>
+                  <select id="consulente-1">
+                    <option value="">Seleziona consulente...</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label for="costo-1">Costo Corso</label>
@@ -10641,6 +10643,7 @@ function viewCorsiInteraziendali(){
     showOverlay(modalHtml, 'iscrizione-modal-overlay');
     loadCorsiOptions();
     loadClientiOptions();
+    loadConsulentiOptions();
   }
 
   async function loadCorsiOptions() {
@@ -10679,6 +10682,25 @@ function viewCorsiInteraziendali(){
     }
   }
 
+  async function loadConsulentiOptions() {
+    try {
+      const response = await GET('/api/users');
+      const selects = document.querySelectorAll('select[id^="consulente-"]');
+      
+      if (response.users) {
+        const options = response.users.map(user => 
+          `<option value="${user.id}">${user.name}</option>`
+        ).join('');
+        
+        selects.forEach(select => {
+          select.innerHTML = '<option value="">Seleziona consulente...</option>' + options;
+        });
+      }
+    } catch (error) {
+      console.error('Error loading consulenti options:', error);
+    }
+  }
+
   window.loadCorsoDates = async function() {
     const corsoId = document.getElementById('corso-select').value;
     const dataSelect = document.getElementById('data-corso');
@@ -10693,7 +10715,8 @@ function viewCorsiInteraziendali(){
       
       if (response.date) {
         const options = response.date.map(data => {
-          const dateStr = new Date(data.data_inizio).toLocaleDateString('it-IT');
+          const date = new Date(data.data_inizio);
+          const dateStr = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
           return `<option value="${data.id}">${dateStr}</option>`;
         }).join('');
         
@@ -10709,13 +10732,20 @@ function viewCorsiInteraziendali(){
 
   window.loadClienteInfo = function(index) {
     const clienteSelect = document.getElementById(`cliente-${index}`);
-    const consulenteInput = document.getElementById(`consulente-${index}`);
+    const consulenteSelect = document.getElementById(`consulente-${index}`);
     const costoInput = document.getElementById(`costo-${index}`);
     const corsoSelect = document.getElementById('corso-select');
     
     const selectedOption = clienteSelect.selectedOptions[0];
     if (selectedOption && selectedOption.dataset.consulente) {
-      consulenteInput.value = selectedOption.dataset.consulente;
+      // Trova e seleziona il consulente nel dropdown
+      const consulenteOptions = consulenteSelect.querySelectorAll('option');
+      for (let option of consulenteOptions) {
+        if (option.value === selectedOption.dataset.consulente) {
+          consulenteSelect.value = option.value;
+          break;
+        }
+      }
     }
     
     // Imposta costo base del corso
@@ -10740,7 +10770,9 @@ function viewCorsiInteraziendali(){
         </div>
         <div class="form-group">
           <label for="consulente-${clienteCount}">Consulente</label>
-          <input type="text" id="consulente-${clienteCount}" readonly>
+          <select id="consulente-${clienteCount}">
+            <option value="">Seleziona consulente...</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="costo-${clienteCount}">Costo Corso</label>
@@ -10752,8 +10784,9 @@ function viewCorsiInteraziendali(){
     
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
-    // Carica opzioni clienti per il nuovo select
+    // Carica opzioni clienti e consulenti per il nuovo select
     loadClientiOptions();
+    loadConsulentiOptions();
   };
 
   window.removeCliente = function(index) {
