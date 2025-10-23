@@ -122,26 +122,29 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
               startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
               endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
               break;
-            case 'settimanale':
+            case 'settimanale': {
               const startOfWeek = new Date(now);
               startOfWeek.setDate(now.getDate() - now.getDay());
               startDate = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate());
               endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
               break;
+            }
             case 'mensile':
               startDate = new Date(now.getFullYear(), now.getMonth(), 1);
               endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
               break;
-            case 'trimestrale':
+            case 'trimestrale': {
               const quarter = Math.floor(now.getMonth() / 3);
               startDate = new Date(now.getFullYear(), quarter * 3, 1);
               endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 1);
               break;
-            case 'semestrale':
+            }
+            case 'semestrale': {
               const semester = Math.floor(now.getMonth() / 6);
               startDate = new Date(now.getFullYear(), semester * 6, 1);
               endDate = new Date(now.getFullYear(), (semester + 1) * 6, 1);
               break;
+            }
             case 'annuale':
               startDate = new Date(now.getFullYear(), 0, 1);
               endDate = new Date(now.getFullYear() + 1, 0, 1);
