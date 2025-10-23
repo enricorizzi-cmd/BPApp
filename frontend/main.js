@@ -9358,7 +9358,7 @@ function viewCorsiInteraziendali(){
         <td>${corso.durata_giorni}</td>
         <td>${corso.descrizione || '-'}</td>
         <td>€${Number(corso.costo_corso).toLocaleString()}</td>
-        <td>${corso.date_programmate || 0}</td>
+        <td>${formatDateProgrammate(corso.id, corsiDate)}</td>
         ${isAdmin ? `
           <td class="actions">
             <button class="btn-small" onclick="editCorso('${corso.id}')" title="Modifica">
@@ -10122,6 +10122,54 @@ function viewCorsiInteraziendali(){
       modal.remove();
     }
   };
+
+  // Formatta le date programmate per la visualizzazione
+  function formatDateProgrammate(corsoId, corsiDate) {
+    const dateCorso = corsiDate.find(cd => cd.corso_id === corsoId);
+    
+    if (!dateCorso || !dateCorso.giorni_dettaglio || dateCorso.giorni_dettaglio.length === 0) {
+      return '-';
+    }
+    
+    // Raggruppa le date per corso (corso multi-giorno)
+    const dateGroups = [];
+    const processedDates = new Set();
+    
+    dateCorso.giorni_dettaglio.forEach(giorno => {
+      if (processedDates.has(giorno.data)) return;
+      
+      // Trova tutti i giorni consecutivi per questo corso
+      const corsoDates = dateCorso.giorni_dettaglio
+        .filter(g => g.corso_id === giorno.corso_id)
+        .sort((a, b) => new Date(a.data) - new Date(b.data));
+      
+      if (corsoDates.length === 1) {
+        // Corso di un solo giorno
+        const date = new Date(giorno.data);
+        dateGroups.push(date.toLocaleDateString('it-IT', { 
+          day: 'numeric', 
+          month: 'long' 
+        }));
+        processedDates.add(giorno.data);
+      } else {
+        // Corso multi-giorno
+        const firstDate = new Date(corsoDates[0].data);
+        const lastDate = new Date(corsoDates[corsoDates.length - 1].data);
+        
+        if (firstDate.getMonth() === lastDate.getMonth()) {
+          // Stesso mese
+          dateGroups.push(`${firstDate.getDate()}-${lastDate.getDate()} ${firstDate.toLocaleDateString('it-IT', { month: 'long' })}`);
+        } else {
+          // Mesi diversi
+          dateGroups.push(`${firstDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} - ${lastDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`);
+        }
+        
+        corsoDates.forEach(g => processedDates.add(g.data));
+      }
+    });
+    
+    return dateGroups.join('<br>');
+  }
 
   // Carica consulenti per i filtri
   async function loadConsulentiOptions() {
