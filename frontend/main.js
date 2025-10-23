@@ -12073,7 +12073,7 @@ function viewGestioneLead(){
     }
     
     try {
-      await DELETE('/api/leads', { id: leadId });
+      await DELETE(`/api/leads?id=${leadId}`);
       toast('✅ Lead eliminato definitivamente');
       loadLeadsData(); // Ricarica dati
     } catch (error) {
@@ -12215,16 +12215,16 @@ function viewGestioneLead(){
     
     // Prepara dati per l'invio
     const leadData = {
-      nome_lead: formData.get('nomeLead'),
-      azienda_lead: formData.get('aziendaLead'),
-      settore_lead: formData.get('settoreLead'),
-      numero_telefono: formData.get('numeroTelefono'),
-      indirizzo_mail: formData.get('indirizzoMail'),
+      nomeLead: formData.get('nomeLead'),
+      aziendaLead: formData.get('aziendaLead'),
+      settoreLead: formData.get('settoreLead'),
+      numeroTelefono: formData.get('numeroTelefono'),
+      indirizzoMail: formData.get('indirizzoMail'),
       provincia: formData.get('provincia'),
       comune: formData.get('comune'),
       indirizzo: formData.get('indirizzo'),
       sorgente: formData.get('sorgente'),
-      consulente_assegnato: formData.get('consulenteAssegnato'),
+      consulenteAssegnato: formData.get('consulenteAssegnato'),
       note: formData.get('note')
     };
     
@@ -12237,7 +12237,7 @@ function viewGestioneLead(){
     // Se c'è contatto avvenuto, aggiungilo
     const contattoAvvenuto = formData.get('contattoAvvenuto');
     if (contattoAvvenuto) {
-      leadData.contatto_avvenuto = new Date(contattoAvvenuto).toISOString();
+      leadData.contattoAvvenuto = new Date(contattoAvvenuto).toISOString();
     }
     
     try {
@@ -12348,8 +12348,8 @@ function viewGestioneLead(){
         // Marca come contattato con data di oggi
         await POST('/api/leads', {
           id: leadId,
-          contatto_avvenuto: new Date().toISOString(),
-          contact_banner_answered: true
+          contattoAvvenuto: new Date().toISOString(),
+          contactBannerAnswered: true
         });
         toast('Lead marcato come contattato');
       } else {
@@ -12360,7 +12360,7 @@ function viewGestioneLead(){
         await POST('/api/leads', {
           id: leadId,
           note: note,
-          contact_banner_answered: true
+          contactBannerAnswered: true
         });
         toast('Tentativo registrato nelle note');
       }

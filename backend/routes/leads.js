@@ -29,7 +29,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       }
 
       const consultantName = consultant.name || consultant.email || 'Consulente';
-      const leadName = leadData.nome_lead || '';
+      const leadName = leadData.nomeLead || '';
       
       const message = `Ehi ${consultantName}, ti abbiamo assegnato il lead "${leadName}" da contattare entro 24h!`;
       
