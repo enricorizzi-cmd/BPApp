@@ -26,14 +26,11 @@ import "./lib/targets.js";
 import "./lib/telemetry.js";
 import "./lib/undo.js";
 // Ensure post-sale/NNCF banners are registered before final-hooks tries to init them
-import "./lib/debug-banner-state.js";
 import "./lib/final-hooks.js";
 import "./lib/ics-single.js";
 import "./lib/leaderboard-hooks.js";
-import "./lib/migrate-banner-data.js";
 import "./lib/migrate-push-data.js";
 import "./lib/push-client.js";
-import "./lib/test-banner-persistence.js";
 import "./lib/timezone.js";
 import "./lib/user-preferences-sync.js";
 import { installPWA, showAddToHomePrompt, updateInstallButtonVisibility } from "./modules/installPrompt.js";
