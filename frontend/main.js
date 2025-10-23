@@ -10820,6 +10820,1504 @@ function viewCorsiInteraziendali(){
 }
 window.viewCorsiInteraziendali = window.viewCorsiInteraziendali || viewCorsiInteraziendali;
 
+// ===== GESTIONE LEAD =====
+function viewGestioneLead(){
+  if(!getUser()) return viewLogin();
+  document.title = 'Battle Plan – Gestione Lead';
+  setActiveSidebarItem('viewGestioneLead');
+  const isAdmin = getUser().role==='admin';
+
+  // Stato per tab attiva
+  let activeTab = 'contattare'; // Default per consultant, admin può vedere entrambe
+  if (isAdmin) {
+    activeTab = 'elenco'; // Admin vede prima elenco
+  }
+
+  // CSS integrato direttamente
+  if(!document.getElementById('leads-css')){
+    const style = document.createElement('style');
+    style.id = 'leads-css';
+    style.textContent = `
+      /* Gestione Lead Styles - Coerenti con il design system del progetto */
+      .leads-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+        margin-top: calc(56px + env(safe-area-inset-top) + 32px);
+      }
+      
+      .leads-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      
+      .leads-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+      }
+      
+      .leads-tabs {
+        display: flex;
+        background: rgba(255,255,255,.05);
+        border-radius: 12px;
+        padding: 4px;
+        border: 1px solid var(--hair2);
+        overflow-x: auto;
+      }
+      
+      .leads-tab {
+        padding: 12px 20px;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        font-size: 14px;
+      }
+      
+      .leads-tab.active {
+        background: var(--accent);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(93,211,255,.3);
+      }
+      
+      .leads-tab:hover:not(.active) {
+        background: rgba(255,255,255,.08);
+        color: var(--text);
+      }
+      
+      .leads-content {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 16px rgba(0,0,0,.08);
+        min-height: 600px;
+      }
+      
+      .leads-filters {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--hair2);
+      }
+      
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      
+      .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .filter-group select,
+      .filter-group input {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        font-size: 14px;
+        transition: all 0.2s ease;
+        min-width: 140px;
+      }
+      
+      .filter-group select:focus,
+      .filter-group input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .leads-table-container {
+        overflow-x: auto;
+        max-height: 70vh;
+        overflow-y: auto;
+        border-radius: 12px;
+        border: 1px solid var(--hair2);
+        background: rgba(255,255,255,.02);
+      }
+      
+      .leads-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 1200px;
+      }
+      
+      .leads-table th,
+      .leads-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--hair2);
+        white-space: nowrap;
+      }
+      
+      .leads-table th {
+        background: rgba(255,255,255,.05);
+        font-weight: 600;
+        color: var(--text);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .leads-table tr:hover {
+        background: rgba(255,255,255,.03);
+      }
+      
+      .leads-table td {
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .leads-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      
+      .leads-actions button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        min-width: 44px;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-call {
+        background: var(--ok);
+        color: white;
+        box-shadow: 0 2px 8px rgba(46,204,113,.3);
+      }
+      
+      .btn-call:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(46,204,113,.4);
+      }
+      
+      .btn-whatsapp {
+        background: #25d366;
+        color: white;
+        box-shadow: 0 2px 8px rgba(37,211,102,.3);
+      }
+      
+      .btn-whatsapp:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37,211,102,.4);
+      }
+      
+      .btn-email {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 2px 8px rgba(93,211,255,.3);
+      }
+      
+      .btn-email:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(93,211,255,.4);
+      }
+      
+      .btn-edit {
+        background: var(--warn);
+        color: white;
+        box-shadow: 0 2px 8px rgba(255,180,84,.3);
+      }
+      
+      .btn-edit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,180,84,.4);
+      }
+      
+      .btn-delete {
+        background: var(--danger);
+        color: white;
+        box-shadow: 0 2px 8px rgba(255,92,92,.3);
+      }
+      
+      .btn-delete:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(255,92,92,.4);
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: white;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(93,211,255,.25);
+        transition: transform .05s ease, box-shadow .2s ease;
+        white-space: nowrap;
+      }
+      
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 18px rgba(93,211,255,.35);
+      }
+      
+      .btn-secondary {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-secondary:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.05);
+      }
+      
+      .leads-modal {
+        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        border-radius: 16px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0,0,0,.15);
+      }
+      
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--hair2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .modal-header h3 {
+        margin: 0;
+        color: var(--text);
+        font-size: 18px;
+        font-weight: 700;
+      }
+      
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: var(--muted);
+        transition: color 0.2s ease;
+      }
+      
+      .close-btn:hover {
+        color: var(--text);
+      }
+      
+      .modal-body {
+        padding: 20px;
+      }
+      
+      .modal-footer {
+        padding: 20px;
+        border-top: 1px solid var(--hair2);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+      
+      .form-group {
+        margin-bottom: 16px;
+      }
+      
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        transition: all 0.2s ease;
+      }
+      
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      
+      .form-row {
+        display: flex;
+        gap: 16px;
+      }
+      
+      .form-row .form-group {
+        flex: 1;
+      }
+      
+      .required {
+        color: var(--danger);
+      }
+      
+      .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 24px 0 16px 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--hair2);
+        position: relative;
+      }
+      
+      .section-title::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -2px;
+        width: 40px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        border-radius: 1px;
+      }
+      
+      /* Indicatore utente in modifica */
+      .editing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255,180,84,.15);
+        border: 1px solid rgba(255,180,84,.3);
+        border-radius: 12px;
+        padding: 2px 6px;
+        margin-left: 8px;
+        font-size: 10px;
+        color: var(--warn);
+        font-weight: 500;
+      }
+      
+      .editing-icon {
+        font-size: 10px;
+      }
+      
+      .editing-text {
+        white-space: nowrap;
+      }
+      
+      .row-being-edited {
+        background: rgba(255,180,84,.05) !important;
+        border-left: 3px solid var(--warn);
+      }
+      
+      .row-being-edited:hover {
+        background: rgba(255,180,84,.08) !important;
+      }
+      
+      .leads-actions button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
+      
+      /* Mobile responsive */
+      @media (max-width: 768px) {
+        .leads-wrap {
+          padding: 0 16px;
+        }
+        
+        .leads-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        
+        .leads-filters {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 16px;
+        }
+        
+        .leads-filters .filter-group {
+          width: 100%;
+        }
+        
+        .leads-table {
+          min-width: 800px;
+        }
+        
+        .leads-actions {
+          flex-direction: column;
+        }
+        
+        .leads-actions button {
+          width: 100%;
+          margin-bottom: 4px;
+        }
+        
+        .form-row {
+          flex-direction: column;
+        }
+        
+        .modal-footer {
+          flex-direction: column;
+        }
+        
+        .modal-footer button {
+          width: 100%;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Funzioni per tracking utenti in modifica
+  async function markLeadAsEditing(leadId) {
+    try {
+      const user = getUser();
+      if (!user) return;
+      
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({ 
+          id: leadId, 
+          editing_by: user.id, 
+          editing_at: new Date().toISOString() 
+        })
+      });
+    } catch (error) {
+      console.error('Error marking lead as editing:', error);
+    }
+  }
+  
+  async function clearLeadEditing(leadId) {
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem('token')
+        },
+        body: JSON.stringify({ 
+          id: leadId, 
+          editing_by: null, 
+          editing_at: null 
+        })
+      });
+    } catch (error) {
+      console.error('Error clearing lead editing:', error);
+    }
+  }
+  
+  function getEditingUserInfo(lead) {
+    if (!lead.editing_by || !lead.editing_at) return null;
+    
+    // Trova il nome dell'utente che sta editando
+    const editingUser = allConsultants.find(c => c.id === lead.editing_by);
+    const userName = editingUser ? editingUser.name : 'Utente sconosciuto';
+    
+    // Controlla se l'editing è recente (meno di 30 minuti)
+    const editingTime = new Date(lead.editing_at);
+    const now = new Date();
+    const diffMinutes = (now - editingTime) / (1000 * 60);
+    
+    if (diffMinutes > 30) {
+      return null; // Editing troppo vecchio, non mostrare
+    }
+    
+    return {
+      userName,
+      minutesAgo: Math.floor(diffMinutes)
+    };
+  }
+
+  // Funzioni helper
+  function renderTabs() {
+    if (isAdmin) {
+      return `
+        <div class="leads-tabs">
+          <button class="leads-tab ${activeTab === 'elenco' ? 'active' : ''}" data-tab="elenco">
+            Elenco Lead
+          </button>
+          <button class="leads-tab ${activeTab === 'contattare' ? 'active' : ''}" data-tab="contattare">
+            Lead da Contattare
+          </button>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="leads-tabs">
+          <button class="leads-tab active" data-tab="contattare">
+            Lead da Contattare
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  function renderContent() {
+    if (activeTab === 'elenco' && isAdmin) {
+      return renderElencoLeadSection();
+    } else {
+      return renderLeadDaContattareSection();
+    }
+  }
+
+  function renderElencoLeadSection() {
+    return `
+      <div class="leads-filters">
+        <div>
+          <label>Granularità</label>
+          <select id="lead-granularity">
+            <option value="giornaliera">Giornaliera</option>
+            <option value="settimanale">Settimanale</option>
+            <option value="mensile" selected>Mensile</option>
+            <option value="trimestrale">Trimestrale</option>
+            <option value="semestrale">Semestrale</option>
+            <option value="annuale">Annuale</option>
+          </select>
+        </div>
+        
+        <div>
+          <label>Periodo</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="lead-prev-period">‹</button>
+            <span id="lead-current-period">Ottobre 2025</span>
+            <button id="lead-next-period">›</button>
+          </div>
+        </div>
+        
+        <div>
+          <label>Consulente</label>
+          <select id="lead-consultant">
+            <option value="">Tutti</option>
+          </select>
+        </div>
+        
+        <div style="margin-left: auto;">
+          <button class="btn-primary" id="add-lead-btn">+ Aggiungi Lead</button>
+        </div>
+      </div>
+      
+      <div class="leads-table-container">
+        <table class="leads-table">
+          <thead>
+            <tr>
+              <th>Data Inserimento</th>
+              <th>Nome Lead</th>
+              <th>Azienda Lead</th>
+              <th>Settore Lead</th>
+              <th>Telefono</th>
+              <th>Email</th>
+              <th>Provincia</th>
+              <th>Comune</th>
+              <th>Indirizzo</th>
+              <th>Sorgente</th>
+              <th>Consulente</th>
+              <th>Note</th>
+              <th>Contatto Avvenuto</th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="leads-table-body">
+            <tr>
+              <td colspan="14" style="text-align: center; padding: 40px; color: #666;">
+                Caricamento lead...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderLeadDaContattareSection() {
+    return `
+      <div class="leads-filters">
+        <div>
+          <label>Granularità</label>
+          <select id="contact-granularity">
+            <option value="giornaliera">Giornaliera</option>
+            <option value="settimanale">Settimanale</option>
+            <option value="mensile" selected>Mensile</option>
+            <option value="trimestrale">Trimestrale</option>
+            <option value="semestrale">Semestrale</option>
+            <option value="annuale">Annuale</option>
+          </select>
+        </div>
+        
+        <div>
+          <label>Periodo</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="contact-prev-period">‹</button>
+            <span id="contact-current-period">Ottobre 2025</span>
+            <button id="contact-next-period">›</button>
+          </div>
+        </div>
+        
+        ${isAdmin ? `
+          <div>
+            <label>Consulente</label>
+            <select id="contact-consultant">
+              <option value="">Tutti</option>
+            </select>
+          </div>
+        ` : ''}
+      </div>
+      
+      <div style="padding: 20px;">
+        <h3 class="section-title">Lead da Contattare</h3>
+        <div class="leads-table-container">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>Azioni</th>
+                <th>Data Inserimento</th>
+                <th>Nome Lead</th>
+                <th>Azienda Lead</th>
+                <th>Settore Lead</th>
+                <th>Telefono</th>
+                <th>Email</th>
+                <th>Provincia</th>
+                <th>Comune</th>
+                <th>Sorgente</th>
+                <th>Consulente</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="contact-leads-table-body">
+              <tr>
+                <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+                  Caricamento lead da contattare...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <h3 class="section-title">Lead Contattati</h3>
+        <div class="leads-table-container">
+          <table class="leads-table">
+            <thead>
+              <tr>
+                <th>Data Inserimento</th>
+                <th>Nome Lead</th>
+                <th>Azienda Lead</th>
+                <th>Settore Lead</th>
+                <th>Telefono</th>
+                <th>Email</th>
+                <th>Provincia</th>
+                <th>Comune</th>
+                <th>Sorgente</th>
+                <th>Consulente</th>
+                <th>Note</th>
+                <th>Contatto Avvenuto</th>
+              </tr>
+            </thead>
+            <tbody id="contacted-leads-table-body">
+              <tr>
+                <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+                  Caricamento lead contattati...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  // Renderizzazione principale
+  appEl.innerHTML = topbarHTML() + `
+    <div class="leads-wrap">
+      <div class="leads-header">
+        <h2 class="leads-title">Gestione Lead</h2>
+        ${renderTabs()}
+      </div>
+      <div class="leads-content">
+        ${renderContent()}
+      </div>
+    </div>
+  `;
+
+  // Event listeners per tab
+  document.querySelectorAll('.leads-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (typeof haptic === 'function') haptic('light');
+      activeTab = tab.dataset.tab;
+      
+      // Aggiorna UI tab
+      document.querySelectorAll('.leads-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Aggiorna contenuto
+      document.querySelector('.leads-content').innerHTML = renderContent();
+      
+      // Ricarica dati per la nuova tab
+      loadLeadsData();
+    });
+  });
+
+  // Funzioni per caricamento dati
+  async function loadLeadsData() {
+    const startTime = performance.now();
+    
+    try {
+      if (activeTab === 'elenco' && isAdmin) {
+        await loadElencoLeadData();
+      } else {
+        await loadContactLeadsData();
+      }
+      
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      // Monitoring performance
+      console.log(`📊 Leads data loaded in ${loadTime.toFixed(2)}ms`);
+      
+      // Alert se caricamento troppo lento
+      if (loadTime > 2000) {
+        console.warn(`⚠️ Slow leads loading: ${loadTime.toFixed(2)}ms`);
+        toast(`⚠️ Caricamento lento: ${loadTime.toFixed(0)}ms`);
+      }
+      
+      // Alert se troppi lead
+      const totalLeads = (currentLeadsData || []).length;
+      if (totalLeads > 500) {
+        console.warn(`⚠️ Many leads in database: ${totalLeads}`);
+        toast(`⚠️ Molti lead nel database: ${totalLeads}. Considerare paginazione.`);
+      }
+      
+    } catch (error) {
+      console.error('Error loading leads data:', error);
+      toast('Errore nel caricamento dei dati');
+    }
+  }
+
+  async function loadElencoLeadData() {
+    const startTime = performance.now();
+    
+    try {
+      const granularity = document.getElementById('lead-granularity')?.value || 'mensile';
+      const consultant = document.getElementById('lead-consultant')?.value || '';
+      
+      // Costruisci query parameters
+      const params = new URLSearchParams();
+      if (consultant) params.append('consultant', consultant);
+      if (granularity) params.append('period', granularity);
+      
+      const response = await GET(`/api/leads?${params.toString()}`);
+      const leads = response.leads || [];
+      
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      console.log(`📊 Elenco Lead loaded in ${loadTime.toFixed(2)}ms (${leads.length} leads)`);
+      
+      // Popola dropdown consulenti se non già fatto
+      await loadConsultantsDropdown('lead-consultant');
+      
+      // Renderizza tabella
+      renderLeadsTable(leads);
+      
+    } catch (error) {
+      console.error('Error loading elenco lead data:', error);
+      toast('Errore nel caricamento dei lead');
+    }
+  }
+
+  async function loadContactLeadsData() {
+    const startTime = performance.now();
+    
+    try {
+      const granularity = document.getElementById('contact-granularity')?.value || 'mensile';
+      const consultant = document.getElementById('contact-consultant')?.value || '';
+      
+      // Costruisci query parameters
+      const params = new URLSearchParams();
+      if (consultant) params.append('consultant', consultant);
+      if (granularity) params.append('period', granularity);
+      
+      const response = await GET(`/api/leads?${params.toString()}`);
+      const allLeads = response.leads || [];
+      
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      console.log(`📊 Contact Leads loaded in ${loadTime.toFixed(2)}ms (${allLeads.length} total leads)`);
+      
+      // Popola dropdown consulenti se admin
+      if (isAdmin) {
+        await loadConsultantsDropdown('contact-consultant');
+      }
+      
+      // Separa lead da contattare e contattati
+      const leadsToContact = allLeads.filter(lead => !lead.contattoAvvenuto);
+      const contactedLeads = allLeads.filter(lead => lead.contattoAvvenuto);
+      
+      console.log(`📊 Lead da contattare: ${leadsToContact.length}, Lead contattati: ${contactedLeads.length}`);
+      
+      // Renderizza tabelle
+      renderContactLeadsTable(leadsToContact);
+      renderContactedLeadsTable(contactedLeads);
+      
+    } catch (error) {
+      console.error('Error loading contact leads data:', error);
+      toast('Errore nel caricamento dei lead da contattare');
+    }
+  }
+
+  async function loadConsultantsDropdown(selectId) {
+    try {
+      const response = await GET('/api/usernames');
+      const users = response.users || [];
+      
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      
+      const currentUser = getUser();
+      let html = '<option value="">Tutti</option>';
+      
+      // Ordina alfabeticamente per nome
+      const sortedUsers = users.sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
+      
+      sortedUsers.forEach(user => {
+        const displayName = user.name || user.email || `User ${user.id}`;
+        html += `<option value="${user.id}">${displayName}</option>`;
+      });
+      
+      select.innerHTML = html;
+      
+      // Imposta valore di default
+      if (currentUser.role === 'admin') {
+        select.value = ''; // Admin vede tutti di default
+      } else {
+        select.value = currentUser.id; // Consultant vede solo i propri
+      }
+      
+    } catch (error) {
+      console.error('Error loading consultants:', error);
+    }
+  }
+
+  function renderLeadsTable(leads) {
+    const tbody = document.getElementById('leads-table-body');
+    if (!tbody) return;
+    
+    if (leads.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="14" style="text-align: center; padding: 40px; color: #666;">
+            Nessun lead trovato
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = leads.map(lead => {
+      const editingInfo = getEditingUserInfo(lead);
+      const editingIndicator = editingInfo ? 
+        `<div class="editing-indicator" title="In modifica da ${editingInfo.userName} (${editingInfo.minutesAgo} min fa)">
+          <span class="editing-icon">✏️</span>
+          <span class="editing-text">${editingInfo.userName}</span>
+        </div>` : '';
+      
+      return `
+        <tr ${editingInfo ? 'class="row-being-edited"' : ''}>
+          <td>${formatDate(lead.dataInserimento)}</td>
+          <td>${escapeHtml(lead.nomeLead || '')} ${editingIndicator}</td>
+          <td>${escapeHtml(lead.aziendaLead || '')}</td>
+          <td>${escapeHtml(lead.settoreLead || '')}</td>
+          <td>${escapeHtml(lead.numeroTelefono || '')}</td>
+          <td>${escapeHtml(lead.indirizzoMail || '')}</td>
+          <td>${escapeHtml(lead.provincia || '')}</td>
+          <td>${escapeHtml(lead.comune || '')}</td>
+          <td>${escapeHtml(lead.indirizzo || '')}</td>
+          <td>${escapeHtml(lead.sorgente || '')}</td>
+          <td>${escapeHtml(lead.consulenteNome || '')}</td>
+          <td>${escapeHtml(lead.note || '')}</td>
+          <td>${lead.contattoAvvenuto ? formatDate(lead.contattoAvvenuto) : ''}</td>
+          <td>
+            <div class="leads-actions">
+              <button class="btn-edit" onclick="editLead('${lead.id}')" title="Modifica" ${editingInfo ? 'disabled' : ''}>
+                ✏️
+              </button>
+              <button class="btn-delete" onclick="deleteLead('${lead.id}')" title="Elimina" ${editingInfo ? 'disabled' : ''}>
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function renderContactLeadsTable(leads) {
+    const tbody = document.getElementById('contact-leads-table-body');
+    if (!tbody) return;
+    
+    if (leads.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+            Nessun lead da contattare
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = leads.map(lead => `
+      <tr>
+        <td>
+          <div class="leads-actions">
+            ${lead.numeroTelefono ? `
+              <button class="btn-call" onclick="initiateCall('${lead.numeroTelefono}', '${lead.id}', '${escapeHtml(lead.nomeLead)}')" title="Chiama">
+                📞
+              </button>
+              <button class="btn-whatsapp" onclick="openWhatsApp('${lead.numeroTelefono}', '${escapeHtml(lead.nomeLead)}')" title="WhatsApp">
+                💬
+              </button>
+            ` : ''}
+            ${lead.indirizzoMail ? `
+              <button class="btn-email" onclick="openEmail('${lead.indirizzoMail}', '${escapeHtml(lead.nomeLead)}')" title="Email">
+                📧
+              </button>
+            ` : ''}
+          </div>
+        </td>
+        <td>${formatDate(lead.dataInserimento)}</td>
+        <td>${escapeHtml(lead.nomeLead || '')}</td>
+        <td>${escapeHtml(lead.aziendaLead || '')}</td>
+        <td>${escapeHtml(lead.settoreLead || '')}</td>
+        <td>${escapeHtml(lead.numeroTelefono || '')}</td>
+        <td>${escapeHtml(lead.indirizzoMail || '')}</td>
+        <td>${escapeHtml(lead.provincia || '')}</td>
+        <td>${escapeHtml(lead.comune || '')}</td>
+        <td>${escapeHtml(lead.sorgente || '')}</td>
+        <td>${escapeHtml(lead.consulenteNome || '')}</td>
+        <td>${escapeHtml(lead.note || '')}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderContactedLeadsTable(leads) {
+    const tbody = document.getElementById('contacted-leads-table-body');
+    if (!tbody) return;
+    
+    if (leads.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+            Nessun lead contattato
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = leads.map(lead => `
+      <tr>
+        <td>${formatDate(lead.dataInserimento)}</td>
+        <td>${escapeHtml(lead.nomeLead || '')}</td>
+        <td>${escapeHtml(lead.aziendaLead || '')}</td>
+        <td>${escapeHtml(lead.settoreLead || '')}</td>
+        <td>${escapeHtml(lead.numeroTelefono || '')}</td>
+        <td>${escapeHtml(lead.indirizzoMail || '')}</td>
+        <td>${escapeHtml(lead.provincia || '')}</td>
+        <td>${escapeHtml(lead.comune || '')}</td>
+        <td>${escapeHtml(lead.sorgente || '')}</td>
+        <td>${escapeHtml(lead.consulenteNome || '')}</td>
+        <td>${escapeHtml(lead.note || '')}</td>
+        <td>${formatDate(lead.contattoAvvenuto)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Funzioni helper
+  function formatDate(dateString) {
+    if (!dateString) return '';
+    try {
+      return new Date(dateString).toLocaleDateString('it-IT');
+    } catch {
+      return dateString;
+    }
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Funzioni per operazioni CRUD
+  async function editLead(leadId) {
+    try {
+      const response = await GET(`/api/leads?id=${leadId}`);
+      const lead = response.lead;
+      
+      if (!lead) {
+        toast('Lead non trovato');
+        return;
+      }
+      
+      showLeadModal(lead);
+    } catch (error) {
+      console.error('Error loading lead for edit:', error);
+      toast('Errore nel caricamento del lead');
+    }
+  }
+
+  async function deleteLead(leadId) {
+    // Trova i dati del lead per mostrare informazioni nella conferma
+    const lead = currentLeadsData.find(l => l.id === leadId);
+    const leadName = lead ? lead.nome_lead || 'Lead senza nome' : 'Lead';
+    const leadCompany = lead ? lead.azienda_lead || '' : '';
+    
+    const confirmMessage = `⚠️ ATTENZIONE: Stai per eliminare definitivamente questo lead:\n\n` +
+      `📋 Nome: ${leadName}\n` +
+      `🏢 Azienda: ${leadCompany}\n\n` +
+      `Questa azione NON può essere annullata!\n\n` +
+      `Sei sicuro di voler procedere?`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+    
+    // Seconda conferma per sicurezza
+    if (!confirm('🔴 CONFERMA FINALE\n\nHai scelto di eliminare definitivamente questo lead.\n\nClicca OK per confermare l\'eliminazione.')) {
+      return;
+    }
+    
+    try {
+      await DELETE('/api/leads', { id: leadId });
+      toast('✅ Lead eliminato definitivamente');
+      loadLeadsData(); // Ricarica dati
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast('❌ Errore nell\'eliminazione del lead');
+    }
+  }
+
+  function showLeadModal(lead = null) {
+    const isEdit = !!lead;
+    const title = isEdit ? 'Modifica Lead' : 'Nuovo Lead';
+    
+    // Se è una modifica, segnala che l'utente sta editando
+    if (isEdit && lead) {
+      markLeadAsEditing(lead.id);
+    }
+    
+    const modalHTML = `
+      <div class="modal-overlay" id="lead-modal-overlay">
+        <div class="leads-modal">
+          <div class="modal-header">
+            <h3>${title}</h3>
+            <button class="close-btn" onclick="closeLeadModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <form id="lead-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="lead-nome">Nome Lead <span class="required">*</span></label>
+                  <input type="text" id="lead-nome" name="nomeLead" value="${lead?.nomeLead || ''}" required>
+                </div>
+                <div class="form-group">
+                  <label for="lead-azienda">Azienda Lead</label>
+                  <input type="text" id="lead-azienda" name="aziendaLead" value="${lead?.aziendaLead || ''}">
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="lead-settore">Settore Lead</label>
+                  <input type="text" id="lead-settore" name="settoreLead" value="${lead?.settoreLead || ''}">
+                </div>
+                <div class="form-group">
+                  <label for="lead-sorgente">Sorgente</label>
+                  <input type="text" id="lead-sorgente" name="sorgente" value="${lead?.sorgente || ''}">
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="lead-telefono">Numero Telefono</label>
+                  <input type="tel" id="lead-telefono" name="numeroTelefono" value="${lead?.numeroTelefono || ''}">
+                </div>
+                <div class="form-group">
+                  <label for="lead-email">Indirizzo Email</label>
+                  <input type="email" id="lead-email" name="indirizzoMail" value="${lead?.indirizzoMail || ''}">
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="lead-provincia">Provincia</label>
+                  <input type="text" id="lead-provincia" name="provincia" value="${lead?.provincia || ''}">
+                </div>
+                <div class="form-group">
+                  <label for="lead-comune">Comune</label>
+                  <input type="text" id="lead-comune" name="comune" value="${lead?.comune || ''}">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="lead-indirizzo">Indirizzo</label>
+                <input type="text" id="lead-indirizzo" name="indirizzo" value="${lead?.indirizzo || ''}">
+              </div>
+              
+              <div class="form-group">
+                <label for="lead-consulente">Consulente Assegnato</label>
+                <select id="lead-consulente" name="consulenteAssegnato">
+                  <option value="">-- Seleziona Consulente --</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="lead-note">Note</label>
+                <textarea id="lead-note" name="note" rows="3">${lead?.note || ''}</textarea>
+              </div>
+              
+              ${isEdit ? `
+                <div class="form-group">
+                  <label for="lead-contatto">Contatto Avvenuto</label>
+                  <input type="datetime-local" id="lead-contatto" name="contattoAvvenuto" value="${lead?.contattoAvvenuto ? new Date(lead.contattoAvvenuto).toISOString().slice(0, 16) : ''}">
+                </div>
+              ` : ''}
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeLeadModal()">Annulla</button>
+            <button class="btn-primary" onclick="saveLead()">Salva</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Carica dropdown consulenti
+    loadConsultantsDropdown('lead-consulente').then(() => {
+      if (lead?.consulenteAssegnato) {
+        document.getElementById('lead-consulente').value = lead.consulenteAssegnato;
+      }
+    });
+  }
+
+  function closeLeadModal() {
+    // Pulisci il tracking di editing se presente
+    const form = document.getElementById('lead-form');
+    if (form && form.dataset.leadId) {
+      clearLeadEditing(form.dataset.leadId);
+    }
+    
+    const overlay = document.getElementById('lead-modal-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
+  }
+
+  async function saveLead() {
+    const form = document.getElementById('lead-form');
+    const formData = new FormData(form);
+    
+    // Validazione: almeno telefono o email
+    const telefono = formData.get('numeroTelefono');
+    const email = formData.get('indirizzoMail');
+    
+    if (!telefono && !email) {
+      toast('Inserire almeno un numero di telefono o un indirizzo email');
+      return;
+    }
+    
+    // Prepara dati per l'invio
+    const leadData = {
+      nomeLead: formData.get('nomeLead'),
+      aziendaLead: formData.get('aziendaLead'),
+      settoreLead: formData.get('settoreLead'),
+      numeroTelefono: formData.get('numeroTelefono'),
+      indirizzoMail: formData.get('indirizzoMail'),
+      provincia: formData.get('provincia'),
+      comune: formData.get('comune'),
+      indirizzo: formData.get('indirizzo'),
+      sorgente: formData.get('sorgente'),
+      consulenteAssegnato: formData.get('consulenteAssegnato'),
+      note: formData.get('note')
+    };
+    
+    // Se è una modifica, aggiungi ID
+    const leadId = document.querySelector('#lead-modal-overlay').dataset.leadId;
+    if (leadId) {
+      leadData.id = leadId;
+    }
+    
+    // Se c'è contatto avvenuto, aggiungilo
+    const contattoAvvenuto = formData.get('contattoAvvenuto');
+    if (contattoAvvenuto) {
+      leadData.contattoAvvenuto = new Date(contattoAvvenuto).toISOString();
+    }
+    
+    try {
+      await POST('/api/leads', leadData);
+      toast('Lead salvato con successo');
+      
+      // Pulisci il tracking di editing dopo il salvataggio
+      if (leadId) {
+        clearLeadEditing(leadId);
+      }
+      
+      closeLeadModal();
+      loadLeadsData(); // Ricarica dati
+    } catch (error) {
+      console.error('Error saving lead:', error);
+      toast('Errore nel salvataggio del lead');
+    }
+  }
+
+  // Funzioni per chiamate e contatti
+  function initiateCall(phoneNumber, leadId, leadName) {
+    if (typeof haptic === 'function') haptic('light');
+    
+    // Controlla se è mobile o desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                     window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // Mobile: chiamata diretta
+      window.location.href = `tel:${phoneNumber}`;
+      
+      // Banner dopo 10 secondi SOLO per utente loggato
+      setTimeout(() => {
+        if (getUser()) {
+          showContactConfirmationBanner(leadId, leadName);
+        }
+      }, 10000);
+    } else {
+      // Desktop: copia numero negli appunti
+      navigator.clipboard.writeText(phoneNumber).then(() => {
+        toast(`📋 Numero copiato negli appunti: ${phoneNumber}\n\nPuoi ora incollarlo nel tuo client telefonico preferito.`);
+        
+        // Banner dopo 10 secondi per simulare chiamata
+        setTimeout(() => {
+          if (getUser()) {
+            showContactConfirmationBanner(leadId, leadName);
+          }
+        }, 10000);
+      }).catch(() => {
+        // Fallback se clipboard non funziona
+        toast(`📞 Numero da chiamare: ${phoneNumber}\n\nCopia questo numero nel tuo client telefonico.`);
+        
+        // Banner dopo 10 secondi
+        setTimeout(() => {
+          if (getUser()) {
+            showContactConfirmationBanner(leadId, leadName);
+          }
+        }, 10000);
+      });
+    }
+  }
+
+  function showContactConfirmationBanner(leadId, leadName) {
+    // Usa il sistema banner esistente
+    if (typeof window.enqueueBanner === 'function') {
+      window.enqueueBanner(function(close) {
+        const card = document.createElement('div');
+        card.className = 'bp-banner-card';
+        card.setAttribute('role','alertdialog');
+        card.setAttribute('aria-live','assertive');
+        
+        card.innerHTML = `
+          <div class="msg">
+            <b>Il Lead ${escapeHtml(leadName)} ti ha risposto?</b>
+          </div>
+          <div class="row">
+            <button class="ghost" data-act="no">No</button>
+            <button data-act="yes">Sì</button>
+          </div>
+        `;
+        
+        card.querySelector('[data-act="yes"]').onclick = async function(){
+          try {
+            await markLeadContactAnswered(leadId, 'yes');
+            close();
+          } catch(e) {
+            console.error('Error marking lead contact:', e);
+          }
+        };
+        
+        card.querySelector('[data-act="no"]').onclick = async function(){
+          try {
+            await markLeadContactAnswered(leadId, 'no');
+            close();
+          } catch(e) {
+            console.error('Error marking lead contact:', e);
+          }
+        };
+        
+        return card;
+      });
+    }
+  }
+
+  async function markLeadContactAnswered(leadId, answer) {
+    try {
+      if (answer === 'yes') {
+        // Marca come contattato con data di oggi
+        await POST('/api/leads', {
+          id: leadId,
+          contattoAvvenuto: new Date().toISOString(),
+          contactBannerAnswered: true
+        });
+        toast('Lead marcato come contattato');
+      } else {
+        // Aggiungi tentativo alle note
+        const timestamp = new Date().toLocaleString('it-IT');
+        const note = `\nTentativo chiamata il ${timestamp}`;
+        
+        await POST('/api/leads', {
+          id: leadId,
+          note: note,
+          contactBannerAnswered: true
+        });
+        toast('Tentativo registrato nelle note');
+      }
+      
+      // Ricarica dati
+      loadLeadsData();
+    } catch (error) {
+      console.error('Error marking lead contact:', error);
+      toast('Errore nel salvataggio');
+    }
+  }
+
+  function openWhatsApp(phoneNumber, leadName) {
+    if (typeof haptic === 'function') haptic('light');
+    
+    // Rimuove caratteri non numerici e aggiunge prefisso internazionale se necessario
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    const whatsappPhone = cleanPhone.startsWith('39') ? cleanPhone : `39${cleanPhone}`;
+    
+    // Apre WhatsApp Web o app
+    const message = encodeURIComponent(`Ciao ${leadName}, ti contatto per...`);
+    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
+    
+    window.open(whatsappUrl, '_blank');
+  }
+
+  function openEmail(email, leadName) {
+    if (typeof haptic === 'function') haptic('light');
+    
+    const subject = encodeURIComponent(`Contatto per ${leadName}`);
+    const body = encodeURIComponent(`Ciao ${leadName},\n\nTi contatto per...`);
+    const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
+    
+    window.location.href = mailtoUrl;
+  }
+
+  // Event listeners per filtri e azioni
+  document.addEventListener('click', (e) => {
+    // Aggiungi lead
+    if (e.target.id === 'add-lead-btn') {
+      if (typeof haptic === 'function') haptic('light');
+      showLeadModal();
+    }
+    
+    // Filtri periodo
+    if (e.target.id === 'lead-prev-period' || e.target.id === 'contact-prev-period') {
+      if (typeof haptic === 'function') haptic('light');
+      // TODO: Implementare navigazione periodo
+      loadLeadsData();
+    }
+    
+    if (e.target.id === 'lead-next-period' || e.target.id === 'contact-next-period') {
+      if (typeof haptic === 'function') haptic('light');
+      // TODO: Implementare navigazione periodo
+      loadLeadsData();
+    }
+  });
+
+  // Event listeners per cambio filtri
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
+        e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant') {
+      if (typeof haptic === 'function') haptic('light');
+      loadLeadsData();
+    }
+  });
+
+  // Esponi funzioni globalmente per onclick
+  window.editLead = editLead;
+  window.deleteLead = deleteLead;
+  window.showLeadModal = showLeadModal;
+  window.closeLeadModal = closeLeadModal;
+  window.saveLead = saveLead;
+  window.initiateCall = initiateCall;
+  window.showContactConfirmationBanner = showContactConfirmationBanner;
+  window.markLeadContactAnswered = markLeadContactAnswered;
+  window.openWhatsApp = openWhatsApp;
+  window.openEmail = openEmail;
+
+  // Caricamento iniziale
+  loadLeadsData();
+}
+
+window.viewGestioneLead = window.viewGestioneLead || viewGestioneLead;
+
 // ===== VENDITE & RIORDINI =====
 function viewVenditeRiordini(){
   if(!getUser()) return viewLogin();

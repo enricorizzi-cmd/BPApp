@@ -1916,8 +1916,10 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   
   // Route che dipendono da Supabase (dopo inizializzazione)
   const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase });
+  const leadsRoutes = require("./routes/leads")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
   
   app.use('/api', appointmentRoutes);
+  app.use('/api', leadsRoutes);
   app.use('/api/settings', settingsRoutes);
   app.use('/api', openCyclesRoutes);
   app.use('/api/push-tracking', pushTrackingRoutes);
