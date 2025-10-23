@@ -10891,6 +10891,10 @@ function viewGestioneLead(){
   // Variabili globali per i dati dei lead
   let currentLeadsData = [];
 
+  // Stato per granularità e periodo
+  let currentGranularity = 'mensile';
+  let currentPeriod = new Date(); // Periodo corrente
+
   // Stato per tab attiva
   let activeTab = 'contattare'; // Default per consultant, admin può vedere entrambe
   if (isAdmin) {
@@ -11169,14 +11173,13 @@ function viewGestioneLead(){
       }
       
       .leads-modal {
-        background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-        border: 1px solid var(--hair2);
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
         border-radius: 16px;
         max-width: 600px;
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
-        backdrop-filter: blur(10px);
         box-shadow: 0 8px 32px rgba(0,0,0,.15);
       }
       
@@ -11239,12 +11242,12 @@ function viewGestioneLead(){
       .form-group textarea {
         width: 100%;
         padding: 10px 12px;
-        border: 1px solid var(--hair2);
+        border: 1px solid #e0e0e0;
         border-radius: 8px;
         font-size: 14px;
         box-sizing: border-box;
-        background: rgba(255,255,255,.05);
-        color: var(--text);
+        background: #ffffff;
+        color: #333333;
         transition: all 0.2s ease;
       }
       
@@ -11253,7 +11256,7 @@ function viewGestioneLead(){
       .form-group textarea:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(93,211,255,.1);
-        background: rgba(255,255,255,.08);
+        background: #ffffff;
         outline: none;
       }
       
@@ -11657,6 +11660,9 @@ function viewGestioneLead(){
     </div>
   `;
 
+  // Renderizza topbar per assicurarsi che il pulsante hamburger sia presente
+  renderTopbar();
+
   // Event listeners per tab
   document.querySelectorAll('.leads-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -11674,6 +11680,48 @@ function viewGestioneLead(){
       loadLeadsData();
     });
   });
+
+  // ---- Funzioni di navigazione periodo ----
+  function shiftLeadPeriod(direction) {
+    const granularity = currentGranularity;
+    let newDate = new Date(currentPeriod);
+    
+    switch (granularity) {
+      case 'giornaliera':
+        newDate.setDate(newDate.getDate() + direction);
+        break;
+      case 'settimanale':
+        newDate.setDate(newDate.getDate() + (direction * 7));
+        break;
+      case 'mensile':
+        newDate.setMonth(newDate.getMonth() + direction);
+        break;
+      case 'trimestrale':
+        newDate.setMonth(newDate.getMonth() + (direction * 3));
+        break;
+      case 'semestrale':
+        newDate.setMonth(newDate.getMonth() + (direction * 6));
+        break;
+      case 'annuale':
+        newDate.setFullYear(newDate.getFullYear() + direction);
+        break;
+    }
+    
+    currentPeriod = newDate;
+    updatePeriodDisplay();
+    loadLeadsData();
+  }
+
+  function updatePeriodDisplay() {
+    const { from, to } = calculatePeriod(currentGranularity, currentPeriod);
+    const periodLabel = formatPeriodLabel(currentGranularity, currentPeriod);
+    
+    // Aggiorna label periodo se presente
+    const periodLabels = document.querySelectorAll('.period-label');
+    periodLabels.forEach(label => {
+      label.textContent = periodLabel;
+    });
+  }
 
   // Funzioni per caricamento dati
   async function loadLeadsData() {
@@ -11715,13 +11763,21 @@ function viewGestioneLead(){
     const startTime = performance.now();
     
     try {
-      const granularity = document.getElementById('lead-granularity')?.value || 'mensile';
+      const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = document.getElementById('lead-consultant')?.value || '';
+      
+      // Aggiorna granularità corrente
+      currentGranularity = granularity;
+      
+      // Calcola periodo corrente
+      const { from, to } = calculatePeriod(granularity, currentPeriod);
       
       // Costruisci query parameters
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
       if (granularity) params.append('period', granularity);
+      params.append('from', from);
+      params.append('to', to);
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
@@ -11750,13 +11806,15 @@ function viewGestioneLead(){
     const startTime = performance.now();
     
     try {
-      const granularity = document.getElementById('contact-granularity')?.value || 'mensile';
       const consultant = document.getElementById('contact-consultant')?.value || '';
       
-      // Costruisci query parameters
+      // ECCEZIONE: Lead da Contattare non segue filtri periodo/granularità
+      // Mostra sempre tutti i lead da contattare del consulente selezionato
+      
+      // Costruisci query parameters (solo consulente)
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
-      if (granularity) params.append('period', granularity);
+      // NON aggiungere filtri periodo per questa sezione
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const allLeads = response.leads || [];
@@ -12157,16 +12215,16 @@ function viewGestioneLead(){
     
     // Prepara dati per l'invio
     const leadData = {
-      nomeLead: formData.get('nomeLead'),
-      aziendaLead: formData.get('aziendaLead'),
-      settoreLead: formData.get('settoreLead'),
-      numeroTelefono: formData.get('numeroTelefono'),
-      indirizzoMail: formData.get('indirizzoMail'),
+      nome_lead: formData.get('nomeLead'),
+      azienda_lead: formData.get('aziendaLead'),
+      settore_lead: formData.get('settoreLead'),
+      numero_telefono: formData.get('numeroTelefono'),
+      indirizzo_mail: formData.get('indirizzoMail'),
       provincia: formData.get('provincia'),
       comune: formData.get('comune'),
       indirizzo: formData.get('indirizzo'),
       sorgente: formData.get('sorgente'),
-      consulenteAssegnato: formData.get('consulenteAssegnato'),
+      consulente_assegnato: formData.get('consulenteAssegnato'),
       note: formData.get('note')
     };
     
@@ -12179,7 +12237,7 @@ function viewGestioneLead(){
     // Se c'è contatto avvenuto, aggiungilo
     const contattoAvvenuto = formData.get('contattoAvvenuto');
     if (contattoAvvenuto) {
-      leadData.contattoAvvenuto = new Date(contattoAvvenuto).toISOString();
+      leadData.contatto_avvenuto = new Date(contattoAvvenuto).toISOString();
     }
     
     try {
@@ -12290,8 +12348,8 @@ function viewGestioneLead(){
         // Marca come contattato con data di oggi
         await POST('/api/leads', {
           id: leadId,
-          contattoAvvenuto: new Date().toISOString(),
-          contactBannerAnswered: true
+          contatto_avvenuto: new Date().toISOString(),
+          contact_banner_answered: true
         });
         toast('Lead marcato come contattato');
       } else {
@@ -12302,7 +12360,7 @@ function viewGestioneLead(){
         await POST('/api/leads', {
           id: leadId,
           note: note,
-          contactBannerAnswered: true
+          contact_banner_answered: true
         });
         toast('Tentativo registrato nelle note');
       }
@@ -12350,14 +12408,12 @@ function viewGestioneLead(){
     // Filtri periodo
     if (e.target.id === 'lead-prev-period' || e.target.id === 'contact-prev-period') {
       if (typeof haptic === 'function') haptic('light');
-      // TODO: Implementare navigazione periodo
-      loadLeadsData();
+      shiftLeadPeriod(-1);
     }
     
     if (e.target.id === 'lead-next-period' || e.target.id === 'contact-next-period') {
       if (typeof haptic === 'function') haptic('light');
-      // TODO: Implementare navigazione periodo
-      loadLeadsData();
+      shiftLeadPeriod(+1);
     }
   });
 
@@ -12384,6 +12440,9 @@ function viewGestioneLead(){
 
   // Caricamento iniziale
   loadLeadsData();
+  
+  // Aggiorna display periodo iniziale
+  updatePeriodDisplay();
 }
 
 window.viewGestioneLead = window.viewGestioneLead || viewGestioneLead;

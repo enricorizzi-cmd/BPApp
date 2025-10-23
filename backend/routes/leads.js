@@ -112,8 +112,15 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         
         // Filtro per periodo se specificato
         const periodFilter = req.query.period;
-        if (periodFilter && periodFilter !== '') {
-          // Implementa logica di filtro periodo simile agli appointments
+        const fromDate = req.query.from;
+        const toDate = req.query.to;
+        
+        if (fromDate && toDate) {
+          // Usa i parametri from/to se forniti
+          query = query.gte('data_inserimento', fromDate);
+          query = query.lte('data_inserimento', toDate);
+        } else if (periodFilter && periodFilter !== '') {
+          // Fallback alla logica precedente se from/to non sono forniti
           const now = new Date();
           let startDate, endDate;
           
@@ -307,7 +314,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           comune: lead.comune,
           indirizzo: lead.indirizzo,
           sorgente: lead.sorgente,
-          consulente_assegnato: lead.consulenteAssegnato,
+          consulente_assegnato: lead.consulenteAssegnato && lead.consulenteAssegnato.trim() !== '' ? lead.consulenteAssegnato : null,
           note: lead.note,
           contatto_avvenuto: lead.contattoAvvenuto,
           contact_banner_answered: lead.contactBannerAnswered,
@@ -381,7 +388,9 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       if (body.comune !== undefined) mappedUpdates.comune = toStr(body.comune);
       if (body.indirizzo !== undefined) mappedUpdates.indirizzo = toStr(body.indirizzo);
       if (body.sorgente !== undefined) mappedUpdates.sorgente = toStr(body.sorgente);
-      if (body.consulenteAssegnato !== undefined) mappedUpdates.consulente_assegnato = toStr(body.consulenteAssegnato);
+      if (body.consulenteAssegnato !== undefined) {
+        mappedUpdates.consulente_assegnato = body.consulenteAssegnato && body.consulenteAssegnato.trim() !== '' ? toStr(body.consulenteAssegnato) : null;
+      }
       if (body.note !== undefined) mappedUpdates.note = toStr(body.note);
       if (body.contattoAvvenuto !== undefined) mappedUpdates.contatto_avvenuto = toStr(body.contattoAvvenuto);
       if (body.contactBannerAnswered !== undefined) mappedUpdates.contact_banner_answered = toBool(body.contactBannerAnswered);
