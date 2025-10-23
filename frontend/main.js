@@ -9988,11 +9988,11 @@ function viewCorsiInteraziendali(){
             // Controlla se questo giorno ha un corso
             return cd.giorni_dettaglio.some(gd => {
               // Se il corso è multi-giorno, controlla se questo giorno è incluso
-              if (gd.giorno_numero && gd.giorno_numero > 1) {
+              if (gd.giorno && gd.giorno > 1) {
                 // Calcola la data del giorno specifico del corso
                 const dataInizio = new Date(cd.data_inizio);
                 const giornoCorso = new Date(dataInizio);
-                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
                 const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
                 return dataCorsoStr === dateStr;
               } else {
@@ -10006,10 +10006,10 @@ function viewCorsiInteraziendali(){
             if (!cd.giorni_dettaglio) return false;
             
             return cd.giorni_dettaglio.some(gd => {
-              if (gd.giorno_numero && gd.giorno_numero > 1) {
+              if (gd.giorno && gd.giorno > 1) {
                 const dataInizio = new Date(cd.data_inizio);
                 const giornoCorso = new Date(dataInizio);
-                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
                 const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
                 return dataCorsoStr === dateStr;
               } else {
@@ -10134,10 +10134,10 @@ function viewCorsiInteraziendali(){
           if (!cd.giorni_dettaglio) return false;
           
           return cd.giorni_dettaglio.some(gd => {
-            if (gd.giorno_numero && gd.giorno_numero > 1) {
+            if (gd.giorno && gd.giorno > 1) {
               const dataInizio = new Date(cd.data_inizio);
               const giornoCorso = new Date(dataInizio);
-              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
               const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
               return dataCorsoStr === dateStr;
             } else {
@@ -10150,10 +10150,10 @@ function viewCorsiInteraziendali(){
           if (!cd.giorni_dettaglio) return false;
           
           return cd.giorni_dettaglio.some(gd => {
-            if (gd.giorno_numero && gd.giorno_numero > 1) {
+            if (gd.giorno && gd.giorno > 1) {
               const dataInizio = new Date(cd.data_inizio);
               const giornoCorso = new Date(dataInizio);
-              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
               const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
               return dataCorsoStr === dateStr;
             } else {
@@ -10271,7 +10271,7 @@ function viewCorsiInteraziendali(){
                     <div class="course-schedule">
                       ${course.giorni_dettaglio.map(giorno => `
                         <div class="schedule-item">
-                          <strong>Giorno ${giorno.giorno_numero}:</strong> 
+                          <strong>Giorno ${giorno.giorno}:</strong> 
                           ${giorno.data} dalle ${giorno.ora_inizio} alle ${giorno.ora_fine}
                         </div>
                       `).join('')}
