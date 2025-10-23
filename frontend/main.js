@@ -10753,12 +10753,22 @@ function viewCorsiInteraziendali(){
   window.saveIscrizione = async function() {
     try {
       const form = document.getElementById('iscrizione-form');
+      if (!form) {
+        toast('Form non trovato', 'error');
+        return;
+      }
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
       }
 
-      const corsoDataId = document.getElementById('data-corso').value;
+      const dataCorsoElement = document.getElementById('data-corso');
+      if (!dataCorsoElement) {
+        toast('Elemento data-corso non trovato', 'error');
+        return;
+      }
+      
+      const corsoDataId = dataCorsoElement.value;
       if (!corsoDataId) {
         toast('Seleziona una data corso', 'error');
         return;
@@ -11884,17 +11894,17 @@ function viewGestioneLead(){
       return `
         <tr ${editingInfo ? 'class="row-being-edited"' : ''}>
           <td>${formatDate(lead.dataInserimento)}</td>
-          <td>${escapeHtml(lead.nomeLead || '')} ${editingIndicator}</td>
-          <td>${escapeHtml(lead.aziendaLead || '')}</td>
-          <td>${escapeHtml(lead.settoreLead || '')}</td>
-          <td>${escapeHtml(lead.numeroTelefono || '')}</td>
-          <td>${escapeHtml(lead.indirizzoMail || '')}</td>
-          <td>${escapeHtml(lead.provincia || '')}</td>
-          <td>${escapeHtml(lead.comune || '')}</td>
-          <td>${escapeHtml(lead.indirizzo || '')}</td>
-          <td>${escapeHtml(lead.sorgente || '')}</td>
-          <td>${escapeHtml(lead.consulenteNome || '')}</td>
-          <td>${escapeHtml(lead.note || '')}</td>
+          <td>${htmlEscape(lead.nomeLead || '')} ${editingIndicator}</td>
+          <td>${htmlEscape(lead.aziendaLead || '')}</td>
+          <td>${htmlEscape(lead.settoreLead || '')}</td>
+          <td>${htmlEscape(lead.numeroTelefono || '')}</td>
+          <td>${htmlEscape(lead.indirizzoMail || '')}</td>
+          <td>${htmlEscape(lead.provincia || '')}</td>
+          <td>${htmlEscape(lead.comune || '')}</td>
+          <td>${htmlEscape(lead.indirizzo || '')}</td>
+          <td>${htmlEscape(lead.sorgente || '')}</td>
+          <td>${htmlEscape(lead.consulenteNome || '')}</td>
+          <td>${htmlEscape(lead.note || '')}</td>
           <td>${lead.contattoAvvenuto ? formatDate(lead.contattoAvvenuto) : ''}</td>
           <td>
             <div class="leads-actions">
@@ -11931,31 +11941,31 @@ function viewGestioneLead(){
         <td>
           <div class="leads-actions">
             ${lead.numeroTelefono ? `
-              <button class="btn-call" onclick="initiateCall('${lead.numeroTelefono}', '${lead.id}', '${escapeHtml(lead.nomeLead)}')" title="Chiama">
+              <button class="btn-call" onclick="initiateCall('${lead.numeroTelefono}', '${lead.id}', '${htmlEscape(lead.nomeLead)}')" title="Chiama">
                 📞
               </button>
-              <button class="btn-whatsapp" onclick="openWhatsApp('${lead.numeroTelefono}', '${escapeHtml(lead.nomeLead)}')" title="WhatsApp">
+              <button class="btn-whatsapp" onclick="openWhatsApp('${lead.numeroTelefono}', '${htmlEscape(lead.nomeLead)}')" title="WhatsApp">
                 💬
               </button>
             ` : ''}
             ${lead.indirizzoMail ? `
-              <button class="btn-email" onclick="openEmail('${lead.indirizzoMail}', '${escapeHtml(lead.nomeLead)}')" title="Email">
+              <button class="btn-email" onclick="openEmail('${lead.indirizzoMail}', '${htmlEscape(lead.nomeLead)}')" title="Email">
                 📧
               </button>
             ` : ''}
           </div>
         </td>
         <td>${formatDate(lead.dataInserimento)}</td>
-        <td>${escapeHtml(lead.nomeLead || '')}</td>
-        <td>${escapeHtml(lead.aziendaLead || '')}</td>
-        <td>${escapeHtml(lead.settoreLead || '')}</td>
-        <td>${escapeHtml(lead.numeroTelefono || '')}</td>
-        <td>${escapeHtml(lead.indirizzoMail || '')}</td>
-        <td>${escapeHtml(lead.provincia || '')}</td>
-        <td>${escapeHtml(lead.comune || '')}</td>
-        <td>${escapeHtml(lead.sorgente || '')}</td>
-        <td>${escapeHtml(lead.consulenteNome || '')}</td>
-        <td>${escapeHtml(lead.note || '')}</td>
+        <td>${htmlEscape(lead.nomeLead || '')}</td>
+        <td>${htmlEscape(lead.aziendaLead || '')}</td>
+        <td>${htmlEscape(lead.settoreLead || '')}</td>
+        <td>${htmlEscape(lead.numeroTelefono || '')}</td>
+        <td>${htmlEscape(lead.indirizzoMail || '')}</td>
+        <td>${htmlEscape(lead.provincia || '')}</td>
+        <td>${htmlEscape(lead.comune || '')}</td>
+        <td>${htmlEscape(lead.sorgente || '')}</td>
+        <td>${htmlEscape(lead.consulenteNome || '')}</td>
+        <td>${htmlEscape(lead.note || '')}</td>
       </tr>
     `).join('');
   }
@@ -11978,16 +11988,16 @@ function viewGestioneLead(){
     tbody.innerHTML = leads.map(lead => `
       <tr>
         <td>${formatDate(lead.dataInserimento)}</td>
-        <td>${escapeHtml(lead.nomeLead || '')}</td>
-        <td>${escapeHtml(lead.aziendaLead || '')}</td>
-        <td>${escapeHtml(lead.settoreLead || '')}</td>
-        <td>${escapeHtml(lead.numeroTelefono || '')}</td>
-        <td>${escapeHtml(lead.indirizzoMail || '')}</td>
-        <td>${escapeHtml(lead.provincia || '')}</td>
-        <td>${escapeHtml(lead.comune || '')}</td>
-        <td>${escapeHtml(lead.sorgente || '')}</td>
-        <td>${escapeHtml(lead.consulenteNome || '')}</td>
-        <td>${escapeHtml(lead.note || '')}</td>
+        <td>${htmlEscape(lead.nomeLead || '')}</td>
+        <td>${htmlEscape(lead.aziendaLead || '')}</td>
+        <td>${htmlEscape(lead.settoreLead || '')}</td>
+        <td>${htmlEscape(lead.numeroTelefono || '')}</td>
+        <td>${htmlEscape(lead.indirizzoMail || '')}</td>
+        <td>${htmlEscape(lead.provincia || '')}</td>
+        <td>${htmlEscape(lead.comune || '')}</td>
+        <td>${htmlEscape(lead.sorgente || '')}</td>
+        <td>${htmlEscape(lead.consulenteNome || '')}</td>
+        <td>${htmlEscape(lead.note || '')}</td>
         <td>${formatDate(lead.contattoAvvenuto)}</td>
       </tr>
     `).join('');
