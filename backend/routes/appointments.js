@@ -1,5 +1,6 @@
 const express = require('express');
 const { parseDateTime, toUTCString, minutesBetween, addMinutes, isValidDateTime } = require('../lib/timezone');
+const productionLogger = require('../lib/production-logger');
 
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase }){
   const router = express.Router();
@@ -107,7 +108,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         const { data, error } = await query;
         
         if (error) {
-          console.error('Supabase error in handleGetList:', error);
+          productionLogger.error('Supabase error in handleGetList:', error);
           throw error;
         }
         
@@ -148,16 +149,16 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         });
         
         // DEBUG: Log per verificare lettura corretta da Supabase
-        console.log(`[APPOINTMENTS_DEBUG] Supabase query successful: ${enriched.length} appointments`);
+        productionLogger.debug(`[APPOINTMENTS_DEBUG] Supabase query successful: ${enriched.length} appointments`);
         if (enriched.length > 0) {
           const sample = enriched[0];
-          console.log(`[APPOINTMENTS_DEBUG] Sample appointment: ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
+          productionLogger.debug(`[APPOINTMENTS_DEBUG] Sample appointment: ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
         }
         
         return res.json({ appointments: enriched });
       }
     } catch (error) {
-      console.error('Error fetching from Supabase, falling back to JSON:', error);
+      productionLogger.error('Error fetching from Supabase, falling back to JSON:', error);
     }
     
     // Fallback al metodo tradizionale
@@ -182,10 +183,10 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     });
     
     // DEBUG: Log per verificare fallback JSON
-    console.log(`[APPOINTMENTS_DEBUG] JSON fallback: ${enriched.length} appointments`);
+    productionLogger.debug(`[APPOINTMENTS_DEBUG] JSON fallback: ${enriched.length} appointments`);
     if (enriched.length > 0) {
       const sample = enriched[0];
-      console.log(`[APPOINTMENTS_DEBUG] Sample appointment (JSON): ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
+      productionLogger.debug(`[APPOINTMENTS_DEBUG] Sample appointment (JSON): ${sample.id}, nncf: ${sample.nncf}, nncfPromptAnswered: ${sample.nncfPromptAnswered}, userId: ${sample.userId}, consultantName: ${sample.consultantName}`);
     }
     
     return res.json({ appointments: enriched });
@@ -281,11 +282,11 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         if (body.nncf !== undefined) mappedUpdates.nncf = it.nncf;
         if (body.nncfPromptAnswered !== undefined) {
           mappedUpdates.nncfpromptanswered = !!body.nncfPromptAnswered;
-          console.log(`[DEBUG_BANNER_SAVE] Setting nncfpromptanswered: ${body.nncfPromptAnswered} -> ${mappedUpdates.nncfpromptanswered}`);
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] Setting nncfpromptanswered: ${body.nncfPromptAnswered} -> ${mappedUpdates.nncfpromptanswered}`);
         }
         if (body.salePromptAnswered !== undefined) {
           mappedUpdates.salepromptanswered = !!body.salePromptAnswered;
-          console.log(`[DEBUG_BANNER_SAVE] Setting salepromptanswered: ${body.salePromptAnswered} -> ${mappedUpdates.salepromptanswered}`);
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] Setting salepromptanswered: ${body.salePromptAnswered} -> ${mappedUpdates.salepromptanswered}`);
         }
         if (body.salePromptSnoozedUntil !== undefined) mappedUpdates.salepromptsnoozeduntil = body.salePromptSnoozedUntil;
         if (body.nncfPromptSnoozedUntil !== undefined) mappedUpdates.nncfpromptsnoozeduntil = body.nncfPromptSnoozedUntil;
@@ -296,28 +297,28 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         
         // DEBUG: Log banner fields per troubleshooting
         if (body.nncfPromptAnswered !== undefined || body.salePromptAnswered !== undefined) {
-          console.log(`[DEBUG_BANNER_SAVE] Updating appointment ${it.id} with banner fields`);
-          console.log(`[DEBUG_BANNER_SAVE] Original values: nncfPromptAnswered: ${body.nncfPromptAnswered}, salePromptAnswered: ${body.salePromptAnswered}`);
-          console.log(`[DEBUG_BANNER_SAVE] Mapped fields: nncfpromptanswered: ${mappedUpdates.nncfpromptanswered}, salepromptanswered: ${mappedUpdates.salepromptanswered}`);
-          console.log(`[DEBUG_BANNER_SAVE] All mapped updates:`, JSON.stringify(mappedUpdates, null, 2));
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] Updating appointment ${it.id} with banner fields`);
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] Original values: nncfPromptAnswered: ${body.nncfPromptAnswered}, salePromptAnswered: ${body.salePromptAnswered}`);
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] Mapped fields: nncfpromptanswered: ${mappedUpdates.nncfpromptanswered}, salepromptanswered: ${mappedUpdates.salepromptanswered}`);
+          productionLogger.debug(`[DEBUG_BANNER_SAVE] All mapped updates:`, JSON.stringify(mappedUpdates, null, 2));
         }
         
-        console.log(`[DEBUG_BANNER_SAVE] Calling updateRecord for appointment ${it.id}`);
+        productionLogger.debug(`[DEBUG_BANNER_SAVE] Calling updateRecord for appointment ${it.id}`);
         await updateRecord('appointments', it.id, mappedUpdates);
-        console.log(`[DEBUG_BANNER_SAVE] Successfully updated appointment ${it.id}`);
+        productionLogger.debug(`[DEBUG_BANNER_SAVE] Successfully updated appointment ${it.id}`);
         
         // Log dell'operazione per monitoraggio
-        console.log(`[APPOINTMENT_UPDATED] User: ${req.user.id}, ID: ${it.id}, Client: ${it.client}, Start: ${it.start}`);
+        productionLogger.debug(`[APPOINTMENT_UPDATED] User: ${req.user.id}, ID: ${it.id}, Client: ${it.client}, Start: ${it.start}`);
         
       } catch (error) {
-        console.error('Error updating appointment:', error);
+        productionLogger.error('Error updating appointment:', error);
         return res.status(500).json({ error: 'Failed to update appointment' });
       }
     }
     
       return res.json({ ok:true, id: it.id, clientId: it.clientId });
     } catch (error) {
-      console.error('Error in handleUpdate:', error);
+      productionLogger.error('Error in handleUpdate:', error);
       return res.status(500).json({ error: 'Database error during update' });
     }
   }
@@ -407,10 +408,10 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         await insertRecord('appointments', mappedRow);
         
         // Log dell'operazione per monitoraggio
-        console.log(`[APPOINTMENT_CREATED] User: ${req.user.id}, ID: ${row.id}, Client: ${row.client}, Start: ${row.start}`);
+        productionLogger.debug(`[APPOINTMENT_CREATED] User: ${req.user.id}, ID: ${row.id}, Client: ${row.client}, Start: ${row.start}`);
         
       } catch (error) {
-        console.error('Error inserting appointment:', error);
+        productionLogger.error('Error inserting appointment:', error);
         return res.status(500).json({ error: 'Failed to save appointment' });
       }
     }
@@ -431,7 +432,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
   router.post('/appointments', auth, async (req,res)=>{
     const body = req.body || {};
-    console.log(`[DEBUG_BANNER_SAVE] Received appointment update request from user ${req.user.id}:`, JSON.stringify(body, null, 2));
+    productionLogger.debug(`[DEBUG_BANNER_SAVE] Received appointment update request from user ${req.user.id}:`, JSON.stringify(body, null, 2));
     
     // Safety check: se c'è un ID, verifica che l'appuntamento esista direttamente su Supabase
     if(body.id) {
@@ -445,11 +446,11 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         
         if (error || !existingAppointment) {
           console.warn(`[DEBUG_BANNER_SAVE] User ${req.user.id} attempted to update non-existent appointment ${body.id}`);
-          console.error(`[DEBUG_BANNER_SAVE] Supabase error:`, error);
+          productionLogger.error(`[DEBUG_BANNER_SAVE] Supabase error:`, error);
           return res.status(404).json({ error:'appointment not found - possible overwrite attempt' });
         }
         
-        console.log(`[DEBUG_BANNER_SAVE] Found existing appointment:`, existingAppointment);
+        productionLogger.debug(`[DEBUG_BANNER_SAVE] Found existing appointment:`, existingAppointment);
         
         // Verifica ownership per sicurezza (più permissivo per VSS updates)
         if (existingAppointment.userid !== req.user.id && req.user.role !== 'admin') {
@@ -463,12 +464,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         }
         
         // Log dell'operazione per monitoraggio
-        console.log(`[APPOINTMENT_UPDATE_REQUEST] User: ${req.user.id}, ID: ${body.id}, Client: ${existingAppointment.client}, Start: ${existingAppointment.start_time}`);
+        productionLogger.debug(`[APPOINTMENT_UPDATE_REQUEST] User: ${req.user.id}, ID: ${body.id}, Client: ${existingAppointment.client}, Start: ${existingAppointment.start_time}`);
         
         return handleUpdate(req,res,body);
       } catch (error) {
-        console.error(`[DEBUG_BANNER_SAVE] Error checking appointment existence:`, error);
-        console.error(`[DEBUG_BANNER_SAVE] Error details:`, {
+        productionLogger.error(`[DEBUG_BANNER_SAVE] Error checking appointment existence:`, error);
+        productionLogger.error(`[DEBUG_BANNER_SAVE] Error details:`, {
           message: error.message,
           code: error.code,
           details: error.details,

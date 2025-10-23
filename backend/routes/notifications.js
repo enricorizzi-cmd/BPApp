@@ -1,4 +1,5 @@
 const express = require('express');
+const productionLogger = require('../lib/production-logger');
 const router = express.Router();
 
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }) {
@@ -12,7 +13,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       
       // SICUREZZA: Blocca notifiche automatiche a tutti gli utenti
       if (recipients === 'all' && type === 'automatic') {
-        console.warn(`[SECURITY] Blocked automatic notification to all users from ${req.user.id}`);
+        productionLogger.warn(`[SECURITY] Blocked automatic notification to all users from ${req.user.id}`);
         return res.status(400).json({ 
           error: 'Automatic notifications cannot be sent to all users' 
         });
@@ -27,7 +28,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       }
       
       // Log per audit sicurezza
-      console.log(`[NOTIFICATION] Type: ${type}, Recipients: ${recipients}, SentBy: ${req.user.id}, Text: ${text.substring(0, 50)}...`);
+      productionLogger.info(`[NOTIFICATION] Type: ${type}, Recipients: ${recipients}, SentBy: ${req.user.id}, Text: ${text.substring(0, 50)}...`);
       
       // Carica sottoscrizioni push
       let subs = [];
@@ -74,7 +75,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           }
         }
       } else {
-        console.warn('[Notifications] Push notifications not configured');
+        productionLogger.warn('[Notifications] Push notifications not configured');
       }
       
       // Salva nel log

@@ -1,4 +1,5 @@
 const express = require('express');
+const productionLogger = require('../lib/production-logger');
 
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase }) {
   const router = express.Router();
@@ -26,23 +27,23 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // GET /api/open-cycles - Lista cicli
   router.get('/open-cycles', auth, async (req, res) => {
     try {
-      console.log('[DEBUG] GET /api/open-cycles - req.user:', req.user);
+      productionLogger.debug('[DEBUG] GET /api/open-cycles - req.user:', req.user);
       let cycles = [];
       
       // Prova prima Supabase se disponibile
       if (typeof supabase !== 'undefined' && supabase) {
         try {
-          console.log('[DEBUG] Supabase client available, querying open_cycles table...');
+          productionLogger.debug('[DEBUG] Supabase client available, querying open_cycles table...');
           const { data, error } = await supabase
             .from('open_cycles')
             .select('*')
             .order('createdat', { ascending: false });
           
-          console.log('[DEBUG] Supabase query result - data:', data);
-          console.log('[DEBUG] Supabase query result - error:', error);
+          productionLogger.debug('[DEBUG] Supabase query result - data:', data);
+          productionLogger.debug('[DEBUG] Supabase query result - error:', error);
           
           if (error) {
-            console.error('Supabase error:', error);
+            productionLogger.error('Supabase error:', error);
             throw error;
           }
           
@@ -60,7 +61,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             updatedAt: row.updatedat
           }));
         } catch (error) {
-          console.error('Error fetching from Supabase:', error);
+          productionLogger.error('Error fetching from Supabase:', error);
           // Fallback al metodo tradizionale
           const db = await readJSON('open_cycles.json');
           cycles = db.cycles || [];
@@ -73,21 +74,21 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       
       // Filtro per consulente se non admin
       let filteredCycles = cycles;
-      console.log('[DEBUG] Total cycles from Supabase:', cycles.length);
-      console.log('[DEBUG] User role:', req.user.role);
-      console.log('[DEBUG] User id:', req.user.id);
+      productionLogger.debug('[DEBUG] Total cycles from Supabase:', cycles.length);
+      productionLogger.debug('[DEBUG] User role:', req.user.role);
+      productionLogger.debug('[DEBUG] User id:', req.user.id);
       
       if (req.user.role !== 'admin') {
         filteredCycles = cycles.filter(c => c.consultantId === req.user.id);
-        console.log('[DEBUG] Filtered cycles for non-admin:', filteredCycles.length);
+        productionLogger.debug('[DEBUG] Filtered cycles for non-admin:', filteredCycles.length);
       } else {
-        console.log('[DEBUG] Admin user - showing all cycles');
+        productionLogger.debug('[DEBUG] Admin user - showing all cycles');
       }
       
-      console.log('[DEBUG] Final cycles to return:', filteredCycles.length);
+      productionLogger.debug('[DEBUG] Final cycles to return:', filteredCycles.length);
       res.json({ cycles: filteredCycles });
     } catch (error) {
-      console.error('Error fetching open cycles:', error);
+      productionLogger.error('Error fetching open cycles:', error);
       res.status(500).json({ error: 'Failed to fetch cycles' });
     }
   });
@@ -135,7 +136,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           };
           await insertRecord('open_cycles', mappedCycle);
         } catch (error) {
-          console.error('Error inserting cycle:', error);
+          productionLogger.error('Error inserting cycle:', error);
           // Fallback al metodo tradizionale se Supabase fallisce
           db.cycles.push(cycle);
           await writeJSON('open_cycles.json', db);
@@ -144,7 +145,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
       res.json({ ok: true, id: cycle.id, cycle });
     } catch (error) {
-      console.error('Error creating cycle:', error);
+      productionLogger.error('Error creating cycle:', error);
       res.status(500).json({ error: 'Failed to create cycle' });
     }
   });
@@ -170,7 +171,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             .single();
           
           if (error) {
-            console.error('Supabase error:', error);
+            productionLogger.error('Supabase error:', error);
             throw error;
           }
           
@@ -192,7 +193,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             updatedAt: data.updatedat
           };
         } catch (error) {
-          console.error('Error fetching from Supabase:', error);
+          productionLogger.error('Error fetching from Supabase:', error);
           // Fallback al metodo tradizionale
           const db = await readJSON('open_cycles.json');
           db.cycles = db.cycles || [];
@@ -241,7 +242,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           };
           await updateRecord('open_cycles', cycle.id, mappedUpdates);
         } catch (error) {
-          console.error('Error updating cycle:', error);
+          productionLogger.error('Error updating cycle:', error);
           // Fallback al metodo tradizionale se Supabase fallisce
           const db = await readJSON('open_cycles.json');
           db.cycles = db.cycles || [];
@@ -255,7 +256,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
       res.json({ ok: true, id: cycle.id, cycle });
     } catch (error) {
-      console.error('Error updating cycle:', error);
+      productionLogger.error('Error updating cycle:', error);
       res.status(500).json({ error: 'Failed to update cycle' });
     }
   });
@@ -280,7 +281,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             .single();
           
           if (error) {
-            console.error('Supabase error:', error);
+            productionLogger.error('Supabase error:', error);
             throw error;
           }
           
@@ -302,7 +303,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             updatedAt: data.updatedat
           };
         } catch (error) {
-          console.error('Error fetching from Supabase:', error);
+          productionLogger.error('Error fetching from Supabase:', error);
           // Fallback al metodo tradizionale
           const db = await readJSON('open_cycles.json');
           db.cycles = db.cycles || [];
@@ -331,7 +332,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
       res.json({ ok: true });
     } catch (error) {
-      console.error('Error deleting cycle:', error);
+      productionLogger.error('Error deleting cycle:', error);
       res.status(500).json({ error: 'Failed to delete cycle' });
     }
   });
@@ -351,7 +352,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             .order('createdat', { ascending: false });
           
           if (error) {
-            console.error('Supabase error:', error);
+            productionLogger.error('Supabase error:', error);
             throw error;
           }
           
@@ -369,7 +370,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             updatedAt: row.updatedat
           }));
         } catch (error) {
-          console.error('Error fetching from Supabase:', error);
+          productionLogger.error('Error fetching from Supabase:', error);
           // Fallback al metodo tradizionale
           const db = await readJSON('open_cycles.json');
           cycles = db.cycles || [];
@@ -391,7 +392,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
       res.json({ cycles: openCycles });
     } catch (error) {
-      console.error('Error fetching forecast:', error);
+      productionLogger.error('Error fetching forecast:', error);
       res.status(500).json({ error: 'Failed to fetch forecast' });
     }
   });
@@ -399,7 +400,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // Test endpoint per verificare connessione Supabase (senza auth per debug)
   router.get('/open-cycles/test', async (req, res) => {
     try {
-      console.log('[DEBUG] Testing Supabase connection...');
+      productionLogger.debug('[DEBUG] Testing Supabase connection...');
       
       if (typeof supabase === 'undefined' || !supabase) {
         return res.json({ error: 'Supabase client not available' });
@@ -411,7 +412,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         .select('count')
         .limit(1);
       
-      console.log('[DEBUG] Test query result:', { data, error });
+      productionLogger.debug('[DEBUG] Test query result:', { data, error });
       
       if (error) {
         return res.json({ error: error.message, code: error.code });
@@ -423,7 +424,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         .select('*')
         .limit(5);
       
-      console.log('[DEBUG] All data query result:', { allData, allError });
+      productionLogger.debug('[DEBUG] All data query result:', { allData, allError });
       
       res.json({ 
         success: true, 
@@ -432,7 +433,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         error: allError
       });
     } catch (error) {
-      console.error('[DEBUG] Test endpoint error:', error);
+      productionLogger.error('[DEBUG] Test endpoint error:', error);
       res.status(500).json({ error: error.message });
     }
   });

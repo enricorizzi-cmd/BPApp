@@ -12416,8 +12416,6 @@ function viewGestioneLead(){
   window.updateLeadPeriodDisplay();
 }
 
-window.viewGestioneLead = window.viewGestioneLead || viewGestioneLead;
-
 // ===== VENDITE & RIORDINI =====
 function viewVenditeRiordini(){
   if(!getUser()) return viewLogin();
