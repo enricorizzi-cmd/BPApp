@@ -9909,7 +9909,8 @@ function viewCorsiInteraziendali(){
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startDay = firstDay.getDay(); // 0 = Domenica
+    // Correzione: settimana inizia lunedì (1) e finisce domenica (0)
+    const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // 0 = Lunedì
 
     // Crea calendario usando la struttura del calendario principale
     let calendarHtml = '';
@@ -9921,9 +9922,9 @@ function viewCorsiInteraziendali(){
       return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
     };
     
-    // Prima riga: settimane + header giorni
+    // Prima riga: settimane + header giorni (inizia lunedì)
     calendarHtml += '<div class="weekLabel"></div>'; // Spazio per settimane
-    const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const dayNames = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
     dayNames.forEach(day => {
       calendarHtml += `<div class="weekLabel">${day}</div>`;
     });
@@ -10103,10 +10104,11 @@ function viewCorsiInteraziendali(){
       const firstDay = new Date(currentYear, monthIndex, 1);
       const lastDay = new Date(currentYear, monthIndex + 1, 0);
       const daysInMonth = lastDay.getDate();
-      const startDay = firstDay.getDay();
+      // Correzione: settimana inizia lunedì (1) e finisce domenica (0)
+      const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1; // 0 = Lunedì
 
-      // Header giorni settimana per mini-calendario
-      const dayNames = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
+      // Header giorni settimana per mini-calendario (inizia lunedì)
+      const dayNames = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
       dayNames.forEach(day => {
         annualHtml += `<div class="mini-week-label">${day}</div>`;
       });
@@ -10307,6 +10309,8 @@ function viewCorsiInteraziendali(){
       return '-';
     }
     
+    console.log('giorni_dettaglio found:', dateCorso.giorni_dettaglio);
+    
     // Raggruppa le date per corso (corso multi-giorno)
     const dateGroups = [];
     const processedDates = new Set();
@@ -10331,6 +10335,9 @@ function viewCorsiInteraziendali(){
         // Corso multi-giorno
         const firstDate = new Date(corsoDates[0].data);
         const lastDate = new Date(corsoDates[corsoDates.length - 1].data);
+        
+        console.log('DEBUG: First day data:', corsoDates[0].data);
+        console.log('DEBUG: Last day data:', corsoDates[corsoDates.length - 1].data);
         
         if (firstDate.getMonth() === lastDate.getMonth()) {
           // Stesso mese
