@@ -27,7 +27,7 @@ module.exports = function(app) {
         query = query.eq('consultantid', req.user.id);
       } else if (global === '1') {
         // Admin con global=1: mostra tutti i dati
-        query = query;
+        // query rimane invariato
       } else if (targetUserId) {
         query = query.eq('consultantid', targetUserId);
       }
@@ -238,7 +238,7 @@ module.exports = function(app) {
         query = query.eq('consultantid', req.user.id);
       } else if (global === '1') {
         // Admin con global=1: mostra tutti i dati
-        query = query;
+        // query rimane invariato
       } else if (targetUserId) {
         query = query.eq('consultantid', targetUserId);
       }
