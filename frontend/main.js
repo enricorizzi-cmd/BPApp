@@ -8477,7 +8477,10 @@ window.viewGI = window.viewGI || viewGI;
 // ===== CORSI INTERAZIENDALI =====
 // Variabili globali per Corsi Interaziendali
 let corsiActiveTab = 'catalogo';
-let corsiCurrentPeriod = new Date();
+let corsiCurrentPeriod = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth()
+};
 let iscrizioniCurrentPeriod = new Date();
 
 function viewCorsiInteraziendali(){
@@ -9803,8 +9806,10 @@ function viewCorsiInteraziendali(){
         try {
           const iscrizioniResponse = await GET('/api/corsi-iscrizioni');
           iscrizioniData = iscrizioniResponse.iscrizioni || [];
+          console.log('Loaded iscrizioni data:', iscrizioniData);
         } catch (iscrizioniError) {
-          console.warn('Error loading iscrizioni data:', iscrizioniError);
+          console.warn('Error loading iscrizioni data (continuing without):', iscrizioniError);
+          // Continua senza iscrizioni - non è critico per il calendario
         }
 
         if (calendarioView === 'mensile') {
@@ -9828,10 +9833,11 @@ function viewCorsiInteraziendali(){
     const container = document.getElementById('calendario-container');
     if (!container) return;
 
-    const year = corsiCurrentPeriod.year;
-    const month = corsiCurrentPeriod.month;
+    const year = corsiCurrentPeriod?.year || new Date().getFullYear();
+    const month = corsiCurrentPeriod?.month || new Date().getMonth();
     
     console.log('Rendering monthly calendar for:', year, month, 'with data:', corsiDate);
+    console.log('corsiCurrentPeriod:', corsiCurrentPeriod);
     console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
     if (corsiDate && corsiDate.length > 0) {
       console.log('First course data:', corsiDate[0]);
@@ -10026,7 +10032,7 @@ function viewCorsiInteraziendali(){
     const container = document.getElementById('calendario-container');
     if (!container) return;
 
-    const currentYear = corsiCurrentPeriod.year;
+    const currentYear = corsiCurrentPeriod?.year || new Date().getFullYear();
     const months = [
       'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
       'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
@@ -10233,14 +10239,19 @@ function viewCorsiInteraziendali(){
 
   // Formatta le date programmate per la visualizzazione
   function formatDateProgrammate(corsoId, corsiDate) {
+    console.log('formatDateProgrammate called with:', { corsoId, corsiDate });
+    
     // Controllo di sicurezza per evitare errori
     if (!corsiDate || !Array.isArray(corsiDate)) {
+      console.log('corsiDate is not valid array, returning "-"');
       return '-';
     }
     
     const dateCorso = corsiDate.find(cd => cd.corso_id === corsoId);
+    console.log('Found dateCorso:', dateCorso);
     
     if (!dateCorso || !dateCorso.giorni_dettaglio || dateCorso.giorni_dettaglio.length === 0) {
+      console.log('No date data found, returning "-"');
       return '-';
     }
     
