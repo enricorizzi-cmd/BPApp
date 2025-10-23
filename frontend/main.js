@@ -10325,9 +10325,10 @@ function viewCorsiInteraziendali(){
             ${coursesOnDay && coursesOnDay.length > 0 ? `
               <div class="courses-list">
                 ${coursesOnDay.map(course => {
-                  // Calcola iscritti e VSD per questo corso in questa data
+                  // Calcola iscritti e VSD per questo corso in questa data specifica
                   const corsoIscrizioni = iscrizioniData.filter(iscrizione => 
-                    iscrizione.nome_corso === course.corsi_catalogo.nome_corso
+                    iscrizione.nome_corso === course.corsi_catalogo.nome_corso &&
+                    iscrizione.data_corso === dateStr
                   );
                   
                   const nIscritti = corsoIscrizioni.length;
@@ -10342,8 +10343,8 @@ function viewCorsiInteraziendali(){
                         <div class="course-code">Codice: ${course.corsi_catalogo.codice_corso}</div>
                         <div class="course-duration">Durata: ${course.corsi_catalogo.durata_giorni} giorni</div>
                         <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso}</div>
-                        <div class="course-enrollments">N. iscritti: ${nIscritti}</div>
-                        <div class="course-vsd">VSD indiretto totale corso: €${vsdTotale.toFixed(0)}</div>
+                        <div class="course-enrollments">N. iscritti (${dateStr}): ${nIscritti}</div>
+                        <div class="course-vsd">VSD indiretto totale (${dateStr}): €${vsdTotale.toFixed(0)}</div>
                       </div>
                       <div class="course-schedule">
                         ${course.giorni_dettaglio.map(giorno => `
