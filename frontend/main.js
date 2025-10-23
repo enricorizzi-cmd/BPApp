@@ -9227,7 +9227,7 @@ function viewCorsiInteraziendali(){
 
   function load() {
     appEl.innerHTML = topbarHTML() + `
-      <div class="wrap">
+      <div class="wrap corsi-interaziendali-container">
         <div class="card">
           <b>🎓 Corsi Interaziendali</b>
           ${renderTabs()}
@@ -10057,7 +10057,10 @@ function viewCorsiInteraziendali(){
                       )
                       .reduce((total, iscrizione) => total + iscrizione.vsd_totale, 0);
                     
-                    return vsdIndiretto > 0 ? `€${vsdIndiretto.toFixed(0)}` : `€${(Number(course.corsi_catalogo.costo_corso) / course.corsi_catalogo.durata_giorni).toFixed(0)}`;
+                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 8); // Abbrevia nome corso
+                    const valore = vsdIndiretto > 0 ? `€${vsdIndiretto.toFixed(0)}` : `€${(Number(course.corsi_catalogo.costo_corso) / course.corsi_catalogo.durata_giorni).toFixed(0)}`;
+                    
+                    return `${nomeCorso} ${valore}`;
                   }).join(', ')}
                 </div>
               ` : ''}
@@ -10086,6 +10089,12 @@ function viewCorsiInteraziendali(){
     if (!container) return;
 
     const currentYear = corsiCurrentPeriod?.year || new Date().getFullYear();
+    
+    // Aggiorna titolo per visualizzazione annuale
+    const title = document.getElementById('calendario-title');
+    if (title) {
+      title.textContent = currentYear.toString();
+    }
     const months = [
       'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
       'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
@@ -10210,9 +10219,16 @@ function viewCorsiInteraziendali(){
 
   window.changeCalendarioMonth = function(direction) {
     if (calendarioView === 'mensile') {
-      calendarioDate.setMonth(calendarioDate.getMonth() + direction);
+      corsiCurrentPeriod.month += direction;
+      if (corsiCurrentPeriod.month < 0) {
+        corsiCurrentPeriod.month = 11;
+        corsiCurrentPeriod.year--;
+      } else if (corsiCurrentPeriod.month > 11) {
+        corsiCurrentPeriod.month = 0;
+        corsiCurrentPeriod.year++;
+      }
     } else {
-      calendarioDate.setFullYear(calendarioDate.getFullYear() + direction);
+      corsiCurrentPeriod.year += direction;
     }
     
     loadCalendarioData();
