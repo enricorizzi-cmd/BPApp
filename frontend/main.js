@@ -10057,7 +10057,7 @@ function viewCorsiInteraziendali(){
                       )
                       .reduce((total, iscrizione) => total + iscrizione.vsd_totale, 0);
                     
-                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 8); // Abbrevia nome corso
+                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 15); // Abbrevia nome corso
                     const valore = vsdIndiretto > 0 ? `€${vsdIndiretto.toFixed(0)}` : `€${(Number(course.corsi_catalogo.costo_corso) / course.corsi_catalogo.durata_giorni).toFixed(0)}`;
                     
                     return `${nomeCorso} ${valore}`;
