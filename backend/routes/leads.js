@@ -33,24 +33,44 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       
       const message = `Ehi ${consultantName}, ti abbiamo assegnato il lead "${leadName}" da contattare entro 24h!`;
       
-      // Usa l'endpoint delle notifiche esistenti
-      const response = await fetch('http://localhost:3000/api/notifications/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.ADMIN_TOKEN || 'internal'}` // Token interno per notifiche automatiche
-        },
-        body: JSON.stringify({
-          text: message,
-          recipients: [consultantId],
-          type: 'lead_assignment'
-        })
-      });
-
-      if (!response.ok) {
-        console.error('Error sending lead assignment notification:', response.statusText);
-      } else {
-        console.log(`[LEAD_NOTIFICATION] Sent assignment notification to consultant ${consultantId}: ${message}`);
+      // Invia notifica push direttamente usando webpush
+      if (!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+        console.log('Push notifications not configured, skipping notification');
+        return;
+      }
+      
+      // Recupera le subscription del consulente
+      try {
+        const db = await readJSON("push_subscriptions.json");
+        const subs = (db.subs || db.subscriptions || [])
+          .filter(s => String(s.userId || '') === String(consultantId))
+          .map(s => s.subscription || { endpoint: s.endpoint, keys: (s.keys || {}) })
+          .filter(x => x && x.endpoint);
+        
+        if (subs.length === 0) {
+          console.log(`No push subscriptions found for consultant ${consultantId}`);
+          return;
+        }
+        
+        const payload = {
+          title: "Battle Plan - Nuovo Lead Assegnato",
+          body: message,
+          url: "/",
+          tag: "lead-assignment"
+        };
+        
+        // Invia notifica a tutte le subscription del consulente
+        await Promise.all(subs.map(async (sub) => {
+          try {
+            await webpush.sendNotification(sub, JSON.stringify(payload));
+            console.log(`Lead assignment notification sent to consultant ${consultantId}`);
+          } catch (error) {
+            console.error(`Failed to send notification to consultant ${consultantId}:`, error.message);
+          }
+        }));
+        
+      } catch (error) {
+        console.error('Error sending lead assignment notification:', error);
       }
     } catch (error) {
       console.error('Error in sendLeadAssignmentNotification:', error);
