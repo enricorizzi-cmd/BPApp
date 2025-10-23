@@ -9819,13 +9819,20 @@ function viewCorsiInteraziendali(){
     const container = document.getElementById('calendario-container');
     if (!container) return;
 
-    const year = calendarioDate.getFullYear();
-    const month = calendarioDate.getMonth();
+    const year = corsiCurrentPeriod.year;
+    const month = corsiCurrentPeriod.month;
+    
+    console.log('Rendering monthly calendar for:', year, month, 'with data:', corsiDate);
+    console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
+    if (corsiDate && corsiDate.length > 0) {
+      console.log('First course data:', corsiDate[0]);
+    }
     
     // Aggiorna titolo
     const title = document.getElementById('calendario-title');
     if (title) {
-      title.textContent = calendarioDate.toLocaleDateString('it-IT', { 
+      const date = new Date(year, month);
+      title.textContent = date.toLocaleDateString('it-IT', { 
         month: 'long', 
         year: 'numeric' 
       });
@@ -9900,13 +9907,20 @@ function viewCorsiInteraziendali(){
           calendarHtml += '<div class="day empty"></div>';
         } else {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const hasCourse = corsiDate.some(cd => 
-            cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+          
+          // Debug per verificare la data
+          if (day <= 3) {
+            console.log(`Checking date: ${dateStr}`);
+            console.log('corsiDate for this check:', corsiDate);
+          }
+          
+          const hasCourse = corsiDate && corsiDate.some(cd => 
+            cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
           );
           
-          const coursesOnDay = corsiDate.filter(cd => 
-            cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-          );
+          const coursesOnDay = corsiDate ? corsiDate.filter(cd => 
+            cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+          ) : [];
 
           const today = new Date();
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
@@ -9953,6 +9967,10 @@ function viewCorsiInteraziendali(){
 
   function renderCalendarioAnnuale(corsiDate) {
     console.log('Rendering calendario annuale con dati:', corsiDate);
+    console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
+    if (corsiDate && corsiDate.length > 0) {
+      console.log('First course data:', corsiDate[0]);
+    }
     
     const container = document.getElementById('calendario-container');
     if (!container) return;
