@@ -10125,6 +10125,11 @@ function viewCorsiInteraziendali(){
 
   // Formatta le date programmate per la visualizzazione
   function formatDateProgrammate(corsoId, corsiDate) {
+    // Controllo di sicurezza per evitare errori
+    if (!corsiDate || !Array.isArray(corsiDate)) {
+      return '-';
+    }
+    
     const dateCorso = corsiDate.find(cd => cd.corso_id === corsoId);
     
     if (!dateCorso || !dateCorso.giorni_dettaglio || dateCorso.giorni_dettaglio.length === 0) {
