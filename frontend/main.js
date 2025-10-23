@@ -9328,7 +9328,14 @@ function viewCorsiInteraziendali(){
       const response = await GET(`/api/corsi-catalogo?${params}`);
       
       if (response.corsi) {
-        renderCatalogoTable(response.corsi);
+        // Carica anche i dati delle date per la colonna "Date Programmate"
+        try {
+          const dateResponse = await GET('/api/corsi-date');
+          renderCatalogoTable(response.corsi, dateResponse.corsi_date || []);
+        } catch (dateError) {
+          console.warn('Error loading date data:', dateError);
+          renderCatalogoTable(response.corsi, []);
+        }
       } else {
         tbody.innerHTML = '<tr><td colspan="7" class="loading">Nessun corso trovato</td></tr>';
       }
@@ -9341,7 +9348,7 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  function renderCatalogoTable(corsi) {
+  function renderCatalogoTable(corsi, corsiDate = []) {
     const tbody = document.getElementById('catalogo-tbody');
     if (!tbody) return;
 
