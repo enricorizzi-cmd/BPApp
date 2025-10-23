@@ -10127,6 +10127,8 @@ function viewCorsiInteraziendali(){
 
       // Header giorni settimana per mini-calendario (inizia lunedì)
       const dayNames = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+      // Prima riga: spazio vuoto per settimane + header giorni
+      annualHtml += '<div class="mini-week-label"></div>'; // Spazio per settimane
       dayNames.forEach(day => {
         annualHtml += `<div class="mini-week-label">${day}</div>`;
       });
@@ -10161,7 +10163,7 @@ function viewCorsiInteraziendali(){
 
       // Genera le righe del mini-calendario con numeri settimana
       weeks.forEach((week, weekIndex) => {
-        // Numero della settimana
+        // Numero della settimana a sinistra
         const firstDayOfWeek = week.find(day => day !== null);
         if (firstDayOfWeek) {
           const weekDate = new Date(currentYear, monthIndex, firstDayOfWeek);
