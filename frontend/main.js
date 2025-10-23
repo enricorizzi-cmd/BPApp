@@ -9798,10 +9798,19 @@ function viewCorsiInteraziendali(){
       const response = await GET('/api/corsi-date');
       
       if (response.date) {
+        // Carica anche le iscrizioni per calcolare il VSD indiretto
+        let iscrizioniData = [];
+        try {
+          const iscrizioniResponse = await GET('/api/corsi-iscrizioni');
+          iscrizioniData = iscrizioniResponse.iscrizioni || [];
+        } catch (iscrizioniError) {
+          console.warn('Error loading iscrizioni data:', iscrizioniError);
+        }
+
         if (calendarioView === 'mensile') {
-          renderCalendarioMensile(response.date);
+          renderCalendarioMensile(response.date, iscrizioniData);
         } else {
-          renderCalendarioAnnuale(response.date);
+          renderCalendarioAnnuale(response.date, iscrizioniData);
         }
       } else {
         container.innerHTML = '<div class="loading">Nessun corso programmato</div>';
@@ -9815,7 +9824,7 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  function renderCalendarioMensile(corsiDate) {
+  function renderCalendarioMensile(corsiDate, iscrizioniData = []) {
     const container = document.getElementById('calendario-container');
     if (!container) return;
 
@@ -9978,7 +9987,21 @@ function viewCorsiInteraziendali(){
             <div class="day ${dayClass}" 
                  onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
               <div class="dnum">${day}</div>
-              ${hasCourse ? `<div class="small">${coursesOnDay[0].corsi_catalogo.nome_corso}</div>` : ''}
+              ${hasCourse ? `
+                <div class="small">
+                  ${coursesOnDay.map(course => {
+                    // Calcola il VSD indiretto per questo corso in questo giorno
+                    const vsdIndiretto = iscrizioniData
+                      .filter(iscrizione => 
+                        iscrizione.data_corso === dateStr && 
+                        iscrizione.nome_corso === course.corsi_catalogo.nome_corso
+                      )
+                      .reduce((total, iscrizione) => total + iscrizione.vsd_totale, 0);
+                    
+                    return vsdIndiretto > 0 ? `€${vsdIndiretto.toFixed(0)}` : `€${(Number(course.corsi_catalogo.costo_corso) / course.corsi_catalogo.durata_giorni).toFixed(0)}`;
+                  }).join(', ')}
+                </div>
+              ` : ''}
             </div>
           `;
           
@@ -9993,7 +10016,7 @@ function viewCorsiInteraziendali(){
     container.innerHTML = calendarHtml;
   }
 
-  function renderCalendarioAnnuale(corsiDate) {
+  function renderCalendarioAnnuale(corsiDate, iscrizioniData = []) {
     console.log('Rendering calendario annuale con dati:', corsiDate);
     console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
     if (corsiDate && corsiDate.length > 0) {
