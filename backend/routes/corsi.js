@@ -376,7 +376,7 @@ module.exports = function(app) {
             corsi_catalogo:corso_id(nome_corso)
           )
         `)
-        .order('corsi_date.data_inizio', { ascending: true });
+        .order('created_at', { ascending: true });
 
       // Filtro consulente
       if (!isAdmin && consulente_id) {

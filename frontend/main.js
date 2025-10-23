@@ -10679,7 +10679,7 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  async function loadCorsoDates() {
+  window.loadCorsoDates = async function() {
     const corsoId = document.getElementById('corso-select').value;
     const dataSelect = document.getElementById('data-corso');
     
@@ -10707,7 +10707,7 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  function loadClienteInfo(index) {
+  window.loadClienteInfo = function(index) {
     const clienteSelect = document.getElementById(`cliente-${index}`);
     const consulenteInput = document.getElementById(`consulente-${index}`);
     const costoInput = document.getElementById(`costo-${index}`);
