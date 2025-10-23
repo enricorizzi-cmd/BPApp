@@ -41,22 +41,22 @@
 
   async function subscribe(){
     try{
-      console.log('[BP] Starting subscription process...');
+      logger.info('[BP] Starting subscription process...');
       const reg = await navigator.serviceWorker.ready;
-      console.log('[BP] Service Worker ready');
+      logger.info('[BP] Service Worker ready');
       
       let sub = await reg.pushManager.getSubscription();
-      console.log('[BP] Existing subscription:', !!sub);
+      logger.info('[BP] Existing subscription:', !!sub);
       
       if(!sub){
-        console.log('[BP] No existing subscription, creating new one...');
+        logger.info('[BP] No existing subscription, creating new one...');
         const r = await fetch('/api/push/publicKey');
         const j = await r.json();
         const key = j.publicKey || j.key || '';
-        console.log('[BP] Public key received:', !!key);
+        logger.info('[BP] Public key received:', !!key);
         
         if(!key) {
-          console.error('[BP] No public key received from server');
+          logger.error('[BP] No public key received from server');
           return;
         }
         

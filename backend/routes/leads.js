@@ -1,5 +1,7 @@
 const express = require('express');
 
+const productionLogger = require('../lib/production-logger');
+
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }){
   const router = express.Router();
 
@@ -24,7 +26,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         .single();
 
       if (consultantError || !consultant) {
-        console.error('Error fetching consultant for notification:', consultantError);
+        productionLogger.error('Error fetching consultant for notification:', consultantError);
         return;
       }
 
@@ -35,7 +37,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       
       // Invia notifica push direttamente usando webpush
       if (!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-        console.log('Push notifications not configured, skipping notification');
+        productionLogger.debug('Push notifications not configured, skipping notification');
         return;
       }
       
@@ -48,7 +50,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           .filter(x => x && x.endpoint);
         
         if (subs.length === 0) {
-          console.log(`No push subscriptions found for consultant ${consultantId}`);
+          productionLogger.debug(`No push subscriptions found for consultant ${consultantId}`);
           return;
         }
         

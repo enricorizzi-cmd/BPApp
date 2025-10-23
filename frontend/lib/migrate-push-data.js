@@ -15,8 +15,6 @@
   
   async function migratePushData() {
     try {
-      console.log('[Migrate Push Data] Starting migration...');
-      
       // Controlla se ci sono dati da migrare
       const pushKeys = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -27,11 +25,8 @@
       }
       
       if (pushKeys.length === 0) {
-        console.log('[Migrate Push Data] No push data to migrate');
-        return;
+        return; // Nessun dato da migrare
       }
-      
-      console.log(`[Migrate Push Data] Found ${pushKeys.length} push records to migrate`);
       
       // Per ora rimuovi semplicemente i record dal localStorage senza migrare
       // Il tracking push verrà gestito direttamente dal sistema dei banner

@@ -11743,34 +11743,12 @@ function viewGestioneLead(){
 
   // Funzioni per caricamento dati
   async function loadLeadsData() {
-    const startTime = performance.now();
-    
     try {
       if (activeTab === 'elenco' && isAdmin) {
         await loadElencoLeadData();
       } else {
         await loadContactLeadsData();
       }
-      
-      const endTime = performance.now();
-      const loadTime = endTime - startTime;
-      
-      // Monitoring performance
-      console.log(`📊 Leads data loaded in ${loadTime.toFixed(2)}ms`);
-      
-      // Alert se caricamento troppo lento
-      if (loadTime > 2000) {
-        console.warn(`⚠️ Slow leads loading: ${loadTime.toFixed(2)}ms`);
-        toast(`⚠️ Caricamento lento: ${loadTime.toFixed(0)}ms`);
-      }
-      
-      // Alert se troppi lead
-      const totalLeads = (currentLeadsData || []).length;
-      if (totalLeads > 500) {
-        console.warn(`⚠️ Many leads in database: ${totalLeads}`);
-        toast(`⚠️ Molti lead nel database: ${totalLeads}. Considerare paginazione.`);
-      }
-      
     } catch (error) {
       console.error('Error loading leads data:', error);
       toast('Errore nel caricamento dei dati');
@@ -11778,8 +11756,6 @@ function viewGestioneLead(){
   }
 
   async function loadElencoLeadData() {
-    const startTime = performance.now();
-    
     try {
       const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = document.getElementById('lead-consultant')?.value || '';
@@ -11800,11 +11776,6 @@ function viewGestioneLead(){
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
       
-      const endTime = performance.now();
-      const loadTime = endTime - startTime;
-      
-      console.log(`📊 Elenco Lead loaded in ${loadTime.toFixed(2)}ms (${leads.length} leads)`);
-      
       // Aggiorna variabile globale
       currentLeadsData = leads;
       
@@ -11821,8 +11792,6 @@ function viewGestioneLead(){
   }
 
   async function loadContactLeadsData() {
-    const startTime = performance.now();
-    
     try {
       const consultant = document.getElementById('contact-consultant')?.value || '';
       
@@ -11837,11 +11806,6 @@ function viewGestioneLead(){
       const response = await GET(`/api/leads?${params.toString()}`);
       const allLeads = response.leads || [];
       
-      const endTime = performance.now();
-      const loadTime = endTime - startTime;
-      
-      console.log(`📊 Contact Leads loaded in ${loadTime.toFixed(2)}ms (${allLeads.length} total leads)`);
-      
       // Aggiorna variabile globale
       currentLeadsData = allLeads;
       
@@ -11853,8 +11817,6 @@ function viewGestioneLead(){
       // Separa lead da contattare e contattati
       const leadsToContact = allLeads.filter(lead => !lead.contattoAvvenuto);
       const contactedLeads = allLeads.filter(lead => lead.contattoAvvenuto);
-      
-      console.log(`📊 Lead da contattare: ${leadsToContact.length}, Lead contattati: ${contactedLeads.length}`);
       
       // Renderizza tabelle
       renderContactLeadsTable(leadsToContact);
@@ -12042,8 +12004,6 @@ function viewGestioneLead(){
     } catch {
       return dateString;
     }
-  }
-
   }
 
   // Funzioni per operazioni CRUD
