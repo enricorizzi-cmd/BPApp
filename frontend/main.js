@@ -9340,7 +9340,8 @@ function viewCorsiInteraziendali(){
         // Carica anche i dati delle date per la colonna "Date Programmate"
         try {
           const dateResponse = await GET('/api/corsi-date');
-          renderCatalogoTable(response.corsi, dateResponse.corsi_date || []);
+          console.log('Date response:', dateResponse);
+          renderCatalogoTable(response.corsi, dateResponse.date || []);
         } catch (dateError) {
           console.warn('Error loading date data:', dateError);
           renderCatalogoTable(response.corsi, []);
