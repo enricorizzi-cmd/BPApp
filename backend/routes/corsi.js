@@ -371,9 +371,9 @@ module.exports = function(app) {
         .from('corsi_iscrizioni')
         .select(`
           *,
-          corsi_date!inner(
+          corsi_date:corso_data_id(
             data_inizio,
-            corsi_catalogo!inner(nome_corso)
+            corsi_catalogo:corso_id(nome_corso)
           )
         `)
         .order('corsi_date.data_inizio', { ascending: true });
@@ -388,12 +388,8 @@ module.exports = function(app) {
         query = query.eq('consulente_id', req.user.id);
       }
 
-      // Filtro periodo
-      if (from && to) {
-        query = query
-          .gte('corsi_date.data_inizio', from)
-          .lte('corsi_date.data_inizio', to);
-      }
+      // Filtro periodo - applicato dopo il fetch per evitare problemi con JOIN
+      // (i filtri sui JOIN non funzionano sempre bene con Supabase)
 
       const { data, error } = await query;
 
@@ -402,9 +398,18 @@ module.exports = function(app) {
         return res.status(500).json({ error: 'Database query failed' });
       }
 
+      // Filtra per periodo se specificato
+      let filteredData = data || [];
+      if (from && to) {
+        filteredData = filteredData.filter(iscrizione => {
+          const dataCorso = iscrizione.corsi_date?.data_inizio;
+          return dataCorso && dataCorso >= from && dataCorso <= to;
+        });
+      }
+
       // Aggrega per data corso
       const aggregated = {};
-      (data || []).forEach(iscrizione => {
+      filteredData.forEach(iscrizione => {
         const dataCorso = iscrizione.corsi_date.data_inizio;
         const nomeCorso = iscrizione.corsi_date.corsi_catalogo.nome_corso;
         const key = `${dataCorso}_${nomeCorso}`;
