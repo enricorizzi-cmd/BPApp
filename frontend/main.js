@@ -9914,13 +9914,41 @@ function viewCorsiInteraziendali(){
             console.log('corsiDate for this check:', corsiDate);
           }
           
-          const hasCourse = corsiDate && corsiDate.some(cd => 
-            cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-          );
+          const hasCourse = corsiDate && corsiDate.some(cd => {
+            if (!cd.giorni_dettaglio) return false;
+            
+            // Controlla se questo giorno ha un corso
+            return cd.giorni_dettaglio.some(gd => {
+              // Se il corso è multi-giorno, controlla se questo giorno è incluso
+              if (gd.giorno_numero && gd.giorno_numero > 1) {
+                // Calcola la data del giorno specifico del corso
+                const dataInizio = new Date(cd.data_inizio);
+                const giornoCorso = new Date(dataInizio);
+                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+                const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+                return dataCorsoStr === dateStr;
+              } else {
+                // Corso di un solo giorno o primo giorno
+                return gd.data === dateStr;
+              }
+            });
+          });
           
-          const coursesOnDay = corsiDate ? corsiDate.filter(cd => 
-            cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-          ) : [];
+          const coursesOnDay = corsiDate ? corsiDate.filter(cd => {
+            if (!cd.giorni_dettaglio) return false;
+            
+            return cd.giorni_dettaglio.some(gd => {
+              if (gd.giorno_numero && gd.giorno_numero > 1) {
+                const dataInizio = new Date(cd.data_inizio);
+                const giornoCorso = new Date(dataInizio);
+                giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+                const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+                return dataCorsoStr === dateStr;
+              } else {
+                return gd.data === dateStr;
+              }
+            });
+          }) : [];
 
           const today = new Date();
           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
@@ -10010,13 +10038,37 @@ function viewCorsiInteraziendali(){
       // Giorni del mese
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasCourse = corsiDate && corsiDate.some(cd => 
-          cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-        );
+        const hasCourse = corsiDate && corsiDate.some(cd => {
+          if (!cd.giorni_dettaglio) return false;
+          
+          return cd.giorni_dettaglio.some(gd => {
+            if (gd.giorno_numero && gd.giorno_numero > 1) {
+              const dataInizio = new Date(cd.data_inizio);
+              const giornoCorso = new Date(dataInizio);
+              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+              const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+              return dataCorsoStr === dateStr;
+            } else {
+              return gd.data === dateStr;
+            }
+          });
+        });
         
-        const coursesOnDay = corsiDate ? corsiDate.filter(cd => 
-          cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-        ) : [];
+        const coursesOnDay = corsiDate ? corsiDate.filter(cd => {
+          if (!cd.giorni_dettaglio) return false;
+          
+          return cd.giorni_dettaglio.some(gd => {
+            if (gd.giorno_numero && gd.giorno_numero > 1) {
+              const dataInizio = new Date(cd.data_inizio);
+              const giornoCorso = new Date(dataInizio);
+              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno_numero - 1));
+              const dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+              return dataCorsoStr === dateStr;
+            } else {
+              return gd.data === dateStr;
+            }
+          });
+        }) : [];
 
         const today = new Date();
         const isToday = day === today.getDate() && monthIndex === today.getMonth() && currentYear === today.getFullYear();
