@@ -9389,19 +9389,36 @@ function viewCorsiInteraziendali(){
   }
 
   function calculatePeriod(granularity, date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
+    // Gestisce sia Date che oggetto {year, month}
+    let year, month, day;
+    
+    if (date && typeof date === 'object' && 'year' in date && 'month' in date) {
+      // È un oggetto {year, month}
+      year = date.year;
+      month = date.month;
+      day = date.day || 1;
+    } else if (date instanceof Date) {
+      // È un Date
+      year = date.getFullYear();
+      month = date.getMonth();
+      day = date.getDate();
+    } else {
+      // Fallback alla data corrente
+      const now = new Date();
+      year = now.getFullYear();
+      month = now.getMonth();
+      day = now.getDate();
+    }
     
     switch (granularity) {
       case 'giornaliera':
-        const day = date.getDate();
         return {
           from: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
           to: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         };
       case 'settimanale':
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
+        const weekStart = new Date(year, month, day);
+        weekStart.setDate(day - weekStart.getDay());
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         return {
