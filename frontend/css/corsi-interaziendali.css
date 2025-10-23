@@ -367,7 +367,9 @@
 
 .course-code,
 .course-duration,
-.course-cost {
+.course-cost,
+.course-enrollments,
+.course-vsd {
   font-size: 14px;
   color: var(--muted);
 }

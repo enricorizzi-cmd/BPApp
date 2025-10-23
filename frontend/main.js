@@ -10049,19 +10049,23 @@ function viewCorsiInteraziendali(){
               ${hasCourse ? `
                 <div class="small">
                   ${coursesOnDay.map(course => {
-                    // Calcola il VSD indiretto per questo corso in questo giorno
-                    const vsdIndiretto = iscrizioniData
+                    // Calcola il VSD indiretto totale per questo corso in questo giorno
+                    const vsdTotale = iscrizioniData
                       .filter(iscrizione => 
                         iscrizione.data_corso === dateStr && 
                         iscrizione.nome_corso === course.corsi_catalogo.nome_corso
                       )
                       .reduce((total, iscrizione) => total + iscrizione.vsd_totale, 0);
                     
-                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 15); // Abbrevia nome corso
-                    const valore = vsdIndiretto > 0 ? `€${vsdIndiretto.toFixed(0)}` : `€${(Number(course.corsi_catalogo.costo_corso) / course.corsi_catalogo.durata_giorni).toFixed(0)}`;
+                    // Calcola VSD per giorno: totale diviso durata corso
+                    const durataGiorni = course.corsi_catalogo.durata_giorni || 1;
+                    const vsdPerGiorno = vsdTotale > 0 ? vsdTotale / durataGiorni : (Number(course.corsi_catalogo.costo_corso) / durataGiorni);
                     
-                    return `${nomeCorso} ${valore}`;
-                  }).join(', ')}
+                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 15); // Abbrevia nome corso
+                    const valoreVSD = `VSDindiretto ${vsdPerGiorno.toFixed(0)}€`;
+                    
+                    return `${nomeCorso}<br/>${valoreVSD}`;
+                  }).join('<br/>')}
                 </div>
               ` : ''}
             </div>
@@ -10285,7 +10289,7 @@ function viewCorsiInteraziendali(){
     loadCalendarioData();
   };
 
-  window.showDayCourses = function(dateStr, coursesOnDay) {
+  window.showDayCourses = async function(dateStr, coursesOnDay) {
     console.log('Showing courses for date:', dateStr, 'Courses:', coursesOnDay);
     
     // Verifica che siamo nella pagina Corsi Interaziendali
@@ -10293,6 +10297,15 @@ function viewCorsiInteraziendali(){
     if (!currentView) {
       console.log('Not in Corsi Interaziendali view, ignoring modal');
       return;
+    }
+
+    // Carica dati iscrizioni per questa data
+    let iscrizioniData = [];
+    try {
+      const response = await GET(`/api/corsi-iscrizioni?from=${dateStr}&to=${dateStr}`);
+      iscrizioniData = response.iscrizioni || [];
+    } catch (error) {
+      console.error('Error loading iscrizioni data for modal:', error);
     }
     
     // Crea modal per mostrare i dettagli del giorno
@@ -10311,24 +10324,38 @@ function viewCorsiInteraziendali(){
           <div class="modal-content">
             ${coursesOnDay && coursesOnDay.length > 0 ? `
               <div class="courses-list">
-                ${coursesOnDay.map(course => `
-                  <div class="course-item">
-                    <div class="course-name">${course.corsi_catalogo.nome_corso}</div>
-                    <div class="course-details">
-                      <div class="course-code">Codice: ${course.corsi_catalogo.codice_corso}</div>
-                      <div class="course-duration">Durata: ${course.corsi_catalogo.durata_giorni} giorni</div>
-                      <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso}</div>
+                ${coursesOnDay.map(course => {
+                  // Calcola iscritti e VSD per questo corso in questa data
+                  const corsoIscrizioni = iscrizioniData.filter(iscrizione => 
+                    iscrizione.nome_corso === course.corsi_catalogo.nome_corso
+                  );
+                  
+                  const nIscritti = corsoIscrizioni.length;
+                  const vsdTotale = corsoIscrizioni.reduce((total, iscrizione) => 
+                    total + (iscrizione.vsd_totale || 0), 0
+                  );
+                  
+                  return `
+                    <div class="course-item">
+                      <div class="course-name">${course.corsi_catalogo.nome_corso}</div>
+                      <div class="course-details">
+                        <div class="course-code">Codice: ${course.corsi_catalogo.codice_corso}</div>
+                        <div class="course-duration">Durata: ${course.corsi_catalogo.durata_giorni} giorni</div>
+                        <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso}</div>
+                        <div class="course-enrollments">N. iscritti: ${nIscritti}</div>
+                        <div class="course-vsd">VSD indiretto totale corso: €${vsdTotale.toFixed(0)}</div>
+                      </div>
+                      <div class="course-schedule">
+                        ${course.giorni_dettaglio.map(giorno => `
+                          <div class="schedule-item">
+                            <strong>Giorno ${giorno.giorno}:</strong> 
+                            ${giorno.data} dalle ${giorno.ora_inizio} alle ${giorno.ora_fine}
+                          </div>
+                        `).join('')}
+                      </div>
                     </div>
-                    <div class="course-schedule">
-                      ${course.giorni_dettaglio.map(giorno => `
-                        <div class="schedule-item">
-                          <strong>Giorno ${giorno.giorno}:</strong> 
-                          ${giorno.data} dalle ${giorno.ora_inizio} alle ${giorno.ora_fine}
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                `).join('')}
+                  `;
+                }).join('')}
               </div>
             ` : `
               <div class="no-courses">
@@ -10859,6 +10886,9 @@ function viewGestioneLead(){
   document.title = 'Battle Plan – Gestione Lead';
   setActiveSidebarItem('viewGestioneLead');
   const isAdmin = getUser().role==='admin';
+
+  // Variabili globali per i dati dei lead
+  let currentLeadsData = [];
 
   // Stato per tab attiva
   let activeTab = 'contattare'; // Default per consultant, admin può vedere entrambe
@@ -11700,6 +11730,9 @@ function viewGestioneLead(){
       
       console.log(`📊 Elenco Lead loaded in ${loadTime.toFixed(2)}ms (${leads.length} leads)`);
       
+      // Aggiorna variabile globale
+      currentLeadsData = leads;
+      
       // Popola dropdown consulenti se non già fatto
       await loadConsultantsDropdown('lead-consultant');
       
@@ -11731,6 +11764,9 @@ function viewGestioneLead(){
       const loadTime = endTime - startTime;
       
       console.log(`📊 Contact Leads loaded in ${loadTime.toFixed(2)}ms (${allLeads.length} total leads)`);
+      
+      // Aggiorna variabile globale
+      currentLeadsData = allLeads;
       
       // Popola dropdown consulenti se admin
       if (isAdmin) {
