@@ -483,6 +483,75 @@
   box-shadow: none;
 }
 
+/* Annual Calendar Grid */
+.annual-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 20px;
+}
+
+.mini-calendar {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid var(--hair2);
+}
+
+.mini-calendar-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hair2);
+}
+
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mini-week-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px;
+}
+
+.mini-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.mini-day:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.mini-day.empty {
+  background: transparent;
+  border: none;
+  cursor: default;
+}
+
+.mini-day.empty:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* Calendar Day Colors - Matching Main Calendar */
 .day.busy0 {
   border-color: #27ae60;
@@ -500,6 +569,27 @@
 }
 
 .day.today {
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.06) inset;
+}
+
+/* Mini-day colors - same as main calendar */
+.mini-day.busy0 {
+  border-color: #27ae60;
+  background: rgba(39,174,96,.08);
+}
+
+.mini-day.busy1 {
+  border-color: #ff9f1a;
+  background: rgba(255,159,26,.10);
+}
+
+.mini-day.busy2 {
+  border-color: #7d1731;
+  background: rgba(125,23,49,.12);
+}
+
+.mini-day.today {
   outline: 2px solid var(--accent);
   box-shadow: 0 0 0 2px rgba(0,0,0,.06) inset;
 }

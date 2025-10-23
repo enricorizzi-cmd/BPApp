@@ -9945,40 +9945,38 @@ function viewCorsiInteraziendali(){
   }
 
   function renderCalendarioAnnuale(corsiDate) {
+    console.log('Rendering calendario annuale con dati:', corsiDate);
+    
     const container = document.getElementById('calendario-container');
     if (!container) return;
 
-    const year = calendarioDate.getFullYear();
-    console.log('Rendering annual calendar for year:', year);
-    
-    // Aggiorna titolo
-    const title = document.getElementById('calendario-title');
-    if (title) {
-      title.textContent = year.toString();
-    }
+    const currentYear = corsiCurrentPeriod.year;
+    const months = [
+      'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+      'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+    ];
 
-    // Crea matrice annuale con 12 mesi
-    let annualHtml = '<div class="annual-matrix">';
+    let annualHtml = '<div class="annual-calendar-grid">';
     
-    for (let month = 0; month < 12; month++) {
-      const monthName = new Date(year, month).toLocaleDateString('it-IT', { month: 'long' });
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startDay = firstDay.getDay(); // 0 = Domenica
-      
+    months.forEach((monthName, monthIndex) => {
       annualHtml += `
-        <div class="mini-month">
-          <div class="mini-month-title">${monthName}</div>
-          <div class="mini-calendar">
+        <div class="mini-calendar">
+          <div class="mini-calendar-header">${monthName}</div>
+          <div class="mini-calendar-grid">
       `;
-      
-      // Header giorni settimana (mini)
+
+      // Crea mini-calendario per il mese
+      const firstDay = new Date(currentYear, monthIndex, 1);
+      const lastDay = new Date(currentYear, monthIndex + 1, 0);
+      const daysInMonth = lastDay.getDate();
+      const startDay = firstDay.getDay();
+
+      // Header giorni settimana per mini-calendario
       const dayNames = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
       dayNames.forEach(day => {
-        annualHtml += `<div class="mini-weekLabel">${day}</div>`;
+        annualHtml += `<div class="mini-week-label">${day}</div>`;
       });
-      
+
       // Spazi vuoti per allineare il primo giorno
       for (let i = 0; i < startDay; i++) {
         annualHtml += '<div class="mini-day empty"></div>';
@@ -9986,23 +9984,26 @@ function viewCorsiInteraziendali(){
 
       // Giorni del mese
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasCourse = corsiDate.some(cd => 
-          cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+        const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hasCourse = corsiDate && corsiDate.some(cd => 
+          cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
         );
         
-        const coursesOnDay = corsiDate.filter(cd => 
-          cd.giorni_dettaglio.some(gd => gd.data === dateStr)
-        );
+        const coursesOnDay = corsiDate ? corsiDate.filter(cd => 
+          cd.giorni_dettaglio && cd.giorni_dettaglio.some(gd => gd.data === dateStr)
+        ) : [];
 
         const today = new Date();
-        const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+        const isToday = day === today.getDate() && monthIndex === today.getMonth() && currentYear === today.getFullYear();
         
-        // Determina il giorno della settimana
-        const dayOfWeek = new Date(year, month, day).getDay();
+        // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
+        const dayOfWeek = new Date(currentYear, monthIndex, day).getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         
-        // Logica colorazione identica al calendario mensile
+        // Logica colorazione:
+        // - Giorni con corsi = ROSSI (anche weekend)
+        // - Weekend senza corsi = BIANCHI  
+        // - Giorni feriali senza corsi = VERDI
         let dayClass = '';
         if (hasCourse) {
           dayClass = 'busy2'; // Rosso per giorni con corsi
@@ -10018,22 +10019,22 @@ function viewCorsiInteraziendali(){
         
         annualHtml += `
           <div class="mini-day ${dayClass}" 
-               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})"
-               title="${hasCourse ? coursesOnDay.map(c => c.corsi_catalogo.nome_corso).join(', ') : ''}">
+               onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
             ${day}
           </div>
         `;
       }
-      
+
       annualHtml += `
           </div>
         </div>
       `;
-    }
-    
+    });
+
     annualHtml += '</div>';
-    console.log('Annual HTML generated:', annualHtml.length, 'characters');
     container.innerHTML = annualHtml;
+    
+    console.log('Calendario annuale renderizzato');
   }
 
   window.switchCalendarioView = function(view) {
@@ -10059,6 +10060,13 @@ function viewCorsiInteraziendali(){
 
   window.showDayCourses = function(dateStr, coursesOnDay) {
     console.log('Showing courses for date:', dateStr, 'Courses:', coursesOnDay);
+    
+    // Verifica che siamo nella pagina Corsi Interaziendali
+    const currentView = document.querySelector('.corsi-interaziendali-container');
+    if (!currentView) {
+      console.log('Not in Corsi Interaziendali view, ignoring modal');
+      return;
+    }
     
     // Crea modal per mostrare i dettagli del giorno
     const modalHtml = `
