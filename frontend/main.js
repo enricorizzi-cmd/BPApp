@@ -9310,6 +9310,8 @@ function viewCorsiInteraziendali(){
   // Funzioni di caricamento dati
   async function loadCatalogoData() {
     try {
+      console.log('loadCatalogoData called, corsiCurrentPeriod:', corsiCurrentPeriod);
+      
       const tbody = document.getElementById('catalogo-tbody');
       if (!tbody) return;
 
@@ -9318,8 +9320,12 @@ function viewCorsiInteraziendali(){
       const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
       const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
       
+      console.log('About to call calculatePeriod with:', { granularity, corsiCurrentPeriod });
+      
       // Calcola periodo basato su granularità
       const { from, to } = calculatePeriod(granularity, corsiCurrentPeriod);
+      
+      console.log('calculatePeriod returned:', { from, to });
       
       const params = new URLSearchParams();
       if (!tuttiCorsi) {
