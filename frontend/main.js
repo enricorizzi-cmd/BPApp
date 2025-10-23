@@ -9452,22 +9452,49 @@ function viewCorsiInteraziendali(){
     
     switch (granularity) {
       case 'giornaliera':
-        corsiCurrentPeriod.setDate(corsiCurrentPeriod.getDate() + direction);
+        const dayDate = new Date(corsiCurrentPeriod.year, corsiCurrentPeriod.month, 1);
+        dayDate.setDate(dayDate.getDate() + direction);
+        corsiCurrentPeriod.year = dayDate.getFullYear();
+        corsiCurrentPeriod.month = dayDate.getMonth();
         break;
       case 'settimanale':
-        corsiCurrentPeriod.setDate(corsiCurrentPeriod.getDate() + (direction * 7));
+        const weekDate = new Date(corsiCurrentPeriod.year, corsiCurrentPeriod.month, 1);
+        weekDate.setDate(weekDate.getDate() + (direction * 7));
+        corsiCurrentPeriod.year = weekDate.getFullYear();
+        corsiCurrentPeriod.month = weekDate.getMonth();
         break;
       case 'mensile':
-        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + direction);
+        corsiCurrentPeriod.month += direction;
+        if (corsiCurrentPeriod.month < 0) {
+          corsiCurrentPeriod.month = 11;
+          corsiCurrentPeriod.year--;
+        } else if (corsiCurrentPeriod.month > 11) {
+          corsiCurrentPeriod.month = 0;
+          corsiCurrentPeriod.year++;
+        }
         break;
       case 'trimestrale':
-        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + (direction * 3));
+        corsiCurrentPeriod.month += (direction * 3);
+        if (corsiCurrentPeriod.month < 0) {
+          corsiCurrentPeriod.month += 12;
+          corsiCurrentPeriod.year--;
+        } else if (corsiCurrentPeriod.month > 11) {
+          corsiCurrentPeriod.month -= 12;
+          corsiCurrentPeriod.year++;
+        }
         break;
       case 'semestrale':
-        corsiCurrentPeriod.setMonth(corsiCurrentPeriod.getMonth() + (direction * 6));
+        corsiCurrentPeriod.month += (direction * 6);
+        if (corsiCurrentPeriod.month < 0) {
+          corsiCurrentPeriod.month += 12;
+          corsiCurrentPeriod.year--;
+        } else if (corsiCurrentPeriod.month > 11) {
+          corsiCurrentPeriod.month -= 12;
+          corsiCurrentPeriod.year++;
+        }
         break;
       case 'annuale':
-        corsiCurrentPeriod.setFullYear(corsiCurrentPeriod.getFullYear() + direction);
+        corsiCurrentPeriod.year += direction;
         break;
     }
     
@@ -9490,18 +9517,19 @@ function viewCorsiInteraziendali(){
         span.textContent = `${new Date(from).toLocaleDateString('it-IT')} - ${new Date(to).toLocaleDateString('it-IT')}`;
         break;
       case 'mensile':
-        span.textContent = corsiCurrentPeriod.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+        const mensileDate = new Date(corsiCurrentPeriod.year, corsiCurrentPeriod.month);
+        span.textContent = mensileDate.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
         break;
       case 'trimestrale':
-        const quarter = Math.floor(corsiCurrentPeriod.getMonth() / 3) + 1;
-        span.textContent = `Q${quarter} ${corsiCurrentPeriod.getFullYear()}`;
+        const quarter = Math.floor(corsiCurrentPeriod.month / 3) + 1;
+        span.textContent = `Q${quarter} ${corsiCurrentPeriod.year}`;
         break;
       case 'semestrale':
-        const semester = Math.floor(corsiCurrentPeriod.getMonth() / 6) + 1;
-        span.textContent = `Semestre ${semester} ${corsiCurrentPeriod.getFullYear()}`;
+        const semester = Math.floor(corsiCurrentPeriod.month / 6) + 1;
+        span.textContent = `Semestre ${semester} ${corsiCurrentPeriod.year}`;
         break;
       case 'annuale':
-        span.textContent = corsiCurrentPeriod.getFullYear().toString();
+        span.textContent = corsiCurrentPeriod.year.toString();
         break;
     }
   }
