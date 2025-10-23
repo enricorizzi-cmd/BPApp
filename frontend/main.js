@@ -9395,77 +9395,6 @@ function viewCorsiInteraziendali(){
     tbody.innerHTML = rows;
   }
 
-  function calculatePeriod(granularity, date) {
-    // Gestisce sia Date che oggetto {year, month}
-    let year, month, day;
-    
-    if (date && typeof date === 'object' && 'year' in date && 'month' in date) {
-      // È un oggetto {year, month}
-      year = date.year;
-      month = date.month;
-      day = date.day || 1;
-    } else if (date instanceof Date) {
-      // È un Date
-      year = date.getFullYear();
-      month = date.getMonth();
-      day = date.getDate();
-    } else {
-      // Fallback alla data corrente
-      const now = new Date();
-      year = now.getFullYear();
-      month = now.getMonth();
-      day = now.getDate();
-    }
-    
-    switch (granularity) {
-      case 'giornaliera':
-        return {
-          from: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          to: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        };
-      case 'settimanale':
-        const weekStart = new Date(year, month, day);
-        weekStart.setDate(day - weekStart.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        return {
-          from: weekStart.toISOString().split('T')[0],
-          to: weekEnd.toISOString().split('T')[0]
-        };
-      case 'mensile':
-        return {
-          from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-          to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
-        };
-      case 'trimestrale':
-        const quarter = Math.floor(month / 3);
-        const quarterStart = quarter * 3;
-        const quarterEnd = quarterStart + 2;
-        return {
-          from: `${year}-${String(quarterStart + 1).padStart(2, '0')}-01`,
-          to: `${year}-${String(quarterEnd + 1).padStart(2, '0')}-${new Date(year, quarterEnd + 1, 0).getDate()}`
-        };
-      case 'semestrale':
-        const semester = Math.floor(month / 6);
-        const semesterStart = semester * 6;
-        const semesterEnd = semesterStart + 5;
-        return {
-          from: `${year}-${String(semesterStart + 1).padStart(2, '0')}-01`,
-          to: `${year}-${String(semesterEnd + 1).padStart(2, '0')}-${new Date(year, semesterEnd + 1, 0).getDate()}`
-        };
-      case 'annuale':
-        return {
-          from: `${year}-01-01`,
-          to: `${year}-12-31`
-        };
-      default:
-        return {
-          from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-          to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
-        };
-    }
-  }
-
   // Funzioni globali per Catalogo
   window.updateCatalogoFilters = function() {
     loadCatalogoData();
@@ -10881,6 +10810,131 @@ function viewCorsiInteraziendali(){
 }
 window.viewCorsiInteraziendali = window.viewCorsiInteraziendali || viewCorsiInteraziendali;
 
+// ===== FUNZIONI GLOBALI PER GESTIONE LEAD =====
+function calculatePeriod(granularity, date) {
+  // Gestisce sia Date che oggetto {year, month}
+  let year, month, day;
+  
+  if (date && typeof date === 'object' && 'year' in date && 'month' in date) {
+    // È un oggetto {year, month}
+    year = date.year;
+    month = date.month;
+    day = date.day || 1;
+  } else if (date instanceof Date) {
+    // È un Date
+    year = date.getFullYear();
+    month = date.getMonth();
+    day = date.getDate();
+  } else {
+    // Fallback alla data corrente
+    const now = new Date();
+    year = now.getFullYear();
+    month = now.getMonth();
+    day = now.getDate();
+  }
+  
+  switch (granularity) {
+    case 'giornaliera':
+      return {
+        from: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        to: `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      };
+    case 'settimanale':
+      const weekStart = new Date(year, month, day);
+      weekStart.setDate(day - weekStart.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      return {
+        from: weekStart.toISOString().split('T')[0],
+        to: weekEnd.toISOString().split('T')[0]
+      };
+    case 'mensile':
+      return {
+        from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+        to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
+      };
+    case 'trimestrale':
+      const quarter = Math.floor(month / 3);
+      const quarterStart = quarter * 3;
+      const quarterEnd = quarterStart + 2;
+      return {
+        from: `${year}-${String(quarterStart + 1).padStart(2, '0')}-01`,
+        to: `${year}-${String(quarterEnd + 1).padStart(2, '0')}-${new Date(year, quarterEnd + 1, 0).getDate()}`
+      };
+    case 'semestrale':
+      const semester = Math.floor(month / 6);
+      const semesterStart = semester * 6;
+      const semesterEnd = semesterStart + 5;
+      return {
+        from: `${year}-${String(semesterStart + 1).padStart(2, '0')}-01`,
+        to: `${year}-${String(semesterEnd + 1).padStart(2, '0')}-${new Date(year, semesterEnd + 1, 0).getDate()}`
+      };
+    case 'annuale':
+      return {
+        from: `${year}-01-01`,
+        to: `${year}-12-31`
+      };
+    default:
+      return {
+        from: `${year}-${String(month + 1).padStart(2, '0')}-01`,
+        to: `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`
+      };
+  }
+}
+
+// Esponi le funzioni globalmente
+window.calculatePeriod = calculatePeriod;
+
+// Funzioni per gestione periodo lead
+function updateLeadPeriodDisplay() {
+  const { from, to } = calculatePeriod(window.currentGranularity || 'mensile', window.currentPeriod || new Date());
+  const periodLabel = formatPeriodLabel(window.currentGranularity || 'mensile', window.currentPeriod || new Date());
+  
+  // Aggiorna label periodo se presente
+  const periodLabels = document.querySelectorAll('.period-label');
+  periodLabels.forEach(label => {
+    label.textContent = periodLabel;
+  });
+}
+
+function shiftLeadPeriod(direction) {
+  const granularity = window.currentGranularity || 'mensile';
+  let newDate = new Date(window.currentPeriod || new Date());
+  
+  switch (granularity) {
+    case 'giornaliera':
+      newDate.setDate(newDate.getDate() + direction);
+      break;
+    case 'settimanale':
+      newDate.setDate(newDate.getDate() + (direction * 7));
+      break;
+    case 'mensile':
+      newDate.setMonth(newDate.getMonth() + direction);
+      break;
+    case 'trimestrale':
+      newDate.setMonth(newDate.getMonth() + (direction * 3));
+      break;
+    case 'semestrale':
+      newDate.setMonth(newDate.getMonth() + (direction * 6));
+      break;
+    case 'annuale':
+      newDate.setFullYear(newDate.getFullYear() + direction);
+      break;
+  }
+  
+  window.currentPeriod = newDate;
+  updateLeadPeriodDisplay();
+  
+  // Ricarica dati se la funzione esiste
+  if (typeof window.loadLeadsData === 'function') {
+    window.loadLeadsData();
+  }
+}
+
+// Esponi le funzioni globalmente
+window.updateLeadPeriodDisplay = updateLeadPeriodDisplay;
+window.shiftLeadPeriod = shiftLeadPeriod;
+
 // ===== GESTIONE LEAD =====
 function viewGestioneLead(){
   if(!getUser()) return viewLogin();
@@ -10894,6 +10948,10 @@ function viewGestioneLead(){
   // Stato per granularità e periodo
   let currentGranularity = 'mensile';
   let currentPeriod = new Date(); // Periodo corrente
+  
+  // Aggiorna le variabili globali
+  window.currentGranularity = currentGranularity;
+  window.currentPeriod = currentPeriod;
 
   // Stato per tab attiva
   let activeTab = 'contattare'; // Default per consultant, admin può vedere entrambe
@@ -11682,46 +11740,6 @@ function viewGestioneLead(){
   });
 
   // ---- Funzioni di navigazione periodo ----
-  function shiftLeadPeriod(direction) {
-    const granularity = currentGranularity;
-    let newDate = new Date(currentPeriod);
-    
-    switch (granularity) {
-      case 'giornaliera':
-        newDate.setDate(newDate.getDate() + direction);
-        break;
-      case 'settimanale':
-        newDate.setDate(newDate.getDate() + (direction * 7));
-        break;
-      case 'mensile':
-        newDate.setMonth(newDate.getMonth() + direction);
-        break;
-      case 'trimestrale':
-        newDate.setMonth(newDate.getMonth() + (direction * 3));
-        break;
-      case 'semestrale':
-        newDate.setMonth(newDate.getMonth() + (direction * 6));
-        break;
-      case 'annuale':
-        newDate.setFullYear(newDate.getFullYear() + direction);
-        break;
-    }
-    
-    currentPeriod = newDate;
-    updatePeriodDisplay();
-    loadLeadsData();
-  }
-
-  function updatePeriodDisplay() {
-    const { from, to } = calculatePeriod(currentGranularity, currentPeriod);
-    const periodLabel = formatPeriodLabel(currentGranularity, currentPeriod);
-    
-    // Aggiorna label periodo se presente
-    const periodLabels = document.querySelectorAll('.period-label');
-    periodLabels.forEach(label => {
-      label.textContent = periodLabel;
-    });
-  }
 
   // Funzioni per caricamento dati
   async function loadLeadsData() {
@@ -12026,11 +12044,6 @@ function viewGestioneLead(){
     }
   }
 
-  function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   // Funzioni per operazioni CRUD
@@ -12311,7 +12324,7 @@ function viewGestioneLead(){
         
         card.innerHTML = `
           <div class="msg">
-            <b>Il Lead ${escapeHtml(leadName)} ti ha risposto?</b>
+            <b>Il Lead ${htmlEscape(leadName)} ti ha risposto?</b>
           </div>
           <div class="row">
             <button class="ghost" data-act="no">No</button>
@@ -12437,12 +12450,13 @@ function viewGestioneLead(){
   window.markLeadContactAnswered = markLeadContactAnswered;
   window.openWhatsApp = openWhatsApp;
   window.openEmail = openEmail;
+  window.loadLeadsData = loadLeadsData;
 
   // Caricamento iniziale
   loadLeadsData();
   
   // Aggiorna display periodo iniziale
-  updatePeriodDisplay();
+  window.updateLeadPeriodDisplay();
 }
 
 window.viewGestioneLead = window.viewGestioneLead || viewGestioneLead;

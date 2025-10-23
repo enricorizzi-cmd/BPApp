@@ -742,4 +742,10 @@
       console.error('Error initializing post sale banners:', e);
     }
   }
+  
+  // Fallback per browser: esporta anche su window
+  if (typeof window !== 'undefined') {
+    window.enqueueBanner = enqueueBanner;
+    window.initPostSaleBanners = initPostSaleBanners;
+  }
 })(typeof window !== 'undefined' ? window : this);
