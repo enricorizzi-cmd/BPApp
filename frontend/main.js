@@ -11127,7 +11127,16 @@ function viewGestioneLead(){
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid var(--hair2);
-        white-space: nowrap;
+        white-space: normal;
+        word-wrap: break-word;
+        max-width: 200px;
+      }
+      
+      .leads-table td.notes-cell {
+        white-space: pre-wrap !important;
+        max-width: 300px;
+        min-width: 200px;
+        word-wrap: break-word;
       }
       
       .leads-table th {
@@ -11152,9 +11161,12 @@ function viewGestioneLead(){
       }
       
       .leads-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 6px;
+        width: 88px;
+        height: 88px;
       }
       
       .leads-actions button {
@@ -11464,12 +11476,16 @@ function viewGestioneLead(){
         }
         
         .leads-actions {
-          flex-direction: column;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+          width: 80px;
+          height: 80px;
+          gap: 4px;
         }
         
         .leads-actions button {
           width: 100%;
-          margin-bottom: 4px;
+          height: 100%;
         }
         
         .form-row {
@@ -12010,7 +12026,7 @@ function viewGestioneLead(){
           <td>${htmlEscape(lead.indirizzo || '')}</td>
           <td>${htmlEscape(lead.sorgente || '')}</td>
           <td>${htmlEscape(lead.consulenteNome || '')}</td>
-          <td>${htmlEscape(lead.note || '')}</td>
+          <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
           <td>${lead.contattoAvvenuto ? formatDate(lead.contattoAvvenuto) : ''}</td>
           <td>
             <div class="leads-actions">
@@ -12072,10 +12088,10 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.indirizzoMail || '')}</td>
         <td>${htmlEscape(lead.provincia || '')}</td>
         <td>${htmlEscape(lead.comune || '')}</td>
-        <td>${htmlEscape(lead.sorgente || '')}</td>
-        <td>${htmlEscape(lead.consulenteNome || '')}</td>
-        <td>${htmlEscape(lead.note || '')}</td>
-      </tr>
+            <td>${htmlEscape(lead.sorgente || '')}</td>
+            <td>${htmlEscape(lead.consulenteNome || '')}</td>
+            <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+          </tr>
     `).join('');
   }
 
@@ -12124,11 +12140,11 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.indirizzoMail || '')}</td>
         <td>${htmlEscape(lead.provincia || '')}</td>
         <td>${htmlEscape(lead.comune || '')}</td>
-        <td>${htmlEscape(lead.sorgente || '')}</td>
-        <td>${htmlEscape(lead.consulenteNome || '')}</td>
-        <td>${htmlEscape(lead.note || '')}</td>
-        <td>${formatDate(lead.contattoAvvenuto)}</td>
-      </tr>
+            <td>${htmlEscape(lead.sorgente || '')}</td>
+            <td>${htmlEscape(lead.consulenteNome || '')}</td>
+            <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+            <td>${formatDate(lead.contattoAvvenuto)}</td>
+          </tr>
     `).join('');
   }
 
@@ -12511,6 +12527,7 @@ function viewGestioneLead(){
           } catch(err) {
             console.error('Error marking lead contact:', err);
             toast('Errore nel salvataggio');
+            close(); // Chiudi il banner anche in caso di errore
           }
         };
         
@@ -12569,6 +12586,7 @@ function viewGestioneLead(){
             } catch(err) {
               console.error('Error marking lead contact:', err);
               toast('Errore nel salvataggio');
+              close(); // Chiudi il banner anche in caso di errore
             }
           };
           
@@ -12585,6 +12603,7 @@ function viewGestioneLead(){
             } catch(err) {
               console.error('Error marking lead contact:', err);
               toast('Errore nel salvataggio');
+              close(); // Chiudi il banner anche in caso di errore
             }
           };
           
@@ -12614,19 +12633,23 @@ function viewGestioneLead(){
       }
 
       if (answer === 'yes') {
-        // Marca come contattato con data di oggi
+        // Prima recupera il lead per verificare se è già stato contattato
+        const leadResponse = await GET(`/api/leads?id=${leadId}`);
+        const lead = leadResponse.lead;
+        
         const payload = {
           id: leadId,
-          contatto_avvenuto: new Date().toISOString(),
           contact_banner_answered: true
         };
         
+        // Solo se è il PRIMO contatto, salva la data/ora in contatto_avvenuto
+        if (!lead.contattoAvvenuto) {
+          payload.contatto_avvenuto = new Date().toISOString();
+        }
+        // Se è un contatto successivo, NON modificare contatto_avvenuto
+        
         // Se ci sono note dalla chiamata, aggiungile
         if (callNotes && callNotes.trim()) {
-          // Prima recupera il lead per ottenere le note esistenti
-          const response = await GET(`/api/leads?id=${leadId}`);
-          const lead = response.lead;
-          
           const timestamp = new Date().toLocaleString('it-IT');
           const existingNotes = lead.note || '';
           
@@ -12652,10 +12675,7 @@ function viewGestioneLead(){
         
         await POST('/api/leads', payload);
       } else {
-        // Aggiungi tentativo alle note (recupera note esistenti prima)
-        const response = await GET(`/api/leads?id=${leadId}`);
-        const lead = response.lead;
-
+        // Aggiungi tentativo alle note (usa lead già recuperato)
         const timestamp = new Date().toLocaleString('it-IT');
         const existingNotes = lead.note || '';
         
@@ -12675,7 +12695,7 @@ function viewGestioneLead(){
           // Se non ci sono note esistenti, inizia direttamente
           newNote = `Tentativo chiamata il ${timestamp}`;
         }
-
+        
         await POST('/api/leads', {
           id: leadId,
           note: newNote,
