@@ -12491,6 +12491,22 @@ function viewGestioneLead(){
         card.setAttribute('aria-live','assertive');
         card.style.cssText = 'pointer-events: auto; max-width: 720px; background: var(--card, #fff); color: var(--text, #111); border: 1px solid rgba(0,0,0,0.12); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 12px;';
         
+        // Funzione di chiusura con fallback
+        const closeBanner = function() {
+          try {
+            if (typeof close === 'function') {
+              close();
+            } else {
+              // Fallback: rimuovi il banner manualmente
+              card.remove();
+            }
+          } catch (e) {
+            console.error('Error closing banner:', e);
+            // Fallback: rimuovi il banner manualmente
+            card.remove();
+          }
+        };
+        
         // Contenuto iniziale
         const msgDiv = document.createElement('div');
         msgDiv.className = 'msg';
@@ -12522,12 +12538,12 @@ function viewGestioneLead(){
           try {
             await markLeadContactAnswered(leadId, 'no', null);
             toast('Tentativo registrato nelle note');
-            close();
+            closeBanner();
             loadLeadsData();
           } catch(err) {
             console.error('Error marking lead contact:', err);
             toast('Errore nel salvataggio');
-            close(); // Chiudi il banner anche in caso di errore
+            closeBanner(); // Chiudi il banner anche in caso di errore
           }
         };
         
@@ -12581,12 +12597,12 @@ function viewGestioneLead(){
             try {
               await markLeadContactAnswered(leadId, 'yes', null);
               toast('Lead marcato come contattato');
-              close();
+              closeBanner();
               loadLeadsData();
             } catch(err) {
               console.error('Error marking lead contact:', err);
               toast('Errore nel salvataggio');
-              close(); // Chiudi il banner anche in caso di errore
+              closeBanner(); // Chiudi il banner anche in caso di errore
             }
           };
           
@@ -12598,12 +12614,12 @@ function viewGestioneLead(){
             try {
               await markLeadContactAnswered(leadId, 'yes', notes);
               toast('Lead marcato come contattato con note');
-              close();
+              closeBanner();
               loadLeadsData();
             } catch(err) {
               console.error('Error marking lead contact:', err);
               toast('Errore nel salvataggio');
-              close(); // Chiudi il banner anche in caso di errore
+              closeBanner(); // Chiudi il banner anche in caso di errore
             }
           };
           
@@ -12639,12 +12655,12 @@ function viewGestioneLead(){
         
         const payload = {
           id: leadId,
-          contact_banner_answered: true
+          contactBannerAnswered: true
         };
         
         // Solo se è il PRIMO contatto, salva la data/ora in contatto_avvenuto
         if (!lead.contattoAvvenuto) {
-          payload.contatto_avvenuto = new Date().toISOString();
+          payload.contattoAvvenuto = new Date().toISOString();
         }
         // Se è un contatto successivo, NON modificare contatto_avvenuto
         
@@ -12699,7 +12715,7 @@ function viewGestioneLead(){
         await POST('/api/leads', {
           id: leadId,
           note: newNote,
-          contact_banner_answered: true
+          contactBannerAnswered: true
         });
       }
     } catch (error) {

@@ -122,8 +122,10 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         
         // Filtro per lead da contattare
         if (toContact) {
+          // Se toContact è true, mostra SOLO i lead da contattare
           query = query.is('contatto_avvenuto', null);
         }
+        // Se toContact è false, non applicare filtro (mostra tutti)
         
         // Filtro per periodo se specificato
         const periodFilter = req.query.period;
