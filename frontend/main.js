@@ -11181,6 +11181,17 @@ function viewGestioneLead(){
         box-shadow: 0 4px 12px rgba(93,211,255,.4);
       }
       
+      .btn-save-contact {
+        background: #9c27b0;
+        color: white;
+        box-shadow: 0 2px 8px rgba(156,39,176,.3);
+      }
+      
+      .btn-save-contact:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(156,39,176,.4);
+      }
+      
       .btn-edit {
         background: var(--warn);
         color: white;
@@ -11695,6 +11706,7 @@ function viewGestioneLead(){
           <table class="leads-table">
             <thead>
               <tr>
+                <th>Azioni</th>
                 <th>Data Inserimento</th>
                 <th>Nome Lead</th>
                 <th>Azienda Lead</th>
@@ -11711,7 +11723,7 @@ function viewGestioneLead(){
             </thead>
             <tbody id="contacted-leads-table-body">
               <tr>
-                <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+                <td colspan="14" style="text-align: center; padding: 40px; color: #666;">
                   Caricamento lead contattati...
                 </td>
               </tr>
@@ -11978,7 +11990,7 @@ function viewGestioneLead(){
     if (leads.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+          <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
             Nessun lead da contattare
           </td>
         </tr>
@@ -12003,6 +12015,9 @@ function viewGestioneLead(){
                 📧
               </button>
             ` : ''}
+            <button class="btn-save-contact" onclick="saveContactToPhone(${JSON.stringify(lead).replace(/"/g, '&quot;')})" title="Salva Contatto">
+              💾
+            </button>
           </div>
         </td>
         <td>${formatDate(lead.dataInserimento)}</td>
@@ -12027,7 +12042,7 @@ function viewGestioneLead(){
     if (leads.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+          <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
             Nessun lead contattato
           </td>
         </tr>
@@ -12037,6 +12052,26 @@ function viewGestioneLead(){
     
     tbody.innerHTML = leads.map(lead => `
       <tr>
+        <td>
+          <div class="leads-actions">
+            ${lead.numeroTelefono ? `
+              <button class="btn-call" onclick="initiateCall('${lead.numeroTelefono}', '${lead.id}', '${htmlEscape(lead.nomeLead)}')" title="Chiama">
+                📞
+              </button>
+              <button class="btn-whatsapp" onclick="openWhatsApp('${lead.numeroTelefono}', '${htmlEscape(lead.nomeLead)}')" title="WhatsApp">
+                💬
+              </button>
+            ` : ''}
+            ${lead.indirizzoMail ? `
+              <button class="btn-email" onclick="openEmail('${lead.indirizzoMail}', '${htmlEscape(lead.nomeLead)}')" title="Email">
+                📧
+              </button>
+            ` : ''}
+            <button class="btn-save-contact" onclick="saveContactToPhone(${JSON.stringify(lead).replace(/"/g, '&quot;')})" title="Salva Contatto">
+              💾
+            </button>
+          </div>
+        </td>
         <td>${formatDate(lead.dataInserimento)}</td>
         <td>${htmlEscape(lead.nomeLead || '')}</td>
         <td>${htmlEscape(lead.aziendaLead || '')}</td>
@@ -12629,6 +12664,100 @@ function viewGestioneLead(){
     window.location.href = mailtoUrl;
   }
 
+  function saveContactToPhone(lead) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
+    if (typeof haptic === 'function') haptic('light');
+    
+    // Controlla se è mobile o desktop
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                     window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // Mobile: usa vCard per salvare il contatto
+      const vcard = generateVCard(lead);
+      downloadVCard(vcard, `${lead.nomeLead || 'Lead'}.vcf`);
+      toast('📱 Contatto salvato! Controlla la tua rubrica');
+    } else {
+      // Desktop: mostra informazioni per copiare
+      const contactInfo = `
+📋 INFORMAZIONI CONTATTO:
+Nome: ${lead.nomeLead || 'N/A'}
+Azienda: ${lead.aziendaLead || 'N/A'}
+Telefono: ${lead.numeroTelefono || 'N/A'}
+Email: ${lead.indirizzoMail || 'N/A'}
+Indirizzo: ${lead.indirizzo || 'N/A'}
+Provincia: ${lead.provincia || 'N/A'}
+Comune: ${lead.comune || 'N/A'}
+      `.trim();
+      
+      navigator.clipboard.writeText(contactInfo).then(() => {
+        toast('📋 Informazioni contatto copiate negli appunti!\n\nPuoi incollarle nella tua rubrica preferita.');
+      }).catch(() => {
+        toast('📋 Informazioni contatto:\n\n' + contactInfo);
+      });
+    }
+  }
+
+  function generateVCard(lead) {
+    const name = lead.nomeLead || '';
+    const company = lead.aziendaLead || '';
+    const phone = lead.numeroTelefono || '';
+    const email = lead.indirizzoMail || '';
+    const address = lead.indirizzo || '';
+    const city = lead.comune || '';
+    const province = lead.provincia || '';
+    
+    let vcard = 'BEGIN:VCARD\n';
+    vcard += 'VERSION:3.0\n';
+    
+    if (name) {
+      vcard += `FN:${name}\n`;
+      vcard += `N:${name};;;;\n`;
+    }
+    
+    if (company) {
+      vcard += `ORG:${company}\n`;
+    }
+    
+    if (phone) {
+      vcard += `TEL:${phone}\n`;
+    }
+    
+    if (email) {
+      vcard += `EMAIL:${email}\n`;
+    }
+    
+    if (address || city || province) {
+      const fullAddress = [address, city, province].filter(Boolean).join(', ');
+      vcard += `ADR:;;${fullAddress};;;;\n`;
+    }
+    
+    vcard += 'END:VCARD';
+    
+    return vcard;
+  }
+
+  function downloadVCard(vcard, filename) {
+    const blob = new Blob([vcard], { type: 'text/vcard' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
   // Event listeners per filtri e azioni
   document.addEventListener('click', (e) => {
     // Aggiungi lead
@@ -12669,6 +12798,7 @@ function viewGestioneLead(){
   window.markLeadContactAnswered = markLeadContactAnswered;
   window.openWhatsApp = openWhatsApp;
   window.openEmail = openEmail;
+  window.saveContactToPhone = saveContactToPhone;
   window.loadLeadsData = loadLeadsData;
 
   // Caricamento iniziale
