@@ -12185,6 +12185,7 @@ function viewGestioneLead(){
           </div>
           <div class="modal-body">
             <form id="lead-form">
+              ${lead ? `<input type="hidden" name="id" value="${lead.id}">` : ''}
               <div class="form-row">
                 <div class="form-group">
                   <label for="lead-nome">Nome Lead <span class="required">*</span></label>
@@ -12267,7 +12268,12 @@ function viewGestioneLead(){
     // Carica dropdown consulenti
     loadConsultantsDropdown('lead-consulente').then(() => {
       if (lead?.consulenteAssegnato) {
-        document.getElementById('lead-consulente').value = lead.consulenteAssegnato;
+        const select = document.getElementById('lead-consulente');
+        if (select) {
+          console.log('Setting consulente value:', lead.consulenteAssegnato);
+          select.value = lead.consulenteAssegnato;
+          console.log('Consulente value after setting:', select.value);
+        }
       }
     });
   }
@@ -12324,7 +12330,7 @@ function viewGestioneLead(){
     };
     
     // Se è una modifica, aggiungi ID
-    const leadId = document.querySelector('#lead-modal-overlay').dataset.leadId;
+    const leadId = formData.get('id');
     if (leadId) {
       leadData.id = leadId;
     }
@@ -12579,9 +12585,23 @@ function viewGestioneLead(){
           
           const timestamp = new Date().toLocaleString('it-IT');
           const existingNotes = lead.note || '';
-          const newNote = existingNotes 
-            ? `${existingNotes}\n\nContatto avvenuto il ${timestamp}:\n${callNotes.trim()}`
-            : `Contatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+          
+          // Formattazione pulita delle note
+          let newNote;
+          if (existingNotes.trim()) {
+            // Controlla se esiste già una nota per questo contatto
+            const contactPattern = `Contatto avvenuto il ${timestamp.split(',')[0]}`;
+            if (existingNotes.includes(contactPattern)) {
+              // Se esiste già, non aggiungere duplicato
+              newNote = existingNotes.trim();
+            } else {
+              // Se non esiste, aggiungi una riga vuota e poi le nuove note
+              newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+            }
+          } else {
+            // Se non ci sono note esistenti, inizia direttamente
+            newNote = `Contatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+          }
           
           payload.note = newNote;
         }
@@ -12594,9 +12614,23 @@ function viewGestioneLead(){
 
         const timestamp = new Date().toLocaleString('it-IT');
         const existingNotes = lead.note || '';
-        const newNote = existingNotes 
-          ? `${existingNotes}\n\nTentativo chiamata il ${timestamp}`
-          : `Tentativo chiamata il ${timestamp}`;
+        
+        // Formattazione pulita delle note
+        let newNote;
+        if (existingNotes.trim()) {
+          // Controlla se esiste già un tentativo per oggi
+          const todayPattern = `Tentativo chiamata il ${timestamp.split(',')[0]}`;
+          if (existingNotes.includes(todayPattern)) {
+            // Se esiste già, non aggiungere duplicato
+            newNote = existingNotes.trim();
+          } else {
+            // Se non esiste, aggiungi una riga vuota e poi il tentativo
+            newNote = `${existingNotes.trim()}\n\nTentativo chiamata il ${timestamp}`;
+          }
+        } else {
+          // Se non ci sono note esistenti, inizia direttamente
+          newNote = `Tentativo chiamata il ${timestamp}`;
+        }
 
         await POST('/api/leads', {
           id: leadId,
