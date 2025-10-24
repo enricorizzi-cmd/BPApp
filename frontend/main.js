@@ -11455,6 +11455,16 @@ function viewGestioneLead(){
   // Funzioni per tracking utenti in modifica
   async function markLeadAsEditing(leadId) {
     try {
+      // Controllo autenticazione prima di procedere
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
       const user = getUser();
       if (!user) return;
       
@@ -11751,6 +11761,16 @@ function viewGestioneLead(){
   // Funzioni per caricamento dati
   async function loadLeadsData() {
     try {
+      // Controllo autenticazione prima di procedere
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
       if (activeTab === 'elenco' && isAdmin) {
         await loadElencoLeadData();
       } else {
@@ -11758,12 +11778,32 @@ function viewGestioneLead(){
       }
     } catch (error) {
       console.error('Error loading leads data:', error);
+      
+      // Gestione specifica per errori 401
+      if (error.message && error.message.includes('401')) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+      
       toast('Errore nel caricamento dei dati');
     }
   }
 
   async function loadElencoLeadData() {
     try {
+      // Controllo autenticazione prima di procedere
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
       const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = document.getElementById('lead-consultant')?.value || '';
       
@@ -11800,6 +11840,16 @@ function viewGestioneLead(){
 
   async function loadContactLeadsData() {
     try {
+      // Controllo autenticazione prima di procedere
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
       const consultant = document.getElementById('contact-consultant')?.value || '';
       
       // ECCEZIONE: Lead da Contattare non segue filtri periodo/granularità
@@ -12032,6 +12082,16 @@ function viewGestioneLead(){
   }
 
   async function deleteLead(leadId) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     // Trova i dati del lead per mostrare informazioni nella conferma
     const lead = currentLeadsData.find(l => l.id === leadId);
     const leadName = lead ? lead.nome_lead || 'Lead senza nome' : 'Lead';
@@ -12063,6 +12123,16 @@ function viewGestioneLead(){
   }
 
   function showLeadModal(lead = null) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     const isEdit = !!lead;
     const title = isEdit ? 'Modifica Lead' : 'Nuovo Lead';
     
@@ -12181,6 +12251,16 @@ function viewGestioneLead(){
   }
 
   async function saveLead() {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     const form = document.getElementById('lead-form');
     const formData = new FormData(form);
     
@@ -12239,6 +12319,16 @@ function viewGestioneLead(){
 
   // Funzioni per chiamate e contatti
   function initiateCall(phoneNumber, leadId, leadName) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     if (typeof haptic === 'function') haptic('light');
     
     // Controlla se è mobile o desktop
@@ -12281,6 +12371,16 @@ function viewGestioneLead(){
   }
 
   function showContactConfirmationBanner(leadId, leadName) {
+    // Controllo autenticazione prima di mostrare il banner
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     // Usa il sistema banner esistente
     if (typeof window.enqueueBanner === 'function') {
       window.enqueueBanner(function(close) {
@@ -12418,6 +12518,16 @@ function viewGestioneLead(){
 
   async function markLeadContactAnswered(leadId, answer, callNotes) {
     try {
+      // Controllo autenticazione prima di procedere
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
       if (answer === 'yes') {
         // Marca come contattato con data di oggi
         const payload = {
@@ -12446,13 +12556,13 @@ function viewGestioneLead(){
         // Aggiungi tentativo alle note (recupera note esistenti prima)
         const response = await GET(`/api/leads?id=${leadId}`);
         const lead = response.lead;
-        
+
         const timestamp = new Date().toLocaleString('it-IT');
         const existingNotes = lead.note || '';
         const newNote = existingNotes 
           ? `${existingNotes}\n\nTentativo chiamata il ${timestamp}`
           : `Tentativo chiamata il ${timestamp}`;
-        
+
         await POST('/api/leads', {
           id: leadId,
           note: newNote,
@@ -12461,11 +12571,31 @@ function viewGestioneLead(){
       }
     } catch (error) {
       console.error('Error marking lead contact:', error);
+      
+      // Gestione specifica per errori 401
+      if (error.message && error.message.includes('401')) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+      
       throw error;
     }
   }
 
   function openWhatsApp(phoneNumber, leadName) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     if (typeof haptic === 'function') haptic('light');
     
     // Rimuove caratteri non numerici e aggiunge prefisso internazionale se necessario
@@ -12480,6 +12610,16 @@ function viewGestioneLead(){
   }
 
   function openEmail(email, leadName) {
+    // Controllo autenticazione prima di procedere
+    const token = getToken();
+    if (!token) {
+      toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+      setTimeout(() => {
+        logout();
+      }, 2000);
+      return;
+    }
+
     if (typeof haptic === 'function') haptic('light');
     
     const subject = encodeURIComponent(`Contatto per ${leadName}`);
