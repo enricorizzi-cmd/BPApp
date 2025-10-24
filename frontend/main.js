@@ -12673,15 +12673,34 @@ function viewGestioneLead(){
         // Solo se è il PRIMO contatto, salva la data/ora in contatto_avvenuto
         if (!lead.contattoAvvenuto) {
           payload.contattoAvvenuto = new Date().toISOString();
-        }
-        // Se è un contatto successivo, NON modificare contatto_avvenuto
-        
-        // Se ci sono note dalla chiamata, aggiungile
-        if (callNotes && callNotes.trim()) {
+          
+          // Aggiungi sempre le note automatiche per il primo contatto
           const timestamp = new Date().toLocaleString('it-IT');
           const existingNotes = lead.note || '';
           
-          // Formattazione pulita delle note
+          let newNote;
+          if (existingNotes.trim()) {
+            // Se ci sono note esistenti, aggiungi una riga vuota e poi le nuove note
+            newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}`;
+          } else {
+            // Se non ci sono note esistenti, inizia direttamente
+            newNote = `Contatto avvenuto il ${timestamp}`;
+          }
+          
+          // Se ci sono note dalla chiamata, aggiungile
+          if (callNotes && callNotes.trim()) {
+            newNote += `:\n${callNotes.trim()}`;
+          }
+          
+          payload.note = newNote;
+        }
+        // Se è un contatto successivo, NON modificare contatto_avvenuto
+        
+        // Per contatti successivi, aggiungi solo alle note
+        if (lead.contattoAvvenuto) {
+          const timestamp = new Date().toLocaleString('it-IT');
+          const existingNotes = lead.note || '';
+          
           let newNote;
           if (existingNotes.trim()) {
             // Controlla se esiste già una nota per questo contatto
@@ -12691,11 +12710,16 @@ function viewGestioneLead(){
               newNote = existingNotes.trim();
             } else {
               // Se non esiste, aggiungi una riga vuota e poi le nuove note
-              newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+              newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}`;
             }
           } else {
             // Se non ci sono note esistenti, inizia direttamente
-            newNote = `Contatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+            newNote = `Contatto avvenuto il ${timestamp}`;
+          }
+          
+          // Se ci sono note dalla chiamata, aggiungile
+          if (callNotes && callNotes.trim()) {
+            newNote += `:\n${callNotes.trim()}`;
           }
           
           payload.note = newNote;
