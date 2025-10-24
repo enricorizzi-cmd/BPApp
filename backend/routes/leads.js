@@ -107,6 +107,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         const consultantFilter = req.query.consultant;
         const withoutConsultant = req.query.withoutConsultant === 'true';
         const contactStatus = req.query.contactStatus || 'all';
+        productionLogger.debug('🔍 DEBUG: contactStatus received =', contactStatus);
         
         if (consultantFilter && consultantFilter !== '') {
           query = query.eq('consulente_assegnato', consultantFilter);

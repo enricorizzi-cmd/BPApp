@@ -11949,6 +11949,7 @@ function viewGestioneLead(){
       const consultant = document.getElementById('lead-consultant')?.value || '';
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
+      console.log('🔍 DEBUG: contactStatus =', contactStatus);
       
       // Aggiorna granularità corrente
       currentGranularity = granularity;
@@ -11963,7 +11964,7 @@ function viewGestioneLead(){
       params.append('from', from);
       params.append('to', to);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
-      if (contactStatus !== 'all') params.append('contactStatus', contactStatus);
+      params.append('contactStatus', contactStatus);
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
@@ -12006,7 +12007,7 @@ function viewGestioneLead(){
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
-      if (contactStatus !== 'all') params.append('contactStatus', contactStatus);
+      params.append('contactStatus', contactStatus);
       // NON aggiungere filtri periodo per questa sezione
       
       const response = await GET(`/api/leads?${params.toString()}`);
