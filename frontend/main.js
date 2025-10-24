@@ -10617,19 +10617,36 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  async function loadClientiOptions() {
+  async function loadClientiOptions(targetSelectId = null) {
     try {
       const response = await GET('/api/clients');
-      const selects = document.querySelectorAll('[id^="cliente-"]');
       
       if (response.clients) {
         const options = response.clients.map(client => 
           `<option value="${client.id}" data-consulente="${client.consultantname || ''}" data-consulente-id="${client.consultantid || ''}">${client.name}</option>`
         ).join('');
         
-        selects.forEach(select => {
-          select.innerHTML = '<option value="">Seleziona cliente...</option>' + options;
-        });
+        if (targetSelectId) {
+          // Carica solo il select specifico
+          const select = document.getElementById(targetSelectId);
+          if (select) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Seleziona cliente...</option>' + options;
+            if (currentValue) {
+              select.value = currentValue;
+            }
+          }
+        } else {
+          // Carica tutti i select esistenti
+          const selects = document.querySelectorAll('[id^="cliente-"]');
+          selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Seleziona cliente...</option>' + options;
+            if (currentValue) {
+              select.value = currentValue;
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading clienti options:', error);
@@ -10695,9 +10712,19 @@ function viewCorsiInteraziendali(){
       // Trova e seleziona il consulente nel dropdown
       const consulenteOptions = consulenteSelect.querySelectorAll('option');
       for (let option of consulenteOptions) {
-        if (option.value === selectedOption.dataset.consulente) {
+        if (option.value === selectedOption.dataset.consulenteId) {
           consulenteSelect.value = option.value;
           break;
+        }
+      }
+      
+      // Se non trova per ID, prova per nome
+      if (!consulenteSelect.value) {
+        for (let option of consulenteOptions) {
+          if (option.textContent === selectedOption.dataset.consulente) {
+            consulenteSelect.value = option.value;
+            break;
+          }
         }
       }
     }
@@ -10738,8 +10765,8 @@ function viewCorsiInteraziendali(){
     
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
-    // Carica opzioni clienti e consulenti per il nuovo select
-    loadClientiOptions();
+    // Carica opzioni clienti e consulenti solo per il nuovo select
+    loadClientiOptions(`cliente-${clienteCount}`);
     loadConsulentiOptions();
   };
 
@@ -10779,16 +10806,17 @@ function viewCorsiInteraziendali(){
       
       for (const group of clienteGroups) {
         const clienteSelect = group.querySelector('select[id^="cliente-"]');
-        const consulenteInput = group.querySelector('input[id^="consulente-"]');
+        const consulenteSelect = group.querySelector('select[id^="consulente-"]');
         const costoInput = group.querySelector('input[id^="costo-"]');
         
-        if (clienteSelect.value && consulenteInput.value && costoInput.value) {
+        if (clienteSelect.value && consulenteSelect.value && costoInput.value) {
           const selectedOption = clienteSelect.selectedOptions[0];
+          const consulenteOption = consulenteSelect.selectedOptions[0];
           clienti.push({
             cliente_id: clienteSelect.value,
             cliente_nome: selectedOption.textContent,
-            consulente_id: selectedOption.dataset.consulenteId,
-            consulente_nome: consulenteInput.value,
+            consulente_id: consulenteSelect.value,
+            consulente_nome: consulenteOption.textContent,
             costo_personalizzato: Number(costoInput.value)
           });
         }
