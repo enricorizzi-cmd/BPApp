@@ -11719,10 +11719,14 @@ function viewGestioneLead(){
             <input type="checkbox" id="lead-without-consultant" checked>
             Senza consulente assegnato
           </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="lead-to-contact" checked>
-            Da contattare
-          </label>
+          <div class="selector-group">
+            <label for="lead-contact-status" style="font-size: 14px; color: var(--text); margin-bottom: 4px; display: block;">Stato contatto:</label>
+            <select id="lead-contact-status" style="padding: 8px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; background: white; color: var(--text);">
+              <option value="all" selected>Tutti</option>
+              <option value="to_contact">Da contattare</option>
+              <option value="contacted">Contattati</option>
+            </select>
+          </div>
         </div>
         
         <div style="margin-left: auto;">
@@ -11944,7 +11948,7 @@ function viewGestioneLead(){
       const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = document.getElementById('lead-consultant')?.value || '';
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
-      const showToContact = document.getElementById('lead-to-contact')?.checked || false;
+      const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
       // Aggiorna granularità corrente
       currentGranularity = granularity;
@@ -11959,8 +11963,7 @@ function viewGestioneLead(){
       params.append('from', from);
       params.append('to', to);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
-      if (showToContact) params.append('toContact', 'true');
-      else params.append('toContact', 'false');
+      if (contactStatus !== 'all') params.append('contactStatus', contactStatus);
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
@@ -11994,7 +11997,7 @@ function viewGestioneLead(){
 
       const consultant = document.getElementById('contact-consultant')?.value || '';
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
-      const showToContact = document.getElementById('lead-to-contact')?.checked || false;
+      const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
       // ECCEZIONE: Lead da Contattare non segue filtri periodo/granularità
       // Mostra sempre tutti i lead da contattare del consulente selezionato
@@ -12003,8 +12006,7 @@ function viewGestioneLead(){
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
-      if (showToContact) params.append('toContact', 'true');
-      else params.append('toContact', 'false');
+      if (contactStatus !== 'all') params.append('contactStatus', contactStatus);
       // NON aggiungere filtri periodo per questa sezione
       
       const response = await GET(`/api/leads?${params.toString()}`);
@@ -13164,10 +13166,10 @@ Comune: ${lead.comune || 'N/A'}
   });
 
   // Event listeners per cambio filtri
-  document.addEventListener('change', (e) => {
-    if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
-        e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
-        e.target.id === 'lead-without-consultant' || e.target.id === 'lead-to-contact') {
+    document.addEventListener('change', (e) => {
+      if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
+          e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
+          e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status') {
       if (typeof haptic === 'function') haptic('light');
       
       // Se cambia la granularità, aggiorna il periodo corrente

@@ -106,7 +106,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         // Filtri per consulente
         const consultantFilter = req.query.consultant;
         const withoutConsultant = req.query.withoutConsultant === 'true';
-        const toContact = req.query.toContact === 'true';
+        const contactStatus = req.query.contactStatus || 'all';
         
         if (consultantFilter && consultantFilter !== '') {
           query = query.eq('consulente_assegnato', consultantFilter);
@@ -120,14 +120,15 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           query = query.is('consulente_assegnato', null);
         }
         
-        // Filtro per lead da contattare
-        if (toContact) {
-          // Se toContact è true, mostra SOLO i lead da contattare
+        // Filtro per stato contatto
+        if (contactStatus === 'to_contact') {
+          // Solo lead da contattare (contatto_avvenuto null)
           query = query.is('contatto_avvenuto', null);
-        } else {
-          // Se toContact è false, mostra SOLO i lead già contattati
+        } else if (contactStatus === 'contacted') {
+          // Solo lead già contattati (contatto_avvenuto compilato)
           query = query.not('contatto_avvenuto', 'is', null);
         }
+        // Se contactStatus === 'all', non applicare nessun filtro
         
         // Filtro per periodo se specificato
         const periodFilter = req.query.period;
