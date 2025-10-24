@@ -11899,6 +11899,7 @@ function viewGestioneLead(){
       params.append('to', to);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       if (showToContact) params.append('toContact', 'true');
+      else params.append('toContact', 'false');
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
@@ -11942,6 +11943,7 @@ function viewGestioneLead(){
       if (consultant) params.append('consultant', consultant);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       if (showToContact) params.append('toContact', 'true');
+      else params.append('toContact', 'false');
       // NON aggiungere filtri periodo per questa sezione
       
       const response = await GET(`/api/leads?${params.toString()}`);
@@ -12503,19 +12505,36 @@ function viewGestioneLead(){
         card.setAttribute('aria-live','assertive');
         card.style.cssText = 'pointer-events: auto; max-width: 720px; background: var(--card, #fff); color: var(--text, #111); border: 1px solid rgba(0,0,0,0.12); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 12px;';
         
-        // Funzione di chiusura con fallback
+        // Funzione di chiusura con fallback robusto
         const closeBanner = function() {
           try {
+            // Prova prima con la funzione close del sistema banner
             if (typeof close === 'function') {
               close();
-            } else {
-              // Fallback: rimuovi il banner manualmente
-              card.remove();
             }
           } catch (e) {
-            console.error('Error closing banner:', e);
-            // Fallback: rimuovi il banner manualmente
-            card.remove();
+            console.error('Error with close function:', e);
+          }
+          
+          // Fallback sempre attivo: rimuovi il banner manualmente
+          try {
+            if (card && card.parentNode) {
+              card.parentNode.removeChild(card);
+            }
+          } catch (e) {
+            console.error('Error removing banner manually:', e);
+          }
+          
+          // Fallback aggiuntivo: rimuovi tutti i banner visibili
+          try {
+            const banners = document.querySelectorAll('.bp-banner-card');
+            banners.forEach(banner => {
+              if (banner.parentNode) {
+                banner.parentNode.removeChild(banner);
+              }
+            });
+          } catch (e) {
+            console.error('Error removing all banners:', e);
           }
         };
         
@@ -12602,38 +12621,48 @@ function viewGestioneLead(){
           // Focus su textarea
           setTimeout(() => textarea.focus(), 100);
           
-          // Handler per "Salta" - salva senza note
-          btnSkip.onclick = async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              await markLeadContactAnswered(leadId, 'yes', null);
-              toast('Lead marcato come contattato');
-              closeBanner();
-              loadLeadsData();
-            } catch(err) {
-              console.error('Error marking lead contact:', err);
-              toast('Errore nel salvataggio');
-              closeBanner(); // Chiudi il banner anche in caso di errore
-            }
-          };
+        // Handler per "Salta" - salva senza note
+        btnSkip.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await markLeadContactAnswered(leadId, 'yes', null);
+            toast('Lead marcato come contattato');
+            closeBanner();
+            loadLeadsData();
+          } catch(err) {
+            console.error('Error marking lead contact:', err);
+            toast('Errore nel salvataggio');
+            closeBanner(); // Chiudi il banner anche in caso di errore
+          }
           
-          // Handler per "Salva" - salva con note
-          btnSave.onclick = async function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const notes = textarea.value.trim();
-            try {
-              await markLeadContactAnswered(leadId, 'yes', notes);
-              toast('Lead marcato come contattato con note');
-              closeBanner();
-              loadLeadsData();
-            } catch(err) {
-              console.error('Error marking lead contact:', err);
-              toast('Errore nel salvataggio');
-              closeBanner(); // Chiudi il banner anche in caso di errore
-            }
-          };
+          // Timeout di sicurezza per chiudere il banner
+          setTimeout(() => {
+            closeBanner();
+          }, 1000);
+        };
+          
+        // Handler per "Salva" - salva con note
+        btnSave.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const notes = textarea.value.trim();
+          try {
+            await markLeadContactAnswered(leadId, 'yes', notes);
+            toast('Lead marcato come contattato con note');
+            closeBanner();
+            loadLeadsData();
+          } catch(err) {
+            console.error('Error marking lead contact:', err);
+            toast('Errore nel salvataggio');
+            closeBanner(); // Chiudi il banner anche in caso di errore
+          }
+          
+          // Timeout di sicurezza per chiudere il banner
+          setTimeout(() => {
+            closeBanner();
+          }, 1000);
+        };
           
           // Handler per Enter (Ctrl+Enter per salvare)
           textarea.onkeydown = function(e) {
@@ -12645,6 +12674,151 @@ function viewGestioneLead(){
         
         return card;
       });
+    } else {
+      // Fallback: crea banner direttamente nel DOM se enqueueBanner non è disponibile
+      const card = document.createElement('div');
+      card.className = 'bp-banner-card';
+      card.setAttribute('role','alertdialog');
+      card.setAttribute('aria-live','assertive');
+      card.style.cssText = 'pointer-events: auto; max-width: 720px; background: var(--card, #fff); color: var(--text, #111); border: 1px solid rgba(0,0,0,0.12); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 12px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000;';
+      
+      // Funzione di chiusura semplice per fallback
+      const closeBanner = function() {
+        try {
+          if (card && card.parentNode) {
+            card.parentNode.removeChild(card);
+          }
+        } catch (e) {
+          console.error('Error removing banner:', e);
+        }
+      };
+      
+      // Contenuto del banner (stesso del caso normale)
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg';
+      msgDiv.innerHTML = `<b>Il Lead ${htmlEscape(leadName)} ti ha risposto?</b>`;
+      
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'row';
+      rowDiv.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+      
+      const btnNo = document.createElement('button');
+      btnNo.textContent = 'No';
+      btnNo.className = 'ghost';
+      btnNo.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.12); font-size: 14px; font-weight: 500;';
+      
+      const btnYes = document.createElement('button');
+      btnYes.textContent = 'Sì';
+      btnYes.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: var(--accent, #2196F3); color: white; border: none; font-size: 14px; font-weight: 500;';
+      
+      rowDiv.appendChild(btnNo);
+      rowDiv.appendChild(btnYes);
+      
+      card.appendChild(msgDiv);
+      card.appendChild(rowDiv);
+      
+      // Handler per "No"
+      btnNo.onclick = async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          await markLeadContactAnswered(leadId, 'no', null);
+          toast('Tentativo registrato nelle note');
+          closeBanner();
+          loadLeadsData();
+        } catch(err) {
+          console.error('Error marking lead contact:', err);
+          toast('Errore nel salvataggio');
+          closeBanner();
+        }
+      };
+      
+      // Handler per "Sì" - mostra form note (stesso del caso normale)
+      btnYes.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Rimuovi i pulsanti
+        rowDiv.remove();
+        
+        // Cambia messaggio
+        msgDiv.innerHTML = `<b>Lead ${htmlEscape(leadName)} contattato!</b><br><small>Aggiungi note sulla telefonata (facoltativo):</small>`;
+        
+        // Aggiungi textarea per note
+        const notesContainer = document.createElement('div');
+        notesContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+        
+        const textarea = document.createElement('textarea');
+        textarea.id = 'lead-call-notes';
+        textarea.placeholder = 'Note sulla chiamata...';
+        textarea.rows = 3;
+        textarea.style.cssText = 'width: 100%; padding: 8px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;';
+        
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+        
+        const btnSkip = document.createElement('button');
+        btnSkip.textContent = 'Salta';
+        btnSkip.className = 'ghost';
+        btnSkip.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.12); font-size: 14px; font-weight: 500;';
+        
+        const btnSave = document.createElement('button');
+        btnSave.textContent = 'Salva';
+        btnSave.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: var(--accent, #2196F3); color: white; border: none; font-size: 14px; font-weight: 500;';
+        
+        btnRow.appendChild(btnSkip);
+        btnRow.appendChild(btnSave);
+        
+        notesContainer.appendChild(textarea);
+        notesContainer.appendChild(btnRow);
+        card.appendChild(notesContainer);
+        
+        // Focus su textarea
+        setTimeout(() => textarea.focus(), 100);
+        
+        // Handler per "Salta"
+        btnSkip.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          try {
+            await markLeadContactAnswered(leadId, 'yes', null);
+            toast('Lead marcato come contattato');
+            closeBanner();
+            loadLeadsData();
+          } catch(err) {
+            console.error('Error marking lead contact:', err);
+            toast('Errore nel salvataggio');
+            closeBanner();
+          }
+        };
+        
+        // Handler per "Salva"
+        btnSave.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const notes = textarea.value.trim();
+          try {
+            await markLeadContactAnswered(leadId, 'yes', notes);
+            toast('Lead marcato come contattato con note');
+            closeBanner();
+            loadLeadsData();
+          } catch(err) {
+            console.error('Error marking lead contact:', err);
+            toast('Errore nel salvataggio');
+            closeBanner();
+          }
+        };
+        
+        // Handler per Enter
+        textarea.onkeydown = function(e) {
+          if (e.ctrlKey && e.key === 'Enter') {
+            btnSave.click();
+          }
+        };
+      };
+      
+      // Aggiungi al DOM
+      document.body.appendChild(card);
     }
   }
 
