@@ -10653,19 +10653,36 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  async function loadConsulentiOptions() {
+  async function loadConsulentiOptions(targetSelectId = null) {
     try {
       const response = await GET('/api/users');
-      const selects = document.querySelectorAll('select[id^="consulente-"]');
       
       if (response.users) {
         const options = response.users.map(user => 
           `<option value="${user.id}">${user.name}</option>`
         ).join('');
         
-        selects.forEach(select => {
-          select.innerHTML = '<option value="">Seleziona consulente...</option>' + options;
-        });
+        if (targetSelectId) {
+          // Carica solo il select specifico
+          const select = document.getElementById(targetSelectId);
+          if (select) {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Seleziona consulente...</option>' + options;
+            if (currentValue) {
+              select.value = currentValue;
+            }
+          }
+        } else {
+          // Carica tutti i select esistenti preservando i valori
+          const selects = document.querySelectorAll('select[id^="consulente-"]');
+          selects.forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Seleziona consulente...</option>' + options;
+            if (currentValue) {
+              select.value = currentValue;
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading consulenti options:', error);
@@ -10707,12 +10724,24 @@ function viewCorsiInteraziendali(){
     const costoInput = document.getElementById(`costo-${index}`);
     const corsoSelect = document.getElementById('corso-select');
     
+    console.log(`[loadClienteInfo] Index: ${index}`);
+    console.log(`[loadClienteInfo] Cliente select:`, clienteSelect);
+    console.log(`[loadClienteInfo] Consulente select:`, consulenteSelect);
+    
     const selectedOption = clienteSelect.selectedOptions[0];
+    console.log(`[loadClienteInfo] Selected option:`, selectedOption);
+    console.log(`[loadClienteInfo] Consulente name:`, selectedOption?.dataset.consulente);
+    console.log(`[loadClienteInfo] Consulente ID:`, selectedOption?.dataset.consulenteId);
+    
     if (selectedOption && selectedOption.dataset.consulente) {
       // Trova e seleziona il consulente nel dropdown
       const consulenteOptions = consulenteSelect.querySelectorAll('option');
+      console.log(`[loadClienteInfo] Available consulente options:`, consulenteOptions.length);
+      
       for (let option of consulenteOptions) {
+        console.log(`[loadClienteInfo] Checking option:`, option.value, option.textContent);
         if (option.value === selectedOption.dataset.consulenteId) {
+          console.log(`[loadClienteInfo] Found match by ID:`, option.value);
           consulenteSelect.value = option.value;
           break;
         }
@@ -10720,13 +10749,17 @@ function viewCorsiInteraziendali(){
       
       // Se non trova per ID, prova per nome
       if (!consulenteSelect.value) {
+        console.log(`[loadClienteInfo] No ID match, trying by name...`);
         for (let option of consulenteOptions) {
           if (option.textContent === selectedOption.dataset.consulente) {
+            console.log(`[loadClienteInfo] Found match by name:`, option.textContent);
             consulenteSelect.value = option.value;
             break;
           }
         }
       }
+      
+      console.log(`[loadClienteInfo] Final consulente value:`, consulenteSelect.value);
     }
     
     // Imposta costo base del corso
@@ -10767,7 +10800,7 @@ function viewCorsiInteraziendali(){
     
     // Carica opzioni clienti e consulenti solo per il nuovo select
     loadClientiOptions(`cliente-${clienteCount}`);
-    loadConsulentiOptions();
+    loadConsulentiOptions(`consulente-${clienteCount}`);
   };
 
   window.removeCliente = function(index) {
