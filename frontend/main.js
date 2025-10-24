@@ -12288,33 +12288,127 @@ function viewGestioneLead(){
         card.className = 'bp-banner-card';
         card.setAttribute('role','alertdialog');
         card.setAttribute('aria-live','assertive');
+        card.style.cssText = 'pointer-events: auto; max-width: 720px; background: var(--card, #fff); color: var(--text, #111); border: 1px solid rgba(0,0,0,0.12); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,0.28); padding: 16px; display: flex; flex-direction: column; gap: 12px;';
         
-        card.innerHTML = `
-          <div class="msg">
-            <b>Il Lead ${htmlEscape(leadName)} ti ha risposto?</b>
-          </div>
-          <div class="row">
-            <button class="ghost" data-act="no">No</button>
-            <button data-act="yes">Sì</button>
-          </div>
-        `;
+        // Contenuto iniziale
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'msg';
+        msgDiv.innerHTML = `<b>Il Lead ${htmlEscape(leadName)} ti ha risposto?</b>`;
         
-        card.querySelector('[data-act="yes"]').onclick = async function(){
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row';
+        rowDiv.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+        
+        const btnNo = document.createElement('button');
+        btnNo.textContent = 'No';
+        btnNo.className = 'ghost';
+        btnNo.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.12); font-size: 14px; font-weight: 500;';
+        
+        const btnYes = document.createElement('button');
+        btnYes.textContent = 'Sì';
+        btnYes.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: var(--accent, #2196F3); color: white; border: none; font-size: 14px; font-weight: 500;';
+        
+        rowDiv.appendChild(btnNo);
+        rowDiv.appendChild(btnYes);
+        
+        card.appendChild(msgDiv);
+        card.appendChild(rowDiv);
+        
+        // Handler per "No" - aggiungi tentativo
+        btnNo.onclick = async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
           try {
-            await markLeadContactAnswered(leadId, 'yes');
+            await markLeadContactAnswered(leadId, 'no', null);
+            toast('Tentativo registrato nelle note');
             close();
-          } catch(e) {
-            console.error('Error marking lead contact:', e);
+            loadLeadsData();
+          } catch(err) {
+            console.error('Error marking lead contact:', err);
+            toast('Errore nel salvataggio');
           }
         };
         
-        card.querySelector('[data-act="no"]').onclick = async function(){
-          try {
-            await markLeadContactAnswered(leadId, 'no');
-            close();
-          } catch(e) {
-            console.error('Error marking lead contact:', e);
-          }
+        // Handler per "Sì" - mostra form note
+        btnYes.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Rimuovi i pulsanti
+          rowDiv.remove();
+          
+          // Cambia messaggio
+          msgDiv.innerHTML = `<b>Lead ${htmlEscape(leadName)} contattato!</b><br><small>Aggiungi note sulla telefonata (facoltativo):</small>`;
+          
+          // Aggiungi textarea per note
+          const notesContainer = document.createElement('div');
+          notesContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+          
+          const textarea = document.createElement('textarea');
+          textarea.id = 'lead-call-notes';
+          textarea.placeholder = 'Note sulla chiamata...';
+          textarea.rows = 3;
+          textarea.style.cssText = 'width: 100%; padding: 8px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;';
+          
+          const btnRow = document.createElement('div');
+          btnRow.style.cssText = 'display: flex; gap: 8px; justify-content: flex-end;';
+          
+          const btnSkip = document.createElement('button');
+          btnSkip.textContent = 'Salta';
+          btnSkip.className = 'ghost';
+          btnSkip.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.12); font-size: 14px; font-weight: 500;';
+          
+          const btnSave = document.createElement('button');
+          btnSave.textContent = 'Salva';
+          btnSave.style.cssText = 'padding: 8px 16px; border-radius: 8px; cursor: pointer; background: var(--accent, #2196F3); color: white; border: none; font-size: 14px; font-weight: 500;';
+          
+          btnRow.appendChild(btnSkip);
+          btnRow.appendChild(btnSave);
+          
+          notesContainer.appendChild(textarea);
+          notesContainer.appendChild(btnRow);
+          card.appendChild(notesContainer);
+          
+          // Focus su textarea
+          setTimeout(() => textarea.focus(), 100);
+          
+          // Handler per "Salta" - salva senza note
+          btnSkip.onclick = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              await markLeadContactAnswered(leadId, 'yes', null);
+              toast('Lead marcato come contattato');
+              close();
+              loadLeadsData();
+            } catch(err) {
+              console.error('Error marking lead contact:', err);
+              toast('Errore nel salvataggio');
+            }
+          };
+          
+          // Handler per "Salva" - salva con note
+          btnSave.onclick = async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const notes = textarea.value.trim();
+            try {
+              await markLeadContactAnswered(leadId, 'yes', notes);
+              toast('Lead marcato come contattato con note');
+              close();
+              loadLeadsData();
+            } catch(err) {
+              console.error('Error marking lead contact:', err);
+              toast('Errore nel salvataggio');
+            }
+          };
+          
+          // Handler per Enter (Ctrl+Enter per salvare)
+          textarea.onkeydown = function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+              btnSave.click();
+            }
+          };
         };
         
         return card;
@@ -12322,34 +12416,52 @@ function viewGestioneLead(){
     }
   }
 
-  async function markLeadContactAnswered(leadId, answer) {
+  async function markLeadContactAnswered(leadId, answer, callNotes) {
     try {
       if (answer === 'yes') {
         // Marca come contattato con data di oggi
-        await POST('/api/leads', {
+        const payload = {
           id: leadId,
-          contattoAvvenuto: new Date().toISOString(),
-          contactBannerAnswered: true
-        });
-        toast('Lead marcato come contattato');
+          contatto_avvenuto: new Date().toISOString(),
+          contact_banner_answered: true
+        };
+        
+        // Se ci sono note dalla chiamata, aggiungile
+        if (callNotes && callNotes.trim()) {
+          // Prima recupera il lead per ottenere le note esistenti
+          const response = await GET(`/api/leads?id=${leadId}`);
+          const lead = response.lead;
+          
+          const timestamp = new Date().toLocaleString('it-IT');
+          const existingNotes = lead.note || '';
+          const newNote = existingNotes 
+            ? `${existingNotes}\n\nContatto avvenuto il ${timestamp}:\n${callNotes.trim()}`
+            : `Contatto avvenuto il ${timestamp}:\n${callNotes.trim()}`;
+          
+          payload.note = newNote;
+        }
+        
+        await POST('/api/leads', payload);
       } else {
-        // Aggiungi tentativo alle note
+        // Aggiungi tentativo alle note (recupera note esistenti prima)
+        const response = await GET(`/api/leads?id=${leadId}`);
+        const lead = response.lead;
+        
         const timestamp = new Date().toLocaleString('it-IT');
-        const note = `\nTentativo chiamata il ${timestamp}`;
+        const existingNotes = lead.note || '';
+        const newNote = existingNotes 
+          ? `${existingNotes}\n\nTentativo chiamata il ${timestamp}`
+          : `Tentativo chiamata il ${timestamp}`;
         
         await POST('/api/leads', {
           id: leadId,
-          note: note,
-          contactBannerAnswered: true
+          note: newNote,
+          contact_banner_answered: true
         });
-        toast('Tentativo registrato nelle note');
       }
-      
-      // Ricarica dati
-      loadLeadsData();
     } catch (error) {
       console.error('Error marking lead contact:', error);
-      toast('Errore nel salvataggio');
+      throw error;
     }
   }
 
