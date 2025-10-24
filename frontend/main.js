@@ -10891,13 +10891,25 @@ function calculatePeriod(granularity, date) {
 
 // Esponi le funzioni globalmente
 window.calculatePeriod = calculatePeriod;
+window.formatPeriodLabel = formatPeriodLabel;
 
 // Funzioni per gestione periodo lead
 function updateLeadPeriodDisplay() {
   const { from, to } = calculatePeriod(window.currentGranularity || 'annuale', window.currentPeriod || new Date());
   const periodLabel = formatPeriodLabel(window.currentGranularity || 'annuale', window.currentPeriod || new Date());
   
-  // Aggiorna label periodo se presente
+  // Aggiorna label periodo per Gestione Lead
+  const leadPeriodSpan = document.getElementById('lead-current-period');
+  if (leadPeriodSpan) {
+    leadPeriodSpan.textContent = periodLabel;
+  }
+  
+  const contactPeriodSpan = document.getElementById('contact-current-period');
+  if (contactPeriodSpan) {
+    contactPeriodSpan.textContent = periodLabel;
+  }
+  
+  // Aggiorna anche gli elementi con classe period-label (per compatibilità)
   const periodLabels = document.querySelectorAll('.period-label');
   periodLabels.forEach(label => {
     label.textContent = periodLabel;
@@ -10954,7 +10966,7 @@ function viewGestioneLead(){
 
   // Stato per granularità e periodo
   let currentGranularity = 'annuale'; // Default annuale invece di mensile
-  let currentPeriod = new Date(); // Anno attuale
+  let currentPeriod = new Date(new Date().getFullYear(), 0, 1); // Inizio anno corrente per granularità annuale
   let currentConsultant = '';
   let showWithoutConsultant = true; // Default selezionato
   let showToContact = true; // Default selezionato
@@ -12898,6 +12910,40 @@ Comune: ${lead.comune || 'N/A'}
         e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
         e.target.id === 'lead-without-consultant' || e.target.id === 'lead-to-contact') {
       if (typeof haptic === 'function') haptic('light');
+      
+      // Se cambia la granularità, aggiorna il periodo corrente
+      if (e.target.id === 'lead-granularity') {
+        currentGranularity = e.target.value;
+        window.currentGranularity = currentGranularity;
+        
+        // Imposta il periodo iniziale basato sulla granularità
+        const now = new Date();
+        switch (currentGranularity) {
+          case 'giornaliera':
+            currentPeriod = now;
+            break;
+          case 'settimanale':
+            currentPeriod = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+            break;
+          case 'mensile':
+            currentPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'trimestrale':
+            const quarter = Math.floor(now.getMonth() / 3);
+            currentPeriod = new Date(now.getFullYear(), quarter * 3, 1);
+            break;
+          case 'semestrale':
+            const semester = Math.floor(now.getMonth() / 6);
+            currentPeriod = new Date(now.getFullYear(), semester * 6, 1);
+            break;
+          case 'annuale':
+            currentPeriod = new Date(now.getFullYear(), 0, 1);
+            break;
+        }
+        window.currentPeriod = currentPeriod;
+        updateLeadPeriodDisplay();
+      }
+      
       loadLeadsData();
     }
   });
