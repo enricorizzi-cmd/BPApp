@@ -101,15 +101,28 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
             *,
             app_users!leads_consulente_assegnato_fkey(name, email)
           `)
-          .order('createdat', { ascending: false });
+          .order('data_inserimento', { ascending: false });
         
-        // Filtri per utente
+        // Filtri per consulente
         const consultantFilter = req.query.consultant;
+        const withoutConsultant = req.query.withoutConsultant === 'true';
+        const toContact = req.query.toContact === 'true';
+        
         if (consultantFilter && consultantFilter !== '') {
           query = query.eq('consulente_assegnato', consultantFilter);
         } else if (!isAdmin) {
           // Utente normale - solo i propri lead assegnati
           query = query.eq('consulente_assegnato', req.user.id);
+        }
+        
+        // Filtro per lead senza consulente assegnato
+        if (withoutConsultant) {
+          query = query.is('consulente_assegnato', null);
+        }
+        
+        // Filtro per lead da contattare
+        if (toContact) {
+          query = query.is('contatto_avvenuto', null);
         }
         
         // Filtro per periodo se specificato

@@ -10894,8 +10894,8 @@ window.calculatePeriod = calculatePeriod;
 
 // Funzioni per gestione periodo lead
 function updateLeadPeriodDisplay() {
-  const { from, to } = calculatePeriod(window.currentGranularity || 'mensile', window.currentPeriod || new Date());
-  const periodLabel = formatPeriodLabel(window.currentGranularity || 'mensile', window.currentPeriod || new Date());
+  const { from, to } = calculatePeriod(window.currentGranularity || 'annuale', window.currentPeriod || new Date());
+  const periodLabel = formatPeriodLabel(window.currentGranularity || 'annuale', window.currentPeriod || new Date());
   
   // Aggiorna label periodo se presente
   const periodLabels = document.querySelectorAll('.period-label');
@@ -10905,7 +10905,7 @@ function updateLeadPeriodDisplay() {
 }
 
 function shiftLeadPeriod(direction) {
-  const granularity = window.currentGranularity || 'mensile';
+  const granularity = window.currentGranularity || 'annuale';
   let newDate = new Date(window.currentPeriod || new Date());
   
   switch (granularity) {
@@ -10953,8 +10953,11 @@ function viewGestioneLead(){
   let currentLeadsData = [];
 
   // Stato per granularità e periodo
-  let currentGranularity = 'mensile';
-  let currentPeriod = new Date(); // Periodo corrente
+  let currentGranularity = 'annuale'; // Default annuale invece di mensile
+  let currentPeriod = new Date(); // Anno attuale
+  let currentConsultant = '';
+  let showWithoutConsultant = true; // Default selezionato
+  let showToContact = true; // Default selezionato
   
   // Aggiorna le variabili globali
   window.currentGranularity = currentGranularity;
@@ -11080,6 +11083,28 @@ function viewGestioneLead(){
         box-shadow: 0 0 0 3px rgba(93,211,255,.1);
         background: rgba(255,255,255,.08);
         outline: none;
+      }
+      
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: var(--text);
+        cursor: pointer;
+      }
+      
+      .checkbox-label input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--accent);
+        cursor: pointer;
       }
       
       .leads-table-container {
@@ -11577,10 +11602,10 @@ function viewGestioneLead(){
           <select id="lead-granularity">
             <option value="giornaliera">Giornaliera</option>
             <option value="settimanale">Settimanale</option>
-            <option value="mensile" selected>Mensile</option>
+            <option value="mensile">Mensile</option>
             <option value="trimestrale">Trimestrale</option>
             <option value="semestrale">Semestrale</option>
-            <option value="annuale">Annuale</option>
+            <option value="annuale" selected>Annuale</option>
           </select>
         </div>
         
@@ -11598,6 +11623,17 @@ function viewGestioneLead(){
           <select id="lead-consultant">
             <option value="">Tutti</option>
           </select>
+        </div>
+        
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="lead-without-consultant" checked>
+            Senza consulente assegnato
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="lead-to-contact" checked>
+            Da contattare
+          </label>
         </div>
         
         <div style="margin-left: auto;">
@@ -11818,6 +11854,8 @@ function viewGestioneLead(){
 
       const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = document.getElementById('lead-consultant')?.value || '';
+      const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
+      const showToContact = document.getElementById('lead-to-contact')?.checked || false;
       
       // Aggiorna granularità corrente
       currentGranularity = granularity;
@@ -11831,6 +11869,8 @@ function viewGestioneLead(){
       if (granularity) params.append('period', granularity);
       params.append('from', from);
       params.append('to', to);
+      if (showWithoutConsultant) params.append('withoutConsultant', 'true');
+      if (showToContact) params.append('toContact', 'true');
       
       const response = await GET(`/api/leads?${params.toString()}`);
       const leads = response.leads || [];
@@ -11863,6 +11903,8 @@ function viewGestioneLead(){
       }
 
       const consultant = document.getElementById('contact-consultant')?.value || '';
+      const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
+      const showToContact = document.getElementById('lead-to-contact')?.checked || false;
       
       // ECCEZIONE: Lead da Contattare non segue filtri periodo/granularità
       // Mostra sempre tutti i lead da contattare del consulente selezionato
@@ -11870,6 +11912,8 @@ function viewGestioneLead(){
       // Costruisci query parameters (solo consulente)
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
+      if (showWithoutConsultant) params.append('withoutConsultant', 'true');
+      if (showToContact) params.append('toContact', 'true');
       // NON aggiungere filtri periodo per questa sezione
       
       const response = await GET(`/api/leads?${params.toString()}`);
@@ -12815,7 +12859,8 @@ Comune: ${lead.comune || 'N/A'}
   // Event listeners per cambio filtri
   document.addEventListener('change', (e) => {
     if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
-        e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant') {
+        e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
+        e.target.id === 'lead-without-consultant' || e.target.id === 'lead-to-contact') {
       if (typeof haptic === 'function') haptic('light');
       loadLeadsData();
     }
