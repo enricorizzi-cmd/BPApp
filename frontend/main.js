@@ -2478,26 +2478,27 @@ function viewCalendar(){
               // Piccolo delay per assicurarsi che la sezione sia caricata
               setTimeout(() => {
                 // Pre-compila data con la data selezionata, ora di default 09:00
-                var dateParts = selectedDate.split('-');
-                var prefilledDate = dateParts[0] + '-' + dateParts[1] + '-' + dateParts[2] + 'T09:00';
                 var startInput = document.getElementById('a_start');
-                if(startInput){
-                  // Converti la data locale in formato input datetime-local
-                  var localDate = new Date(selectedDate + 'T00:00:00');
-                  var localYear = localDate.getFullYear();
-                  var localMonth = String(localDate.getMonth() + 1).padStart(2, '0');
-                  var localDay = String(localDate.getDate()).padStart(2, '0');
-                  var prefilledDateTime = localYear + '-' + localMonth + '-' + localDay + 'T09:00';
+                var durInput = document.getElementById('a_dur');
+                if(startInput && durInput){
+                  // Format data: YYYY-MM-DDTHH:MM
+                  var prefilledDateTime = selectedDate + 'T09:00';
                   startInput.value = prefilledDateTime;
                   
-                  // Triggera l'evento change per calcolare la fine automatica
-                  if(typeof setDur === 'function'){
-                    var defDur = defDurByType(document.getElementById('a_type').value || 'vendita');
-                    setDur(defDur);
+                  // Calcola durata di default (90 min per vendita)
+                  var typeInput = document.getElementById('a_type');
+                  var defDur = defDurByType(typeInput ? typeInput.value : 'vendita');
+                  
+                  // Imposta durata
+                  durInput.value = String(defDur);
+                  
+                  // Triggera il cambio durata per calcolare la fine automatica
+                  if(typeof updateEndFromDur === 'function'){
+                    updateEndFromDur();
                   }
                 }
                 window.scrollTo({top: 0, behavior: 'smooth'});
-              }, 100);
+              }, 200);
             });
           }
 
@@ -4424,7 +4425,8 @@ function viewAppointments(){
   segSotto= document.getElementById('t_sotto');
   segRiunione = document.getElementById('t_riunione');
   segImpegni = document.getElementById('t_impegni');
-  allSegs = [segSale, segHalf, segIProfile, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
+  // Filtra eventuali elementi null (se iProfile non esiste ancora)
+  allSegs = [segSale, segHalf, segIProfile, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni].filter(Boolean);
   function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
@@ -4460,7 +4462,7 @@ function viewAppointments(){
 
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
     else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
-    else if(btn===segIProfile){ typeHidden.value='iProfile'; setDur(90); document.getElementById('a_vsd').value='700'; }
+    else if(btn===segIProfile && segIProfile){ typeHidden.value='iProfile'; setDur(90); document.getElementById('a_vsd').value='700'; }
     else if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
     else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientDisplay.value='Formazione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
     else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientDisplay.value='MBS'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
@@ -4889,7 +4891,7 @@ function fillForm(a){
     var t = String(a.type||'vendita').toLowerCase();
     try {
       if(t.indexOf('mezza')>-1) selectSeg(segHalf);
-      else if(t.indexOf('iprofile')>-1) selectSeg(segIProfile);
+      else if(t.indexOf('iprofile')>-1 && segIProfile) selectSeg(segIProfile);
       else if(t.indexOf('giorn')>-1) selectSeg(segFull);
       else if(t.indexOf('formaz')>-1) selectSeg(segForm);
       else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
