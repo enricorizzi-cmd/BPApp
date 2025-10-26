@@ -575,6 +575,32 @@ app.post("/api/reset-password", rateLimit({ windowMs: 2*60*1000, max: 5 }), asyn
 });
 // ---------- Users ----------
 app.get("/api/users", auth, requirePermission("users:read"), async (req,res)=>{
+  // Prova prima Supabase per dati aggiornati
+  if (typeof supabase !== 'undefined' && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('app_users')
+        .select('id, name, email, role, grade, permissions, createdat')
+        .order('name', { ascending: true });
+      
+      if (!error && data) {
+        const users = data.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          grade: u.grade,
+          permissions: u.permissions || [],
+          createdAt: u.createdat
+        }));
+        return res.json({ users });
+      }
+    } catch (error) {
+      console.error('[Users] Supabase query error:', error);
+    }
+  }
+  
+  // Fallback al metodo tradizionale
   const db = await readJSON("users.json");
   const users = (db.users||[]).map(u => ({
     id:u.id, name:u.name, email:u.email, role:u.role, grade:u.grade, permissions:u.permissions||[], createdAt:u.createdAt
