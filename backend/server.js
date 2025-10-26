@@ -1062,15 +1062,13 @@ app.get("/api/periods", auth, async (req,res)=>{
   const isAdmin = req.user.role === "admin";
   let rows = (db.periods || []);
   
-  // Logica corretta per il filtro utente
+  // SICUREZZA: Ogni utente vede SOLO i propri BP, anche gli admin
+  // NON usare mai global=1 per i periodi per evitare che gli utenti vedano BP di altri
   if (isAdmin && userQ) {
     // Admin può specificare un utente specifico
     rows = rows.filter(p => String(p.userId) === String(userQ));
-  } else if (isAdmin && (global === "1" || !userQ)) {
-    // Admin con global=1 O senza userQ (Tutti) vede tutti i periodi
-    // rows rimane invariato
   } else {
-    // Non-admin vede solo i propri dati
+    // SEMPRE filtra per userId dell'utente loggato, anche admin
     rows = rows.filter(p => String(p.userId) === String(req.user.id));
   }
 

@@ -3374,6 +3374,13 @@ function viewPeriods(){
     var now=new Date(), dow=now.getDay();
     // NUOVA LOGICA: finestra BP da inviare dal VENERDÌ al LUNEDÌ inclusi (venerdì=5, sabato=6, domenica=0, lunedì=1)
     var bpWindow=(dow===5||dow===6||dow===0||dow===1);
+    // IMPORTANTE: Se è lunedì (dow===1), consideralo ancora parte della settimana PRECEDENTE per mostrare i BP corretti
+    var nowForBounds = now;
+    if(dow===1){
+      // Se è lunedì, usa domenica come riferimento per calcolare i bounds (settimana precedente)
+      nowForBounds = new Date(now);
+      nowForBounds.setDate(nowForBounds.getDate() - 1);
+    }
     var eom=endOfMonth(now), eoq=endOfQuarter(now), eos=endOfSemester(now), eoy=endOfYear(now);
     var monthWindow=bpWindow && isEndWindowFor(eom),
         quarterWindow=bpWindow && isEndWindowFor(eoq),
@@ -3417,11 +3424,11 @@ function viewPeriods(){
       }
     }
 
-    if(bpWindow){ var curW=currentBounds('settimanale',now), nxtW=nextBounds('settimanale',now); pushPrevOrCompile('settimanale',curW,nxtW); }
-    if(monthWindow){ var curM=currentBounds('mensile',now), nxtM=nextBounds('mensile',now); pushPrevOrCompile('mensile',curM,nxtM); }
-    if(quarterWindow){ var curQ=currentBounds('trimestrale',now), nxtQ=nextBounds('trimestrale',now); pushPrevOrCompile('trimestrale',curQ,nxtQ); }
-    if(semWindow){ var curS=currentBounds('semestrale',now), nxtS=nextBounds('semestrale',now); pushPrevOrCompile('semestrale',curS,nxtS); }
-    if(yearWindow){ var curY=currentBounds('annuale',now), nxtY=nextBounds('annuale',now); pushPrevOrCompile('annuale',curY,nxtY); }
+    if(bpWindow){ var curW=currentBounds('settimanale',nowForBounds), nxtW=nextBounds('settimanale',nowForBounds); pushPrevOrCompile('settimanale',curW,nxtW); }
+    if(monthWindow){ var curM=currentBounds('mensile',nowForBounds), nxtM=nextBounds('mensile',nowForBounds); pushPrevOrCompile('mensile',curM,nxtM); }
+    if(quarterWindow){ var curQ=currentBounds('trimestrale',nowForBounds), nxtQ=nextBounds('trimestrale',nowForBounds); pushPrevOrCompile('trimestrale',curQ,nxtQ); }
+    if(semWindow){ var curS=currentBounds('semestrale',nowForBounds), nxtS=nextBounds('semestrale',nowForBounds); pushPrevOrCompile('semestrale',curS,nxtS); }
+    if(yearWindow){ var curY=currentBounds('annuale',nowForBounds), nxtY=nextBounds('annuale',nowForBounds); pushPrevOrCompile('annuale',curY,nxtY); }
 
     if(!contSend.children.length){ contSend.innerHTML='<div class="muted">Nessun suggerimento attivo in questo momento</div>'; }
 
