@@ -1995,7 +1995,14 @@ function viewCalendar(){
       baseGI += '&global=1';
     }
     else if(consultant && consultant!==getUser().id){ 
+      // Mostra dati di un altro consulente
       baseApps += '?user='+consultant; 
+      baseAvail += '&user='+consultant;
+      baseGI += '&user='+consultant;
+    }
+    else if(consultant === getUser().id && getUser().role === 'admin') {
+      // Admin vedono i propri dati (specifico user per sicurezza)
+      baseApps += '?user='+consultant;
       baseAvail += '&user='+consultant;
       baseGI += '&user='+consultant;
     }
@@ -2073,6 +2080,12 @@ function viewCalendar(){
         weekEnd.setHours(23, 59, 59, 999);
         
         return calculateGIForPeriod(weekStart, weekEnd);
+      }
+      
+      // Funzione helper per verificare se una data è venerdì
+      function isFriday(dateStr) {
+        var d = new Date(dateStr);
+        return d.getDay() === 5; // 5 = venerdì
       }
       function showResultsBox(tot, label, weekly){
         var host = document.getElementById('cal_results'); if(!host) return;
@@ -2161,21 +2174,6 @@ function viewCalendar(){
         map[key].gi = calculateGIForPeriod(dayStart, dayEnd);
       }
       
-      // Calcola GI settimanale per i venerdì
-      var fridayMap = {};
-      for(var key in map) {
-        var dayDate = new Date(key);
-        var dayOfWeek = dayDate.getDay(); // 0=domenica, 5=venerdì
-        
-        if(dayOfWeek === 5) { // Venerdì
-          var weekStart = new Date(dayDate);
-          weekStart.setDate(weekStart.getDate() - 4); // Lunedì della settimana
-          weekStart.setHours(0, 0, 0, 0);
-          
-          fridayMap[key] = calculateGIForWeek(weekStart);
-        }
-      }
-
       var dayNames=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
       var monthLabel = new Date(y, m-1, 1).toLocaleString('it-IT',{month:'long', year:'numeric'});
       var grid = '<div class="card"><b class="neon">'+monthLabel+'</b></div>';
@@ -2187,6 +2185,27 @@ function viewCalendar(){
       var firstDate = new Date(y, m-1, 1);
       var firstDow = (firstDate.getDay()+6)%7;  // lun=0
       var d = new Date(firstDate); d.setDate(firstDate.getDate()-firstDow);
+      
+      // Calcola GI settimanale per TUTTI i venerdì nella griglia (6 settimane)
+      var fridayMap = {};
+      var gridStart = new Date(d);
+      var gridEnd = new Date(d);
+      gridEnd.setDate(gridEnd.getDate() + (6 * 7 - 1)); // 6 settimane
+      
+      var tempDate = new Date(gridStart);
+      while(tempDate <= gridEnd) {
+        var key = ymd(tempDate);
+        var dayOfWeek = tempDate.getDay(); // 0=domenica, 5=venerdì
+        
+        if(dayOfWeek === 5) { // Venerdì
+          var weekStart = new Date(tempDate);
+          weekStart.setDate(weekStart.getDate() - 4); // Lunedì della settimana
+          weekStart.setHours(0, 0, 0, 0);
+          
+          fridayMap[key] = calculateGIForWeek(weekStart);
+        }
+        tempDate.setDate(tempDate.getDate() + 1);
+      }
 
       for(var wk=0; wk<6; wk++){
         // etichetta settimana cliccabile con data (lunedì) della riga
@@ -2236,7 +2255,7 @@ function viewCalendar(){
               if(v.count>0){lines += '<div class="small">App. '+fmtInt(v.count)+'</div>'; nLines++; }
               
               // Mostra GI solo nei venerdì con valore settimanale
-              if(dow === 5 && fridayMap[key] > 0) { // Venerdì con GI
+              if(dow === 5 && fridayMap[key] !== undefined && fridayMap[key] > 0) { // Venerdì con GI
                 lines += '<div class="small" style="color: var(--accent); font-weight: 600;">GI '+fmtEuro(fridayMap[key])+'</div>'; 
                 nLines++; 
               }
