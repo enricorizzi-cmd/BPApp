@@ -3371,12 +3371,14 @@ function viewPeriods(){
     var contSend=document.getElementById('bp_to_send'), contSent=document.getElementById('bp_sent');
     contSend.innerHTML=''; contSent.innerHTML='';
     function findBP(tp,s,e){ return periods.find(function(p){return p.type===tp && ymd(p.startDate)===ymd(s) && ymd(p.endDate)===ymd(e);}); }
-    var now=new Date(), dow=now.getDay(), weekendWindow=(dow===5||dow===6||dow===0);
+    var now=new Date(), dow=now.getDay();
+    // NUOVA LOGICA: finestra BP da inviare dal VENERDÌ al LUNEDÌ inclusi (venerdì=5, sabato=6, domenica=0, lunedì=1)
+    var bpWindow=(dow===5||dow===6||dow===0||dow===1);
     var eom=endOfMonth(now), eoq=endOfQuarter(now), eos=endOfSemester(now), eoy=endOfYear(now);
-    var monthWindow=weekendWindow && isEndWindowFor(eom),
-        quarterWindow=weekendWindow && isEndWindowFor(eoq),
-        semWindow=weekendWindow && isEndWindowFor(eos),
-        yearWindow=weekendWindow && isEndWindowFor(eoy);
+    var monthWindow=bpWindow && isEndWindowFor(eom),
+        quarterWindow=bpWindow && isEndWindowFor(eoq),
+        semWindow=bpWindow && isEndWindowFor(eos),
+        yearWindow=bpWindow && isEndWindowFor(eoy);
 
     ['settimanale','mensile','trimestrale','semestrale','annuale'].forEach(function(tp){
       var cur=currentBounds(tp,now), bp=findBP(tp,cur.start,cur.end);
@@ -3415,7 +3417,7 @@ function viewPeriods(){
       }
     }
 
-    if(weekendWindow){ var curW=currentBounds('settimanale',now), nxtW=nextBounds('settimanale',now); pushPrevOrCompile('settimanale',curW,nxtW); }
+    if(bpWindow){ var curW=currentBounds('settimanale',now), nxtW=nextBounds('settimanale',now); pushPrevOrCompile('settimanale',curW,nxtW); }
     if(monthWindow){ var curM=currentBounds('mensile',now), nxtM=nextBounds('mensile',now); pushPrevOrCompile('mensile',curM,nxtM); }
     if(quarterWindow){ var curQ=currentBounds('trimestrale',now), nxtQ=nextBounds('trimestrale',now); pushPrevOrCompile('trimestrale',curQ,nxtQ); }
     if(semWindow){ var curS=currentBounds('semestrale',now), nxtS=nextBounds('semestrale',now); pushPrevOrCompile('semestrale',curS,nxtS); }
