@@ -2010,17 +2010,87 @@ function viewCalendar(){
     Promise.all([
       GET(baseApps),
       GET(baseAvail),
-      GET(baseGI)
+      GET(baseGI),
+      GET('/api/users'),
+      GET('/api/settings')
     ])
     .then(function(arr){
       var apps  = (arr[0] && arr[0].appointments) ? arr[0].appointments : [];
       var avAll = arr[1]||{slots:[],summary:{total:0,mondays:0,others:0}};
       var slots = avAll.slots||[];
       var giData = (arr[2] && arr[2].sales) ? arr[2].sales : [];
+      var usersData = (arr[3] && arr[3].users) ? arr[3].users : [];
+      var settings = arr[4] || { commissions: {} };
 
       var from = new Date(y, m-1, 1);
       var to   = new Date(y, m, 0, 23,59,59,999);
 
+      // Funzione helper per calcolare provvigioni
+      function calculateProvvigioni(vsd, gi, consultantId, appsData, periodStart, periodEnd){
+        // Se "tutti" i consulenti, somma le provvigioni calcolate per ciascuno
+        if(consultantId === 'all'){
+          var totalProvvigioni = 0;
+          var consultantTotals = {}; // { userId: {vsd, gi} }
+          
+          // Raggruppa VSD e GI per consulente
+          for(var i = 0; i < appsData.length; i++){
+            var app = appsData[i];
+            var userId = app.userId || app.user?.id;
+            if(!userId) continue;
+            
+            if(!consultantTotals[userId]) consultantTotals[userId] = {vsd: 0, gi: 0};
+            consultantTotals[userId].vsd += Number(app.vsdPersonal || 0);
+          }
+          
+          // Calcola GI per consulente dalle vendite
+          var giPerConsulente = {};
+          for(var i = 0; i < giData.length; i++){
+            var sale = giData[i];
+            var userId = sale.consultantId;
+            if(!userId) continue;
+            if(!giPerConsulente[userId]) giPerConsulente[userId] = 0;
+            
+            // Conta solo le rate in scadenza nel periodo
+            if(sale.schedule && Array.isArray(sale.schedule)){
+              for(var j = 0; j < sale.schedule.length; j++){
+                var payment = sale.schedule[j];
+                if(!payment.dueDate) continue;
+                var paymentDate = new Date(payment.dueDate);
+                if(paymentDate >= periodStart && paymentDate <= periodEnd){
+                  giPerConsulente[userId] += Number(payment.amount || 0);
+                }
+              }
+            }
+          }
+          
+          // Calcola provvigioni per ogni consulente
+          for(var userId in consultantTotals){
+            var user = usersData.find(function(u){ return String(u.id) === String(userId); });
+            var grade = (user && user.grade || 'junior').toLowerCase();
+            var rateGi = Number(settings.commissions?.gi || 0.15);
+            var rateVsd = (grade === 'senior') ? Number(settings.commissions?.vsdSenior || 0.25) : Number(settings.commissions?.vsdJunior || 0.20);
+            
+            var consVsd = consultantTotals[userId].vsd;
+            var consGi = giPerConsulente[userId] || 0;
+            
+            totalProvvigioni += (consVsd * rateVsd) + (consGi * rateGi);
+          }
+          
+          return totalProvvigioni;
+        }
+        
+        // Per consulente specifico
+        var targetUser = usersData.find(function(u){ return String(u.id) === String(consultantId); }) || getUser();
+        var grade = (targetUser.grade || 'junior').toLowerCase();
+        var rateGi = Number(settings.commissions?.gi || 0.15);
+        var rateVsd = (grade === 'senior') ? Number(settings.commissions?.vsdSenior || 0.25) : Number(settings.commissions?.vsdJunior || 0.20);
+        
+        var provvGi = gi * rateGi;
+        var provvVsd = vsd * rateVsd;
+        
+        return provvGi + provvVsd;
+      }
+      
       // --- util risultati ---
       function sumInRange(s, e){
         var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0, gi:0};
@@ -2045,6 +2115,9 @@ function viewCalendar(){
         
         // Calcola GI per il periodo
         out.gi = calculateGIForPeriod(s, e);
+        
+        // Calcola provvigioni totali
+        out.provvigioni = calculateProvvigioni(out.vsd, out.gi, consultant, apps, s, e);
         
         return out;
       }
@@ -2126,6 +2199,10 @@ function viewCalendar(){
             '<div class="cal-result-pill">'+
               '<div class="cal-result-label">GI</div>'+
               '<div class="cal-result-value">'+fmtEuro(tot.gi)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">Provvigioni</div>'+
+              '<div class="cal-result-value">'+fmtEuro(tot.provvigioni || 0)+'</div>'+
             '</div>'+
           '</div>';
         host.style.display='block';
