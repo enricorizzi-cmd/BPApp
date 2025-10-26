@@ -2377,6 +2377,11 @@ function viewCalendar(){
           items.sort(function(a,b){ return BPTimezone.parseUTCString(a.start)-BPTimezone.parseUTCString(b.start); });
           var box = document.getElementById('cal_day_box');
           var h='<b>Appuntamenti del '+dateStr.split('-').reverse().join('/')+'</b>';
+          // Bottone aggiungi appuntamento inline
+          h += '<div style="margin-top:8px;margin-bottom:8px">'+
+               '<button id="cal_add_appt_btn" class="button" data-date="'+dateStr+'">➕ Aggiungi appuntamento</button>'+
+               '</div>';
+          
           if(!items.length){ h += '<div class="muted" style="margin-top:6px">Nessun appuntamento</div>'; }
           else{
             h += '<div class="row" style="margin-top:8px">';
@@ -3550,6 +3555,8 @@ function viewAppointments(){
   if(!getUser()) return viewLogin();
   document.title = 'Battle Plan – Appuntamenti';
   setActiveSidebarItem('viewAppointments');
+  // Fix scroll: sempre posizionarsi in alto
+  window.scrollTo({top: 0, behavior: 'instant'});
 
   // Add modern Appointments CSS
   if(!document.getElementById('appts_css')){
@@ -4113,6 +4120,7 @@ function viewAppointments(){
             '<div>'+
               '<button type="button" id="t_vendita" class="seg">Vendita</button>'+
               '<button type="button" id="t_mezza"   class="seg" data-vsd="1000">Mezza giornata</button>'+
+              '<button type="button" id="t_iprofile" class="seg" data-vsd="700" data-duration="90">iProfile</button>'+
               '<button type="button" id="t_full"    class="seg" data-vsd="2000">Giornata intera</button>'+
               '<button type="button" id="t_form"    class="seg">Formazione</button>'+
               '<button type="button" id="t_mbs"     class="seg">MBS</button>'+
@@ -4370,13 +4378,14 @@ function viewAppointments(){
   // --------- segment buttons ----------
   segSale = document.getElementById('t_vendita');
   segHalf = document.getElementById('t_mezza');
+  segIProfile = document.getElementById('t_iprofile');
   segFull = document.getElementById('t_full');
   segForm = document.getElementById('t_form');
   segMbs  = document.getElementById('t_mbs');
   segSotto= document.getElementById('t_sotto');
   segRiunione = document.getElementById('t_riunione');
   segImpegni = document.getElementById('t_impegni');
-  allSegs = [segSale, segHalf, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
+  allSegs = [segSale, segHalf, segIProfile, segFull, segForm, segMbs, segSotto, segRiunione, segImpegni];
   function selectSeg(btn, keepNncf=false){
     allSegs.forEach(b=>b.classList.toggle('active', b===btn));
     const typeHidden = document.getElementById('a_type');
@@ -4412,6 +4421,7 @@ function viewAppointments(){
 
     if(btn===segSale){ typeHidden.value='vendita'; setDur(90); }
     else if(btn===segHalf){ typeHidden.value='mezza';   setDur(240); document.getElementById('a_vsd').value='1000'; }
+    else if(btn===segIProfile){ typeHidden.value='iProfile'; setDur(90); document.getElementById('a_vsd').value='700'; }
     else if(btn===segFull){ typeHidden.value='giornata';setDur(570); document.getElementById('a_vsd').value='2000'; }
     else if(btn===segForm){ typeHidden.value='formazione'; setDur(570); clientDisplay.value='Formazione'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; nncfBtn.style.display='none'; }
     else if(btn===segMbs){ typeHidden.value='MBS'; setDur(570); clientDisplay.value='MBS'; clientDisplay.disabled=true; rowVss.style.display='none'; rowVsdP.style.display='none'; rowVsdI.style.display=''; document.getElementById('a_vsd_i').value='2000'; nncfBtn.style.display='none'; }
@@ -4814,6 +4824,7 @@ function isoToLocalInput(iso){
 }
 function defDurByType(t){
   t = String(t||'').toLowerCase();
+  if(t.indexOf('iprofile')>-1) return 90; // iProfile: 90 minuti
   if(t.indexOf('mezza')>-1) return 240;
   if(t.indexOf('giorn')>-1) return 570;
   if(t.indexOf('formaz')>-1) return 570;
@@ -4839,6 +4850,7 @@ function fillForm(a){
     var t = String(a.type||'vendita').toLowerCase();
     try {
       if(t.indexOf('mezza')>-1) selectSeg(segHalf);
+      else if(t.indexOf('iprofile')>-1) selectSeg(segIProfile);
       else if(t.indexOf('giorn')>-1) selectSeg(segFull);
       else if(t.indexOf('formaz')>-1) selectSeg(segForm);
       else if(t.indexOf('mbs')>-1) selectSeg(segMbs);
