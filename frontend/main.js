@@ -2461,6 +2461,45 @@ function viewCalendar(){
               viewAppointments(); toast('Slot precompilato negli appuntamenti');
             });
           });
+          
+          // Handler bottone aggiungi appuntamento inline
+          var addBtn = box.querySelector('#cal_add_appt_btn');
+          if(addBtn){
+            addBtn.addEventListener('click', function(ev){
+              ev.stopPropagation();
+              var selectedDate = addBtn.getAttribute('data-date');
+              
+              // Salva la data selezionata per prefill
+              save('bp_prefill_cal_date', { date: selectedDate });
+              
+              // Naviga alla scheda appuntamenti con prefill
+              viewAppointments();
+              
+              // Piccolo delay per assicurarsi che la sezione sia caricata
+              setTimeout(() => {
+                // Pre-compila data con la data selezionata, ora di default 09:00
+                var dateParts = selectedDate.split('-');
+                var prefilledDate = dateParts[0] + '-' + dateParts[1] + '-' + dateParts[2] + 'T09:00';
+                var startInput = document.getElementById('a_start');
+                if(startInput){
+                  // Converti la data locale in formato input datetime-local
+                  var localDate = new Date(selectedDate + 'T00:00:00');
+                  var localYear = localDate.getFullYear();
+                  var localMonth = String(localDate.getMonth() + 1).padStart(2, '0');
+                  var localDay = String(localDate.getDate()).padStart(2, '0');
+                  var prefilledDateTime = localYear + '-' + localMonth + '-' + localDay + 'T09:00';
+                  startInput.value = prefilledDateTime;
+                  
+                  // Triggera l'evento change per calcolare la fine automatica
+                  if(typeof setDur === 'function'){
+                    var defDur = defDurByType(document.getElementById('a_type').value || 'vendita');
+                    setDur(defDur);
+                  }
+                }
+                window.scrollTo({top: 0, behavior: 'smooth'});
+              }, 100);
+            });
+          }
 
           window.scrollTo({top: box.getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth'});
           if (typeof window.wireICSInsideDayBox === 'function') { try{ window.wireICSInsideDayBox(); }catch(_){ } }
