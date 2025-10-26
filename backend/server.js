@@ -1545,8 +1545,43 @@ app.get("/api/gi", auth, async (req,res)=>{
   const { from, to, userId, global, user } = req.query || {};
   const isAdmin = (req.user.role === "admin");
 
-  const db = await readJSON("gi.json");
-  let rows = (db.sales||[]);
+  let rows = [];
+  
+  // Prova prima Supabase per dati aggiornati
+  if (typeof supabase !== 'undefined' && supabase) {
+    try {
+      let query = supabase
+        .from('gi')
+        .select('id, data, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule')
+        .order('date', { ascending: false });
+      
+      const { data, error } = await query;
+      
+      if (!error && data) {
+        rows = data.map(r => ({
+          id: r.id,
+          date: r.data,
+          createdAt: r.data,
+          appointmentId: null,
+          clientId: r.clientid || '',
+          clientName: r.clientname || '',
+          consultantId: r.consultantid || '',
+          consultantName: r.consultantname || '',
+          services: r.services || '',
+          vssTotal: Number(r.vsstotal || 0),
+          schedule: r.schedule || []
+        }));
+      }
+    } catch (error) {
+      console.error('[GI] Supabase query error:', error);
+    }
+  }
+  
+  // Fallback al metodo tradizionale
+  if (rows.length === 0) {
+    const db = await readJSON("gi.json");
+    rows = db.sales || [];
+  }
 
   // visibilità - supporta sia userId che user per compatibilità
   const targetUserId = userId || user;
@@ -1561,12 +1596,20 @@ app.get("/api/gi", auth, async (req,res)=>{
   }
 
   // filtro data (se passato)
+  // IMPORTANTE: Filtra per date di scadenza (dueDate) nello schedule,
+  // NON per la data di creazione della vendita
   if(from || to){
     const fs = from ? new Date(from).getTime() : -Infinity;
     const te = to   ? new Date(to).getTime()   : +Infinity;
     rows = rows.filter(r => {
-      const t = new Date(r.date || r.createdAt || Date.now()).getTime();
-      return t >= fs && t <= te;
+      // Verifica se questa vendita ha rate con scadenza nel periodo richiesto
+      const schedule = r.schedule || [];
+      const hasMatchingSchedule = schedule.some(payment => {
+        if (!payment.dueDate) return false;
+        const dueDate = new Date(payment.dueDate).getTime();
+        return dueDate >= fs && dueDate <= te;
+      });
+      return hasMatchingSchedule;
     });
   }
 
