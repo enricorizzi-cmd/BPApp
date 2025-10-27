@@ -3687,12 +3687,14 @@ function showInlineApptForm(dateStr){
     if(!formWrap) return;
     
     // Setup form fields
-    if(dateStr){
-      document.getElementById('modal_a_start').value = dateStr + 'T09:00';
+    const startInput = document.getElementById('modal_a_start');
+    const durInput = document.getElementById('modal_a_dur');
+    
+    if(startInput && dateStr){
+      startInput.value = dateStr + 'T09:00';
     }
     
     // Imposta durata default
-    const durInput = document.getElementById('modal_a_dur');
     if(durInput){
       durInput.value = '90';
     }
@@ -3748,8 +3750,6 @@ function showInlineApptForm(dateStr){
     });
     
     // Trigger update end time from duration
-    const startInput = document.getElementById('modal_a_start');
-    const durInput = document.getElementById('modal_a_dur');
     if(startInput && durInput){
       startInput.addEventListener('change', () => updateEndFromDurModal());
       durInput.addEventListener('change', () => updateEndFromDurModal());
