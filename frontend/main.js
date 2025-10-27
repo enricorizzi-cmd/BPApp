@@ -4660,8 +4660,7 @@ function showInlineApptFormEdit(appData){
       if(rowApp) rowApp.style.display = '';
     }
     
-    // Setup delete button
-    const modalDeleteBtn = document.getElementById('modal_btnDeleteA');
+    // Setup delete button (modalDeleteBtn già dichiarato sopra)
     if(modalDeleteBtn){
       modalDeleteBtn.addEventListener('click', function(e){
         e.preventDefault();
