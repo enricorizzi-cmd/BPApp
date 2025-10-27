@@ -32,7 +32,8 @@ import "./lib/leaderboard-hooks.js";
 import "./lib/migrate-push-data.js";
 import "./lib/push-client.js";
 import "./lib/timezone.js";
-import "./lib/user-preferences-sync.js";
+// Temporaneamente disabilitato finché non viene creata la tabella user_preferences
+// import "./lib/user-preferences-sync.js";
 import { installPWA, showAddToHomePrompt, updateInstallButtonVisibility } from "./modules/installPrompt.js";
 import { celebrate, toast } from "./modules/notifications.js";
 import { renderTopbar, rerenderTopbarSoon, setActiveSidebarItem, toggleDrawer, topbarHTML } from "./modules/ui.js";
@@ -1437,9 +1438,11 @@ function cardAppt(x){
     var pers = (arr[1] && arr[1].periods)      || [];
     var allPers = (arr[2] && arr[2].periods)   || [];
   }).catch(function(error){
-    // ERRORE 401: token scaduto, logout e stop
-    console.error('[Dashboard] Authentication error, logging out');
-    logout();
+    // ERRORE 401: token scaduto, redirect a login senza loop
+    console.error('[Dashboard] Authentication error, redirecting to login');
+    setTimeout(function(){
+      location.href = '/?v=13';
+    }, 100);
     return;
   }).then(function(){
 
@@ -17828,9 +17831,11 @@ document.addEventListener('DOMContentLoaded', async function () {
       setTimeout(updateInstallButtonVisibility, 100);
       viewHome();
     } catch (error) {
-      // Token scaduto o non valido, reindirizza al login
+      // Token scaduto o non valido, reindirizza al login senza loop
       console.log('Token scaduto, reindirizzamento al login');
-      logout();
+      setTimeout(function(){
+        location.href = '/?v=13';
+      }, 100);
       return; // PREVIENI ESECUZIONE DI VIEWHOME
     }
   } else {
