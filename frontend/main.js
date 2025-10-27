@@ -4069,6 +4069,19 @@ function showInlineApptForm(dateStr){
         POST('/api/appointments', data).then(r=>{
           if(r.ok){
             toast('Appuntamento aggiunto!');
+            
+            // Haptic feedback
+            if (typeof haptic==='function') haptic('success');
+            
+            // Eventi custom
+            document.dispatchEvent(new Event('appt:saved'));
+            try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ }
+            
+            // Coach feedback
+            if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+              window.BP.Coach.say('appointment_created', { intensity: 'medium' });
+            }
+            
             overlay.classList.add('closing');
             setTimeout(() => {
               overlay.remove();
@@ -4082,6 +4095,8 @@ function showInlineApptForm(dateStr){
           }else{
             toast('Errore: ' + (r.error || 'Operazione fallita'));
           }
+        }).catch(()=> {
+          toast('Errore salvataggio');
         });
       });
     }
@@ -4153,7 +4168,32 @@ function showInlineApptForm(dateStr){
         
         POST('/api/appointments', data).then(r=>{
           if(r.ok){
-            toast('Appuntamento salvato ed esportato!');
+            toast('Appuntamento salvato!');
+            
+            // Haptic feedback
+            if (typeof haptic==='function') haptic('success');
+            
+            // Eventi custom
+            document.dispatchEvent(new Event('appt:saved'));
+            try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ }
+            
+            // Coach feedback
+            if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+              window.BP.Coach.say('appointment_created', { intensity: 'medium' });
+            }
+            
+            // Export ICS
+            if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
+              const ok = BP.ICS.downloadIcsForAppointment(data);
+              if (ok) {
+                if (typeof haptic==='function') haptic('medium');
+                try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+                toast('.ics esportato');
+              } else {
+                toast('Export .ics non disponibile');
+              }
+            }
+            
             overlay.classList.add('closing');
             setTimeout(() => {
               overlay.remove();
@@ -4166,6 +4206,8 @@ function showInlineApptForm(dateStr){
           }else{
             toast('Errore: ' + (r.error || 'Operazione fallita'));
           }
+        }).catch(()=> {
+          toast('Errore salvataggio');
         });
       });
     }
@@ -4708,9 +4750,36 @@ function showInlineApptFormEdit(appData){
         
         const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
         if(currentEditId){
+          // Backup per UNDO
+          let backup = null;
+          try {
+            backup = {
+              client: document.getElementById('modal_a_client_display').value,
+              clientId: document.getElementById('modal_a_client_select').value,
+              start: localInputToISO(document.getElementById('modal_a_start').value),
+              type: document.getElementById('modal_a_type').value,
+              vss: Number(document.getElementById('modal_a_vss').value||0),
+              vsdPersonal: Number(document.getElementById('modal_a_vsd').value||0),
+              vsdIndiretto: Number(document.getElementById('modal_a_vsd_i').value||0),
+              telefonate: Number(document.getElementById('modal_a_tel').value||0),
+              appFissati: Number(document.getElementById('modal_a_app').value||0),
+              notes: document.getElementById('modal_a_desc').value || '',
+              nncf: document.getElementById('modal_a_nncf').getAttribute('data-active')==='1'
+            };
+          } catch(e) { }
+          
           DELETE('/api/appointments/'+currentEditId).then(r=>{
             if(r.ok){
               toast('Appuntamento eliminato!');
+              
+              // Haptic feedback
+              if (typeof haptic==='function') haptic('warning');
+              
+              // Mostra Undo se disponibile
+              if (typeof showUndo==='function' && backup){
+                showUndo('Appuntamento eliminato', function(){ return POST('/api/appointments', backup); }, 5000);
+              }
+              
               currentOverlay.classList.add('closing');
               setTimeout(() => {
                 currentOverlay.remove();
@@ -4725,6 +4794,8 @@ function showInlineApptFormEdit(appData){
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
+          }).catch(()=> {
+            toast('Errore eliminazione');
           });
         }
       });
@@ -4808,6 +4879,18 @@ function showInlineApptFormEdit(appData){
           PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
               toast('Appuntamento modificato!');
+              
+              // Haptic feedback
+              if (typeof haptic==='function') haptic('success');
+              
+              // Eventi custom
+              document.dispatchEvent(new Event('appt:saved'));
+              
+              // Coach feedback
+              if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+                window.BP.Coach.say('appointment_updated', { intensity: 'low' });
+              }
+              
               currentOverlay.classList.add('closing');
               setTimeout(() => {
                 currentOverlay.remove();
@@ -4822,12 +4905,27 @@ function showInlineApptFormEdit(appData){
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
+          }).catch(()=> {
+            toast('Errore salvataggio');
           });
         } else {
           // Se editId è null, fallback su POST
           POST('/api/appointments', data).then(r=>{
             if(r.ok){
               toast('Appuntamento aggiunto!');
+              
+              // Haptic feedback
+              if (typeof haptic==='function') haptic('success');
+              
+              // Eventi custom
+              document.dispatchEvent(new Event('appt:saved'));
+              try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ }
+              
+              // Coach feedback
+              if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+                window.BP.Coach.say('appointment_created', { intensity: 'medium' });
+              }
+              
               currentOverlay.classList.add('closing');
               setTimeout(() => {
                 currentOverlay.remove();
@@ -4835,6 +4933,8 @@ function showInlineApptFormEdit(appData){
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
+          }).catch(()=> {
+            toast('Errore salvataggio');
           });
         }
       });
@@ -4913,7 +5013,31 @@ function showInlineApptFormEdit(appData){
         if(currentEditId){
           PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
-              toast('Appuntamento modificato ed esportato!');
+              toast('Appuntamento modificato!');
+              
+              // Haptic feedback
+              if (typeof haptic==='function') haptic('success');
+              
+              // Eventi custom
+              document.dispatchEvent(new Event('appt:saved'));
+              
+              // Coach feedback
+              if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+                window.BP.Coach.say('appointment_updated', { intensity: 'low' });
+              }
+              
+              // Export ICS
+              if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
+                const ok = BP.ICS.downloadIcsForAppointment(data);
+                if (ok) {
+                  if (typeof haptic==='function') haptic('medium');
+                  try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+                  toast('.ics esportato');
+                } else {
+                  toast('Export .ics non disponibile');
+                }
+              }
+              
               currentOverlay.classList.add('closing');
               setTimeout(() => {
                 currentOverlay.remove();
@@ -4927,11 +5051,38 @@ function showInlineApptFormEdit(appData){
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
+          }).catch(()=> {
+            toast('Errore salvataggio');
           });
         } else {
           POST('/api/appointments', data).then(r=>{
             if(r.ok){
-              toast('Appuntamento salvato ed esportato!');
+              toast('Appuntamento salvato!');
+              
+              // Haptic feedback
+              if (typeof haptic==='function') haptic('success');
+              
+              // Eventi custom
+              document.dispatchEvent(new Event('appt:saved'));
+              try{ document.dispatchEvent(new Event('appt:created')); }catch(_){ }
+              
+              // Coach feedback
+              if (typeof window.BP !== 'undefined' && window.BP.Coach && typeof window.BP.Coach.say === 'function') {
+                window.BP.Coach.say('appointment_created', { intensity: 'medium' });
+              }
+              
+              // Export ICS
+              if (window.BP && BP.ICS && typeof BP.ICS.downloadIcsForAppointment==='function') {
+                const ok = BP.ICS.downloadIcsForAppointment(data);
+                if (ok) {
+                  if (typeof haptic==='function') haptic('medium');
+                  try{ document.dispatchEvent(new Event('ics:exported')); }catch(_){ }
+                  toast('.ics esportato');
+                } else {
+                  toast('Export .ics non disponibile');
+                }
+              }
+              
               currentOverlay.classList.add('closing');
               setTimeout(() => {
                 currentOverlay.remove();
@@ -4939,6 +5090,8 @@ function showInlineApptFormEdit(appData){
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
+          }).catch(()=> {
+            toast('Errore salvataggio');
           });
         }
       });
