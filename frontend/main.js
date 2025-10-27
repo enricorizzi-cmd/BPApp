@@ -4520,9 +4520,16 @@ function setupModalTypeButtons(){
     });
   });
   
-  // Set initial active button
-  const initialBtn = document.getElementById('modal_t_vendita');
-  if(initialBtn) initialBtn.classList.add('active');
+  // Set initial active button SOLO se nessun altro bottone è già attivo
+  const hasActive = typeButtons.some(btnId => {
+    const btn = document.getElementById(btnId);
+    return btn && btn.classList.contains('active');
+  });
+  
+  if(!hasActive){
+    const initialBtn = document.getElementById('modal_t_vendita');
+    if(initialBtn) initialBtn.classList.add('active');
+  }
 }
 
 // Funzione per mostrare form inline appuntamenti in MODALITÀ MODIFICA
@@ -4684,14 +4691,18 @@ function showInlineApptFormEdit(appData){
         
         if(!confirm('Eliminare definitivamente questo appuntamento?')) return;
         
-        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
+        // Recupera overlay dal bottone
+        const currentOverlay = this.closest('.cal-modal-overlay');
+        if(!currentOverlay) return;
+        
+        const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
         if(currentEditId){
           DELETE('/api/appointments/'+currentEditId).then(r=>{
             if(r.ok){
               toast('Appuntamento eliminato!');
-              overlay.classList.add('closing');
+              currentOverlay.classList.add('closing');
               setTimeout(() => {
-                overlay.remove();
+                currentOverlay.remove();
                 editId = null;
               }, 300);
               // Refresh calendario se esiste
@@ -4714,8 +4725,12 @@ function showInlineApptFormEdit(appData){
       saveBtn.addEventListener('click', function(e){
         e.preventDefault();
         
+        // Recupera overlay dal bottone
+        const currentOverlay = this.closest('.cal-modal-overlay');
+        if(!currentOverlay) return;
+        
         // Ottieni editId dall'overlay data attribute
-        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
+        const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
         
         // Raccogli dati - COPIA ESATTA di collectForm()
         let client = (document.getElementById('modal_a_client_display').value||'').trim();
@@ -4782,9 +4797,9 @@ function showInlineApptFormEdit(appData){
           PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
               toast('Appuntamento modificato!');
-              overlay.classList.add('closing');
+              currentOverlay.classList.add('closing');
               setTimeout(() => {
-                overlay.remove();
+                currentOverlay.remove();
                 editId = null;
               }, 300);
               // Refresh calendario se esiste
@@ -4802,9 +4817,9 @@ function showInlineApptFormEdit(appData){
           POST('/api/appointments', data).then(r=>{
             if(r.ok){
               toast('Appuntamento aggiunto!');
-              overlay.classList.add('closing');
+              currentOverlay.classList.add('closing');
               setTimeout(() => {
-                overlay.remove();
+                currentOverlay.remove();
               }, 300);
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
@@ -4879,14 +4894,14 @@ function showInlineApptFormEdit(appData){
           exportAfter: true
         };
         
-        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
+        const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
         if(currentEditId){
           PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
               toast('Appuntamento modificato ed esportato!');
-              overlay.classList.add('closing');
+              currentOverlay.classList.add('closing');
               setTimeout(() => {
-                overlay.remove();
+                currentOverlay.remove();
                 editId = null;
               }, 300);
               const monthInput = document.getElementById('cal_month');
@@ -4902,9 +4917,9 @@ function showInlineApptFormEdit(appData){
           POST('/api/appointments', data).then(r=>{
             if(r.ok){
               toast('Appuntamento salvato ed esportato!');
-              overlay.classList.add('closing');
+              currentOverlay.classList.add('closing');
               setTimeout(() => {
-                overlay.remove();
+                currentOverlay.remove();
               }, 300);
             }else{
               toast('Errore: ' + (r.error || 'Operazione fallita'));
@@ -4915,15 +4930,18 @@ function showInlineApptFormEdit(appData){
     }
     
     // Chiudi su click overlay
-    overlay.addEventListener('click', function(e){
-      if(e.target === overlay){
-        overlay.classList.add('closing');
-        setTimeout(() => {
-          overlay.remove();
-          editId = null;
-        }, 300);
-      }
-    });
+    const currentOverlayClose = document.querySelector('.cal-modal-overlay[data-edit-id="' + appData.id + '"]');
+    if(currentOverlayClose){
+      currentOverlayClose.addEventListener('click', function(e){
+        if(e.target === currentOverlayClose){
+          currentOverlayClose.classList.add('closing');
+          setTimeout(() => {
+            currentOverlayClose.remove();
+            editId = null;
+          }, 300);
+        }
+      });
+    }
   }, 100);
 }
 
