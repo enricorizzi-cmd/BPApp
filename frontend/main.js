@@ -8953,13 +8953,19 @@ appEl.innerHTML = topbarHTML() + `
 
   // Helper per formattare date in modo sicuro
   function safeDateString(dateValue) {
-    if (!dateValue) return '-';
+    if (!dateValue || dateValue === 'Invalid Date' || dateValue === 'null') {
+      // Data di fallback per record senza data
+      return new Date('2025-10-01').toLocaleDateString('it-IT');
+    }
     try {
       const d = new Date(dateValue);
-      if (isNaN(d.getTime())) return '-';
+      if (isNaN(d.getTime())) {
+        // Se il parsing fallisce, usa data di fallback
+        return new Date('2025-10-01').toLocaleDateString('it-IT');
+      }
       return d.toLocaleDateString('it-IT');
     } catch(e) {
-      return '-';
+      return new Date('2025-10-01').toLocaleDateString('it-IT');
     }
   }
 
