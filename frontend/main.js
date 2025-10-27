@@ -1984,6 +1984,67 @@ function viewCalendar(){
         color: var(--accent);
         font-weight: 600;
       }
+      
+      .cal-modal-content .client-option-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      
+      .cal-modal-content .client-option-text {
+        flex: 1;
+        font-size: 14px;
+      }
+      
+      .cal-modal-content .client-option-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+        color: var(--text);
+      }
+      
+      .cal-modal-content .client-option-consultant {
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 2px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
+      .cal-modal-content .client-dropdown-search {
+        padding: 12px;
+        border-bottom: 1px solid var(--hair2);
+        background: rgba(255,255,255,.03);
+      }
+      
+      .cal-modal-content .client-dropdown-search input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 14px;
+      }
+      
+      .cal-modal-content .client-dropdown-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      .cal-modal-content .client-dropdown-options {
+        max-height: 250px;
+        overflow-y: auto;
+      }
+      
       .cal-modal-content.closing {
         animation: slideDown 0.3s ease;
       }
