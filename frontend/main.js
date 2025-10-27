@@ -1063,7 +1063,10 @@ function viewHome(){
           recomputeMini();
           refreshLists();
         };
-      }).catch(function(){});
+      }).catch(function(error){
+        // Silenzioso: non critico, è solo per popolare dropdown consulenti
+        console.log('[Dashboard] Failed to load usernames (non-critical)');
+      });
     })();
   } else {
     // Per non-admin, ricarica i dati immediatamente
@@ -1241,7 +1244,11 @@ function recomputeKPI(){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  return GET('/api/periods'+qsKpi).then(function(j){
+  return GET('/api/periods'+qsKpi).catch(function(error){
+    console.error('[Dashboard KPI] Auth error');
+    logout();
+    return { periods: [] };
+  }).then(function(j){
     var periods = (j && j.periods) || [];
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
@@ -1255,7 +1262,7 @@ function recomputeKPI(){
       // rispetta il consulente
       if(cons && String(p.userId||p.uid||'') !== String(cons)) continue;
 
-      // rispetta l’intervallo selezionato
+      // rispetta l'intervallo selezionato
       var ps = new Date(p.startDate).getTime();
       var pe = new Date(p.endDate).getTime();
       if (ps < f || pe > t) continue;
@@ -3738,7 +3745,11 @@ function viewPeriods(){
 
   // === Elenco + apertura ===
   function listPeriods(){
-    GET('/api/periods').then(function(r){
+    GET('/api/periods').catch(function(error){
+      console.error('[Periods List] Auth error');
+      logout();
+      return { periods: [] };
+    }).then(function(r){
       var list=r.periods||[]; list.sort(function(a,b){return new Date(b.startDate)-new Date(a.startDate);});
       var groups={settimanale:[],mensile:[],trimestrale:[],semestrale:[],annuale:[]};
       for(var i=0;i<list.length;i++){
@@ -6315,7 +6326,11 @@ function deleteA(){
       '</div>';
   }
   function listA(){
-    GET('/api/appointments').then(r=>{
+    GET('/api/appointments').catch(function(error){
+      console.error('[Appointments List] Auth error');
+      logout();
+      return { appointments: [] };
+    }).then(r=>{
       const list=(r&&r.appointments)||[];
       const b=boundsForList(); const s=b.s.getTime(), e=b.e.getTime();
       const filtered=list.filter(a=>{ 
@@ -6400,7 +6415,7 @@ function deleteA(){
 
   // Logica di modifica appuntamenti ora gestita direttamente nei click handler
 
-  GET('/api/clients').then(()=>{});
+  GET('/api/clients').catch(()=>{}).then(()=>{});
   listA();
 }
 
@@ -7074,7 +7089,11 @@ let cyclesSortOrder = 'desc';
 
 // Carica dati cicli aperti
 function loadOpenCycles() {
-  GET('/api/open-cycles').then(response => {
+  GET('/api/open-cycles').catch(function(error){
+    console.error('[Open Cycles] Auth error');
+    logout();
+    return { cycles: [] };
+  }).then(response => {
     cyclesData = (response && response.cycles) || [];
     
     // Ordina per data inserimento (più recenti primi)
