@@ -1990,7 +1990,7 @@ function viewCalendar(){
       '<div class="card" id="cal_free_slots" style="margin-top:8px;display:none"></div>'+
     '</div>'+
     
-    '<button class="fab" id="cal_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
+    '<button class="fab" id="cal_fab" title="Nuovo appuntamento">'+
       '+'+
     '</button>';
   renderTopbar();
@@ -2595,6 +2595,17 @@ function viewCalendar(){
   document.getElementById('only_free_cb').onchange = doRender;
   document.getElementById('only_4h_cb').onchange = doRender;
   if(consSel) consSel.onchange = doRender;
+
+  // FAB button - apri modal nuovo appuntamento
+  const fab = document.getElementById('cal_fab');
+  if(fab){
+    fab.addEventListener('click', function(){
+      // Ottieni data di oggi
+      const today = new Date();
+      const todayStr = ymd(today);
+      showInlineApptForm(todayStr);
+    });
+  }
 
   doRender();
 }
