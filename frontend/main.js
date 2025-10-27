@@ -1163,7 +1163,17 @@ function viewHome(){
       if (userId) s += '&userId='+encodeURIComponent(userId);
       return s;
     })();
-    return GET('/api/periods'+__qsDash).catch(function(){ return GET('/api/periods'+__qsDash.replace('?global=1','')); }).then(function(resp){
+    return GET('/api/periods'+__qsDash).catch(function(error){
+    // Se fallisce con global=1, prova senza global (per utenti non-admin)
+    if (__qsDash.indexOf('global=1') !== -1) {
+      return GET('/api/periods'+__qsDash.replace('?global=1',''));
+    }
+    // Se già senza global e fallisce, ritorna array vuoto
+    return { periods: [] };
+  }).catch(function(error){
+    // Fallback finale: array vuoto
+    return { periods: [] };
+  }).then(function(resp){
       var periods = (resp && resp.periods) || [];
 
       var filtered = periods.filter(function(p){
@@ -1245,8 +1255,8 @@ function recomputeKPI(){
     return s;
   })();
   return GET('/api/periods'+qsKpi).catch(function(error){
-    console.error('[Dashboard KPI] Auth error');
-    logout();
+    // Non fare logout, solo array vuoto
+    console.log('[Dashboard KPI] Auth error, using empty periods');
     return { periods: [] };
   }).then(function(j){
     var periods = (j && j.periods) || [];
