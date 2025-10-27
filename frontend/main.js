@@ -1411,9 +1411,20 @@ function cardAppt(x){
     return s;
   })();
   Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash), GET('/api/periods') ]).then(function(arr){
+    // Verifica che tutte le chiamate siano andate a buon fine
+    if (!arr || arr.length < 3) {
+      console.error('[Dashboard] API calls failed or incomplete');
+      return;
+    }
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
     var allPers = (arr[2] && arr[2].periods)   || [];
+  }).catch(function(error){
+    // ERRORE 401: token scaduto, logout e stop
+    console.error('[Dashboard] Authentication error, logging out');
+    logout();
+    return;
+  }).then(function(){
 
     // ===== PROSSIMI APPUNTAMENTI (prossimi 4) =====
     (function renderNext(){
@@ -2324,7 +2335,18 @@ function viewCalendar(){
       GET('/api/users'),
       GET('/api/settings')
     ])
+    .catch(function(error){
+      // ERRORE 401: token scaduto, logout e stop
+      console.error('[Calendar] Authentication error in Promise.all, logging out');
+      logout();
+      return;
+    })
     .then(function(arr){
+      // Verifica che le chiamate siano andate a buon fine
+      if (!arr || arr.length < 5) {
+        console.error('[Calendar] API calls failed or incomplete');
+        return;
+      }
       var apps  = (arr[0] && arr[0].appointments) ? arr[0].appointments : [];
       var avAll = arr[1]||{slots:[],summary:{total:0,mondays:0,others:0}};
       var slots = avAll.slots||[];
@@ -3516,7 +3538,19 @@ function viewPeriods(){
     Promise.all([
       GET('/api/appointments'),
       GET('/api/gi')
-    ]).then(function(results){
+    ])
+    .catch(function(error){
+      // ERRORE 401: token scaduto, logout e stop
+      console.error('[Import Agenda] Authentication error, logging out');
+      toast('❌ Errore di autenticazione. Reindirizzamento al login...');
+      setTimeout(() => logout(), 1000);
+      return;
+    })
+    .then(function(results){
+      if (!results || results.length < 2) {
+        console.error('[Import Agenda] API calls failed or incomplete');
+        return;
+      }
       var appointmentsResponse = results[0];
       var giResponse = results[1];
       
@@ -17768,6 +17802,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       // Token scaduto o non valido, reindirizza al login
       console.log('Token scaduto, reindirizzamento al login');
       logout();
+      return; // PREVIENI ESECUZIONE DI VIEWHOME
     }
   } else {
     viewLogin();
