@@ -3893,7 +3893,7 @@ function showInlineApptForm(dateStr){
   document.body.appendChild(overlay);
   
   // Load form template dal codice esistente
-  setTimeout(() => {
+  setTimeout(async () => {
     const formWrap = document.getElementById('inline_appt_form_wrap');
     if(!formWrap) return;
     
@@ -3911,7 +3911,7 @@ function showInlineApptForm(dateStr){
     }
     
     // Setup client dropdown
-    setupModalClientDropdown();
+    await setupModalClientDropdown();
     
     // Setup type buttons
     setupModalTypeButtons();
@@ -4003,7 +4003,7 @@ function updateEndFromDurModal(){
 }
 
 // Setup client dropdown for modal - COPIA ESATTA della logica di appuntamenti
-function setupModalClientDropdown(){
+async function setupModalClientDropdown(){
   const display = document.getElementById('modal_a_client_display');
   const hidden = document.getElementById('modal_a_client_select');
   const list = document.getElementById('modal_a_client_list');
@@ -4013,23 +4013,17 @@ function setupModalClientDropdown(){
   if (!display || !hidden || !list || !options || !search) return;
   
   // Carica clienti dal database se non già caricati
-  if (window._clients && window._clients.length === 0) {
-    GET('/api/clients').then(response => {
-      window._clients = (response && response.clients) || [];
-    }).catch(err => {
-      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
-    });
-  }
-  
-  // Usa i clienti già caricati o carica se necessario
   let clients = window._clients || [];
   if (clients.length === 0) {
-    GET('/api/clients').then(response => {
+    try {
+      const response = await GET('/api/clients');
       clients = (response && response.clients) || [];
       window._clients = clients;
-    }).catch(err => {
+    } catch (error) {
+      console.error('Errore caricamento clienti:', error);
       options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
-    });
+      return;
+    }
   }
   
   // Ordina clienti alfabeticamente
@@ -4350,7 +4344,7 @@ function showInlineApptFormEdit(appData){
   document.body.appendChild(overlay);
   
   // Load form template dal codice esistente
-  setTimeout(() => {
+  setTimeout(async () => {
     const formWrap = document.getElementById('inline_appt_edit_form_wrap');
     if(!formWrap) return;
     
@@ -4433,7 +4427,7 @@ function showInlineApptFormEdit(appData){
     }
     
     // Setup client dropdown
-    setupModalClientDropdown();
+    await setupModalClientDropdown();
     
     // Setup type buttons
     setupModalTypeButtons();
