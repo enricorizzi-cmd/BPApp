@@ -505,5 +505,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
   router.delete('/appointments', auth, async (req,res)=> handleDelete(req,res));
 
+  // Aggiungi PUT per supportare le chiamate da frontend
+  router.put('/appointments/:id', auth, async (req,res)=>{
+    const body = req.body || {};
+    body.id = req.params.id; // Assicurati che l'ID sia nel body
+    productionLogger.debug(`[PUT_APPOINTMENT] Received PUT request for appointment ${body.id} from user ${req.user.id}`);
+    return handleUpdate(req,res,body);
+  });
+
   return router;
 };
