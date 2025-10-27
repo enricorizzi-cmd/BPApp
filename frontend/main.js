@@ -4550,6 +4550,37 @@ function showInlineApptFormEdit(appData){
       if(rowApp) rowApp.style.display = '';
     }
     
+    // Setup delete button
+    const deleteBtn = document.getElementById('modal_btnDeleteA');
+    if(deleteBtn){
+      deleteBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        
+        if(!confirm('Eliminare definitivamente questo appuntamento?')) return;
+        
+        if(editId){
+          DELETE('/api/appointments/'+editId).then(r=>{
+            if(r.ok){
+              toast('Appuntamento eliminato!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+                editId = null;
+              }, 300);
+              // Refresh calendario se esiste
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect && typeof renderMonth === 'function'){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        }
+      });
+    }
+    
     // Setup save button
     const saveBtn = document.getElementById('modal_btnSaveA');
     if(saveBtn){
