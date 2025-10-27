@@ -3595,6 +3595,61 @@ function viewPeriods(){
   listPeriods();
 }
 
+// Funzione per ricreare il template del form appuntamenti
+function getAppointmentFormHTML(){
+  return '<div class="appt-form-grid">'+
+    '<div class="appt-form-group" style="grid-column: 1 / -1;">'+
+      '<label>Cliente *</label>'+
+      '<div class="appt-client-group">'+
+        '<div class="client-dropdown" style="flex: 1;">'+
+          '<input type="text" id="modal_a_client_display" placeholder="— seleziona cliente —" autocomplete="off" class="client-dropdown-input">'+
+          '<input type="hidden" id="modal_a_client_select" value="">'+
+          '<div class="client-dropdown-list" id="modal_a_client_list" style="display:none">'+
+            '<div class="client-dropdown-search">'+
+              '<input type="text" id="modal_a_client_search" placeholder="Cerca cliente..." autocomplete="off">'+
+            '</div>'+
+            '<div class="client-dropdown-options" id="modal_a_client_options">'+
+              '<div style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+        '<button id="modal_a_nncf" class="seg" data-active="0" aria-pressed="false">NNCF</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="appt-form-group"><label>Data/ora inizio</label><input id="modal_a_start" type="datetime-local"></div>'+
+    '<div class="appt-form-group"><label>Ora fine</label><input id="modal_a_end" type="time"></div>'+
+    '<div class="appt-form-group"><label>Durata (min)</label><input id="modal_a_dur" type="number" placeholder="60" min="1" style="width:80px"></div>'+
+    '</div>'+
+    '<div class="appt-form-group" style="margin-top:16px;"><label>Descrizione appuntamento</label><textarea id="modal_a_desc" rows="2"></textarea></div>'+
+    '<div class="appt-form-grid" style="margin-top:16px;">'+
+      '<div class="appt-form-group appt-type">'+
+        '<label>Tipo</label>'+
+        '<div>'+
+          '<button type="button" id="modal_t_vendita" class="seg">Vendita</button>'+
+          '<button type="button" id="modal_t_mezza"   class="seg" data-vsd="1000">Mezza giornata</button>'+
+          '<button type="button" id="modal_t_iprofile" class="seg" data-vsd="700" data-duration="90">iProfile</button>'+
+          '<button type="button" id="modal_t_full"    class="seg" data-vsd="2000">Giornata intera</button>'+
+          '<button type="button" id="modal_t_form"    class="seg">Formazione</button>'+
+          '<button type="button" id="modal_t_mbs"     class="seg">MBS</button>'+
+          '<button type="button" id="modal_t_sotto"   class="seg">Sottoprodotti</button>'+
+          '<button type="button" id="modal_t_riunione" class="seg">Riunione</button>'+
+          '<button type="button" id="modal_t_impegni"  class="seg">Impegni personali</button>'+
+        '</div>'+
+        '<input id="modal_a_type" type="hidden" value="vendita">'+
+      '</div>'+
+      '<div class="appt-form-group" id="modal_row_vss"><label>VSS</label><input id="modal_a_vss" type="number" step="1" placeholder="0"></div>'+
+      '<div class="appt-form-group" id="modal_row_vsd_p"><label>VSD personale</label><input id="modal_a_vsd" type="number" step="1" placeholder="0"></div>'+
+      '<div class="appt-form-group" id="modal_row_vsd_i" style="display:none"><label>VSD indiretto</label><input id="modal_a_vsd_i" type="number" step="1" placeholder="0"></div>'+
+      '<div class="appt-form-group" id="modal_row_tel" style="display:none"><label>Telefonate</label><input id="modal_a_tel" type="number" step="1" placeholder="0"></div>'+
+      '<div class="appt-form-group" id="modal_row_app" style="display:none"><label>Appunt. fissati</label><input id="modal_a_app" type="number" step="1" placeholder="0"></div>'+
+    '</div>'+
+    '<div class="appt-actions">'+
+      '<div><button id="modal_btnSaveA" class="appt-button primary">Salva</button></div>'+
+      '<div><button id="modal_btnSaveExportA" class="appt-button">Salva ed esporta</button></div>'+
+      '<div class="right"><button id="modal_btnDeleteA" class="appt-button danger" style="display:none">Elimina</button></div>'+
+    '</div>';
+}
+
 // Funzione per mostrare form inline appuntamenti nel calendario
 function showInlineApptForm(dateStr){
   // Crea overlay e modal
@@ -3607,7 +3662,9 @@ function showInlineApptForm(dateStr){
         <button onclick="this.closest('.cal-modal-overlay').remove()" 
                 style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);line-height:1">&times;</button>
       </div>
-      <div id="inline_appt_form_wrap"></div>
+      <div id="inline_appt_form_wrap">
+        ${getAppointmentFormHTML()}
+      </div>
     </div>
   `;
   
@@ -3618,61 +3675,57 @@ function showInlineApptForm(dateStr){
     const formWrap = document.getElementById('inline_appt_form_wrap');
     if(!formWrap) return;
     
-    // Recupera template HTML dal DOM della sezione appuntamenti
-    const apptForm = document.getElementById('a_form');
-    if(apptForm){
-      formWrap.innerHTML = apptForm.outerHTML;
-      
-      // Precompila data e ora
-      const startInput = document.getElementById('a_start');
-      if(startInput && dateStr){
-        startInput.value = dateStr + 'T09:00';
-      }
-      
-      // Imposta durata default
-      const durInput = document.getElementById('a_dur');
-      if(durInput){
-        const typeInput = document.getElementById('a_type');
-        const defDur = defDurByType(typeInput ? typeInput.value : 'vendita');
-        durInput.value = String(defDur);
-        updateEndFromDur();
-      }
-      
-      // Configura l'invio del form
-      const form = formWrap.querySelector('#a_form');
-      if(form){
-        form.addEventListener('submit', function(e){
-          e.preventDefault();
-          
-          // Raccogli dati
-          const data = {};
-          data.type = document.getElementById('a_type').value;
-          data.start = document.getElementById('a_start').value;
-          data.end = document.getElementById('a_end').value;
-          data.duration = document.getElementById('a_dur').value;
-          const clientSelect = document.getElementById('a_client_select');
-          if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
-          const clientDisplay = document.getElementById('a_client_display');
-          if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
-          
-          // Salva appuntamento
-          POST('/api/appointments', data).then(r=>{
-            if(r.ok){
-              toast('Appuntamento aggiunto!');
-              overlay.classList.add('closing');
-              setTimeout(() => overlay.remove(), 300);
-              // Refresh calendario
-              const monthInput = document.getElementById('cal_month');
-              const consultantSelect = document.getElementById('cal_consultant');
-              if(monthInput && consultantSelect){
-                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
-              }
-            }else{
-              toast('Errore: ' + (r.error || 'Operazione fallita'));
+    // Setup form fields
+    if(dateStr){
+      document.getElementById('modal_a_start').value = dateStr + 'T09:00';
+    }
+    
+    // Imposta durata default
+    const durInput = document.getElementById('modal_a_dur');
+    if(durInput){
+      durInput.value = '90';
+    }
+    
+    // Setup client dropdown
+    setupModalClientDropdown();
+    
+    // Setup type buttons
+    setupModalTypeButtons();
+    
+    // Setup save button
+    const saveBtn = document.getElementById('modal_btnSaveA');
+    if(saveBtn){
+      saveBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        
+        // Raccogli dati
+        const data = {};
+        data.type = document.getElementById('modal_a_type').value;
+        data.start = document.getElementById('modal_a_start').value;
+        data.end = document.getElementById('modal_a_end').value;
+        data.duration = document.getElementById('modal_a_dur').value;
+        const clientSelect = document.getElementById('modal_a_client_select');
+        if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
+        const clientDisplay = document.getElementById('modal_a_client_display');
+        if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+        
+        // Salva appuntamento
+        POST('/api/appointments', data).then(r=>{
+          if(r.ok){
+            toast('Appuntamento aggiunto!');
+            overlay.classList.add('closing');
+            setTimeout(() => overlay.remove(), 300);
+            // Refresh calendario
+            const monthInput = document.getElementById('cal_month');
+            const consultantSelect = document.getElementById('cal_consultant');
+            if(monthInput && consultantSelect){
+              renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
             }
-          });
+          }else{
+            toast('Errore: ' + (r.error || 'Operazione fallita'));
+          }
         });
-      }
+      });
     }
     
     // Chiudi su click overlay
@@ -3682,7 +3735,209 @@ function showInlineApptForm(dateStr){
         setTimeout(() => overlay.remove(), 300);
       }
     });
-  }, 50);
+    
+    // Trigger update end time from duration
+    const startInput = document.getElementById('modal_a_start');
+    const durInput = document.getElementById('modal_a_dur');
+    if(startInput && durInput){
+      startInput.addEventListener('change', () => updateEndFromDurModal());
+      durInput.addEventListener('change', () => updateEndFromDurModal());
+      updateEndFromDurModal();
+    }
+  }, 100);
+}
+
+// Helper function to update end time from duration in modal
+function updateEndFromDurModal(){
+  const sVal = document.getElementById('modal_a_start')?.value;
+  const m = parseInt(document.getElementById('modal_a_dur')?.value||'0',10);
+  if(!sVal || !isFinite(m) || m<=0){ 
+    const end = document.getElementById('modal_a_end');
+    if(end) end.value = ''; 
+    return; 
+  }
+  const s = new Date(sVal);
+  const e = new Date(s.getTime()+m*60000);
+  const endInput = document.getElementById('modal_a_end');
+  if(endInput){
+    endInput.value = ('0'+e.getHours()).slice(-2)+':'+('0'+e.getMinutes()).slice(-2);
+  }
+}
+
+// Setup client dropdown for modal
+function setupModalClientDropdown(){
+  // This will be a simplified version - copy logic from main form
+  const display = document.getElementById('modal_a_client_display');
+  const hidden = document.getElementById('modal_a_client_select');
+  const list = document.getElementById('modal_a_client_list');
+  const options = document.getElementById('modal_a_client_options');
+  const search = document.getElementById('modal_a_client_search');
+  
+  if (!display || !hidden || !list || !options || !search) return;
+  
+  // Load clients
+  GET('/api/clients').then(response => {
+    const clients = (response && response.clients) || [];
+    sortedClients = [...clients].sort((a, b) => 
+      String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
+    );
+    
+    // Render options
+    if (sortedClients.length === 0) {
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente disponibile</div>';
+      return;
+    }
+    
+    options.innerHTML = sortedClients.map(client => {
+      const initials = (client.name || '').split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+      const consultant = client.consultantName || '';
+      return `
+        <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}" data-client-status="${client.status || 'attivo'}">
+          <div class="client-option-icon">${initials}</div>
+          <div class="client-option-text">
+            <div class="client-option-name">${htmlEscape(client.name || '')}</div>
+            ${consultant ? `<div class="client-option-consultant">${htmlEscape(consultant)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }).catch(err => {
+    options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+  });
+  
+  // Event listeners
+  display.addEventListener('click', (e) => {
+    e.stopPropagation();
+    list.style.display = 'block';
+  });
+  
+  search.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!query) {
+      return;
+    }
+    
+    const filtered = sortedClients.filter(client => 
+      String(client.name || '').toLowerCase().includes(query)
+    );
+    
+    if (filtered.length === 0) {
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
+      return;
+    }
+    
+    options.innerHTML = filtered.map(client => {
+      const initials = (client.name || '').split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+      const consultant = client.consultantName || '';
+      return `
+        <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}" data-client-status="${client.status || 'attivo'}">
+          <div class="client-option-icon">${initials}</div>
+          <div class="client-option-text">
+            <div class="client-option-name">${htmlEscape(client.name || '')}</div>
+            ${consultant ? `<div class="client-option-consultant">${htmlEscape(consultant)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  });
+  
+  options.addEventListener('click', (e) => {
+    const option = e.target.closest('.client-option');
+    if (!option) return;
+    
+    const clientId = option.dataset.clientId;
+    const clientName = option.dataset.clientName;
+    
+    display.value = clientName;
+    hidden.value = clientId;
+    list.style.display = 'none';
+  });
+}
+
+// Setup type buttons for modal
+function setupModalTypeButtons(){
+  const typeButtons = ['modal_t_vendita', 'modal_t_mezza', 'modal_t_iprofile', 'modal_t_full', 'modal_t_form', 'modal_t_mbs', 'modal_t_sotto', 'modal_t_riunione', 'modal_t_impegni'];
+  
+  typeButtons.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if(!btn) return;
+    
+    btn.addEventListener('click', () => {
+      // Remove active class from all buttons
+      typeButtons.forEach(id => {
+        const b = document.getElementById(id);
+        if(b) b.classList.remove('active');
+      });
+      
+      // Add active class to clicked button
+      btn.classList.add('active');
+      
+      // Update type hidden input
+      const typeInput = document.getElementById('modal_a_type');
+      if(!typeInput) return;
+      
+      const types = {
+        'modal_t_vendita': 'vendita',
+        'modal_t_mezza': 'mezza',
+        'modal_t_iprofile': 'iProfile',
+        'modal_t_full': 'giornata',
+        'modal_t_form': 'formazione',
+        'modal_t_mbs': 'MBS',
+        'modal_t_sotto': 'sottoprodotti',
+        'modal_t_riunione': 'riunione',
+        'modal_t_impegni': 'impegni personali'
+      };
+      
+      typeInput.value = types[btnId] || 'vendita';
+      
+      // Set default values based on type
+      const vsdInput = document.getElementById('modal_a_vsd');
+      const durInput = document.getElementById('modal_a_dur');
+      
+      if(btnId === 'modal_t_mezza' && vsdInput){
+        vsdInput.value = '1000';
+        if(durInput) durInput.value = '240';
+      }
+      else if(btnId === 'modal_t_iprofile' && vsdInput){
+        vsdInput.value = '700';
+        if(durInput) durInput.value = '90';
+      }
+      else if(btnId === 'modal_t_full' && vsdInput){
+        vsdInput.value = '2000';
+        if(durInput) durInput.value = '570';
+      }
+      
+      if(durInput) updateEndFromDurModal();
+      
+      // Toggle visibility of fields based on type
+      const rowVsdI = document.getElementById('modal_row_vsd_i');
+      const rowTel = document.getElementById('modal_row_tel');
+      const rowApp = document.getElementById('modal_row_app');
+      const rowVss = document.getElementById('modal_row_vss');
+      const rowVsdP = document.getElementById('modal_row_vsd_p');
+      
+      if(btnId === 'modal_t_mbs' && rowVsdI){
+        rowVss.style.display = 'none';
+        rowVsdP.style.display = 'none';
+        rowVsdI.style.display = '';
+      } else if(btnId === 'modal_t_sotto' && rowTel && rowApp){
+        rowVss.style.display = 'none';
+        rowVsdP.style.display = 'none';
+        rowTel.style.display = '';
+        rowApp.style.display = '';
+      } else {
+        if(rowVsdI) rowVsdI.style.display = 'none';
+        if(rowTel) rowTel.style.display = 'none';
+        if(rowApp) rowApp.style.display = 'none';
+        if(rowVss) rowVss.style.display = '';
+        if(rowVsdP) rowVsdP.style.display = '';
+      }
+    });
+  });
+  
+  // Set initial active button
+  const initialBtn = document.getElementById('modal_t_vendita');
+  if(initialBtn) initialBtn.classList.add('active');
 }
 
 // Funzione per mostrare form inline appuntamenti in MODALITÀ MODIFICA
