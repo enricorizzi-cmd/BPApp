@@ -4537,10 +4537,15 @@ function showInlineApptFormEdit(appData){
   // Pulisci editId e imposta subito l'ID
   editId = appData.id;
   
+  console.log('[Modal Edit] appData.id:', appData.id);
+  console.log('[Modal Edit] appData completo:', appData);
+  
   // Crea overlay e modal
   const overlay = document.createElement('div');
   overlay.className = 'cal-modal-overlay';
   overlay.setAttribute('data-edit-id', appData.id); // Store ID nell'overlay per debug
+  
+  console.log('[Modal Edit] overlay data-edit-id:', overlay.getAttribute('data-edit-id'));
   overlay.innerHTML = `
     <div class="cal-modal-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -4696,6 +4701,7 @@ function showInlineApptFormEdit(appData){
         if(!currentOverlay) return;
         
         const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
+        console.log('[Modal Delete] ID recuperato:', currentEditId);
         if(currentEditId){
           DELETE('/api/appointments/'+currentEditId).then(r=>{
             if(r.ok){
@@ -4731,6 +4737,7 @@ function showInlineApptFormEdit(appData){
         
         // Ottieni editId dall'overlay data attribute
         const currentEditId = currentOverlay.getAttribute('data-edit-id') || editId;
+        console.log('[Modal Save] ID recuperato:', currentEditId);
         
         // Raccogli dati - COPIA ESATTA di collectForm()
         let client = (document.getElementById('modal_a_client_display').value||'').trim();
