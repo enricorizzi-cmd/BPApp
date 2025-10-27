@@ -4443,6 +4443,12 @@ function showInlineApptFormEdit(appData){
     // Setup editId per save
     editId = appData.id;
     
+    // Mostra bottone elimina
+    const deleteBtn = document.getElementById('modal_btnDeleteA');
+    if(deleteBtn) {
+      deleteBtn.style.display = 'block';
+    }
+    
     // Precompila tutti i campi con i dati dell'appuntamento
     // Parse app data
     const startDate = new Date(appData.start);
