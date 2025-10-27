@@ -3918,7 +3918,7 @@ function getAppointmentFormHTML(){
             '</div>'+
           '</div>'+
         '</div>'+
-        '<button id="modal_a_nncf" class="seg" data-active="0" aria-pressed="false">NNCF</button>'+
+        '<button type="button" id="modal_a_nncf" class="seg" data-active="0" aria-pressed="false">NNCF</button>'+
       '</div>'+
     '</div>'+
     '<div class="appt-form-group"><label>Data/ora inizio</label><input id="modal_a_start" type="datetime-local"></div>'+
@@ -4736,8 +4736,10 @@ function showInlineApptFormEdit(appData){
       }
       
       // Aggiungi listener solo se non esiste
+      console.log('[NNCF Setup] Has listener?', nncfBtn.hasAttribute('data-listener'));
       if(!nncfBtn.hasAttribute('data-listener')){
         nncfBtn.setAttribute('data-listener', '1');
+        console.log('[NNCF Setup] Adding click listener');
         nncfBtn.addEventListener('click', function(e){
           e.preventDefault();
           if(this.disabled) return;
