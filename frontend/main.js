@@ -4013,18 +4013,20 @@ function showInlineApptForm(dateStr){
         const clientDisplay = document.getElementById('modal_a_client_display');
         if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
         
-        // Salva appuntamento
+        // Salva appuntamento - SEMPRE POST per nuova creazione
         POST('/api/appointments', data).then(r=>{
           if(r.ok){
             toast('Appuntamento aggiunto!');
             overlay.classList.add('closing');
-            setTimeout(() => overlay.remove(), 300);
-            // Refresh calendario
-            const monthInput = document.getElementById('cal_month');
-            const consultantSelect = document.getElementById('cal_consultant');
-            if(monthInput && consultantSelect){
-              renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
-            }
+            setTimeout(() => {
+              overlay.remove();
+              // Refresh calendario se esiste
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect && typeof renderMonth === 'function'){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }, 300);
           }else{
             toast('Errore: ' + (r.error || 'Operazione fallita'));
           }
@@ -4533,25 +4535,40 @@ function showInlineApptFormEdit(appData){
         const clientDisplay = document.getElementById('modal_a_client_display');
         if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
         
-        // Salva appuntamento modificato
-        PUT('/api/appointments/'+editId, data).then(r=>{
-          if(r.ok){
-            toast('Appuntamento modificato!');
-            overlay.classList.add('closing');
-            setTimeout(() => {
-              overlay.remove();
-              editId = null;
-            }, 300);
-            // Refresh calendario
-            const monthInput = document.getElementById('cal_month');
-            const consultantSelect = document.getElementById('cal_consultant');
-            if(monthInput && consultantSelect){
-              renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+        // Salva appuntamento modificato - SOLO se editId è valido
+        if(editId){
+          PUT('/api/appointments/'+editId, data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento modificato!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+                editId = null;
+              }, 300);
+              // Refresh calendario se esiste
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect && typeof renderMonth === 'function'){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
             }
-          }else{
-            toast('Errore: ' + (r.error || 'Operazione fallita'));
-          }
-        });
+          });
+        } else {
+          // Se editId è null, fallback su POST
+          POST('/api/appointments', data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento aggiunto!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+              }, 300);
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        }
       });
     }
     
