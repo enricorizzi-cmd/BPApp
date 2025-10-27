@@ -8913,7 +8913,15 @@ appEl.innerHTML = topbarHTML() + `
   };
   const esc = s => String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
   const fmtEuro = n => (Number(n)||0).toLocaleString('it-IT')+'€';
-  const ymd = d => { const x=new Date(d); return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2); };
+  const ymd = d => { 
+    if(!d) return '';
+    const x=new Date(d);
+    if(isNaN(x.getTime())) {
+      console.error('[ymd] Invalid date:', d);
+      return new Date().toISOString().split('T')[0]; // Fallback a oggi
+    }
+    return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2);
+  };
 
   function readRange(){
     const R = (window.readUnifiedRange && window.readUnifiedRange('gi')) || {};
