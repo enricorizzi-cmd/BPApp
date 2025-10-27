@@ -985,10 +985,7 @@ function viewHome(){
   const dashFab = document.getElementById('dash_fab');
   if(dashFab){
     dashFab.addEventListener('click', function(){
-      // Ottieni data di oggi
-      const today = new Date();
-      const todayStr = ymd(today);
-      showInlineApptForm(todayStr);
+      viewAppointments();
     });
   }
 
