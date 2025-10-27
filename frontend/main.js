@@ -1784,6 +1784,206 @@ function viewCalendar(){
         box-shadow: 0 12px 48px rgba(0,0,0,.4);
         animation: slideUp 0.3s ease;
       }
+      
+      /* Importa tutti gli stili appuntamenti nel modal */
+      .cal-modal-content .appt-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+      
+      .cal-modal-content .appt-form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .cal-modal-content .appt-form-group label {
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 6px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .cal-modal-content .appt-form-group input, 
+      .cal-modal-content .appt-form-group select, 
+      .cal-modal-content .appt-form-group textarea {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .cal-modal-content .appt-form-group input:focus, 
+      .cal-modal-content .appt-form-group select:focus, 
+      .cal-modal-content .appt-form-group textarea:focus {
+        background: rgba(255,255,255,.08);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        outline: none;
+      }
+      
+      .cal-modal-content .appt-client-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      
+      .cal-modal-content .appt-client-group input {
+        flex: 1;
+      }
+      
+      .cal-modal-content .seg {
+        padding: 8px 12px;
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        font-size: 13px;
+      }
+      
+      .cal-modal-content .seg:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+        transform: translateY(-1px);
+      }
+      
+      .cal-modal-content .seg.active {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+        transform: translateY(-1px);
+      }
+      
+      .cal-modal-content .appt-type > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .cal-modal-content .appt-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      
+      .cal-modal-content .appt-button {
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+        font-size: 14px;
+      }
+      
+      .cal-modal-content .appt-button.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+      }
+      
+      .cal-modal-content .appt-button.primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(93,211,255,.4);
+      }
+      
+      .cal-modal-content .appt-button.ghost {
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+        border: 1px solid var(--hair2);
+      }
+      
+      .cal-modal-content .appt-button.ghost:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.1);
+      }
+      
+      /* Client dropdown styles */
+      .cal-modal-content .client-dropdown {
+        position: relative;
+        width: 100%;
+      }
+      
+      .cal-modal-content .client-dropdown-input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 10px 12px;
+        transition: all 0.2s ease;
+        color: var(--text);
+        font-size: 14px;
+        cursor: text;
+      }
+      
+      .cal-modal-content .client-dropdown-input input {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text);
+        font-size: 14px;
+        pointer-events: auto;
+      }
+      
+      .cal-modal-content .client-dropdown-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .cal-modal-content .client-dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        backdrop-filter: blur(10px);
+      }
+      
+      .cal-modal-content .client-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+      }
+      
+      .cal-modal-content .client-option:hover {
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+      }
+      
+      .cal-modal-content .client-option.selected {
+        background: rgba(93,211,255,.15);
+        color: var(--accent);
+        font-weight: 600;
+      }
       .cal-modal-content.closing {
         animation: slideDown 0.3s ease;
       }
