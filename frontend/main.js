@@ -1763,7 +1763,7 @@ function viewCalendar(){
         bottom: 0;
         background: rgba(0,0,0,.7);
         backdrop-filter: blur(4px);
-        z-index: 1000;
+        z-index: 10000;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1957,7 +1957,7 @@ function viewCalendar(){
         border-radius: 8px;
         max-height: 300px;
         overflow-y: auto;
-        z-index: 1000;
+        z-index: 10001;
         margin-top: 4px;
         box-shadow: 0 20px 60px rgba(0,0,0,.3);
         backdrop-filter: blur(10px);
