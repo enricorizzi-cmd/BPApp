@@ -3705,6 +3705,22 @@ function showInlineApptForm(dateStr){
     // Setup type buttons
     setupModalTypeButtons();
     
+    // Setup NNCF button - COPIA ESATTA della logica di appuntamenti
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    if(nncfBtn){
+      nncfBtn.addEventListener('click', () => {
+        const on = nncfBtn.getAttribute('data-active') !== '1';
+        nncfBtn.setAttribute('data-active', on ? '1' : '0');
+        nncfBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        nncfBtn.classList.toggle('active', on);
+        if(on){
+          // Seleziona vendita quando si attiva NNCF
+          const venditaBtn = document.getElementById('modal_t_vendita');
+          if(venditaBtn) venditaBtn.click();
+        }
+      });
+    }
+    
     // Setup save button
     const saveBtn = document.getElementById('modal_btnSaveA');
     if(saveBtn){
@@ -3775,9 +3791,8 @@ function updateEndFromDurModal(){
   }
 }
 
-// Setup client dropdown for modal
+// Setup client dropdown for modal - COPIA ESATTA della logica di appuntamenti
 function setupModalClientDropdown(){
-  // This will be a simplified version - copy logic from main form
   const display = document.getElementById('modal_a_client_display');
   const hidden = document.getElementById('modal_a_client_select');
   const list = document.getElementById('modal_a_client_list');
@@ -3786,20 +3801,39 @@ function setupModalClientDropdown(){
   
   if (!display || !hidden || !list || !options || !search) return;
   
-  // Load clients
-  GET('/api/clients').then(response => {
-    const clients = (response && response.clients) || [];
-    sortedClients = [...clients].sort((a, b) => 
-      String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
-    );
-    
-    // Render options
-    if (sortedClients.length === 0) {
-      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente disponibile</div>';
+  // Carica clienti dal database se non già caricati
+  if (window._clients && window._clients.length === 0) {
+    GET('/api/clients').then(response => {
+      window._clients = (response && response.clients) || [];
+    }).catch(err => {
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+    });
+  }
+  
+  // Usa i clienti già caricati o carica se necessario
+  let clients = window._clients || [];
+  if (clients.length === 0) {
+    GET('/api/clients').then(response => {
+      clients = (response && response.clients) || [];
+      window._clients = clients;
+    }).catch(err => {
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+    });
+  }
+  
+  // Ordina clienti alfabeticamente
+  sortedClients = [...clients].sort((a, b) => 
+    String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
+  );
+  
+  // Funzione per renderizzare le opzioni
+  function renderOptionsModal(clientsToShow = sortedClients) {
+    if (clientsToShow.length === 0) {
+      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
       return;
     }
     
-    options.innerHTML = sortedClients.map(client => {
+    options.innerHTML = clientsToShow.map(client => {
       const initials = (client.name || '').split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
       const consultant = client.consultantName || '';
       return `
@@ -3812,9 +3846,10 @@ function setupModalClientDropdown(){
         </div>
       `;
     }).join('');
-  }).catch(err => {
-    options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
-  });
+  }
+  
+  // Renderizza le opzioni iniziali
+  renderOptionsModal();
   
   // Event listeners
   display.addEventListener('click', (e) => {
@@ -3822,127 +3857,257 @@ function setupModalClientDropdown(){
     list.style.display = 'block';
   });
   
+  // Gestione input diretto nel campo cliente
+  display.addEventListener('input', (e) => {
+    // Quando l'utente scrive direttamente, pulisci la selezione
+    hidden.value = '';
+    // Riabilita NNCF quando si scrive direttamente
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    if(nncfBtn) {
+      nncfBtn.disabled = false;
+      nncfBtn.style.opacity = '1';
+      nncfBtn.style.cursor = 'pointer';
+    }
+    // Mantieni l'elenco aperto
+    list.style.display = 'block';
+  });
+  
+  display.addEventListener('focus', (e) => {
+    // Apri dropdown quando si fa focus sul campo
+    list.style.display = 'block';
+  });
+  
+  display.addEventListener('blur', (e) => {
+    // Non chiudere subito, aspetta un po' per permettere click su opzioni
+    setTimeout(() => {
+      // Chiudi solo se non c'è focus su nessun elemento del dropdown
+      if (!list.contains(document.activeElement) && document.activeElement !== display) {
+        list.style.display = 'none';
+      }
+    }, 150);
+  });
+  
   search.addEventListener('input', (e) => {
     const query = e.target.value.toLowerCase().trim();
     if (!query) {
+      renderOptionsModal();
       return;
     }
     
     const filtered = sortedClients.filter(client => 
       String(client.name || '').toLowerCase().includes(query)
     );
-    
-    if (filtered.length === 0) {
-      options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
-      return;
-    }
-    
-    options.innerHTML = filtered.map(client => {
-      const initials = (client.name || '').split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
-      const consultant = client.consultantName || '';
-      return `
-        <div class="client-option" data-client-id="${client.id}" data-client-name="${htmlEscape(client.name || '')}" data-client-status="${client.status || 'attivo'}">
-          <div class="client-option-icon">${initials}</div>
-          <div class="client-option-text">
-            <div class="client-option-name">${htmlEscape(client.name || '')}</div>
-            ${consultant ? `<div class="client-option-consultant">${htmlEscape(consultant)}</div>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
+    renderOptionsModal(filtered);
   });
   
+  // Chiudi dropdown quando si clicca fuori
+  document.addEventListener('click', (e) => {
+    // Chiudi solo se il click è completamente fuori dal campo e dal dropdown
+    if (!display.contains(e.target) && !list.contains(e.target)) {
+      list.style.display = 'none';
+    }
+  });
+  
+  // Selezione cliente
   options.addEventListener('click', (e) => {
     const option = e.target.closest('.client-option');
     if (!option) return;
     
     const clientId = option.dataset.clientId;
     const clientName = option.dataset.clientName;
+    const clientStatus = option.dataset.clientStatus;
     
+    // Aggiorna display e hidden input
     display.value = clientName;
     hidden.value = clientId;
-    list.style.display = 'none';
+    
+    // Rimuovi selezione precedente e seleziona nuovo
+    options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
+    option.classList.add('selected');
+    
+    // Gestisci flag NNCF basato sullo stato del cliente
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    if (clientStatus === 'attivo') {
+      // Cliente attivo: disabilita NNCF e resetta
+      nncfBtn.setAttribute('data-active', '0');
+      nncfBtn.setAttribute('aria-pressed', 'false');
+      nncfBtn.classList.remove('active');
+      nncfBtn.disabled = true;
+      nncfBtn.style.opacity = '0.5';
+      nncfBtn.style.cursor = 'not-allowed';
+    } else {
+      // Cliente potenziale o altro: abilita NNCF
+      nncfBtn.disabled = false;
+      nncfBtn.style.opacity = '1';
+      nncfBtn.style.cursor = 'pointer';
+    }
+    
+    // Trigger change event per compatibilità
+    const changeEvent = new Event('change', { bubbles: true });
+    hidden.dispatchEvent(changeEvent);
+  });
+  
+  // Gestione keyboard
+  display.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Apri l'elenco se non è già aperto
+      list.style.display = 'block';
+    }
+  });
+  
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      list.style.display = 'none';
+      display.focus();
+    }
   });
 }
 
-// Setup type buttons for modal
+// Setup type buttons for modal - COPIA ESATTA della logica di appuntamenti con selectSeg
 function setupModalTypeButtons(){
   const typeButtons = ['modal_t_vendita', 'modal_t_mezza', 'modal_t_iprofile', 'modal_t_full', 'modal_t_form', 'modal_t_mbs', 'modal_t_sotto', 'modal_t_riunione', 'modal_t_impegni'];
   
+  function selectSegModal(btn, keepNncf=false){
+    // Remove active from all
+    typeButtons.forEach(id => {
+      const b = document.getElementById(id);
+      if(b) b.classList.remove('active');
+    });
+    
+    // Add active to clicked
+    if(btn) btn.classList.add('active');
+    
+    const typeInput = document.getElementById('modal_a_type');
+    const clientDisplay = document.getElementById('modal_a_client_display');
+    const clientSelect = document.getElementById('modal_a_client_select');
+    const rowVss  = document.getElementById('modal_row_vss');
+    const rowVsdP = document.getElementById('modal_row_vsd_p');
+    const rowVsdI = document.getElementById('modal_row_vsd_i');
+    const rowTel  = document.getElementById('modal_row_tel');
+    const rowApp  = document.getElementById('modal_row_app');
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    
+    // reset
+    const vssInput = document.getElementById('modal_a_vss');
+    const vsdInput = document.getElementById('modal_a_vsd');
+    const vsdIInput = document.getElementById('modal_a_vsd_i');
+    const telInput = document.getElementById('modal_a_tel');
+    const appInput = document.getElementById('modal_a_app');
+    if(vssInput) vssInput.value = '';
+    if(vsdInput) vsdInput.value = '';
+    if(vsdIInput) vsdIInput.value = '';
+    if(telInput) telInput.value = '';
+    if(appInput) appInput.value = '';
+    
+    if(rowVss) rowVss.style.display = '';
+    if(rowVsdP) rowVsdP.style.display = '';
+    if(rowVsdI) rowVsdI.style.display = 'none';
+    if(rowTel) rowTel.style.display = 'none';
+    if(rowApp) rowApp.style.display = 'none';
+    if(clientDisplay) clientDisplay.disabled = false;
+    if(nncfBtn) nncfBtn.style.display = '';
+    
+    if(!keepNncf && nncfBtn){
+      nncfBtn.setAttribute('data-active','0');
+      nncfBtn.setAttribute('aria-pressed','false');
+      nncfBtn.classList.remove('active');
+    }
+    
+    // Reset client if auto-set
+    if(clientDisplay && (clientDisplay.value==='Formazione' || clientDisplay.value==='MBS' || clientDisplay.value==='Sottoprodotti' || clientDisplay.value==='Riunione' || clientDisplay.value==='Impegni personali')){
+      clientDisplay.value = '';
+      if(clientSelect) clientSelect.value = '';
+    }
+    
+    const btnId = btn ? btn.id : '';
+    
+    if(btnId === 'modal_t_vendita') {
+      if(typeInput) typeInput.value = 'vendita';
+      if(durInput) durInput.value = '90';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_mezza'){
+      if(typeInput) typeInput.value = 'mezza';
+      if(durInput) durInput.value = '240';
+      if(vsdInput) vsdInput.value = '1000';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_iprofile'){
+      if(typeInput) typeInput.value = 'iProfile';
+      if(durInput) durInput.value = '90';
+      if(vsdInput) vsdInput.value = '700';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_full'){
+      if(typeInput) typeInput.value = 'giornata';
+      if(durInput) durInput.value = '570';
+      if(vsdInput) vsdInput.value = '2000';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_form'){
+      if(typeInput) typeInput.value = 'formazione';
+      if(durInput) durInput.value = '570';
+      if(clientDisplay) clientDisplay.value = 'Formazione';
+      if(clientDisplay) clientDisplay.disabled = true;
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(nncfBtn) nncfBtn.style.display = 'none';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_mbs'){
+      if(typeInput) typeInput.value = 'MBS';
+      if(durInput) durInput.value = '570';
+      if(clientDisplay) clientDisplay.value = 'MBS';
+      if(clientDisplay) clientDisplay.disabled = true;
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(rowVsdI) rowVsdI.style.display = '';
+      if(vsdIInput) vsdIInput.value = '2000';
+      if(nncfBtn) nncfBtn.style.display = 'none';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_sotto'){
+      if(typeInput) typeInput.value = 'sottoprodotti';
+      if(durInput) durInput.value = '240';
+      if(clientDisplay) clientDisplay.value = 'Sottoprodotti';
+      if(clientDisplay) clientDisplay.disabled = true;
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(rowTel) rowTel.style.display = '';
+      if(rowApp) rowApp.style.display = '';
+      if(nncfBtn) nncfBtn.style.display = 'none';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_riunione'){
+      if(typeInput) typeInput.value = 'riunione';
+      if(durInput) durInput.value = '60';
+      if(clientDisplay) clientDisplay.value = 'Riunione';
+      if(clientDisplay) clientDisplay.disabled = true;
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(nncfBtn) nncfBtn.style.display = 'none';
+      updateEndFromDurModal();
+    }
+    else if(btnId === 'modal_t_impegni'){
+      if(typeInput) typeInput.value = 'impegni personali';
+      if(durInput) durInput.value = '60';
+      if(clientDisplay) clientDisplay.value = 'Impegni personali';
+      if(clientDisplay) clientDisplay.disabled = true;
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(nncfBtn) nncfBtn.style.display = 'none';
+      updateEndFromDurModal();
+    }
+  }
+  
+  // Add click listeners
   typeButtons.forEach(btnId => {
     const btn = document.getElementById(btnId);
     if(!btn) return;
-    
-    btn.addEventListener('click', () => {
-      // Remove active class from all buttons
-      typeButtons.forEach(id => {
-        const b = document.getElementById(id);
-        if(b) b.classList.remove('active');
-      });
-      
-      // Add active class to clicked button
-      btn.classList.add('active');
-      
-      // Update type hidden input
-      const typeInput = document.getElementById('modal_a_type');
-      if(!typeInput) return;
-      
-      const types = {
-        'modal_t_vendita': 'vendita',
-        'modal_t_mezza': 'mezza',
-        'modal_t_iprofile': 'iProfile',
-        'modal_t_full': 'giornata',
-        'modal_t_form': 'formazione',
-        'modal_t_mbs': 'MBS',
-        'modal_t_sotto': 'sottoprodotti',
-        'modal_t_riunione': 'riunione',
-        'modal_t_impegni': 'impegni personali'
-      };
-      
-      typeInput.value = types[btnId] || 'vendita';
-      
-      // Set default values based on type
-      const vsdInput = document.getElementById('modal_a_vsd');
-      const durInput = document.getElementById('modal_a_dur');
-      
-      if(btnId === 'modal_t_mezza' && vsdInput){
-        vsdInput.value = '1000';
-        if(durInput) durInput.value = '240';
-      }
-      else if(btnId === 'modal_t_iprofile' && vsdInput){
-        vsdInput.value = '700';
-        if(durInput) durInput.value = '90';
-      }
-      else if(btnId === 'modal_t_full' && vsdInput){
-        vsdInput.value = '2000';
-        if(durInput) durInput.value = '570';
-      }
-      
-      if(durInput) updateEndFromDurModal();
-      
-      // Toggle visibility of fields based on type
-      const rowVsdI = document.getElementById('modal_row_vsd_i');
-      const rowTel = document.getElementById('modal_row_tel');
-      const rowApp = document.getElementById('modal_row_app');
-      const rowVss = document.getElementById('modal_row_vss');
-      const rowVsdP = document.getElementById('modal_row_vsd_p');
-      
-      if(btnId === 'modal_t_mbs' && rowVsdI){
-        rowVss.style.display = 'none';
-        rowVsdP.style.display = 'none';
-        rowVsdI.style.display = '';
-      } else if(btnId === 'modal_t_sotto' && rowTel && rowApp){
-        rowVss.style.display = 'none';
-        rowVsdP.style.display = 'none';
-        rowTel.style.display = '';
-        rowApp.style.display = '';
-      } else {
-        if(rowVsdI) rowVsdI.style.display = 'none';
-        if(rowTel) rowTel.style.display = 'none';
-        if(rowApp) rowApp.style.display = 'none';
-        if(rowVss) rowVss.style.display = '';
-        if(rowVsdP) rowVsdP.style.display = '';
-      }
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      selectSegModal(btn);
     });
   });
   
