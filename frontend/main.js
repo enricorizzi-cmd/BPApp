@@ -4524,9 +4524,13 @@ function setupModalTypeButtons(){
 
 // Funzione per mostrare form inline appuntamenti in MODALITÀ MODIFICA
 function showInlineApptFormEdit(appData){
+  // Pulisci editId e imposta subito l'ID
+  editId = appData.id;
+  
   // Crea overlay e modal
   const overlay = document.createElement('div');
   overlay.className = 'cal-modal-overlay';
+  overlay.setAttribute('data-edit-id', appData.id); // Store ID nell'overlay per debug
   overlay.innerHTML = `
     <div class="cal-modal-content">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -4546,9 +4550,6 @@ function showInlineApptFormEdit(appData){
   setTimeout(async () => {
     const formWrap = document.getElementById('inline_appt_edit_form_wrap');
     if(!formWrap) return;
-    
-    // Setup editId per save
-    editId = appData.id;
     
     // Mostra bottone elimina
     const modalDeleteBtn = document.getElementById('modal_btnDeleteA');
@@ -4664,8 +4665,9 @@ function showInlineApptFormEdit(appData){
         
         if(!confirm('Eliminare definitivamente questo appuntamento?')) return;
         
-        if(editId){
-          DELETE('/api/appointments/'+editId).then(r=>{
+        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
+        if(currentEditId){
+          DELETE('/api/appointments/'+currentEditId).then(r=>{
             if(r.ok){
               toast('Appuntamento eliminato!');
               overlay.classList.add('closing');
@@ -4692,6 +4694,9 @@ function showInlineApptFormEdit(appData){
     if(saveBtn){
       saveBtn.addEventListener('click', function(e){
         e.preventDefault();
+        
+        // Ottieni editId dall'overlay data attribute
+        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
         
         // Raccogli dati - COPIA ESATTA di collectForm()
         let client = (document.getElementById('modal_a_client_display').value||'').trim();
@@ -4754,8 +4759,8 @@ function showInlineApptFormEdit(appData){
         };
         
         // Salva appuntamento modificato - SOLO se editId è valido
-        if(editId){
-          PUT('/api/appointments/'+editId, data).then(r=>{
+        if(currentEditId){
+          PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
               toast('Appuntamento modificato!');
               overlay.classList.add('closing');
@@ -4855,8 +4860,9 @@ function showInlineApptFormEdit(appData){
           exportAfter: true
         };
         
-        if(editId){
-          PUT('/api/appointments/'+editId, data).then(r=>{
+        const currentEditId = overlay.getAttribute('data-edit-id') || editId;
+        if(currentEditId){
+          PUT('/api/appointments/'+currentEditId, data).then(r=>{
             if(r.ok){
               toast('Appuntamento modificato ed esportato!');
               overlay.classList.add('closing');
