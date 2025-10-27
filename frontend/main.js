@@ -11242,15 +11242,43 @@ function viewCorsiInteraziendali(){
   };
 
   window.deleteCorso = async function(corsoId) {
-    if (!confirm('Sei sicuro di voler eliminare questo corso?')) return;
+    if (!confirm('⚠️ Sei sicuro di voler eliminare questo corso?\n\nQuesta azione eliminerà anche tutte le date e iscrizioni associate.')) return;
+    
+    // Backup per Undo
+    let backup = null;
+    try {
+      const response = await GET(`/api/corsi-catalogo/${corsoId}`);
+      if (response.corso) {
+        backup = response.corso;
+      }
+    } catch(e) {
+      console.error('[Corsi] Error fetching corso for backup:', e);
+    }
     
     try {
       await DELETE(`/api/corsi-catalogo/${corsoId}`);
-      toast('Corso eliminato con successo');
+      toast('🗑️ Corso eliminato');
+      if (typeof haptic==='function') haptic('warning');
+      
+      // Mostra Undo se disponibile
+      if (typeof showUndo==='function' && backup){
+        showUndo('Corso eliminato', function(){ 
+          return POST('/api/corsi-catalogo', {
+            codice_corso: backup.codice_corso,
+            nome_corso: backup.nome_corso,
+            descrizione: backup.descrizione,
+            durata_giorni: backup.durata_giorni,
+            costo_corso: backup.costo_corso
+          }); 
+        }, 5000);
+      }
+      
       loadCatalogoData();
     } catch (error) {
-      console.error('Error deleting corso:', error);
-      toast('Errore nell\'eliminazione del corso', 'error');
+      console.error('[Corsi] Error deleting corso:', error);
+      const errorMsg = error.message || error.error || 'Errore sconosciuto';
+      toast(`❌ Errore eliminazione: ${errorMsg}`);
+      if (typeof haptic==='function') haptic('error');
     }
   };
 
@@ -11333,26 +11361,48 @@ function viewCorsiInteraziendali(){
       }
 
       const data = {
-        codice_corso: document.getElementById('codice-corso').value,
-        nome_corso: document.getElementById('nome-corso').value,
-        descrizione: document.getElementById('descrizione-corso').value,
+        codice_corso: document.getElementById('codice-corso').value.trim(),
+        nome_corso: document.getElementById('nome-corso').value.trim(),
+        descrizione: document.getElementById('descrizione-corso').value.trim(),
         durata_giorni: Number(document.getElementById('durata-corso').value),
         costo_corso: Number(document.getElementById('costo-corso').value)
       };
 
+      // Validazione aggiuntiva frontend
+      if (!data.codice_corso || !data.nome_corso) {
+        toast('⚠️ Codice corso e Nome corso sono obbligatori');
+        return;
+      }
+
+      if (data.durata_giorni <= 0 || !isFinite(data.durata_giorni)) {
+        toast('⚠️ La durata deve essere maggiore di 0');
+        return;
+      }
+
+      if (data.costo_corso < 0 || !isFinite(data.costo_corso)) {
+        toast('⚠️ Il costo non può essere negativo');
+        return;
+      }
+
       if (corsoId) {
         await PUT(`/api/corsi-catalogo/${corsoId}`, data);
-        toast('Corso modificato con successo');
+        toast('✅ Corso modificato con successo');
+        if (typeof haptic==='function') haptic('success');
+        document.dispatchEvent(new Event('corso:updated'));
       } else {
         await POST('/api/corsi-catalogo', data);
-        toast('Corso creato con successo');
+        toast('✅ Nuovo corso creato con successo');
+        if (typeof haptic==='function') haptic('success');
+        document.dispatchEvent(new Event('corso:created'));
       }
 
       hideOverlay();
       loadCatalogoData();
     } catch (error) {
-      console.error('Error saving corso:', error);
-      toast('Errore nel salvataggio del corso', 'error');
+      console.error('[Corsi] Error saving corso:', error);
+      const errorMsg = error.message || error.error || 'Errore sconosciuto';
+      toast(`❌ Errore nel salvataggio: ${errorMsg}`);
+      if (typeof haptic==='function') haptic('error');
     }
   };
 
@@ -14197,8 +14247,32 @@ function viewGestioneLead(){
     const email = formData.get('indirizzoMail');
     
     if (!telefono && !email) {
-      toast('Inserire almeno un numero di telefono o un indirizzo email');
+      toast('⚠️ Inserire almeno un numero di telefono o un indirizzo email');
       return;
+    }
+    
+    // Validazione email con regex
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        toast('⚠️ Indirizzo email non valido');
+        return;
+      }
+    }
+    
+    // Validazione telefono (solo numeri, spazi, +, -, (, ))
+    if (telefono) {
+      const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+      if (!phoneRegex.test(telefono)) {
+        toast('⚠️ Numero di telefono non valido. Usa solo numeri e +, -, (, )');
+        return;
+      }
+      // Controllo lunghezza minima (almeno 6 cifre)
+      const digitsOnly = telefono.replace(/\D/g, '');
+      if (digitsOnly.length < 6) {
+        toast('⚠️ Il numero di telefono deve contenere almeno 6 cifre');
+        return;
+      }
     }
     
     // Prepara dati per l'invio
