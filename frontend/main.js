@@ -4016,28 +4016,24 @@ function showInlineApptForm(dateStr){
         const clientDisplay = document.getElementById('modal_a_client_display');
         if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
         
-        // Raccogli indicatori in base al tipo
+        // Raccogli indicatori in base al tipo - converti a Number come collectForm()
         const vssInput = document.getElementById('modal_a_vss');
         const vsdInput = document.getElementById('modal_a_vsd');
         const vsdIInput = document.getElementById('modal_a_vsd_i');
         const telInput = document.getElementById('modal_a_tel');
         const appInput = document.getElementById('modal_a_app');
+        const descInput = document.getElementById('modal_a_desc');
         
-        if(data.type && data.type.toLowerCase().indexOf('mbs') > -1){
-          if(vsdIInput && vsdIInput.value) data.vsdIndiretto = vsdIInput.value;
-        }
-        else if(data.type && data.type.toLowerCase().indexOf('sottoprod') > -1){
-          if(telInput && telInput.value) data.telefonate = telInput.value;
-          if(appInput && appInput.value) data.appFissati = appInput.value;
-        }
-        else {
-          if(vssInput && vssInput.value) data.vss = vssInput.value;
-          if(vsdInput && vsdInput.value) data.vsdPersonal = vsdInput.value;
-        }
+        data.vss = Number(vssInput ? vssInput.value : 0);
+        data.vsdPersonal = Number(vsdInput ? vsdInput.value : 0);
+        data.vsdIndiretto = Number(vsdIInput ? vsdIInput.value : 0);
+        data.telefonate = Number(telInput ? telInput.value : 0);
+        data.appFissati = Number(appInput ? appInput.value : 0);
+        data.notes = descInput ? descInput.value : '';
         
         // NNCF flag
         const nncfBtn = document.getElementById('modal_a_nncf');
-        if(nncfBtn && nncfBtn.getAttribute('data-active') === '1') data.nncf = true;
+        data.nncf = nncfBtn && nncfBtn.getAttribute('data-active') === '1';
         
         // Salva appuntamento - SEMPRE POST per nuova creazione
         POST('/api/appointments', data).then(r=>{
@@ -4598,28 +4594,24 @@ function showInlineApptFormEdit(appData){
         const clientDisplay = document.getElementById('modal_a_client_display');
         if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
         
-        // Raccogli indicatori in base al tipo
+        // Raccogli indicatori in base al tipo - converti a Number come collectForm()
         const vssInput = document.getElementById('modal_a_vss');
         const vsdInput = document.getElementById('modal_a_vsd');
         const vsdIInput = document.getElementById('modal_a_vsd_i');
         const telInput = document.getElementById('modal_a_tel');
         const appInput = document.getElementById('modal_a_app');
+        const descInput = document.getElementById('modal_a_desc');
         
-        if(data.type && data.type.toLowerCase().indexOf('mbs') > -1){
-          if(vsdIInput && vsdIInput.value) data.vsdIndiretto = vsdIInput.value;
-        }
-        else if(data.type && data.type.toLowerCase().indexOf('sottoprod') > -1){
-          if(telInput && telInput.value) data.telefonate = telInput.value;
-          if(appInput && appInput.value) data.appFissati = appInput.value;
-        }
-        else {
-          if(vssInput && vssInput.value) data.vss = vssInput.value;
-          if(vsdInput && vsdInput.value) data.vsdPersonal = vsdInput.value;
-        }
+        data.vss = Number(vssInput ? vssInput.value : 0);
+        data.vsdPersonal = Number(vsdInput ? vsdInput.value : 0);
+        data.vsdIndiretto = Number(vsdIInput ? vsdIInput.value : 0);
+        data.telefonate = Number(telInput ? telInput.value : 0);
+        data.appFissati = Number(appInput ? appInput.value : 0);
+        data.notes = descInput ? descInput.value : '';
         
         // NNCF flag
         const nncfBtn = document.getElementById('modal_a_nncf');
-        if(nncfBtn && nncfBtn.getAttribute('data-active') === '1') data.nncf = true;
+        data.nncf = nncfBtn && nncfBtn.getAttribute('data-active') === '1';
         
         // Salva appuntamento modificato - SOLO se editId è valido
         if(editId){
