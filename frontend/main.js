@@ -4703,7 +4703,6 @@ function showInlineApptFormEdit(appData){
     setupModalTypeButtons();
     
     // ORA imposta il type button corretto DOPO setup E imposta l'input type
-    const typeInput = document.getElementById('modal_a_type');
     const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
     if(typeBtn){
       // Rimuovi active da tutti
@@ -4714,8 +4713,9 @@ function showInlineApptFormEdit(appData){
       });
       // Aggiungi active al bottone corretto
       typeBtn.classList.add('active');
-      // Aggiorna l'input type
-      if(typeInput) typeInput.value = appData.type;
+      // Aggiorna l'input type (già dichiarato sopra)
+      const typeInputField = document.getElementById('modal_a_type');
+      if(typeInputField) typeInputField.value = appData.type;
     }
     
     // Setup NNCF button DOPO type buttons per evitare reset
