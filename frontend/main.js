@@ -4696,7 +4696,26 @@ function showInlineApptFormEdit(appData){
     
     // ORA imposta il type button corretto DOPO setup E imposta l'input type
     console.log('[Modal Edit Type] appData.type:', appData.type);
-    const typeBtnId = 'modal_t_' + appData.type.replace(/\s+/g, '_');
+    
+    // Mappa type name a button ID
+    const typeToButtonId = {
+      'vendita': 'modal_t_vendita',
+      'mezza': 'modal_t_mezza',
+      'mezza giornata': 'modal_t_mezza',
+      'iprofile': 'modal_t_iprofile',
+      'iProfile': 'modal_t_iprofile',
+      'full': 'modal_t_full',
+      'giornata': 'modal_t_full',
+      'giornata intera': 'modal_t_full',
+      'formazione': 'modal_t_form',
+      'mbs': 'modal_t_mbs',
+      'MBS': 'modal_t_mbs',
+      'sottoprodotti': 'modal_t_sotto',
+      'riunione': 'modal_t_riunione',
+      'impegni personali': 'modal_t_impegni'
+    };
+    
+    const typeBtnId = typeToButtonId[appData.type] || ('modal_t_' + appData.type.replace(/\s+/g, '_'));
     console.log('[Modal Edit Type] Looking for button:', typeBtnId);
     const typeBtn = document.getElementById(typeBtnId);
     console.log('[Modal Edit Type] Button found:', !!typeBtn);
