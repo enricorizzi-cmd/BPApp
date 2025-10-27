@@ -4086,6 +4086,90 @@ function showInlineApptForm(dateStr){
       });
     }
     
+    // Setup "Salva ed esporta" button
+    const saveExportBtn = document.getElementById('modal_btnSaveExportA');
+    if(saveExportBtn){
+      saveExportBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        
+        // Stessa logica di saveA(true)
+        let client = (document.getElementById('modal_a_client_display').value||'').trim();
+        const clientSelect = document.getElementById('modal_a_client_select');
+        const clientId = clientSelect ? clientSelect.value : '';
+        const typeVal = document.getElementById('modal_a_type').value;
+        
+        if(!client){
+          const tl = String(typeVal||'').toLowerCase();
+          if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ 
+            client=typeVal; 
+          } else { 
+            toast('Cliente obbligatorio'); 
+            return; 
+          }
+        }
+        
+        const startLocal = document.getElementById('modal_a_start').value;
+        if(!startLocal){ 
+          toast('Data/ora obbligatorie'); 
+          return; 
+        }
+        
+        let dur = parseInt(document.getElementById('modal_a_dur').value||'60',10);
+        if(!isFinite(dur)||dur<=0) dur=60;
+        
+        const endStr = document.getElementById('modal_a_end').value;
+        let endISO;
+        if(endStr){
+          const s=new Date(startLocal);
+          const pr=endStr.split(':');
+          const e=new Date(s);
+          e.setHours(parseInt(pr[0],10)||0, parseInt(pr[1],10)||0, 0, 0);
+          if(e < s) e.setDate(e.getDate()+1);
+          endISO=e.toISOString();
+          dur=Math.max(1, Math.round((e-s)/60000));
+        }else{
+          const eLocal = new Date(new Date(startLocal).getTime()+dur*60000);
+          endISO = eLocal.toISOString();
+        }
+        
+        const desc = document.getElementById('modal_a_desc').value || '';
+        
+        const data = {
+          client: client,
+          clientId: clientId,
+          start: localInputToISO(startLocal),
+          end: endISO,
+          durationMinutes: dur,
+          type: typeVal,
+          vss: Number(document.getElementById('modal_a_vss').value||0),
+          vsdPersonal: Number(document.getElementById('modal_a_vsd').value||0),
+          vsdIndiretto: Number(document.getElementById('modal_a_vsd_i').value||0),
+          telefonate: Number(document.getElementById('modal_a_tel').value||0),
+          appFissati: Number(document.getElementById('modal_a_app').value||0),
+          notes: desc,
+          nncf: document.getElementById('modal_a_nncf').getAttribute('data-active')==='1',
+          exportAfter: true
+        };
+        
+        POST('/api/appointments', data).then(r=>{
+          if(r.ok){
+            toast('Appuntamento salvato ed esportato!');
+            overlay.classList.add('closing');
+            setTimeout(() => {
+              overlay.remove();
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect && typeof renderMonth === 'function'){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }, 300);
+          }else{
+            toast('Errore: ' + (r.error || 'Operazione fallita'));
+          }
+        });
+      });
+    }
+    
     // Chiudi su click overlay
     overlay.addEventListener('click', function(e){
       if(e.target === overlay){
@@ -4698,6 +4782,105 @@ function showInlineApptFormEdit(appData){
           POST('/api/appointments', data).then(r=>{
             if(r.ok){
               toast('Appuntamento aggiunto!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+              }, 300);
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        }
+      });
+    }
+    
+    // Setup "Salva ed esporta" button
+    const saveExportBtn = document.getElementById('modal_btnSaveExportA');
+    if(saveExportBtn){
+      saveExportBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        
+        // Raccogli dati - stessa logica di saveBtn
+        let client = (document.getElementById('modal_a_client_display').value||'').trim();
+        const clientSelect = document.getElementById('modal_a_client_select');
+        const clientId = clientSelect ? clientSelect.value : '';
+        const typeVal = document.getElementById('modal_a_type').value;
+        
+        if(!client){
+          const tl = String(typeVal||'').toLowerCase();
+          if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ 
+            client=typeVal; 
+          } else { 
+            toast('Cliente obbligatorio'); 
+            return; 
+          }
+        }
+        
+        const startLocal = document.getElementById('modal_a_start').value;
+        if(!startLocal){ 
+          toast('Data/ora obbligatorie'); 
+          return; 
+        }
+        
+        let dur = parseInt(document.getElementById('modal_a_dur').value||'60',10);
+        if(!isFinite(dur)||dur<=0) dur=60;
+        
+        const endStr = document.getElementById('modal_a_end').value;
+        let endISO;
+        if(endStr){
+          const s=new Date(startLocal);
+          const pr=endStr.split(':');
+          const e=new Date(s);
+          e.setHours(parseInt(pr[0],10)||0, parseInt(pr[1],10)||0, 0, 0);
+          if(e < s) e.setDate(e.getDate()+1);
+          endISO=e.toISOString();
+          dur=Math.max(1, Math.round((e-s)/60000));
+        }else{
+          const eLocal = new Date(new Date(startLocal).getTime()+dur*60000);
+          endISO = eLocal.toISOString();
+        }
+        
+        const desc = document.getElementById('modal_a_desc').value || '';
+        
+        const data = {
+          client: client,
+          clientId: clientId,
+          start: localInputToISO(startLocal),
+          end: endISO,
+          durationMinutes: dur,
+          type: typeVal,
+          vss: Number(document.getElementById('modal_a_vss').value||0),
+          vsdPersonal: Number(document.getElementById('modal_a_vsd').value||0),
+          vsdIndiretto: Number(document.getElementById('modal_a_vsd_i').value||0),
+          telefonate: Number(document.getElementById('modal_a_tel').value||0),
+          appFissati: Number(document.getElementById('modal_a_app').value||0),
+          notes: desc,
+          nncf: document.getElementById('modal_a_nncf').getAttribute('data-active')==='1',
+          exportAfter: true
+        };
+        
+        if(editId){
+          PUT('/api/appointments/'+editId, data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento modificato ed esportato!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+                editId = null;
+              }, 300);
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect && typeof renderMonth === 'function'){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        } else {
+          POST('/api/appointments', data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento salvato ed esportato!');
               overlay.classList.add('closing');
               setTimeout(() => {
                 overlay.remove();
