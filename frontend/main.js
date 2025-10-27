@@ -2482,12 +2482,7 @@ function viewCalendar(){
               const id = c.getAttribute('data-aid');
               const a = items.find(z => String(z.id) === String(id));
               if(a) {
-                viewAppointments();
-                // Piccolo delay per assicurarsi che la sezione sia caricata
-                setTimeout(() => {
-                  fillForm(a);
-                  window.scrollTo({top: 0, behavior: 'smooth'});
-                }, 100);
+                showInlineApptFormEdit(a);
               }
             });
           });
@@ -3685,6 +3680,93 @@ function showInlineApptForm(dateStr){
       if(e.target === overlay){
         overlay.classList.add('closing');
         setTimeout(() => overlay.remove(), 300);
+      }
+    });
+  }, 50);
+}
+
+// Funzione per mostrare form inline appuntamenti in MODALITÀ MODIFICA
+function showInlineApptFormEdit(appData){
+  // Crea overlay e modal
+  const overlay = document.createElement('div');
+  overlay.className = 'cal-modal-overlay';
+  overlay.innerHTML = `
+    <div class="cal-modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="margin:0;font-size:20px;font-weight:800">Modifica Appuntamento</h2>
+        <button onclick="this.closest('.cal-modal-overlay').remove()" 
+                style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);line-height:1">&times;</button>
+      </div>
+      <div id="inline_appt_edit_form_wrap"></div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  // Load form template dal codice esistente
+  setTimeout(() => {
+    const formWrap = document.getElementById('inline_appt_edit_form_wrap');
+    if(!formWrap) return;
+    
+    // Recupera template HTML dal DOM della sezione appuntamenti
+    const apptForm = document.getElementById('a_form');
+    if(apptForm){
+      formWrap.innerHTML = apptForm.outerHTML;
+      
+      // Precompila tutti i campi con i dati dell'appuntamento
+      fillForm(appData);
+      
+      // Setup editId per save
+      editId = appData.id;
+      
+      // Configura l'invio del form
+      const form = formWrap.querySelector('#a_form');
+      if(form){
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          
+          // Raccogli dati
+          const data = {};
+          data.type = document.getElementById('a_type').value;
+          data.start = document.getElementById('a_start').value;
+          data.end = document.getElementById('a_end').value;
+          data.duration = document.getElementById('a_dur').value;
+          const clientSelect = document.getElementById('a_client_select');
+          if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
+          const clientDisplay = document.getElementById('a_client_display');
+          if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+          
+          // Salva appuntamento modificato
+          PUT('/api/appointments/'+editId, data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento modificato!');
+              overlay.classList.add('closing');
+              setTimeout(() => {
+                overlay.remove();
+                editId = null;
+              }, 300);
+              // Refresh calendario
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        });
+      }
+    }
+    
+    // Chiudi su click overlay
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay){
+        overlay.classList.add('closing');
+        setTimeout(() => {
+          overlay.remove();
+          editId = null;
+        }, 300);
       }
     });
   }, 50);
