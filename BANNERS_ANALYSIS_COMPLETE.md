@@ -378,9 +378,29 @@ DELETE operation →
 
 ---
 
+## ⚠️ **OBSOLETI/RIDONDANTI**
+
+### **Client Status Banner (n.6)**
+- 📁 File: `frontend/lib/client-status.js`
+- 🔴 **STATUS**: OBSOLETO - logica duplicata
+- 🔴 **DUPLICA**: Banner Post-NNCF (n.2) fa la stessa cosa
+- ✅ Raccomandazione: **RIMUOVI** o marca come deprecated
+
+---
+
 ## ✅ **VERDETTO FINALE**
 
-**Status**: 🟢 **TUTTI I BANNER FUNZIONANO CORRETTAMENTE**
+**Status**: 🟡 **5 BANNER ATTIVI + 1 OBSOLETO**
+
+**Banner Attivi**:
+1. ✅ Banner Post-Vendita
+2. ✅ Banner Post-NNCF
+3. ✅ Banner Contatto Lead
+4. ✅ Banner Undo
+5. ✅ Banner Installazione PWA
+
+**Banner Obsoleti**:
+6. ⚠️ Banner Client Status (duplica n.2)
 
 **Sintassi**: ✅ Nessun errore
 **Logica**: ✅ Flussi completi
@@ -388,5 +408,5 @@ DELETE operation →
 **UX**: ✅ Feedback chiari + Coach + Haptic
 **Error Handling**: ✅ Multi-layer fallback
 
-**Nessuna modifica necessaria!** 🎉
+**Raccomandazione**: Rimuovere `client-status.js` per evitare confusione! 🧹
 
