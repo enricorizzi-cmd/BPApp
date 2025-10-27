@@ -3511,10 +3511,23 @@ function viewPeriods(){
   // === Import da agenda ===
   function doImportAgenda(){
     var s=startH.value, e=endH.value; if(!s||!e){toast('Seleziona il periodo');return;}
-    GET('/api/appointments').then(function(r){
-      var list=r.appointments||[], sD=new Date(s), eD=new Date(e);
+    
+    // Fetch appuntamenti E GI in parallelo
+    Promise.all([
+      GET('/api/appointments'),
+      GET('/api/gi')
+    ]).then(function(results){
+      var appointmentsResponse = results[0];
+      var giResponse = results[1];
+      
+      var list=appointmentsResponse.appointments||[], sD=new Date(s), eD=new Date(e);
+      var giList=giResponse.sales||[];
+      
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
-      for(var i=0;i<list.length;i++){ var a=list[i], d=BPTimezone.parseUTCString(a.start);
+      
+      // Aggrega appuntamenti
+      for(var i=0;i<list.length;i++){ 
+        var a=list[i], d=BPTimezone.parseUTCString(a.start);
         if(d>=sD && d<=eD){
           agg.VSS+=Number(a.vss||0);
           agg.VSDPersonale+=Number(a.vsdPersonal||0);
@@ -3531,6 +3544,15 @@ function viewPeriods(){
           if(a.nncf){ agg.NNCF+=1; }
         }
       }
+      
+      // Aggrega GI
+      for(var j=0;j<giList.length;j++){
+        var gi=giList[j], giDate=new Date(gi.date);
+        if(giDate>=sD && giDate<=eD){
+          agg.GI+=Number(gi.vssTotal||0);
+        }
+      }
+      
       if(CONS_MODE){
         fillCons(agg); toast('Consuntivo compilato dalla tua agenda');
       }else{
