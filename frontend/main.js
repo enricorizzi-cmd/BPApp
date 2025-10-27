@@ -3974,20 +3974,17 @@ function showInlineApptForm(dateStr){
       durInput.value = '90';
     }
     
-    // Setup client dropdown
-    await setupModalClientDropdown();
-    
-    // Setup type buttons
-    setupModalTypeButtons();
-    
-    // Setup NNCF button - COPIA ESATTA della logica di appuntamenti
+    // Setup NNCF button PRIMA del client dropdown
     const nncfBtn = document.getElementById('modal_a_nncf');
-    if(nncfBtn){
-      nncfBtn.addEventListener('click', () => {
-        const on = nncfBtn.getAttribute('data-active') !== '1';
-        nncfBtn.setAttribute('data-active', on ? '1' : '0');
-        nncfBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-        nncfBtn.classList.toggle('active', on);
+    if(nncfBtn && !nncfBtn.hasAttribute('data-listener')){
+      nncfBtn.setAttribute('data-listener', '1');
+      nncfBtn.addEventListener('click', function(e){
+        e.preventDefault) return;
+        if(this.disabled) return;
+        const on = this.getAttribute('data-active') !== '1';
+        this.setAttribute('data-active', on ? '1' : '0');
+        this.setAttribute('aria-pressed', on ? 'true' : 'false');
+        this.classList.toggle('active', on);
         if(on){
           // Seleziona vendita quando si attiva NNCF
           const venditaBtn = document.getElementById('modal_t_vendita');
@@ -3995,6 +3992,12 @@ function showInlineApptForm(dateStr){
         }
       });
     }
+    
+    // Setup client dropdown
+    await setupModalClientDropdown();
+    
+    // Setup type buttons
+    setupModalTypeButtons();
     
     // Setup save button
     const saveBtn = document.getElementById('modal_btnSaveA');
@@ -4624,12 +4627,28 @@ function showInlineApptFormEdit(appData){
       if(vsdInput && appData.vsdPersonal) vsdInput.value = String(appData.vsdPersonal);
     }
     
-    // Setup NNCF button
+    // Setup NNCF button PRIMA del client dropdown
     const nncfBtn = document.getElementById('modal_a_nncf');
     if(nncfBtn && appData.nncf){
       nncfBtn.classList.add('active');
       nncfBtn.setAttribute('data-active', '1');
       nncfBtn.setAttribute('aria-pressed', 'true');
+    }
+    if(nncfBtn && !nncfBtn.hasAttribute('data-listener')){
+      nncfBtn.setAttribute('data-listener', '1');
+      nncfBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        if(this.disabled) return;
+        const on = this.getAttribute('data-active') !== '1';
+        this.setAttribute('data-active', on ? '1' : '0');
+        this.setAttribute('aria-pressed', on ? 'true' : 'false');
+        this.classList.toggle('active', on);
+        if(on){
+          // Seleziona vendita quando si attiva NNCF
+          const venditaBtn = document.getElementById('modal_t_vendita');
+          if(venditaBtn) venditaBtn.click();
+        }
+      });
     }
     
     // Setup client dropdown
