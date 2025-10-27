@@ -4787,6 +4787,7 @@ let sortedClients = [];
 let nncfBtn = null;
 let segSale = null;
 let segHalf = null;
+let segIProfile = null;
 let segFull = null;
 let segForm = null;
 let segMbs = null;
