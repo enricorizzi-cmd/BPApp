@@ -975,11 +975,22 @@ function viewHome(){
       '</div>'+
     '</div>'+
     
-    '<button class="fab" id="dash_fab" onclick="viewAppointments()" title="Nuovo appuntamento">'+
+    '<button class="fab" id="dash_fab" title="Nuovo appuntamento">'+
       '+'+
     '</button>';
 
   renderTopbar();
+  
+  // FAB button - apri modal nuovo appuntamento
+  const dashFab = document.getElementById('dash_fab');
+  if(dashFab){
+    dashFab.addEventListener('click', function(){
+      // Ottieni data di oggi
+      const today = new Date();
+      const todayStr = ymd(today);
+      showInlineApptForm(todayStr);
+    });
+  }
 
   // Normalize calendar header layout: wrap actions together and fix labels
   (function fixCalHeader(){
