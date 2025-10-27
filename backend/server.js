@@ -1711,11 +1711,15 @@ app.post("/api/gi", auth, async (req,res)=>{
         createdat: row.createdAt
       };
       await insertRecord('gi', mappedSale);
+      console.log('[GI] Successfully inserted into Supabase:', row.id);
     } catch (error) {
-      console.error('Error inserting GI/sale:', error);
+      console.error('[GI] Error inserting into Supabase:', error);
       // Fallback al metodo tradizionale se Supabase fallisce
       await writeJSON("gi.json", db);
     }
+  } else {
+    // Se insertRecord non è disponibile, usa writeJSON
+    await writeJSON("gi.json", db);
   }
   
   return res.json({ ok:true, id: row.id });

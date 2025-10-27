@@ -6723,12 +6723,12 @@ function viewLeaderboard(){
     ov.classList.remove('hidden');
     
     // Aggiungi ESC key handler
-    const escHandler = function(e) {
+    currentEscHandler = function(e) {
       if (e.key === 'Escape' || e.keyCode === 27) {
         hideOverlay();
       }
     };
-    document.addEventListener('keydown', escHandler);
+    document.addEventListener('keydown', currentEscHandler);
     ov.setAttribute('data-esc-handler', 'true');
     
     // focus al primo campo utile se presente
@@ -6736,12 +6736,16 @@ function viewLeaderboard(){
     if (first) setTimeout(function(){ try{ first.focus(); }catch(e){} }, 0);
   };
 
+  // Store esc handler reference
+  var currentEscHandler = null;
+  
   window.hideOverlay = function () {
     var ov = document.getElementById('bp-overlay');
     if (ov) {
       // Rimuovi ESC listener se presente
-      if (ov.getAttribute('data-esc-handler') === 'true') {
-        document.removeEventListener('keydown', arguments.callee.escHandler);
+      if (ov.getAttribute('data-esc-handler') === 'true' && currentEscHandler) {
+        document.removeEventListener('keydown', currentEscHandler);
+        currentEscHandler = null;
         ov.removeAttribute('data-esc-handler');
       }
       
