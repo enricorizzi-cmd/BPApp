@@ -6721,6 +6721,16 @@ function viewLeaderboard(){
     var panel = document.getElementById('bp-overlay-panel');
     panel.innerHTML = html || '';
     ov.classList.remove('hidden');
+    
+    // Aggiungi ESC key handler
+    const escHandler = function(e) {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        hideOverlay();
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+    ov.setAttribute('data-esc-handler', 'true');
+    
     // focus al primo campo utile se presente
     var first = panel.querySelector('input, textarea, select, button');
     if (first) setTimeout(function(){ try{ first.focus(); }catch(e){} }, 0);
@@ -6729,6 +6739,12 @@ function viewLeaderboard(){
   window.hideOverlay = function () {
     var ov = document.getElementById('bp-overlay');
     if (ov) {
+      // Rimuovi ESC listener se presente
+      if (ov.getAttribute('data-esc-handler') === 'true') {
+        document.removeEventListener('keydown', arguments.callee.escHandler);
+        ov.removeAttribute('data-esc-handler');
+      }
+      
       ov.classList.add('hidden');
       ov.classList.remove('gi-modal-overlay');
     }
