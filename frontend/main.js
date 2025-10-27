@@ -4470,9 +4470,9 @@ function showInlineApptFormEdit(appData){
     editId = appData.id;
     
     // Mostra bottone elimina
-    const deleteBtn = document.getElementById('modal_btnDeleteA');
-    if(deleteBtn) {
-      deleteBtn.style.display = 'block';
+    const modalDeleteBtn = document.getElementById('modal_btnDeleteA');
+    if(modalDeleteBtn) {
+      modalDeleteBtn.style.display = 'block';
     }
     
     // Precompila tutti i campi con i dati dell'appuntamento
@@ -4577,9 +4577,9 @@ function showInlineApptFormEdit(appData){
     }
     
     // Setup delete button
-    const deleteBtn = document.getElementById('modal_btnDeleteA');
-    if(deleteBtn){
-      deleteBtn.addEventListener('click', function(e){
+    const modalDeleteBtn = document.getElementById('modal_btnDeleteA');
+    if(modalDeleteBtn){
+      modalDeleteBtn.addEventListener('click', function(e){
         e.preventDefault();
         
         if(!confirm('Eliminare definitivamente questo appuntamento?')) return;
