@@ -4696,37 +4696,14 @@ function showInlineApptFormEdit(appData){
       if(vsdInput && appData.vsdPersonal) vsdInput.value = String(appData.vsdPersonal);
     }
     
-    // Setup NNCF button PRIMA del client dropdown
-    const nncfBtn = document.getElementById('modal_a_nncf');
-    if(nncfBtn && appData.nncf){
-      nncfBtn.classList.add('active');
-      nncfBtn.setAttribute('data-active', '1');
-      nncfBtn.setAttribute('aria-pressed', 'true');
-    }
-    if(nncfBtn && !nncfBtn.hasAttribute('data-listener')){
-      nncfBtn.setAttribute('data-listener', '1');
-      nncfBtn.addEventListener('click', function(e){
-        e.preventDefault();
-        if(this.disabled) return;
-        const on = this.getAttribute('data-active') !== '1';
-        this.setAttribute('data-active', on ? '1' : '0');
-        this.setAttribute('aria-pressed', on ? 'true' : 'false');
-        this.classList.toggle('active', on);
-        if(on){
-          // Seleziona vendita quando si attiva NNCF
-          const venditaBtn = document.getElementById('modal_t_vendita');
-          if(venditaBtn) venditaBtn.click();
-        }
-      });
-    }
-    
     // Setup client dropdown
     await setupModalClientDropdown();
     
     // Setup type buttons PRIMA di impostare il bottone attivo
     setupModalTypeButtons();
     
-    // ORA imposta il type button corretto DOPO setup SENZA triggerare click
+    // ORA imposta il type button corretto DOPO setup E imposta l'input type
+    const typeInput = document.getElementById('modal_a_type');
     const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
     if(typeBtn){
       // Rimuovi active da tutti
@@ -4737,6 +4714,44 @@ function showInlineApptFormEdit(appData){
       });
       // Aggiungi active al bottone corretto
       typeBtn.classList.add('active');
+      // Aggiorna l'input type
+      if(typeInput) typeInput.value = appData.type;
+    }
+    
+    // Setup NNCF button DOPO type buttons per evitare reset
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    if(nncfBtn){
+      // Reset stato iniziale
+      nncfBtn.classList.remove('active');
+      nncfBtn.setAttribute('data-active', '0');
+      nncfBtn.setAttribute('aria-pressed', 'false');
+      
+      // Imposta stato da appData
+      if(appData.nncf){
+        nncfBtn.classList.add('active');
+        nncfBtn.setAttribute('data-active', '1');
+        nncfBtn.setAttribute('aria-pressed', 'true');
+      }
+      
+      // Aggiungi listener solo se non esiste
+      if(!nncfBtn.hasAttribute('data-listener')){
+        nncfBtn.setAttribute('data-listener', '1');
+        nncfBtn.addEventListener('click', function(e){
+          e.preventDefault();
+          if(this.disabled) return;
+          const on = this.getAttribute('data-active') !== '1';
+          this.setAttribute('data-active', on ? '1' : '0');
+          this.setAttribute('aria-pressed', on ? 'true' : 'false');
+          if(on){
+            this.classList.add('active');
+            // Seleziona vendita quando si attiva NNCF
+            const venditaBtn = document.getElementById('modal_t_vendita');
+            if(venditaBtn) venditaBtn.click();
+          } else {
+            this.classList.remove('active');
+          }
+        });
+      }
     }
     
     // Toggle visibility based on type
