@@ -1558,8 +1558,9 @@ app.get("/api/gi", auth, async (req,res)=>{
       if (!error && data) {
         rows = data.map(r => ({
           id: r.id,
-          date: r.data,
-          createdAt: r.data,
+          // Fix temporaneo: se data è null/undefined, usa '2025-10-01' come fallback per record esistenti
+          date: r.data || '2025-10-01',
+          createdAt: r.data || '2025-10-01',
           appointmentId: null,
           clientId: r.clientid || '',
           clientName: r.clientname || '',
