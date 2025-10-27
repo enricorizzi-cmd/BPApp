@@ -17840,12 +17840,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       setTimeout(updateInstallButtonVisibility, 100);
       viewHome();
     } catch (error) {
-      // Token scaduto o non valido, reindirizza al login senza loop
-      console.log('Token scaduto, reindirizzamento al login');
-      setTimeout(function(){
-        location.href = '/?v=13';
-      }, 100);
-      return; // PREVIENI ESECUZIONE DI VIEWHOME
+      // Token scaduto o non valido: logout (pulisce token) e reindirizza
+      console.log('Token scaduto, logout e reindirizzamento al login');
+      logout(); // Questa funzione pulisce token e fa redirect
+      return;
     }
   } else {
     viewLogin();
