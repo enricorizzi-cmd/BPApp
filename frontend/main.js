@@ -1259,6 +1259,10 @@ function recomputeKPI(){
     var fromISO = ymd(new Date(f));
     var toISO   = ymd(new Date(t));
     var s = '?type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+    // Aggiungi global=1 SOLO SE l'utente è admin
+    if (getUser() && getUser().role === 'admin') {
+      s = '?global=1&type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+    }
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
@@ -1433,7 +1437,15 @@ function cardAppt(x){
     var fromISO = ymd(new Date(rDash.start));
     var toISO   = ymd(new Date(rDash.end));
     var s = '?type='+encodeURIComponent(typeDash)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+    // Aggiungi global=1 SOLO SE l'utente è admin
+    if (getUser() && getUser().role === 'admin') {
+      s = '?global=1&type='+encodeURIComponent(typeDash)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+      console.log('[Dashboard viewHome] Admin access, adding global=1');
+    } else {
+      console.log('[Dashboard viewHome] Non-admin access, NOT adding global=1');
+    }
     if (cons) s += '&userId='+encodeURIComponent(cons);
+    console.log('[Dashboard viewHome] Query string:', s);
     return s;
   })();
   Promise.all([
@@ -2349,6 +2361,9 @@ function viewCalendar(){
         baseApps += '?global=1'; 
         baseAvail += '&global=1';
         baseGI += '&global=1';
+        console.log('[Calendar] Admin access, adding global=1');
+      } else {
+        console.log('[Calendar] Non-admin access, NOT adding global=1');
       }
     }
     else if(consultant && consultant!==getUser().id){ 
@@ -8771,6 +8786,10 @@ function renderProvvPie(provvGI, provvVSD, giBase){
       var fromISO = ymd(new Date(from));
       var toISO   = ymd(new Date(to));
       var s = '?type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+      // Aggiungi global=1 SOLO SE l'utente è admin e non ha selezionato un utente specifico
+      if (isAdmin && (!userSel || userSel==='__all')) {
+        s = '?global=1&type='+encodeURIComponent(type)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
+      }
       if (isAdmin && userSel && userSel!=='__all') s += '&userId='+encodeURIComponent(userSel);
       return s;
     })();
