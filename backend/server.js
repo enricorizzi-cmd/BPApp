@@ -1981,7 +1981,8 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   const settingsRoutes = require("./routes/settings")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const openCyclesRoutes = require("./routes/open-cycles")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase });
   const pushTrackingRoutes = require("./routes/push-tracking")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
-  const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
+  // Temporaneamente disabilitato finché non viene creata la tabella user_preferences
+  // const userPreferencesRoutes = require("./routes/user-preferences")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase });
   const cycleNotificationsRoutes = require("./routes/cycle-notifications")({ auth, supabase });
   const venditeRiordiniRoutes = require("./routes/vendite-riordini")(app);
   const corsiRoutes = require("./routes/corsi")(app);
@@ -1995,7 +1996,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   app.use('/api/settings', settingsRoutes);
   app.use('/api', openCyclesRoutes);
   app.use('/api/push-tracking', pushTrackingRoutes);
-  app.use('/api/user-preferences', userPreferencesRoutes);
+  // app.use('/api/user-preferences', userPreferencesRoutes);
   app.use('/api/cycle-notifications', cycleNotificationsRoutes);
   
   // Le route corsi sono già registrate nel modulo stesso (corsiRoutes)
