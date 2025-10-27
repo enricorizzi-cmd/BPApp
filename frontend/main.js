@@ -3935,6 +3935,9 @@ function getAppointmentFormHTML(){
 
 // Funzione per mostrare form inline appuntamenti nel calendario
 function showInlineApptForm(dateStr){
+  // Pulisci editId per forzare modalità CREAZIONE
+  editId = null;
+  
   // Crea overlay e modal
   const overlay = document.createElement('div');
   overlay.className = 'cal-modal-overlay';
