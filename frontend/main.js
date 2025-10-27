@@ -1165,9 +1165,12 @@ function viewHome(){
       return s;
     })();
     return GET('/api/periods'+__qsDash).catch(function(error){
+    console.warn('[Dashboard Chart] GET /api/periods'+__qsDash+' failed:', error.message);
     // Se fallisce con global=1, prova senza global (per utenti non-admin)
     if (__qsDash.indexOf('global=1') !== -1) {
+      console.log('[Dashboard Chart] Retrying without global=1');
       return GET('/api/periods'+__qsDash.replace('?global=1','')).catch(function(e2){
+        console.warn('[Dashboard Chart] Retry without global=1 also failed:', e2.message);
         return { periods: [] };
       });
     }
@@ -1175,6 +1178,7 @@ function viewHome(){
     return { periods: [] };
   }).then(function(resp){
     var periods = (resp && resp.periods) || [];
+    console.log('[Dashboard Chart] Loaded periods:', periods.length);
 
       var filtered = periods.filter(function(p){
         if (p.type !== baseType) return false;
@@ -1256,10 +1260,11 @@ function recomputeKPI(){
   })();
     return GET('/api/periods'+qsKpi).catch(function(error){
     // Non fare logout, solo array vuoto
-    console.log('[Dashboard KPI] Auth error, using empty periods');
+    console.warn('[Dashboard KPI] GET /api/periods'+qsKpi+' failed:', error.message);
     return { periods: [] };
   }).then(function(j){
     var periods = (j && j.periods) || [];
+    console.log('[Dashboard KPI] Loaded periods:', periods.length);
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
 
@@ -1428,14 +1433,25 @@ function cardAppt(x){
     return s;
   })();
   Promise.all([
-    GET('/api/appointments').catch(function(e){ return { appointments: [] }; }),
-    GET('/api/periods'+__qsDash).catch(function(e){ return { periods: [] }; }),
-    GET('/api/periods').catch(function(e){ return { periods: [] }; })
+    GET('/api/appointments').catch(function(e){ 
+      console.warn('[Dashboard] GET /api/appointments failed:', e.message);
+      return { appointments: [] }; 
+    }),
+    GET('/api/periods'+__qsDash).catch(function(e){ 
+      console.warn('[Dashboard] GET /api/periods'+__qsDash+' failed:', e.message);
+      return { periods: [] }; 
+    }),
+    GET('/api/periods').catch(function(e){ 
+      console.warn('[Dashboard] GET /api/periods failed:', e.message);
+      return { periods: [] }; 
+    })
   ]).then(function(arr){
     // RIMOSSO CHECK - accetta sempre array
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
     var allPers = (arr[2] && arr[2].periods)   || [];
+    
+    console.log('[Dashboard] Loaded data - apps:', apps.length, 'pers:', pers.length, 'allPers:', allPers.length);
     
     // Continua con il rendering anche se dati vuoti
 
