@@ -1743,6 +1743,44 @@ function viewCalendar(){
         #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
       }
       
+      /* Modal inline appuntamenti */
+      .cal-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,.7);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.2s ease;
+      }
+      .cal-modal-overlay.closing {
+        animation: fadeOut 0.2s ease;
+      }
+      .cal-modal-content {
+        background: var(--card);
+        border-radius: 20px;
+        padding: 24px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 12px 48px rgba(0,0,0,.4);
+        animation: slideUp 0.3s ease;
+      }
+      .cal-modal-content.closing {
+        animation: slideDown 0.3s ease;
+      }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+      @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(30px); opacity: 0; } }
+      
       /* Modern Results Grid */
       .cal-results-grid {
         display: grid;
@@ -2469,36 +2507,8 @@ function viewCalendar(){
               ev.stopPropagation();
               var selectedDate = addBtn.getAttribute('data-date');
               
-              // Salva la data selezionata per prefill
-              save('bp_prefill_cal_date', { date: selectedDate });
-              
-              // Naviga alla scheda appuntamenti con prefill
-              viewAppointments();
-              
-              // Piccolo delay per assicurarsi che la sezione sia caricata
-              setTimeout(() => {
-                // Pre-compila data con la data selezionata, ora di default 09:00
-                var startInput = document.getElementById('a_start');
-                var durInput = document.getElementById('a_dur');
-                if(startInput && durInput){
-                  // Format data: YYYY-MM-DDTHH:MM
-                  var prefilledDateTime = selectedDate + 'T09:00';
-                  startInput.value = prefilledDateTime;
-                  
-                  // Calcola durata di default (90 min per vendita)
-                  var typeInput = document.getElementById('a_type');
-                  var defDur = defDurByType(typeInput ? typeInput.value : 'vendita');
-                  
-                  // Imposta durata
-                  durInput.value = String(defDur);
-                  
-                  // Triggera il cambio durata per calcolare la fine automatica
-                  if(typeof updateEndFromDur === 'function'){
-                    updateEndFromDur();
-                  }
-                }
-                window.scrollTo({top: 0, behavior: 'smooth'});
-              }, 200);
+              // Visualizza modal form inline
+              showInlineApptForm(selectedDate);
             });
           }
 
@@ -3588,6 +3598,96 @@ function viewPeriods(){
 
   showControlsForType();
   listPeriods();
+}
+
+// Funzione per mostrare form inline appuntamenti nel calendario
+function showInlineApptForm(dateStr){
+  // Crea overlay e modal
+  const overlay = document.createElement('div');
+  overlay.className = 'cal-modal-overlay';
+  overlay.innerHTML = `
+    <div class="cal-modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="margin:0;font-size:20px;font-weight:800">Aggiungi Appuntamento</h2>
+        <button onclick="this.closest('.cal-modal-overlay').remove()" 
+                style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);line-height:1">&times;</button>
+      </div>
+      <div id="inline_appt_form_wrap"></div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+  
+  // Load form template dal codice esistente
+  setTimeout(() => {
+    const formWrap = document.getElementById('inline_appt_form_wrap');
+    if(!formWrap) return;
+    
+    // Recupera template HTML dal DOM della sezione appuntamenti
+    const apptForm = document.getElementById('a_form');
+    if(apptForm){
+      formWrap.innerHTML = apptForm.outerHTML;
+      
+      // Precompila data e ora
+      const startInput = document.getElementById('a_start');
+      if(startInput && dateStr){
+        startInput.value = dateStr + 'T09:00';
+      }
+      
+      // Imposta durata default
+      const durInput = document.getElementById('a_dur');
+      if(durInput){
+        const typeInput = document.getElementById('a_type');
+        const defDur = defDurByType(typeInput ? typeInput.value : 'vendita');
+        durInput.value = String(defDur);
+        updateEndFromDur();
+      }
+      
+      // Configura l'invio del form
+      const form = formWrap.querySelector('#a_form');
+      if(form){
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          
+          // Raccogli dati
+          const data = {};
+          data.type = document.getElementById('a_type').value;
+          data.start = document.getElementById('a_start').value;
+          data.end = document.getElementById('a_end').value;
+          data.duration = document.getElementById('a_dur').value;
+          const clientSelect = document.getElementById('a_client_select');
+          if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
+          const clientDisplay = document.getElementById('a_client_display');
+          if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+          
+          // Salva appuntamento
+          POST('/api/appointments', data).then(r=>{
+            if(r.ok){
+              toast('Appuntamento aggiunto!');
+              overlay.classList.add('closing');
+              setTimeout(() => overlay.remove(), 300);
+              // Refresh calendario
+              const monthInput = document.getElementById('cal_month');
+              const consultantSelect = document.getElementById('cal_consultant');
+              if(monthInput && consultantSelect){
+                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+              }
+            }else{
+              toast('Errore: ' + (r.error || 'Operazione fallita'));
+            }
+          });
+        });
+      }
+    }
+    
+    // Chiudi su click overlay
+    overlay.addEventListener('click', function(e){
+      if(e.target === overlay){
+        overlay.classList.add('closing');
+        setTimeout(() => overlay.remove(), 300);
+      }
+    });
+  }, 50);
 }
 
 // ===== APPUNTAMENTI =====
