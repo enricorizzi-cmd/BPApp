@@ -5,7 +5,7 @@
 
 ---
 
-## 📊 **BANNER INDIVIDUATI (Totale: 4)**
+## 📊 **BANNER INDIVIDUATI (Totale: 6)**
 
 ### **1. BANNER POST-VENDITA (Sale Banner)**
 **File**: `frontend/src/postSaleBanners.js` (righe 447-518)
@@ -156,6 +156,70 @@ Clic telefono → Chiamata (mobile/desktop) → 10s → Banner Lead →
 DELETE → ShowUndo(label, onUndo, 5000) → 
 [Annulla entro 5s] → Undo → Refresh dati
 ```
+
+---
+
+### **5. BANNER INSTALLAZIONE PWA (Install Prompt Banner)**
+**File**: `frontend/modules/installPrompt.js` (righe 97-127)
+
+**Trigger**:
+- 📱 Mobile device (`isMobileDevice()`)
+- ❌ NON già installato (`!isPWAInstalled()`)
+- ✅ Deferred prompt disponibile (`deferredPrompt !== null`)
+- ❌ NON già cancellato (`sessionStorage.getItem('a2hs-dismissed') !== '1'`)
+
+**Contenuto**:
+```
+"Clicca installa app dal menu o aggiungi a schermata Home"
+```
+
+**Bottoni (1)**:
+1. **"✕"** → Chiude banner, salva `a2hs-dismissed=1` in sessionStorage
+
+**Output UI**: Toast container standard (non modal)
+
+**Note**:
+- ⚠️ Display controllato da `updateInstallButtonVisibility()` sulla sidebar/topbar
+- ⚠️ NON usa sistema `enqueueBanner()` (toast standard)
+- ⚠️ Auto-close dopo 2.2s se NON cliccato ✕
+
+---
+
+### **6. BANNER "È DIVENTATO CLIENTE?" (Client Status Banner)**
+**File**: `frontend/lib/client-status.js` (righe 72-90)
+
+**Trigger**:
+- 📅 Appuntamento con `nncf=true`
+- Manualmente via `BP.ClientStatus.renderBecameClientBanner()`
+
+**Contenuto**:
+```
+"È diventato cliente?
+ Appuntamento con [CLIENTE]"
+```
+
+**Bottoni (2)**:
+
+1. **"Sì"** (`data-yes`)
+   - Chiama `onChoice(true, appt)`
+   - Aggiorna cliente: `status='attivo'`
+   - Apre `openVSSQuickEditor(appt)`
+   
+2. **"No"** (`data-no`)
+   - Chiama `onChoice(false, appt)`
+   - Aggiorna cliente: `status='lead non chiuso'`
+   - Salva `vss=0`
+
+**Sequence Flow**:
+```
+Appuntamento NNCF termina → Banner "È diventato cliente?" → 
+[Sì/No] → Aggiorna status cliente → Apri VSS Editor
+```
+
+**Note**:
+- ⚠️ Questo banner è **OBSOLETO** - sostituito da Banner Post-NNCF (n.2)
+- ⚠️ File ancora presente ma **NON USATO** attualmente
+- ✅ Logica migrata in `postSaleBanners.js`
 
 ---
 
