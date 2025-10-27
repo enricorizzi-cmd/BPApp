@@ -4740,18 +4740,24 @@ function showInlineApptFormEdit(appData){
           e.preventDefault();
           if(this.disabled) return;
           const on = this.getAttribute('data-active') !== '1';
+          console.log('[NNCF Click] Toggling from', this.getAttribute('data-active'), 'to', on ? '1' : '0');
           this.setAttribute('data-active', on ? '1' : '0');
           this.setAttribute('aria-pressed', on ? 'true' : 'false');
           if(on){
             this.classList.add('active');
+            console.log('[NNCF Click] Added active class');
             // Seleziona vendita quando si attiva NNCF
             const venditaBtn = document.getElementById('modal_t_vendita');
             if(venditaBtn) venditaBtn.click();
           } else {
             this.classList.remove('active');
+            console.log('[NNCF Click] Removed active class');
           }
+          console.log('[NNCF Click] Final state - data-active:', this.getAttribute('data-active'), 'hasClass:', this.classList.contains('active'));
         });
       }
+      
+      console.log('[NNCF Setup] Initial state - data-active:', nncfBtn.getAttribute('data-active'), 'hasClass:', nncfBtn.classList.contains('active'));
     }
     
     // Toggle visibility based on type
