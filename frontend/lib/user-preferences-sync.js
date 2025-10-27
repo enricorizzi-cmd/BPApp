@@ -58,7 +58,12 @@
       
       return _preferencesCache;
     } catch (error) {
-      console.error('[User Preferences Sync] Failed to load preferences:', error);
+      // Se è un errore 401, non loggare (utente non autenticato è normale)
+      if (error.message && error.message.includes('401')) {
+        console.log('[User Preferences Sync] No authenticated user (expected)');
+      } else {
+        console.error('[User Preferences Sync] Failed to load preferences:', error);
+      }
       
       // Fallback alle preferenze di default
       return {
