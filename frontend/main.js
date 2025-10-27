@@ -1756,19 +1756,22 @@ function viewCalendar(){
       
       /* Modal inline appuntamenti */
       .cal-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,.7);
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0,0,0,.7) !important;
         backdrop-filter: blur(4px);
-        z-index: 10000;
-        display: flex;
+        z-index: 999999 !important;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         padding: 20px;
         animation: fadeIn 0.2s ease;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
       }
       .cal-modal-overlay.closing {
         animation: fadeOut 0.2s ease;
