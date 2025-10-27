@@ -4005,35 +4005,65 @@ function showInlineApptForm(dateStr){
       saveBtn.addEventListener('click', function(e){
         e.preventDefault();
         
-        // Raccogli dati
-        const data = {};
-        data.type = document.getElementById('modal_a_type').value;
-        data.start = document.getElementById('modal_a_start').value;
-        data.end = document.getElementById('modal_a_end').value;
-        data.duration = document.getElementById('modal_a_dur').value;
+        // Raccogli dati - COPIA ESATTA di collectForm()
+        let client = (document.getElementById('modal_a_client_display').value||'').trim();
         const clientSelect = document.getElementById('modal_a_client_select');
-        if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
-        const clientDisplay = document.getElementById('modal_a_client_display');
-        if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+        const clientId = clientSelect ? clientSelect.value : '';
+        const typeVal = document.getElementById('modal_a_type').value;
         
-        // Raccogli indicatori in base al tipo - converti a Number come collectForm()
-        const vssInput = document.getElementById('modal_a_vss');
-        const vsdInput = document.getElementById('modal_a_vsd');
-        const vsdIInput = document.getElementById('modal_a_vsd_i');
-        const telInput = document.getElementById('modal_a_tel');
-        const appInput = document.getElementById('modal_a_app');
-        const descInput = document.getElementById('modal_a_desc');
+        // Cliente obbligatorio (tranne formazione, mbs, sottoprodotti)
+        if(!client){
+          const tl = String(typeVal||'').toLowerCase();
+          if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ 
+            client=typeVal; 
+          } else { 
+            toast('Cliente obbligatorio'); 
+            return; 
+          }
+        }
         
-        data.vss = Number(vssInput ? vssInput.value : 0);
-        data.vsdPersonal = Number(vsdInput ? vsdInput.value : 0);
-        data.vsdIndiretto = Number(vsdIInput ? vsdIInput.value : 0);
-        data.telefonate = Number(telInput ? telInput.value : 0);
-        data.appFissati = Number(appInput ? appInput.value : 0);
-        data.notes = descInput ? descInput.value : '';
+        const startLocal = document.getElementById('modal_a_start').value;
+        if(!startLocal){ 
+          toast('Data/ora obbligatorie'); 
+          return; 
+        }
         
-        // NNCF flag
-        const nncfBtn = document.getElementById('modal_a_nncf');
-        data.nncf = nncfBtn && nncfBtn.getAttribute('data-active') === '1';
+        let dur = parseInt(document.getElementById('modal_a_dur').value||'60',10);
+        if(!isFinite(dur)||dur<=0) dur=60;
+        
+        // Calcola end da durata
+        const endStr = document.getElementById('modal_a_end').value;
+        let endISO;
+        if(endStr){
+          const s=new Date(startLocal);
+          const pr=endStr.split(':');
+          const e=new Date(s);
+          e.setHours(parseInt(pr[0],10)||0, parseInt(pr[1],10)||0, 0, 0);
+          if(e < s) e.setDate(e.getDate()+1);
+          endISO=e.toISOString();
+          dur=Math.max(1, Math.round((e-s)/60000));
+        }else{
+          const eLocal = new Date(new Date(startLocal).getTime()+dur*60000);
+          endISO = eLocal.toISOString();
+        }
+        
+        const desc = document.getElementById('modal_a_desc').value || '';
+        
+        const data = {
+          client: client,
+          clientId: clientId,
+          start: localInputToISO(startLocal),
+          end: endISO,
+          durationMinutes: dur,
+          type: typeVal,
+          vss: Number(document.getElementById('modal_a_vss').value||0),
+          vsdPersonal: Number(document.getElementById('modal_a_vsd').value||0),
+          vsdIndiretto: Number(document.getElementById('modal_a_vsd_i').value||0),
+          telefonate: Number(document.getElementById('modal_a_tel').value||0),
+          appFissati: Number(document.getElementById('modal_a_app').value||0),
+          notes: desc,
+          nncf: document.getElementById('modal_a_nncf').getAttribute('data-active')==='1'
+        };
         
         // Salva appuntamento - SEMPRE POST per nuova creazione
         POST('/api/appointments', data).then(r=>{
@@ -4583,35 +4613,65 @@ function showInlineApptFormEdit(appData){
       saveBtn.addEventListener('click', function(e){
         e.preventDefault();
         
-        // Raccogli dati
-        const data = {};
-        data.type = document.getElementById('modal_a_type').value;
-        data.start = document.getElementById('modal_a_start').value;
-        data.end = document.getElementById('modal_a_end').value;
-        data.duration = document.getElementById('modal_a_dur').value;
+        // Raccogli dati - COPIA ESATTA di collectForm()
+        let client = (document.getElementById('modal_a_client_display').value||'').trim();
         const clientSelect = document.getElementById('modal_a_client_select');
-        if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
-        const clientDisplay = document.getElementById('modal_a_client_display');
-        if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+        const clientId = clientSelect ? clientSelect.value : '';
+        const typeVal = document.getElementById('modal_a_type').value;
         
-        // Raccogli indicatori in base al tipo - converti a Number come collectForm()
-        const vssInput = document.getElementById('modal_a_vss');
-        const vsdInput = document.getElementById('modal_a_vsd');
-        const vsdIInput = document.getElementById('modal_a_vsd_i');
-        const telInput = document.getElementById('modal_a_tel');
-        const appInput = document.getElementById('modal_a_app');
-        const descInput = document.getElementById('modal_a_desc');
+        // Cliente obbligatorio (tranne formazione, mbs, sottoprodotti)
+        if(!client){
+          const tl = String(typeVal||'').toLowerCase();
+          if(tl==='formazione' || tl==='mbs' || tl==='sottoprodotti'){ 
+            client=typeVal; 
+          } else { 
+            toast('Cliente obbligatorio'); 
+            return; 
+          }
+        }
         
-        data.vss = Number(vssInput ? vssInput.value : 0);
-        data.vsdPersonal = Number(vsdInput ? vsdInput.value : 0);
-        data.vsdIndiretto = Number(vsdIInput ? vsdIInput.value : 0);
-        data.telefonate = Number(telInput ? telInput.value : 0);
-        data.appFissati = Number(appInput ? appInput.value : 0);
-        data.notes = descInput ? descInput.value : '';
+        const startLocal = document.getElementById('modal_a_start').value;
+        if(!startLocal){ 
+          toast('Data/ora obbligatorie'); 
+          return; 
+        }
         
-        // NNCF flag
-        const nncfBtn = document.getElementById('modal_a_nncf');
-        data.nncf = nncfBtn && nncfBtn.getAttribute('data-active') === '1';
+        let dur = parseInt(document.getElementById('modal_a_dur').value||'60',10);
+        if(!isFinite(dur)||dur<=0) dur=60;
+        
+        // Calcola end da durata
+        const endStr = document.getElementById('modal_a_end').value;
+        let endISO;
+        if(endStr){
+          const s=new Date(startLocal);
+          const pr=endStr.split(':');
+          const e=new Date(s);
+          e.setHours(parseInt(pr[0],10)||0, parseInt(pr[1],10)||0, 0, 0);
+          if(e < s) e.setDate(e.getDate()+1);
+          endISO=e.toISOString();
+          dur=Math.max(1, Math.round((e-s)/60000));
+        }else{
+          const eLocal = new Date(new Date(startLocal).getTime()+dur*60000);
+          endISO = eLocal.toISOString();
+        }
+        
+        const desc = document.getElementById('modal_a_desc').value || '';
+        
+        const data = {
+          client: client,
+          clientId: clientId,
+          start: localInputToISO(startLocal),
+          end: endISO,
+          durationMinutes: dur,
+          type: typeVal,
+          vss: Number(document.getElementById('modal_a_vss').value||0),
+          vsdPersonal: Number(document.getElementById('modal_a_vsd').value||0),
+          vsdIndiretto: Number(document.getElementById('modal_a_vsd_i').value||0),
+          telefonate: Number(document.getElementById('modal_a_tel').value||0),
+          appFissati: Number(document.getElementById('modal_a_app').value||0),
+          notes: desc,
+          nncf: document.getElementById('modal_a_nncf').getAttribute('data-active')==='1'
+        };
         
         // Salva appuntamento modificato - SOLO se editId è valido
         if(editId){
