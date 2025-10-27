@@ -1167,15 +1167,14 @@ function viewHome(){
     return GET('/api/periods'+__qsDash).catch(function(error){
     // Se fallisce con global=1, prova senza global (per utenti non-admin)
     if (__qsDash.indexOf('global=1') !== -1) {
-      return GET('/api/periods'+__qsDash.replace('?global=1',''));
+      return GET('/api/periods'+__qsDash.replace('?global=1','')).catch(function(e2){
+        return { periods: [] };
+      });
     }
     // Se già senza global e fallisce, ritorna array vuoto
     return { periods: [] };
-  }).catch(function(error){
-    // Fallback finale: array vuoto
-    return { periods: [] };
   }).then(function(resp){
-      var periods = (resp && resp.periods) || [];
+    var periods = (resp && resp.periods) || [];
 
       var filtered = periods.filter(function(p){
         if (p.type !== baseType) return false;
@@ -1255,11 +1254,12 @@ function recomputeKPI(){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  return GET('/api/periods'+qsKpi).catch(function(error){
+    return GET('/api/periods'+qsKpi).catch(function(error){
     // Non fare logout, solo array vuoto
     console.log('[Dashboard KPI] Auth error, using empty periods');
     return { periods: [] };
   }).then(function(j){
+    var periods = (j && j.periods) || [];
     var periods = (j && j.periods) || [];
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
@@ -1428,23 +1428,17 @@ function cardAppt(x){
     if (cons) s += '&userId='+encodeURIComponent(cons);
     return s;
   })();
-  Promise.all([ GET('/api/appointments'), GET('/api/periods'+__qsDash), GET('/api/periods') ]).then(function(arr){
-    // Verifica che tutte le chiamate siano andate a buon fine
-    if (!arr || arr.length < 3) {
-      console.error('[Dashboard] API calls failed or incomplete');
-      return;
-    }
+  Promise.all([
+    GET('/api/appointments').catch(function(e){ return { appointments: [] }; }),
+    GET('/api/periods'+__qsDash).catch(function(e){ return { periods: [] }; }),
+    GET('/api/periods').catch(function(e){ return { periods: [] }; })
+  ]).then(function(arr){
+    // RIMOSSO CHECK - accetta sempre array
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
     var allPers = (arr[2] && arr[2].periods)   || [];
-  }).catch(function(error){
-    // ERRORE 401: token scaduto, redirect a login senza loop
-    console.error('[Dashboard] Authentication error, redirecting to login');
-    setTimeout(function(){
-      location.href = '/?v=13';
-    }, 100);
-    return;
-  }).then(function(){
+    
+    // Continua con il rendering anche se dati vuoti
 
     // ===== PROSSIMI APPUNTAMENTI (prossimi 4) =====
     (function renderNext(){
