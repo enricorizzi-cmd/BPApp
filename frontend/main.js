@@ -8951,6 +8951,18 @@ appEl.innerHTML = topbarHTML() + `
     return (depTxt? depTxt+' + ' : '') + (allEq ? (others.length+' rate da '+fmtEuro(a0)) : 'piano personalizzato');
   }
 
+  // Helper per formattare date in modo sicuro
+  function safeDateString(dateValue) {
+    if (!dateValue) return '-';
+    try {
+      const d = new Date(dateValue);
+      if (isNaN(d.getTime())) return '-';
+      return d.toLocaleDateString('it-IT');
+    } catch(e) {
+      return '-';
+    }
+  }
+
   function rowHTML(x){
     const payments = x.schedule || [];
     const hasPayments = payments.length > 0;
@@ -8983,7 +8995,7 @@ appEl.innerHTML = topbarHTML() + `
     }
     
     return '<tr data-id="'+esc(String(x.id))+'">'+
-      '<td><strong>'+new Date(x.date||x.createdAt).toLocaleDateString('it-IT')+'</strong></td>'+
+      '<td><strong>'+safeDateString(x.date||x.createdAt)+'</strong></td>'+
       '<td><div style="font-weight: 600;">'+esc(x.clientName||'')+'</div></td>'+
       '<td><span style="color: var(--muted);">'+esc(x.consultantName||'')+'</span></td>'+
       '<td><div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">'+esc(x.services||'')+'</div></td>'+
