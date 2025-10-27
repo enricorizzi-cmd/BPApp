@@ -5,7 +5,7 @@
 
 ---
 
-## 📊 **BANNER INDIVIDUATI (Totale: 6)**
+## 📊 **BANNER INDIVIDUATI (Totale: 6 - 5 Attivi + 1 Obsoleto)**
 
 ### **1. BANNER POST-VENDITA (Sale Banner)**
 **File**: `frontend/src/postSaleBanners.js` (righe 447-518)
