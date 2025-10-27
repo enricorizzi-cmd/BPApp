@@ -4572,11 +4572,9 @@ function showInlineApptFormEdit(appData){
     const startDate = new Date(appData.start);
     const endDate = appData.end ? new Date(appData.end) : null;
     
-    // Set type
+    // Set type INPUT (non il bottone, lo faremo dopo setupModalTypeButtons)
     const typeInput = document.getElementById('modal_a_type');
-    const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
     if(typeInput) typeInput.value = appData.type || 'vendita';
-    if(typeBtn) typeBtn.classList.add('active');
     
     // Set client
     if(appData.client) {
@@ -4661,8 +4659,21 @@ function showInlineApptFormEdit(appData){
     // Setup client dropdown
     await setupModalClientDropdown();
     
-    // Setup type buttons
+    // Setup type buttons PRIMA di impostare il bottone attivo
     setupModalTypeButtons();
+    
+    // ORA imposta il type button corretto DOPO setup SENZA triggerare click
+    const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
+    if(typeBtn){
+      // Rimuovi active da tutti
+      const typeButtons = ['modal_t_vendita', 'modal_t_mezza', 'modal_t_iprofile', 'modal_t_full', 'modal_t_form', 'modal_t_mbs', 'modal_t_sotto', 'modal_t_riunione', 'modal_t_impegni'];
+      typeButtons.forEach(id => {
+        const b = document.getElementById(id);
+        if(b) b.classList.remove('active');
+      });
+      // Aggiungi active al bottone corretto
+      typeBtn.classList.add('active');
+    }
     
     // Toggle visibility based on type
     const typeStr = appData.type ? appData.type.toLowerCase() : '';
