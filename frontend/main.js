@@ -8952,19 +8952,22 @@ appEl.innerHTML = topbarHTML() + `
   }
 
   // Helper per formattare date in modo sicuro
+  // ATTENZIONE: La data 1/10/2025 è SOLO un workaround temporaneo per record esistenti senza data
+  // Nuovi record devono SEMPRE avere una data valida
   function safeDateString(dateValue) {
     if (!dateValue || dateValue === 'Invalid Date' || dateValue === 'null') {
-      // Data di fallback per record senza data
+      // TEMPORANEO: Solo per riempire i vuoti dei record esistenti
       return new Date('2025-10-01').toLocaleDateString('it-IT');
     }
     try {
       const d = new Date(dateValue);
       if (isNaN(d.getTime())) {
-        // Se il parsing fallisce, usa data di fallback
+        // TEMPORANEO: Solo per riempire i vuoti dei record esistenti
         return new Date('2025-10-01').toLocaleDateString('it-IT');
       }
       return d.toLocaleDateString('it-IT');
     } catch(e) {
+      // TEMPORANEO: Solo per riempire i vuoti dei record esistenti
       return new Date('2025-10-01').toLocaleDateString('it-IT');
     }
   }
