@@ -3979,7 +3979,7 @@ function showInlineApptForm(dateStr){
     if(nncfBtn && !nncfBtn.hasAttribute('data-listener')){
       nncfBtn.setAttribute('data-listener', '1');
       nncfBtn.addEventListener('click', function(e){
-        e.preventDefault) return;
+        e.preventDefault();
         if(this.disabled) return;
         const on = this.getAttribute('data-active') !== '1';
         this.setAttribute('data-active', on ? '1' : '0');
