@@ -4558,6 +4558,29 @@ function showInlineApptFormEdit(appData){
         const clientDisplay = document.getElementById('modal_a_client_display');
         if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
         
+        // Raccogli indicatori in base al tipo
+        const vssInput = document.getElementById('modal_a_vss');
+        const vsdInput = document.getElementById('modal_a_vsd');
+        const vsdIInput = document.getElementById('modal_a_vsd_i');
+        const telInput = document.getElementById('modal_a_tel');
+        const appInput = document.getElementById('modal_a_app');
+        
+        if(data.type && data.type.toLowerCase().indexOf('mbs') > -1){
+          if(vsdIInput && vsdIInput.value) data.vsdIndiretto = vsdIInput.value;
+        }
+        else if(data.type && data.type.toLowerCase().indexOf('sottoprod') > -1){
+          if(telInput && telInput.value) data.telefonate = telInput.value;
+          if(appInput && appInput.value) data.appFissati = appInput.value;
+        }
+        else {
+          if(vssInput && vssInput.value) data.vss = vssInput.value;
+          if(vsdInput && vsdInput.value) data.vsdPersonal = vsdInput.value;
+        }
+        
+        // NNCF flag
+        const nncfBtn = document.getElementById('modal_a_nncf');
+        if(nncfBtn && nncfBtn.getAttribute('data-active') === '1') data.nncf = true;
+        
         // Salva appuntamento modificato - SOLO se editId è valido
         if(editId){
           PUT('/api/appointments/'+editId, data).then(r=>{
