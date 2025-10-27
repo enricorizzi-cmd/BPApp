@@ -4479,11 +4479,12 @@ function setupModalTypeButtons(){
     if(clientDisplay) clientDisplay.disabled = false;
     if(nncfBtn) nncfBtn.style.display = '';
     
-    if(!keepNncf && nncfBtn){
-      nncfBtn.setAttribute('data-active','0');
-      nncfBtn.setAttribute('aria-pressed','false');
-      nncfBtn.classList.remove('active');
-    }
+    // NON resettare NNCF quando si cambia type - manteniamo lo stato utente
+    // if(!keepNncf && nncfBtn){
+    //   nncfBtn.setAttribute('data-active','0');
+    //   nncfBtn.setAttribute('aria-pressed','false');
+    //   nncfBtn.classList.remove('active');
+    // }
     
     // Reset client if auto-set
     if(clientDisplay && (clientDisplay.value==='Formazione' || clientDisplay.value==='MBS' || clientDisplay.value==='Sottoprodotti' || clientDisplay.value==='Riunione' || clientDisplay.value==='Impegni personali')){
@@ -15373,7 +15374,7 @@ window.editVenditaRiordini = function(id) {
 
 window.deleteVenditaRiordini = function(id) {
   if (confirm('Sei sicuro di voler eliminare questo preventivo?')) {
-    DELETE('/api/vendite-riordini', { id: id }).then(function(){
+    DELETE('/api/vendite-riordini?id=' + encodeURIComponent(id)).then(function(){
       toast('🗑️ Preventivo eliminato! I dati sono stati rimossi dal sistema.');
       refreshVenditeRiordiniData();
     }).catch(function(error){
