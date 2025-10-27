@@ -58,6 +58,8 @@ module.exports = function(app) {
   // ===== POST /api/vendite-riordini =====
   app.post("/api/vendite-riordini", auth, async (req, res) => {
     try {
+      console.log('[VenditeRiordini] POST received body:', JSON.stringify(req.body, null, 2));
+      
       const {
         data: venditaData,
         cliente_id, // Nuovo campo
@@ -69,8 +71,20 @@ module.exports = function(app) {
         stato = 'da_presentare'
       } = req.body;
 
+      console.log('[VenditeRiordini] Parsed fields:', { 
+        venditaData, cliente_id, cliente, consulente, 
+        descrizione_servizi, valore_proposto, data_feedback, stato 
+      });
+
       // Validazione campi obbligatori
       if (!venditaData || !cliente_id || !cliente || !consulente || !data_feedback) {
+        console.error('[VenditeRiordini] Validation failed:', { 
+          venditaData: !!venditaData, 
+          cliente_id: !!cliente_id, 
+          cliente: !!cliente, 
+          consulente: !!consulente, 
+          data_feedback: !!data_feedback 
+        });
         return res.status(400).json({ error: 'Campi obbligatori mancanti' });
       }
 
