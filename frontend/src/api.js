@@ -1,6 +1,12 @@
-import { getToken } from './auth.js';
+import { getToken, logout } from './auth.js';
 
 export function api(path, opts = {}) {
+  // BLOCCO GLOBALE: Se è stato rilevato un 401, blocca IMMEDIATAMENTE tutte le chiamate successive
+  if (window.__BP_401_DETECTED === true) {
+    console.warn('[API] 401 already detected, blocking request to:', path);
+    return Promise.reject(new Error('Authentication expired'));
+  }
+
   opts.method = opts.method || 'GET';
 
   // headers + bearer
@@ -20,6 +26,16 @@ export function api(path, opts = {}) {
 
 async function handleResponse(r) {
   const text = await r.text();
+  
+  // INTERCETTA 401: Blocca TUTTE le chiamate successive
+  if (r.status === 401 && !window.__BP_401_DETECTED) {
+    window.__BP_401_DETECTED = true;
+    console.warn('[API] 401 detected, blocking all subsequent API calls');
+    // Logout UNA VOLTA SOLA
+    logout();
+    throw buildError(text, r);
+  }
+  
   if (!r.ok) throw buildError(text, r);
   return parseBody(text, r);
 }
