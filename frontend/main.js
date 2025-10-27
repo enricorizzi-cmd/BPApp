@@ -16067,7 +16067,6 @@ window.closeVenditeRiordiniModal = function(){
 
 window.saveVenditaRiordini = function(venditaId){
   const data = document.getElementById('vendita_data').value;
-  const cliente_id = document.getElementById('vendita_client_select').value;
   const cliente_display = document.getElementById('vendita_client_display').textContent;
   const descrizione_servizi = document.getElementById('vendita_descrizione').value;
   const valore_proposto = parseFloat(document.getElementById('vendita_valore_proposto').value) || 0;
@@ -16075,14 +16074,13 @@ window.saveVenditaRiordini = function(venditaId){
   const stato = document.getElementById('vendita_stato').value;
   
   // Validazione
-  if(!data || !cliente_id || valore_proposto <= 0) {
+  if(!data || !cliente_display || valore_proposto <= 0) {
     toast('Compila tutti i campi obbligatori');
     return;
   }
   
   const venditaData = {
     data,
-    cliente_id,
     cliente: cliente_display,
     consulente: getUser().name || getUser().email || 'Utente',
     descrizione_servizi,

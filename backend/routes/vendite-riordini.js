@@ -62,7 +62,6 @@ module.exports = function(app) {
       
       const {
         data: venditaData,
-        cliente_id, // Nuovo campo
         cliente,
         consulente,
         descrizione_servizi,
@@ -72,15 +71,14 @@ module.exports = function(app) {
       } = req.body;
 
       console.log('[VenditeRiordini] Parsed fields:', { 
-        venditaData, cliente_id, cliente, consulente, 
+        venditaData, cliente, consulente, 
         descrizione_servizi, valore_proposto, data_feedback, stato 
       });
 
       // Validazione campi obbligatori
-      if (!venditaData || !cliente_id || !cliente || !consulente || !data_feedback) {
+      if (!venditaData || !cliente || !consulente || !data_feedback) {
         console.error('[VenditeRiordini] Validation failed:', { 
           venditaData: !!venditaData, 
-          cliente_id: !!cliente_id, 
           cliente: !!cliente, 
           consulente: !!consulente, 
           data_feedback: !!data_feedback 
@@ -95,7 +93,6 @@ module.exports = function(app) {
       const venditaRecord = {
         id,
         data: venditaData,
-        cliente_id, // Aggiunto campo cliente_id
         cliente,
         consulente,
         consultantid: req.user.id, // SEMPRE per l'utente corrente
