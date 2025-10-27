@@ -4584,16 +4584,8 @@ function setupModalTypeButtons(){
     });
   });
   
-  // Set initial active button SOLO se nessun altro bottone è già attivo
-  const hasActive = typeButtons.some(btnId => {
-    const btn = document.getElementById(btnId);
-    return btn && btn.classList.contains('active');
-  });
-  
-  if(!hasActive){
-    const initialBtn = document.getElementById('modal_t_vendita');
-    if(initialBtn) initialBtn.classList.add('active');
-  }
+  // NON impostiamo un default "vendita" perché verrà gestito dopo in base ai dati
+  // La funzione showInlineApptFormEdit imposterà il bottone corretto
 }
 
 // Funzione per mostrare form inline appuntamenti in MODALITÀ MODIFICA
