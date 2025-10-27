@@ -17,13 +17,20 @@
   // Helper per chiamate API
   async function apiCall(method, url, data = null) {
     try {
+      // Usa lo stesso sistema di getToken() per coerenza
+      const token = localStorage.getItem('bp_token') || sessionStorage.getItem('bp_token') || '';
+      
       const options = {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('bp_token')}`
+          'Content-Type': 'application/json'
         }
       };
+      
+      // Aggiungi Authorization solo se c'è un token
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
       
       if (data) {
         options.body = JSON.stringify(data);
