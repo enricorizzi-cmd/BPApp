@@ -2344,9 +2344,12 @@ function viewCalendar(){
     var baseGI = '/api/gi?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
     
     if(consultant==='all'){ 
-      baseApps += '?global=1'; 
-      baseAvail += '&global=1';
-      baseGI += '&global=1';
+      // Aggiungi global=1 SOLO se l'utente è admin
+      if (getUser() && getUser().role === 'admin') {
+        baseApps += '?global=1'; 
+        baseAvail += '&global=1';
+        baseGI += '&global=1';
+      }
     }
     else if(consultant && consultant!==getUser().id){ 
       // Mostra dati di un altro consulente
@@ -8476,7 +8479,11 @@ function viewTeam(){
     var __qsTeam = (function(){
       var from = buckets.length ? ymd(new Date(buckets[0].s)) : ymd(new Date());
       var to   = buckets.length ? ymd(new Date(buckets[buckets.length-1].e)) : ymd(new Date());
-      var s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      var s = '?type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      // Aggiungi global=1 SOLO SE l'utente è admin
+      if (getUser() && getUser().role === 'admin') {
+        s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      }
       if (userId) s += '&userId='+encodeURIComponent(userId);
       return s;
     })();
@@ -15392,7 +15399,10 @@ function viewVenditeRiordini(){
       // Costruisci URL con parametri
       let url = `/api/vendite-riordini?from=${from}&to=${to}`;
       if (consultant === 'all') {
-        url += '&global=1';
+        // Aggiungi global=1 SOLO se l'utente è admin
+        if (getUser() && getUser().role === 'admin') {
+          url += '&global=1';
+        }
       } else if (consultant && consultant !== getUser().id) {
         url += `&user=${consultant}`;
       }
