@@ -4022,6 +4022,8 @@ function setupModalTypeButtons(){
     
     const btnId = btn ? btn.id : '';
     
+    const durInput = document.getElementById('modal_a_dur');
+    
     if(btnId === 'modal_t_vendita') {
       if(typeInput) typeInput.value = 'vendita';
       if(durInput) durInput.value = '90';
