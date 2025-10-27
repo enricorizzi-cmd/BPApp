@@ -1160,7 +1160,11 @@ function viewHome(){
     var __qsDash = (function(){
       var from = buckets.length ? ymd(new Date(buckets[0].s)) : ymd(new Date());
       var to   = buckets.length ? ymd(new Date(buckets[buckets.length-1].e)) : ymd(new Date());
-      var s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      var s = '?type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      // Aggiungi global=1 SOLO SE l'utente è admin
+      if (getUser() && getUser().role === 'admin') {
+        s = '?global=1&type='+encodeURIComponent(baseType)+'&from='+encodeURIComponent(from)+'&to='+encodeURIComponent(to);
+      }
       if (userId) s += '&userId='+encodeURIComponent(userId);
       return s;
     })();
