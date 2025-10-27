@@ -1,5 +1,10 @@
 import { getToken, logout } from './auth.js';
 
+// RESET FLAG ON MODULE LOAD - Prevents stale 401 state from blocking requests
+if (typeof window !== 'undefined') {
+  window.__BP_401_DETECTED = false;
+}
+
 export function api(path, opts = {}) {
   // BLOCCO GLOBALE: Se è stato rilevato un 401, blocca IMMEDIATAMENTE tutte le chiamate successive
   if (window.__BP_401_DETECTED === true) {

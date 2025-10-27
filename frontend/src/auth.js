@@ -38,5 +38,9 @@ export function logout() {
   del('bp_token');
   sessionStorage.removeItem('bp_token');
   del('bp_user');
+  // RESET 401 FLAG before redirecting
+  if (typeof window !== 'undefined') {
+    window.__BP_401_DETECTED = false;
+  }
   location.href = '/?v=13';
 }

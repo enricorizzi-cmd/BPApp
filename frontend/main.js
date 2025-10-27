@@ -48,6 +48,10 @@ window.getUser = getUser;
 ;(function () {
   'use strict';
 
+  // RESET 401 FLAG on page load - Always start with a clean state
+  if (typeof window !== 'undefined') {
+    window.__BP_401_DETECTED = false;
+  }
 
   // ===== ROOT =====
   var appEl = document.getElementById('app');
@@ -306,6 +310,8 @@ function viewLogin(){
     var password = document.getElementById('li_password').value;
     POST('/api/login',{email:email,password:password}).then(function(r){
       if(typeof r==='string'){ try{ r=JSON.parse(r);}catch(e){} }
+      // RESET 401 FLAG on successful login
+      window.__BP_401_DETECTED = false;
       setToken(r.token); setUser(r.user); // Sempre persistente
       toast('Bentornato '+r.user.name+'!'); window.addXP(10);
       viewHome(); renderTopbar();
@@ -324,6 +330,8 @@ function viewLogin(){
     var email= document.getElementById('re_email').value.trim().toLowerCase();
     var password = document.getElementById('re_password').value;
     POST('/api/register',{name:name,email:email,password:password}).then(function(){
+      // RESET 401 FLAG on successful registration
+      window.__BP_401_DETECTED = false;
       toast('Registrazione ok. Ora accedi'); celebrate(); window.addXP(20); window.scrollTo({top:0,behavior:'smooth'});
     }).catch(function(err){
       toast('Email già registrata?'); logger.error(err);
@@ -17875,6 +17883,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     } catch (error) {
       // Token scaduto o non valido: logout (pulisce token) e reindirizza
       console.log('Token scaduto, logout e reindirizzamento al login');
+      // RESET 401 FLAG before logout
+      window.__BP_401_DETECTED = false;
       logout(); // Questa funzione pulisce token e fa redirect
       return;
     }
