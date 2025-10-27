@@ -1260,7 +1260,6 @@ function recomputeKPI(){
     return { periods: [] };
   }).then(function(j){
     var periods = (j && j.periods) || [];
-    var periods = (j && j.periods) || [];
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
 
