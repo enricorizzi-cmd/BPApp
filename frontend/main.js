@@ -4835,6 +4835,10 @@ function showInlineApptFormEdit(appData){
       saveExportBtn.addEventListener('click', function(e){
         e.preventDefault();
         
+        // Recupera overlay dal bottone
+        const currentOverlay = this.closest('.cal-modal-overlay');
+        if(!currentOverlay) return;
+        
         // Raccogli dati - stessa logica di saveBtn
         let client = (document.getElementById('modal_a_client_display').value||'').trim();
         const clientSelect = document.getElementById('modal_a_client_select');

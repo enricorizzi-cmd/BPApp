@@ -504,6 +504,14 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   }
 
   router.delete('/appointments', auth, async (req,res)=> handleDelete(req,res));
+  
+  // Aggiungi DELETE con parametro ID nell'URL
+  router.delete('/appointments/:id', auth, async (req,res)=>{
+    req.body = req.body || {};
+    req.body.id = req.params.id;
+    productionLogger.debug(`[DELETE_APPOINTMENT] Received DELETE request for appointment ${req.params.id} from user ${req.user.id}`);
+    return handleDelete(req,res);
+  });
 
   // Aggiungi PUT per supportare le chiamate da frontend
   router.put('/appointments/:id', auth, async (req,res)=>{
