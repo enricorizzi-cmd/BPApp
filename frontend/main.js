@@ -3952,7 +3952,9 @@ function showInlineApptFormEdit(appData){
         <button onclick="this.closest('.cal-modal-overlay').remove()" 
                 style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);line-height:1">&times;</button>
       </div>
-      <div id="inline_appt_edit_form_wrap"></div>
+      <div id="inline_appt_edit_form_wrap">
+        ${getAppointmentFormHTML()}
+      </div>
     </div>
   `;
   
@@ -3963,55 +3965,147 @@ function showInlineApptFormEdit(appData){
     const formWrap = document.getElementById('inline_appt_edit_form_wrap');
     if(!formWrap) return;
     
-    // Recupera template HTML dal DOM della sezione appuntamenti
-    const apptForm = document.getElementById('a_form');
-    if(apptForm){
-      formWrap.innerHTML = apptForm.outerHTML;
-      
-      // Precompila tutti i campi con i dati dell'appuntamento
-      fillForm(appData);
-      
-      // Setup editId per save
-      editId = appData.id;
-      
-      // Configura l'invio del form
-      const form = formWrap.querySelector('#a_form');
-      if(form){
-        form.addEventListener('submit', function(e){
-          e.preventDefault();
-          
-          // Raccogli dati
-          const data = {};
-          data.type = document.getElementById('a_type').value;
-          data.start = document.getElementById('a_start').value;
-          data.end = document.getElementById('a_end').value;
-          data.duration = document.getElementById('a_dur').value;
-          const clientSelect = document.getElementById('a_client_select');
-          if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
-          const clientDisplay = document.getElementById('a_client_display');
-          if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
-          
-          // Salva appuntamento modificato
-          PUT('/api/appointments/'+editId, data).then(r=>{
-            if(r.ok){
-              toast('Appuntamento modificato!');
-              overlay.classList.add('closing');
-              setTimeout(() => {
-                overlay.remove();
-                editId = null;
-              }, 300);
-              // Refresh calendario
-              const monthInput = document.getElementById('cal_month');
-              const consultantSelect = document.getElementById('cal_consultant');
-              if(monthInput && consultantSelect){
-                renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
-              }
-            }else{
-              toast('Errore: ' + (r.error || 'Operazione fallita'));
-            }
-          });
-        });
+    // Setup editId per save
+    editId = appData.id;
+    
+    // Precompila tutti i campi con i dati dell'appuntamento
+    // Parse app data
+    const startDate = new Date(appData.start);
+    const endDate = appData.end ? new Date(appData.end) : null;
+    
+    // Set type
+    const typeInput = document.getElementById('modal_a_type');
+    const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
+    if(typeInput) typeInput.value = appData.type || 'vendita';
+    if(typeBtn) typeBtn.classList.add('active');
+    
+    // Set client
+    if(appData.client) {
+      const clientDisplay = document.getElementById('modal_a_client_display');
+      if(clientDisplay) clientDisplay.value = appData.client;
+    }
+    if(appData.clientId) {
+      const clientSelect = document.getElementById('modal_a_client_select');
+      if(clientSelect) clientSelect.value = appData.clientId;
+    }
+    
+    // Set start time
+    const startInput = document.getElementById('modal_a_start');
+    if(startInput){
+      startInput.value = new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+    }
+    
+    // Set end time
+    const endInput = document.getElementById('modal_a_end');
+    if(endInput && endDate){
+      const endLocal = new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000);
+      endInput.value = ('0'+endLocal.getHours()).slice(-2)+':'+('0'+endLocal.getMinutes()).slice(-2);
+    }
+    
+    // Set duration
+    const durInput = document.getElementById('modal_a_dur');
+    if(durInput){
+      if(appData.duration || appData.durationMinutes){
+        durInput.value = String(appData.duration || appData.durationMinutes || 90);
       }
+    }
+    
+    // Set description
+    const descInput = document.getElementById('modal_a_desc');
+    if(descInput && appData.notes){
+      descInput.value = appData.notes;
+    }
+    
+    // Set indicators based on type
+    const vsdInput = document.getElementById('modal_a_vsd');
+    const vssInput = document.getElementById('modal_a_vss');
+    const vsdIInput = document.getElementById('modal_a_vsd_i');
+    const telInput = document.getElementById('modal_a_tel');
+    const appInput = document.getElementById('modal_a_app');
+    
+    if(appData.type && appData.type.toLowerCase().indexOf('mbs') > -1){
+      if(vsdIInput && appData.vsdIndiretto) vsdIInput.value = String(appData.vsdIndiretto);
+    }
+    else if(appData.type && appData.type.toLowerCase().indexOf('sottoprod') > -1){
+      if(telInput && appData.telefonate) telInput.value = String(appData.telefonate);
+      if(appInput && appData.appFissati) appInput.value = String(appData.appFissati);
+    }
+    else {
+      if(vssInput && appData.vss) vssInput.value = String(appData.vss);
+      if(vsdInput && appData.vsdPersonal) vsdInput.value = String(appData.vsdPersonal);
+    }
+    
+    // Setup NNCF button
+    const nncfBtn = document.getElementById('modal_a_nncf');
+    if(nncfBtn && appData.nncf){
+      nncfBtn.classList.add('active');
+      nncfBtn.setAttribute('data-active', '1');
+      nncfBtn.setAttribute('aria-pressed', 'true');
+    }
+    
+    // Setup client dropdown
+    setupModalClientDropdown();
+    
+    // Setup type buttons
+    setupModalTypeButtons();
+    
+    // Toggle visibility based on type
+    const typeStr = appData.type ? appData.type.toLowerCase() : '';
+    if(typeStr.indexOf('mbs') > -1){
+      const rowVss = document.getElementById('modal_row_vss');
+      const rowVsdP = document.getElementById('modal_row_vsd_p');
+      const rowVsdI = document.getElementById('modal_row_vsd_i');
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(rowVsdI) rowVsdI.style.display = '';
+    } else if(typeStr.indexOf('sottoprod') > -1){
+      const rowVss = document.getElementById('modal_row_vss');
+      const rowVsdP = document.getElementById('modal_row_vsd_p');
+      const rowTel = document.getElementById('modal_row_tel');
+      const rowApp = document.getElementById('modal_row_app');
+      if(rowVss) rowVss.style.display = 'none';
+      if(rowVsdP) rowVsdP.style.display = 'none';
+      if(rowTel) rowTel.style.display = '';
+      if(rowApp) rowApp.style.display = '';
+    }
+    
+    // Setup save button
+    const saveBtn = document.getElementById('modal_btnSaveA');
+    if(saveBtn){
+      saveBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        
+        // Raccogli dati
+        const data = {};
+        data.type = document.getElementById('modal_a_type').value;
+        data.start = document.getElementById('modal_a_start').value;
+        data.end = document.getElementById('modal_a_end').value;
+        data.duration = document.getElementById('modal_a_dur').value;
+        const clientSelect = document.getElementById('modal_a_client_select');
+        if(clientSelect && clientSelect.value) data.clientId = clientSelect.value;
+        const clientDisplay = document.getElementById('modal_a_client_display');
+        if(clientDisplay && clientDisplay.value) data.client = clientDisplay.value;
+        
+        // Salva appuntamento modificato
+        PUT('/api/appointments/'+editId, data).then(r=>{
+          if(r.ok){
+            toast('Appuntamento modificato!');
+            overlay.classList.add('closing');
+            setTimeout(() => {
+              overlay.remove();
+              editId = null;
+            }, 300);
+            // Refresh calendario
+            const monthInput = document.getElementById('cal_month');
+            const consultantSelect = document.getElementById('cal_consultant');
+            if(monthInput && consultantSelect){
+              renderMonth(...parseMonth(monthInput.value), {}, consultantSelect.value);
+            }
+          }else{
+            toast('Errore: ' + (r.error || 'Operazione fallita'));
+          }
+        });
+      });
     }
     
     // Chiudi su click overlay
@@ -4024,7 +4118,7 @@ function showInlineApptFormEdit(appData){
         }, 300);
       }
     });
-  }, 50);
+  }, 100);
 }
 
 // ===== APPUNTAMENTI =====
