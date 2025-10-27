@@ -4703,7 +4703,12 @@ function showInlineApptFormEdit(appData){
     setupModalTypeButtons();
     
     // ORA imposta il type button corretto DOPO setup E imposta l'input type
-    const typeBtn = document.getElementById('modal_t_' + appData.type.replace(/\s+/g, '_'));
+    console.log('[Modal Edit Type] appData.type:', appData.type);
+    const typeBtnId = 'modal_t_' + appData.type.replace(/\s+/g, '_');
+    console.log('[Modal Edit Type] Looking for button:', typeBtnId);
+    const typeBtn = document.getElementById(typeBtnId);
+    console.log('[Modal Edit Type] Button found:', !!typeBtn);
+    
     if(typeBtn){
       // Rimuovi active da tutti
       const typeButtons = ['modal_t_vendita', 'modal_t_mezza', 'modal_t_iprofile', 'modal_t_full', 'modal_t_form', 'modal_t_mbs', 'modal_t_sotto', 'modal_t_riunione', 'modal_t_impegni'];
@@ -4713,9 +4718,14 @@ function showInlineApptFormEdit(appData){
       });
       // Aggiungi active al bottone corretto
       typeBtn.classList.add('active');
+      console.log('[Modal Edit Type] Active class added to:', typeBtnId);
+      
       // Aggiorna l'input type (già dichiarato sopra)
       const typeInputField = document.getElementById('modal_a_type');
-      if(typeInputField) typeInputField.value = appData.type;
+      if(typeInputField) {
+        typeInputField.value = appData.type;
+        console.log('[Modal Edit Type] Input value set to:', appData.type);
+      }
     }
     
     // Setup NNCF button DOPO type buttons per evitare reset
