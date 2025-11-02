@@ -363,7 +363,7 @@ module.exports = function(app) {
   // GET /api/corsi-iscrizioni - Lista iscrizioni con filtri
   app.get("/api/corsi-iscrizioni", auth, async (req, res) => {
     try {
-      const { from, to, corso_nome, consulente_id } = req.query || {};
+      const { from, to, corso_nome, consulente_id, detailed, data_corso, nome_corso } = req.query || {};
       const isAdmin = (req.user.role === "admin");
 
       // Costruisci query base con JOIN
@@ -372,6 +372,7 @@ module.exports = function(app) {
         .select(`
           *,
           corsi_date:corso_data_id(
+            id,
             data_inizio,
             corsi_catalogo:corso_id(nome_corso)
           )
@@ -405,6 +406,35 @@ module.exports = function(app) {
           const dataCorso = iscrizione.corsi_date?.data_inizio;
           return dataCorso && dataCorso >= from && dataCorso <= to;
         });
+      }
+
+      // Se c'è filtro per data_corso e nome_corso, filtra prima
+      if (data_corso && nome_corso) {
+        filteredData = filteredData.filter(iscrizione => {
+          const dc = iscrizione.corsi_date?.data_inizio;
+          const nc = iscrizione.corsi_date?.corsi_catalogo?.nome_corso;
+          return dc === data_corso && nc === nome_corso;
+        });
+      }
+
+      // Se detailed=true, restituisci dati non aggregati
+      if (detailed === 'true') {
+        const detailedData = filteredData.map(iscrizione => ({
+          id: iscrizione.id,
+          corso_data_id: iscrizione.corso_data_id,
+          cliente_id: iscrizione.cliente_id,
+          cliente_nome: iscrizione.cliente_nome,
+          consulente_id: iscrizione.consulente_id,
+          consulente_nome: iscrizione.consulente_nome,
+          costo_personalizzato: Number(iscrizione.costo_personalizzato) || 0,
+          data_corso: iscrizione.corsi_date?.data_inizio,
+          nome_corso: iscrizione.corsi_date?.corsi_catalogo?.nome_corso,
+          created_at: iscrizione.created_at,
+          updated_at: iscrizione.updated_at
+        }));
+        
+        res.json({ iscrizioni: detailedData });
+        return;
       }
 
       // Aggrega per data corso E consulente (per supportare filtro "Tutti")
@@ -492,6 +522,111 @@ module.exports = function(app) {
 
     } catch (error) {
       console.error('[CorsiIscrizioni] POST error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // PUT /api/corsi-iscrizioni/:id - Modifica iscrizione esistente
+  app.put("/api/corsi-iscrizioni/:id", auth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { cliente_id, cliente_nome, consulente_id, consulente_nome, costo_personalizzato } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID iscrizione obbligatorio' });
+      }
+
+      const isAdmin = (req.user.role === "admin");
+      
+      // Verifica permessi: admin può modificare tutto, consultant solo le proprie
+      if (!isAdmin) {
+        const { data: existingIscrizione, error: fetchError } = await supabase
+          .from('corsi_iscrizioni')
+          .select('consulente_id')
+          .eq('id', id)
+          .single();
+
+        if (fetchError || !existingIscrizione) {
+          return res.status(404).json({ error: 'Iscrizione non trovata' });
+        }
+
+        if (existingIscrizione.consulente_id !== req.user.id) {
+          return res.status(403).json({ error: 'Non autorizzato a modificare questa iscrizione' });
+        }
+      }
+
+      const updateData = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (cliente_id !== undefined) updateData.cliente_id = cliente_id;
+      if (cliente_nome !== undefined) updateData.cliente_nome = cliente_nome;
+      if (consulente_id !== undefined) updateData.consulente_id = consulente_id;
+      if (consulente_nome !== undefined) updateData.consulente_nome = consulente_nome;
+      if (costo_personalizzato !== undefined) updateData.costo_personalizzato = Number(costo_personalizzato);
+
+      const { data: updatedData, error } = await supabase
+        .from('corsi_iscrizioni')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[CorsiIscrizioni] Update error:', error);
+        return res.status(500).json({ error: 'Failed to update enrollment' });
+      }
+
+      res.json({ iscrizione: updatedData });
+
+    } catch (error) {
+      console.error('[CorsiIscrizioni] PUT error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // DELETE /api/corsi-iscrizioni/:id - Elimina iscrizione
+  app.delete("/api/corsi-iscrizioni/:id", auth, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({ error: 'ID iscrizione obbligatorio' });
+      }
+
+      const isAdmin = (req.user.role === "admin");
+      
+      // Verifica permessi: admin può eliminare tutto, consultant solo le proprie
+      if (!isAdmin) {
+        const { data: existingIscrizione, error: fetchError } = await supabase
+          .from('corsi_iscrizioni')
+          .select('consulente_id')
+          .eq('id', id)
+          .single();
+
+        if (fetchError || !existingIscrizione) {
+          return res.status(404).json({ error: 'Iscrizione non trovata' });
+        }
+
+        if (existingIscrizione.consulente_id !== req.user.id) {
+          return res.status(403).json({ error: 'Non autorizzato a eliminare questa iscrizione' });
+        }
+      }
+
+      const { error } = await supabase
+        .from('corsi_iscrizioni')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('[CorsiIscrizioni] Delete error:', error);
+        return res.status(500).json({ error: 'Failed to delete enrollment' });
+      }
+
+      res.json({ success: true });
+
+    } catch (error) {
+      console.error('[CorsiIscrizioni] DELETE error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });

@@ -11535,11 +11535,12 @@ function viewCorsiInteraziendali(){
                 <th>Clienti Iscritti</th>
                 <th>Totale Iscritti</th>
                 <th>VSD Indiretto Totale</th>
+                ${isAdmin ? '<th>Azioni</th>' : ''}
               </tr>
             </thead>
             <tbody id="iscrizioni-tbody">
               <tr>
-                <td colspan="5" class="loading">Caricamento...</td>
+                <td colspan="${isAdmin ? '6' : '5'}" class="loading">Caricamento...</td>
               </tr>
             </tbody>
           </table>
@@ -12909,13 +12910,17 @@ function viewCorsiInteraziendali(){
       if (response.iscrizioni) {
         renderIscrizioniTable(response.iscrizioni);
       } else {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading">Nessuna iscrizione trovata</td></tr>';
+        const isAdmin = getUser()?.role === 'admin';
+        const colspan = isAdmin ? 6 : 5;
+        tbody.innerHTML = `<tr><td colspan="${colspan}" class="loading">Nessuna iscrizione trovata</td></tr>`;
       }
     } catch (error) {
       console.error('Error loading iscrizioni data:', error);
       const tbody = document.getElementById('iscrizioni-tbody');
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading">Errore nel caricamento</td></tr>';
+        const isAdmin = getUser()?.role === 'admin';
+        const colspan = isAdmin ? 6 : 5;
+        tbody.innerHTML = `<tr><td colspan="${colspan}" class="loading">Errore nel caricamento</td></tr>`;
       }
     }
   }
@@ -12923,9 +12928,11 @@ function viewCorsiInteraziendali(){
   function renderIscrizioniTable(iscrizioni) {
     const tbody = document.getElementById('iscrizioni-tbody');
     if (!tbody) return;
+    const isAdmin = getUser()?.role === 'admin';
+    const colspan = isAdmin ? 6 : 5;
 
     if (iscrizioni.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="loading">Nessuna iscrizione trovata</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${colspan}" class="loading">Nessuna iscrizione trovata</td></tr>`;
       return;
     }
 
@@ -12942,6 +12949,15 @@ function viewCorsiInteraziendali(){
         </td>
         <td>${iscrizione.totale_iscritti}</td>
         <td>€${Number(iscrizione.vsd_totale).toLocaleString()}</td>
+        ${isAdmin ? `
+          <td>
+            <button onclick="editIscrizioni(${JSON.stringify(iscrizione.data_corso)}, ${JSON.stringify(iscrizione.nome_corso)})" 
+                    class="btn-small" 
+                    style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+              ✏️ Modifica
+            </button>
+          </td>
+        ` : ''}
       </tr>
     `).join('');
 
@@ -13319,6 +13335,245 @@ function viewCorsiInteraziendali(){
     const clienteGroup = document.querySelector(`#cliente-${index}`).closest('.cliente-group');
     if (clienteGroup) {
       clienteGroup.remove();
+    }
+  };
+
+  // Funzione per modificare iscrizioni esistenti
+  window.editIscrizioni = async function(dataCorso, nomeCorso) {
+    try {
+      // Carica le iscrizioni individuali per questa data e corso
+      const params = new URLSearchParams();
+      params.append('detailed', 'true');
+      params.append('data_corso', dataCorso);
+      params.append('nome_corso', nomeCorso);
+      
+      const response = await GET(`/api/corsi-iscrizioni?${params}`);
+      
+      if (!response.iscrizioni || response.iscrizioni.length === 0) {
+        toast('Nessuna iscrizione trovata', 'error');
+        return;
+      }
+
+      const iscrizioni = response.iscrizioni;
+      
+      // Crea la modal HTML
+      const modalHtml = `
+        <div class="iscrizione-modal">
+          <div class="modal-header">
+            <h3>Modifica Iscrizioni - ${nomeCorso}</h3>
+            <button onclick="hideOverlay()" class="close-btn">✕</button>
+          </div>
+          <div class="modal-body">
+            <div style="margin-bottom: 16px; padding: 12px; background: rgba(255,255,255,.05); border-radius: 8px;">
+              <strong>Data Corso:</strong> ${new Date(dataCorso).toLocaleDateString('it-IT')}<br>
+              <strong>Corso:</strong> ${nomeCorso}
+            </div>
+            <div id="iscrizioni-edit-container">
+              ${iscrizioni.map((iscrizione, index) => `
+                <div class="cliente-group" data-iscrizione-id="${iscrizione.id}" style="margin-bottom: 16px; padding: 16px; background: rgba(255,255,255,.03); border-radius: 8px; border: 1px solid rgba(255,255,255,.1);">
+                  <div class="form-group">
+                    <label>Cliente *</label>
+                    <select id="edit-cliente-${index}" required onchange="loadClienteInfoEdit(${index})">
+                      <option value="">Seleziona cliente...</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Consulente</label>
+                    <select id="edit-consulente-${index}">
+                      <option value="">Seleziona consulente...</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Costo Corso</label>
+                    <input type="number" id="edit-costo-${index}" min="0" step="0.01" value="${iscrizione.costo_personalizzato || 0}">
+                  </div>
+                  <button type="button" onclick="deleteIscrizione('${iscrizione.id}', ${index})" class="btn-danger" style="background: rgba(255,0,0,.2); border: 1px solid rgba(255,0,0,.3); color: #ff6b6b; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px;">
+                    🗑️ Elimina Iscrizione
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button onclick="hideOverlay()" class="btn-secondary">Annulla</button>
+            <button onclick="saveIscrizioniEdit()" class="btn-primary">Salva Modifiche</button>
+          </div>
+        </div>
+      `;
+
+      showOverlay(modalHtml, 'iscrizione-edit-modal-overlay');
+      
+      // Carica opzioni clienti e consulenti per ogni iscrizione
+      await loadConsulentiOptions();
+      
+      for (let i = 0; i < iscrizioni.length; i++) {
+        const iscrizione = iscrizioni[i];
+        await loadClientiOptions(`edit-cliente-${i}`);
+        await loadConsulentiOptions(`edit-consulente-${i}`);
+        
+        // Imposta i valori esistenti
+        const clienteSelect = document.getElementById(`edit-cliente-${i}`);
+        const consulenteSelect = document.getElementById(`edit-consulente-${i}`);
+        
+        if (clienteSelect) {
+          clienteSelect.value = iscrizione.cliente_id;
+          // Trigger change per caricare info consulente
+          if (clienteSelect.value) {
+            await loadClienteInfoEdit(i);
+          }
+        }
+        
+        if (consulenteSelect) {
+          consulenteSelect.value = iscrizione.consulente_id;
+        }
+      }
+      
+      // Salva le iscrizioni originali in una variabile globale per il salvataggio
+      window.currentEditingIscrizioni = iscrizioni;
+      
+    } catch (error) {
+      console.error('Error loading iscrizioni for edit:', error);
+      toast('Errore nel caricamento delle iscrizioni', 'error');
+    }
+  };
+
+  window.loadClienteInfoEdit = async function(index) {
+    const clienteSelect = document.getElementById(`edit-cliente-${index}`);
+    const consulenteSelect = document.getElementById(`edit-consulente-${index}`);
+    
+    if (!clienteSelect || !consulenteSelect) return;
+    
+    const selectedOption = clienteSelect.selectedOptions[0];
+    if (!selectedOption || !selectedOption.value) {
+      consulenteSelect.value = '';
+      return;
+    }
+    
+    const consultantId = selectedOption.dataset.consulenteId || '';
+    
+    if (consultantId) {
+      const matchingOption = Array.from(consulenteSelect.options).find(
+        option => option.value === consultantId
+      );
+      if (matchingOption) {
+        consulenteSelect.value = consultantId;
+      }
+    }
+  };
+
+  window.deleteIscrizione = async function(iscrizioneId, index) {
+    if (!confirm('Sei sicuro di voler eliminare questa iscrizione?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/corsi-iscrizioni/${iscrizioneId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Errore nell\'eliminazione');
+      }
+      
+      // Rimuovi l'elemento dal DOM
+      const gruppo = document.querySelector(`[data-iscrizione-id="${iscrizioneId}"]`);
+      if (gruppo) {
+        gruppo.remove();
+      }
+      
+      // Rimuovi anche dall'array globale
+      if (window.currentEditingIscrizioni) {
+        window.currentEditingIscrizioni = window.currentEditingIscrizioni.filter(isc => isc.id !== iscrizioneId);
+      }
+      
+      toast('Iscrizione eliminata con successo', 'success');
+      
+      // Ricarica i dati nella tabella principale
+      loadIscrizioniData();
+      
+    } catch (error) {
+      console.error('Error deleting iscrizione:', error);
+      toast(error.message || 'Errore nell\'eliminazione', 'error');
+    }
+  };
+
+  window.saveIscrizioniEdit = async function() {
+    try {
+      if (!window.currentEditingIscrizioni || window.currentEditingIscrizioni.length === 0) {
+        toast('Nessuna iscrizione da salvare', 'error');
+        return;
+      }
+
+      // Raccogli tutte le modifiche
+      const updates = [];
+      const container = document.getElementById('iscrizioni-edit-container');
+      const gruppi = container.querySelectorAll('.cliente-group');
+      
+      for (const gruppo of gruppi) {
+        const iscrizioneId = gruppo.dataset.iscrizioneId;
+        const index = Array.from(gruppi).indexOf(gruppo);
+        
+        const clienteSelect = document.getElementById(`edit-cliente-${index}`);
+        const consulenteSelect = document.getElementById(`edit-consulente-${index}`);
+        const costoInput = document.getElementById(`edit-costo-${index}`);
+        
+        if (!clienteSelect || !clienteSelect.value) {
+          toast('Tutti i campi cliente sono obbligatori', 'error');
+          return;
+        }
+        
+        if (!consulenteSelect || !consulenteSelect.value) {
+          toast('Tutti i campi consulente sono obbligatori', 'error');
+          return;
+        }
+        
+        const clienteOption = clienteSelect.selectedOptions[0];
+        const consulenteOption = consulenteSelect.selectedOptions[0];
+        
+        updates.push({
+          id: iscrizioneId,
+          cliente_id: clienteSelect.value,
+          cliente_nome: clienteOption.textContent,
+          consulente_id: consulenteSelect.value,
+          consulente_nome: consulenteOption.textContent,
+          costo_personalizzato: Number(costoInput.value) || 0
+        });
+      }
+
+      // Esegui tutti gli aggiornamenti
+      const promises = updates.map(update => 
+        fetch(`/api/corsi-iscrizioni/${update.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(update)
+        })
+      );
+
+      const results = await Promise.all(promises);
+      
+      for (const result of results) {
+        if (!result.ok) {
+          const error = await result.json();
+          throw new Error(error.error || 'Errore nel salvataggio');
+        }
+      }
+
+      toast('Iscrizioni modificate con successo', 'success');
+      hideOverlay();
+      
+      // Ricarica i dati nella tabella principale
+      loadIscrizioniData();
+      
+    } catch (error) {
+      console.error('Error saving iscrizioni edits:', error);
+      toast(error.message || 'Errore nel salvataggio', 'error');
     }
   };
 
