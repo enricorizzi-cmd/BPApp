@@ -52,9 +52,37 @@ module.exports = function(app) {
       // Determina quali dati del database potrebbero essere rilevanti
       const relevantData = await gatherRelevantData(message, req.user);
 
+      // Estrai mese/anno dalla domanda per passarlo a formatDataContext
+      const monthNames = {
+        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
+        'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+      };
+      let targetMonth = null;
+      let targetYear = new Date().getFullYear();
+      const lowerMsg = message.toLowerCase();
+      
+      for (const [name, num] of Object.entries(monthNames)) {
+        if (lowerMsg.includes(name)) {
+          targetMonth = num;
+          break;
+        }
+      }
+      
+      const yearMatch = lowerMsg.match(/\b(20\d{2})\b|\b(\d{2})\b/);
+      if (yearMatch) {
+        const fullYear = yearMatch[1];
+        const shortYear = yearMatch[2];
+        if (fullYear) {
+          targetYear = parseInt(fullYear);
+        } else if (shortYear) {
+          const yearNum = parseInt(shortYear);
+          targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
+        }
+      }
+
       // Costruisci il contesto per il sistema
       const systemPrompt = buildSystemPrompt(req.user);
-      const dataContext = formatDataContext(relevantData, message);
+      const dataContext = formatDataContext(relevantData, message, targetMonth, targetYear, monthNames);
 
       // Prepara i messaggi per OpenAI
       const messages = [
@@ -143,7 +171,7 @@ module.exports = function(app) {
         'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
       };
       let targetMonth = null;
-      let targetYear = new Date().getFullYear();
+      let targetYear = new Date().getFullYear(); // Default all'anno corrente
       
       for (const [name, num] of Object.entries(monthNames)) {
         if (lowerMessage.includes(name)) {
@@ -151,6 +179,21 @@ module.exports = function(app) {
           break;
         }
       }
+      
+      // Cerca anno nella domanda (formati: "2025", "25", "novembre 25", "novembre 2025")
+      const yearMatch = lowerMessage.match(/\b(20\d{2})\b|\b(\d{2})\b/);
+      if (yearMatch) {
+        const fullYear = yearMatch[1]; // 2025, 2024, ecc.
+        const shortYear = yearMatch[2]; // 25, 24, ecc.
+        if (fullYear) {
+          targetYear = parseInt(fullYear);
+        } else if (shortYear) {
+          const yearNum = parseInt(shortYear);
+          // Se è <= 50, assume 20xx, altrimenti 19xx
+          targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
+        }
+      }
+      
       // Cerca anche numeri di mese
       const monthMatch = lowerMessage.match(/(?:mese|month)\s+(\d+)|(\d+)\s+(?:novembre|ottobre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre)/i);
       if (!targetMonth && monthMatch) {
@@ -510,9 +553,20 @@ RISPOSTE IN ITALIANO.`;
   /**
    * Formatta i dati per il contesto del chatbot
    */
-  function formatDataContext(data, message = '') {
+  function formatDataContext(data, message = '', targetMonth = null, targetYear = null, monthNames = null) {
     let context = 'Dati disponibili dal database:\n\n';
     const lowerMessage = (message || '').toLowerCase();
+    
+    if (!monthNames) {
+      monthNames = {
+        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
+        'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+      };
+    }
+    
+    if (!targetYear) {
+      targetYear = new Date().getFullYear();
+    }
     
     // Crea mappa userid -> nome per sostituire ID con nomi
     const userIdToName = {};
@@ -595,10 +649,39 @@ RISPOSTE IN ITALIANO.`;
     }
 
     if (data.periods && data.periods.length > 0) {
-      context += `PERIODI/KPI/BP (${data.periods.length} totali):\n`;
+      // Se specificato mese/anno, evidenzia i periodi corrispondenti
+      let relevantPeriods = data.periods;
+      if (targetMonth) {
+        relevantPeriods = data.periods.filter(p => {
+          // Controlla se il periodo corrisponde al mese/anno richiesto
+          const matchesYear = !p.year || p.year == targetYear;
+          const matchesMonth = !p.month || p.month == targetMonth;
+          // Controlla anche startDate/endDate se month/year non sono popolati
+          let matchesDate = false;
+          if (p.startdate && p.enddate) {
+            try {
+              const start = new Date(p.startdate);
+              const end = new Date(p.enddate);
+              const targetStart = new Date(targetYear, targetMonth - 1, 1);
+              const targetEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+              // Il periodo si sovrappone al mese richiesto
+              matchesDate = start <= targetEnd && end >= targetStart;
+            } catch (e) {
+              // Ignora errori di parsing date
+            }
+          }
+          return matchesYear && (matchesMonth || matchesDate);
+        });
+      }
       
-      // Mostra tutti i periodi con dettagli completi per analisi
-      data.periods.slice(0, 50).forEach(period => {
+      context += `PERIODI/KPI/BP (${data.periods.length} totali${relevantPeriods.length !== data.periods.length && targetMonth ? `, ${relevantPeriods.length} rilevanti per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : ''}):\n`;
+      
+      // Mostra prima i periodi rilevanti, poi tutti gli altri
+      const periodsToShow = relevantPeriods.length > 0 && relevantPeriods.length <= 30 && targetMonth
+        ? [...relevantPeriods, ...data.periods.filter(p => !relevantPeriods.find(rp => rp.id === p.id))].slice(0, 50)
+        : data.periods.slice(0, 50);
+      
+      periodsToShow.forEach(period => {
         const typeLabels = {
           weekly: 'settimanale',
           monthly: 'mensile',
@@ -622,11 +705,18 @@ RISPOSTE IN ITALIANO.`;
         context += `- ${u.name} (ruolo: ${u.role})\n`;
       });
       context += '\n';
-      context += 'ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. ';
-      context += 'Per ogni utente nella lista, controlla se esiste un periodo con: type="monthly", year=2025, month=11 (novembre), e indicatorsprev non vuoto. ';
+      // Estrai mese/anno dinamico dalla domanda per le istruzioni
+      const currentDate = new Date();
+      const instructionYear = targetYear || currentDate.getFullYear();
+      const instructionMonth = targetMonth || currentDate.getMonth() + 1;
+      const instructionMonthName = monthNames[Object.keys(monthNames).find(k => monthNames[k] === instructionMonth)] || 'mese indicato';
+      
+      context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. `;
+      context += `Per ogni utente nella lista, controlla se esiste un periodo con: type="monthly", year=${instructionYear}, month=${instructionMonth} (${instructionMonthName}), e indicatorsprev non vuoto. `;
       context += '- Gli utenti che HANNO un periodo con queste caratteristiche sono quelli che HANNO fatto il BP previsionale. ';
-      context += '- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per novembre 2025. ';
-      context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI.\n\n';
+      context += `- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
+      context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI. ';
+      context += 'ATTENZIONE: Guarda TUTTI i periodi forniti, anche se non sembrano corrispondere - potrebbe esserci un periodo mensile con startDate/endDate che include quel mese anche se month/year non sono popolati.\n\n';
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
