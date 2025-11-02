@@ -730,12 +730,14 @@ RISPOSTE IN ITALIANO.`;
       const instructionMonth = targetMonth || currentDate.getMonth() + 1;
       const instructionMonthName = monthNames[Object.keys(monthNames).find(k => monthNames[k] === instructionMonth)] || 'mese indicato';
       
-      context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. `;
-      context += `Per ogni utente nella lista, controlla se esiste un periodo con: type="monthly", year=${instructionYear}, month=${instructionMonth} (${instructionMonthName}), e indicatorsprev non vuoto. `;
+      context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
+      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="monthly" o "mensile") che corrisponde a ${instructionMonthName} ${instructionYear}. `;
+      context += `Un periodo corrisponde se: (year=${instructionYear} E month=${instructionMonth}) OPPURE (startDate/endDate si sovrappone al mese ${instructionMonthName} ${instructionYear}). `;
+      context += `Poi controlla se quel periodo ha indicatorsprev non vuoto. `;
       context += '- Gli utenti che HANNO un periodo con queste caratteristiche sono quelli che HANNO fatto il BP previsionale. ';
       context += `- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
       context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI. ';
-      context += 'ATTENZIONE: Guarda TUTTI i periodi forniti, anche se non sembrano corrispondere - potrebbe esserci un periodo mensile con startDate/endDate che include quel mese anche se month/year non sono popolati.\n\n';
+      context += 'ATTENZIONE: Guarda TUTTI i periodi forniti nella lista PERIODI, anche quelli che sembrano non corrispondere - controlla sia month/year che startDate/endDate. I periodi rilevanti sono marcati con ⭐.\n\n';
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
