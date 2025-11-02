@@ -1135,6 +1135,11 @@ function __readMode(scope){
   function _toYMD(d){ try{ const x=new Date(d); const y=x.getUTCFullYear(); const m=String(x.getUTCMonth()+1).padStart(2,'0'); const dy=String(x.getUTCDate()).padStart(2,'0'); return y+'-'+m+'-'+dy; }catch(_){ return ''; } }
   function _effType(t){ try{ return (typeof effectivePeriodType==='function') ? effectivePeriodType(String(t||'mensile').toLowerCase()) : String(t||'mensile').toLowerCase(); }catch(_){ return String(t||'mensile').toLowerCase(); } }
   async function ensurePeriods(scopeOrOpts){
+    // Non fare chiamate se l'utente non è loggato
+    if (!getUser()) {
+      return window.periods || [];
+    }
+    
     // Non fare chiamate se è stato rilevato un 401 globale
     if (window.__BP_401_DETECTED === true) {
       return window.periods || [];
@@ -1213,6 +1218,12 @@ function drawLineGeneric(canvasId, labels, data){
 
 
 async function recomputeDashboardMini(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    console.log('[recomputeDashboardMini] Utente non loggato, skip');
+    return;
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     console.log('[recomputeDashboardMini] 401 già rilevato globalmente, skip');
@@ -1344,6 +1355,12 @@ async function recomputeDashboardMini(){
 }
 
 async function recomputeCommsMini(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    console.log('[recomputeCommsMini] Utente non loggato, skip');
+    return;
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     console.log('[recomputeCommsMini] 401 già rilevato globalmente, skip');
@@ -1388,6 +1405,12 @@ async function recomputeCommsMini(){
 }
 
 async function recomputeTeamChart(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    console.log('[recomputeTeamChart] Utente non loggato, skip');
+    return;
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     console.log('[recomputeTeamChart] 401 già rilevato globalmente, skip');
@@ -1399,6 +1422,11 @@ var __bp_usersCache = null;
 var __bp_settingsCache = null;
 
 function ensureUsers(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    return Promise.resolve(__bp_usersCache || []);
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     return Promise.resolve(__bp_usersCache || []);
@@ -1414,6 +1442,11 @@ function ensureUsers(){
 }
 
 function ensureSettings(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    return Promise.resolve(__bp_settingsCache || {});
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     return Promise.resolve(__bp_settingsCache || {});
@@ -1474,6 +1507,12 @@ function sumProvvForPeriod(p, mode, which, rates){
 }
 
   function recomputeTeamAggChart(){
+  // Non fare chiamate API se l'utente non è loggato
+  if (!getUser()) {
+    console.log('[recomputeTeamAggChart] Utente non loggato, skip');
+    return;
+  }
+  
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
     console.log('[recomputeTeamAggChart] 401 già rilevato globalmente, skip');

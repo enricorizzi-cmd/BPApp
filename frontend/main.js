@@ -1147,6 +1147,12 @@ function viewHome(){
     }
   }
   function computeSeriesLocallyDash(indicator, mode, userId, range){
+    // Non fare chiamate API se l'utente non è loggato
+    if (!getUser()) {
+      console.log('[computeSeriesLocallyDash] Utente non loggato, skip');
+      return Promise.resolve({ periods: [] });
+    }
+    
     // Non fare chiamate API se è stato rilevato un 401 globale
     if (window.__BP_401_DETECTED === true) {
       console.log('[computeSeriesLocallyDash] 401 già rilevato globalmente, skip');
@@ -1339,6 +1345,12 @@ function recomputeKPI(){
 
   // ===== Serie minichart (identiche a Squadra)
   function recomputeMini(){
+    // Non fare chiamate API se l'utente non è loggato
+    if (!getUser()) {
+      console.log('[recomputeMini] Utente non loggato, skip');
+      return;
+    }
+    
     var mode = (document.getElementById('dash_mode')||{}).value || 'previsionale';
     var el = document.getElementById('dash_cons');
     // Non fare chiamate API se è stato rilevato un 401 globale
