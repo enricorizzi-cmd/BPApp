@@ -10761,6 +10761,57 @@ function viewCorsiInteraziendali(){
         padding: 20px;
       }
       
+      /* Badge codice corso - Stile principale */
+      .corso-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        line-height: 1;
+        text-transform: uppercase;
+      }
+      
+      .calendar .day {
+        position: relative;
+      }
+      
+      .mini-day {
+        position: relative;
+      }
+      
+      .mini-day .corso-badge {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+        top: 2px;
+        right: 2px;
+      }
+      
+      /* Label "Oggi" */
+      .today-label {
+        font-size: 9px;
+        color: var(--accent);
+        font-weight: 600;
+        margin-left: 4px;
+        opacity: 0.9;
+      }
+      
+      .mini-day .today-label {
+        font-size: 7px;
+        margin-left: 2px;
+      }
+      
       .calendario-view-switch {
         display: flex;
         gap: 8px;
@@ -11055,6 +11106,32 @@ function viewCorsiInteraziendali(){
           font-size: 12px;
         }
         
+        /* Badge codice corso - Responsive */
+        .corso-badge {
+          width: 20px;
+          height: 20px;
+          font-size: 9px;
+          top: 3px;
+          right: 3px;
+        }
+        
+        .mini-day .corso-badge {
+          width: 14px;
+          height: 14px;
+          font-size: 7px;
+          top: 1px;
+          right: 1px;
+        }
+        
+        /* Label "Oggi" - Responsive */
+        .today-label {
+          font-size: 8px;
+        }
+        
+        .mini-day .today-label {
+          font-size: 6px;
+        }
+        
         .calendario-corso {
           font-size: 8px;
         }
@@ -11310,6 +11387,7 @@ function viewCorsiInteraziendali(){
         loadIscrizioniData();
         loadConsulentiOptions();
         loadCorsiFilterOptions();
+        updateIscrizioniPeriodDisplay(); // Aggiorna il display del periodo iniziale
         break;
     }
   }
@@ -12061,8 +12139,11 @@ function viewCorsiInteraziendali(){
             });
           }) : [];
 
+          // Controlla se è oggi - IMPORTANTE: controlla anche mese e anno per evitare evidenziare il giorno sbagliato in altri mesi
           const today = new Date();
-          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const isToday = day === today.getDate() && 
+                         month === today.getMonth() && 
+                         year === today.getFullYear();
           
           // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
           const dayOfWeek = new Date(year, month, day).getDay();
@@ -12085,10 +12166,18 @@ function viewCorsiInteraziendali(){
             dayClass += ' today';
           }
           
+          // Crea badge per codice corso (mostra solo il primo se ci sono più corsi)
+          const courseBadge = hasCourse && coursesOnDay.length > 0 ? (() => {
+            const firstCourse = coursesOnDay[0];
+            const codiceCorso = firstCourse.corsi_catalogo?.codice_corso || '';
+            return codiceCorso ? `<span class="corso-badge">${codiceCorso}</span>` : '';
+          })() : '';
+          
           calendarHtml += `
             <div class="day ${dayClass}" 
                  onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
-              <div class="dnum">${day}</div>
+              ${courseBadge}
+              <div class="dnum">${day}${isToday ? ' <span class="today-label">Oggi</span>' : ''}</div>
               ${hasCourse ? `
                 <div class="small">
                   ${coursesOnDay.map(course => {
@@ -12274,8 +12363,11 @@ function viewCorsiInteraziendali(){
               });
             }) : [];
 
+            // Controlla se è oggi - IMPORTANTE: controlla anche mese e anno per evitare evidenziare il giorno sbagliato in altri mesi
             const today = new Date();
-            const isToday = day === today.getDate() && monthIndex === today.getMonth() && currentYear === today.getFullYear();
+            const isToday = day === today.getDate() && 
+                           monthIndex === today.getMonth() && 
+                           currentYear === today.getFullYear();
             
             // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
             const dayOfWeek = new Date(currentYear, monthIndex, day).getDay();
@@ -12298,10 +12390,18 @@ function viewCorsiInteraziendali(){
               dayClass += ' today';
             }
             
+            // Crea badge per codice corso (mostra solo il primo se ci sono più corsi)
+            const courseBadgeAnnual = hasCourse && coursesOnDay.length > 0 ? (() => {
+              const firstCourse = coursesOnDay[0];
+              const codiceCorso = firstCourse.corsi_catalogo?.codice_corso || '';
+              return codiceCorso ? `<span class="corso-badge">${codiceCorso}</span>` : '';
+            })() : '';
+            
             annualHtml += `
               <div class="mini-day ${dayClass}" 
                    onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
-                ${day}
+                ${courseBadgeAnnual}
+                ${day}${isToday ? ' <span class="today-label">Oggi</span>' : ''}
               </div>
             `;
           }
@@ -12536,17 +12636,33 @@ function viewCorsiInteraziendali(){
       const response = await GET('/api/corsi-consulenti');
       const select = document.getElementById('filtro-consulente');
       
-      if (response.consulenti && select) {
+      if (!select) {
+        console.warn('Select filtro-consulente non trovato');
+        return;
+      }
+      
+      if (response && response.consulenti && response.consulenti.length > 0) {
         const options = response.consulenti.map(consulente => 
           `<option value="${consulente.id}">${consulente.name}</option>`
         ).join('');
         
         select.innerHTML = '<option value="">Tutti i consulenti</option>' + options;
+        console.log(`Caricati ${response.consulenti.length} consulenti`);
+      } else {
+        console.warn('Nessun consulente trovato nella risposta:', response);
+        select.innerHTML = '<option value="">Tutti i consulenti</option>';
       }
     } catch (error) {
       console.error('Error loading consulenti options:', error);
+      const select = document.getElementById('filtro-consulente');
+      if (select) {
+        select.innerHTML = '<option value="">Errore nel caricamento</option>';
+      }
     }
   }
+  
+  // Esponi la funzione globalmente per debug
+  window.loadConsulentiOptions = loadConsulentiOptions;
 
   // Carica corsi per i filtri
   async function loadCorsiFilterOptions() {
@@ -12631,6 +12747,8 @@ function viewCorsiInteraziendali(){
   }
 
   window.updateIscrizioniFilters = function() {
+    // Aggiorna il display del periodo quando cambia la granularità
+    updateIscrizioniPeriodDisplay();
     loadIscrizioniData();
   };
 
