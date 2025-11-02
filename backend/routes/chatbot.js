@@ -502,7 +502,7 @@ ANALISI COMPARATIVE:
   * Confronta i conteggi e identifica chi ha più disponibilità
   * Se il mese è specificato (es. "novembre"), filtra solo gli appuntamenti di quel mese
 
-${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
+${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato" elenca i nomi degli utenti che HANNO fatto il BP previsionale.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
 
 RISPOSTE IN ITALIANO.`;
   }
@@ -606,9 +606,10 @@ RISPOSTE IN ITALIANO.`;
         context += `- ${u.name} (ID: ${u.id}, ruolo: ${u.role})\n`;
       });
       context += '\n';
-      context += 'ISTRUZIONE IMPORTANTE: Per trovare chi non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. ';
+      context += 'ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. ';
       context += 'Per ogni utente nella lista, controlla se esiste un periodo con: type="monthly", year=2025, month=11 (novembre), e indicatorsprev non vuoto. ';
-      context += 'Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per novembre 2025.\n\n';
+      context += '- Gli utenti che HANNO un periodo con queste caratteristiche sono quelli che HANNO fatto il BP previsionale. ';
+      context += '- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per novembre 2025.\n\n';
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
