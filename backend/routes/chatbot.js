@@ -109,6 +109,23 @@ module.exports = function(app) {
     };
 
     const lowerMessage = message.toLowerCase();
+    const isAdmin = user.role === 'admin';
+    
+    // Determina se la query richiede dati di tutti i consulenti o uno specifico
+    const wantsAllConsultants = isAdmin && (
+      lowerMessage.includes('tutti') || 
+      lowerMessage.includes('squadra') || 
+      lowerMessage.includes('global') ||
+      lowerMessage.includes('team')
+    );
+    
+    // Estrae nome consulente se specificato (solo per admin)
+    let specificConsultantId = null;
+    if (isAdmin && !wantsAllConsultants) {
+      // Cerca nomi di consulenti nel messaggio
+      // TODO: potrebbe essere migliorato con una query alla tabella users
+      // Per ora assumiamo che se non dice "tutti" allora vuole i suoi dati
+    }
 
     try {
       // Query per appuntamenti (se menzionati)
@@ -119,13 +136,36 @@ module.exports = function(app) {
           lowerMessage.includes('oggi') ||
           lowerMessage.includes('domani')) {
         
-        const { data: appointments } = await supabase
-          .from('appointments')
-          .select('id, client, start_time, type, vss, nncf')
-          .eq('userid', user.id)
-          .order('start_time', { ascending: false })
-          .limit(20);
+        // Determina filtro data: se dice "prossimi", "domani", "oggi" -> solo futuri
+        const wantsFuture = lowerMessage.includes('prossim') || 
+                           lowerMessage.includes('domani') || 
+                           lowerMessage.includes('oggi') ||
+                           lowerMessage.includes('futur');
         
+        // Calcola data minima (oggi a mezzanotte)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayISO = today.toISOString();
+        
+        let query = supabase
+          .from('appointments')
+          .select('id, client, start_time, type, vss, nncf, userid')
+          .limit(50);
+        
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
+          query = query.eq('userid', user.id);
+        }
+        
+        // Filtro per data futura se richiesto
+        if (wantsFuture) {
+          query = query.gte('start_time', todayISO);
+        }
+        
+        // Ordina per data: ascending per prossimi, descending per storici
+        query = query.order('start_time', { ascending: wantsFuture });
+        
+        const { data: appointments } = await query;
         data.appointments = appointments || [];
       }
 
@@ -134,12 +174,17 @@ module.exports = function(app) {
           lowerMessage.includes('client') ||
           lowerMessage.includes('azienda')) {
         
-        const { data: clients } = await supabase
+        let query = supabase
           .from('clients')
-          .select('id, name, status, consultantname')
-          .eq('consultantid', user.id)
-          .limit(50);
+          .select('id, name, status, consultantid, consultantname')
+          .limit(100);
         
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
+          query = query.eq('consultantid', user.id);
+        }
+        
+        const { data: clients } = await query;
         data.clients = clients || [];
       }
 
@@ -151,13 +196,18 @@ module.exports = function(app) {
           lowerMessage.includes('obiettivo') ||
           lowerMessage.includes('target')) {
         
-        const { data: periods } = await supabase
+        let query = supabase
           .from('periods')
           .select('*')
-          .eq('userid', user.id)
           .order('createdat', { ascending: false })
-          .limit(20);
+          .limit(50);
         
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
+          query = query.eq('userid', user.id);
+        }
+        
+        const { data: periods } = await query;
         data.periods = periods || [];
       }
 
@@ -165,13 +215,13 @@ module.exports = function(app) {
       if (lowerMessage.includes('lead') || 
           lowerMessage.includes('prospect')) {
         
-        const isAdmin = user.role === 'admin';
         let query = supabase
           .from('leads')
           .select('*')
           .limit(50);
         
-        if (!isAdmin) {
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
           query = query.eq('consulente_assegnato', user.id);
         }
         
@@ -201,13 +251,13 @@ module.exports = function(app) {
           lowerMessage.includes('gi') ||
           lowerMessage.includes('fatturato')) {
         
-        const isAdmin = user.role === 'admin';
         let query = supabase
           .from('vendite_riordini')
           .select('*')
           .limit(50);
         
-        if (!isAdmin) {
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
           query = query.eq('consultantid', user.id);
         }
         
@@ -215,12 +265,17 @@ module.exports = function(app) {
         data.vendite = vendite || [];
 
         // Query anche per GI
-        const { data: gi } = await supabase
+        let giQuery = supabase
           .from('gi')
           .select('*')
-          .eq('consultantid', user.id)
-          .limit(20);
+          .limit(50);
         
+        // Filtro per consulente
+        if (!isAdmin || !wantsAllConsultants) {
+          giQuery = giQuery.eq('consultantid', user.id);
+        }
+        
+        const { data: gi } = await giQuery;
         data.gi = gi || [];
       }
 
@@ -235,9 +290,10 @@ module.exports = function(app) {
    * Costruisce il prompt di sistema per il chatbot
    */
   function buildSystemPrompt(user) {
-    const roleContext = user.role === 'admin' 
-      ? 'Sei un assistente AI per un sistema di gestione commerciale. L\'utente è un amministratore con accesso completo ai dati.'
-      : `Sei un assistente AI per un consulente commerciale. L'utente è ${user.name || user.email}.`;
+    const isAdmin = user.role === 'admin';
+    const roleContext = isAdmin 
+      ? 'Sei un assistente AI per un sistema di gestione commerciale. L\'utente è un amministratore. Di default, quando non specificato diversamente, mostra solo i dati dell\'utente corrente. Se l\'utente chiede esplicitamente dati di "tutti", "squadra", "team" o "global", puoi mostrare dati aggregati o di tutti i consulenti.'
+      : `Sei un assistente AI per un consulente commerciale. L'utente è ${user.name || user.email}. Puoi accedere SOLO ai dati di questo consulente, non hai accesso ai dati di altri consulenti.`;
 
     return `${roleContext}
 
@@ -260,6 +316,7 @@ RISPOSTE:
 - Se la domanda è ambigua, chiedi chiarimenti
 - Non inventare dati che non sono stati forniti
 - Focalizzati su analisi e insights utili per il lavoro commerciale
+${isAdmin ? '- Se l\'utente è admin e chiede dati "tutti" o "squadra", usa i dati aggregati forniti. Altrimenti mostra solo i suoi dati.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
 
 RISPOSTE IN ITALIANO.`;
   }
@@ -272,9 +329,18 @@ RISPOSTE IN ITALIANO.`;
 
     if (data.appointments && data.appointments.length > 0) {
       context += `APPUNTAMENTI (${data.appointments.length}):\n`;
-      data.appointments.slice(0, 10).forEach(apt => {
-        const date = new Date(apt.start_time).toLocaleDateString('it-IT');
-        context += `- ${apt.client} il ${date}, tipo: ${apt.type}, VSS: €${apt.vss || 0}\n`;
+      data.appointments.slice(0, 20).forEach(apt => {
+        const date = new Date(apt.start_time);
+        const dateStr = date.toLocaleDateString('it-IT', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        });
+        const timeStr = date.toLocaleTimeString('it-IT', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+        context += `- ${apt.client} il ${dateStr} alle ${timeStr}, tipo: ${apt.type}, VSS: €${apt.vss || 0}${apt.nncf ? ', NNCF: Sì' : ''}\n`;
       });
       context += '\n';
     }

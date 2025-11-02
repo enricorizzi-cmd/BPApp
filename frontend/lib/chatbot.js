@@ -194,8 +194,11 @@ function addMessage(text, role, isTemporary = false) {
   messageEl.id = messageId;
   messageEl.className = `chatbot-message chatbot-message-${role}${isTemporary ? ' chatbot-message-loading' : ''}`;
   
+  // Formatta il markdown solo per messaggi assistant (risposte AI)
+  const formattedText = role === 'assistant' ? formatMarkdown(text) : escapeHtml(text);
+  
   messageEl.innerHTML = `
-    <div class="chatbot-message-content">${escapeHtml(text)}</div>
+    <div class="chatbot-message-content">${formattedText}</div>
   `;
 
   container.appendChild(messageEl);
@@ -221,6 +224,37 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * Formatta markdown semplice in HTML (grassetto, liste, ecc.)
+ * Sicura: escapa tutto tranne i tag markdown supportati
+ */
+function formatMarkdown(text) {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Prima escapa tutto per sicurezza
+  let html = escapeHtml(text);
+  
+  // Converti **testo** in <strong>testo</strong> (grassetto)
+  html = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  
+  // Converti *testo* in <em>testo</em> (corsivo) - solo quelli rimanenti (non doppi)
+  // Usa un pattern che non matcha se c'è un asterisco prima o dopo (già convertito in strong)
+  html = html.replace(/([^*])\*([^*\n]+?)\*([^*])/g, '$1<em>$2</em>$3');
+  
+  // Converti liste numerate: 1. item o 1) item
+  html = html.replace(/^(\d+[.)]\s+.+)$/gm, '<div style="margin: 4px 0;">$1</div>');
+  
+  // Converti liste puntate: - item o * item
+  html = html.replace(/^[-*]\s+(.+)$/gm, '<div style="margin: 4px 0;">• $1</div>');
+  
+  // Converti break lines multipli in paragrafi
+  html = html.replace(/\n\n+/g, '</p><p>');
+  html = '<p>' + html + '</p>';
+  html = html.replace(/<p><\/p>/g, ''); // Rimuovi paragrafi vuoti
+  
+  return html;
 }
 
 // Auto-inizializza quando l'utente è loggato

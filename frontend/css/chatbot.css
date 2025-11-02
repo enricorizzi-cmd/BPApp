@@ -195,9 +195,31 @@
   padding: 14px 18px;
   border-radius: 18px;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
-  white-space: pre-wrap;
+  white-space: normal;
+}
+
+.chatbot-message-content p {
+  margin: 0.5em 0;
+}
+
+.chatbot-message-content p:first-child {
+  margin-top: 0;
+}
+
+.chatbot-message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.chatbot-message-content strong {
+  font-weight: 700;
+  color: inherit;
+}
+
+.chatbot-message-content em {
+  font-style: italic;
+  color: inherit;
 }
 
 .chatbot-message-user .chatbot-message-content {
