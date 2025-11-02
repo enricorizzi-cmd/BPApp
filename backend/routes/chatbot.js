@@ -690,8 +690,20 @@ RISPOSTE IN ITALIANO.`;
           annual: 'annuale'
         };
         const type = typeLabels[period.type] || period.type;
-        const hasPrev = period.indicatorsprev && Object.keys(period.indicatorsprev).length > 0;
-        const hasCons = period.indicatorscons && Object.keys(period.indicatorscons).length > 0;
+        
+        // Verifica se previsionale e consuntivo sono realmente compilati
+        // Un oggetto può esistere ma essere vuoto {} o avere solo campi null/vuoti
+        const hasPrev = period.indicatorsprev && 
+                       typeof period.indicatorsprev === 'object' && 
+                       !Array.isArray(period.indicatorsprev) &&
+                       Object.keys(period.indicatorsprev).length > 0 &&
+                       Object.values(period.indicatorsprev).some(v => v !== null && v !== undefined && v !== '');
+        
+        const hasCons = period.indicatorscons && 
+                       typeof period.indicatorscons === 'object' && 
+                       !Array.isArray(period.indicatorscons) &&
+                       Object.keys(period.indicatorscons).length > 0 &&
+                       Object.values(period.indicatorscons).some(v => v !== null && v !== undefined && v !== '');
         
         // Calcola mese/anno da startDate se non sono popolati
         let periodMonth = period.month;
@@ -713,7 +725,12 @@ RISPOSTE IN ITALIANO.`;
         const isRelevant = targetMonth && periodMonth == targetMonth && (!targetYear || periodYear == targetYear);
         const marker = isRelevant ? ' ⭐' : '';
         
-        context += `- ${userName}, ${type}, anno: ${periodYear || '?'}, mese: ${periodMonth ? (monthName || `mese ${periodMonth}`) : (period.startdate ? 'da startDate' : '?')}${marker}, previsionale: ${hasPrev ? 'SÌ' : 'NO'}, consuntivo: ${hasCons ? 'SÌ' : 'NO'}\n`;
+        // Formatta in modo esplicito per evitare confusioni
+        const prevStatus = hasPrev ? 'COMPILATO' : 'NON COMPILATO';
+        const consStatus = hasCons ? 'COMPILATO' : 'NON COMPILATO';
+        
+        context += `- ${userName}, ${type}, anno: ${periodYear || '?'}, mese: ${periodMonth ? (monthName || `mese ${periodMonth}`) : (period.startdate ? 'da startDate' : '?')}${marker}\n`;
+        context += `  → PREVISIONALE: ${prevStatus} | CONSUNTIVO: ${consStatus}\n`;
       });
       context += '\n';
     }
