@@ -11,6 +11,49 @@ let chatbotInitialized = false;
 let conversationHistory = [];
 
 /**
+ * Salva la history della conversazione in sessionStorage
+ */
+function saveConversationHistory(userId) {
+  try {
+    const key = `chatbot_history_${userId}`;
+    sessionStorage.setItem(key, JSON.stringify(conversationHistory));
+  } catch (error) {
+    console.warn('[Chatbot] Failed to save conversation history:', error);
+  }
+}
+
+/**
+ * Carica la history della conversazione da sessionStorage
+ */
+function loadConversationHistory(userId) {
+  try {
+    const key = `chatbot_history_${userId}`;
+    const saved = sessionStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      conversationHistory = Array.isArray(parsed) ? parsed : [];
+      return conversationHistory;
+    }
+  } catch (error) {
+    console.warn('[Chatbot] Failed to load conversation history:', error);
+  }
+  return [];
+}
+
+/**
+ * Resetta la history della conversazione
+ */
+function resetConversationHistory(userId) {
+  conversationHistory = [];
+  try {
+    const key = `chatbot_history_${userId}`;
+    sessionStorage.removeItem(key);
+  } catch (error) {
+    console.warn('[Chatbot] Failed to reset conversation history:', error);
+  }
+}
+
+/**
  * Inizializza il chatbot (FAB button)
  */
 export function initChatbot() {
@@ -58,6 +101,17 @@ function openChatbotModal() {
     existing.remove();
   }
 
+  const user = getUser();
+  if (!user) return;
+
+  // Carica history salvata
+  const savedHistory = loadConversationHistory(user.id);
+  if (savedHistory.length > 0) {
+    conversationHistory = savedHistory;
+  } else {
+    conversationHistory = [];
+  }
+
   const overlay = document.createElement('div');
   overlay.id = 'chatbot-modal-overlay';
   overlay.className = 'chatbot-modal-overlay';
@@ -66,21 +120,33 @@ function openChatbotModal() {
     <div class="chatbot-modal">
       <div class="chatbot-modal-header">
         <h2 class="chatbot-modal-title">🤖 Assistente AI</h2>
-        <button class="chatbot-modal-close" aria-label="Chiudi">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        <div class="chatbot-header-actions">
+          <button id="chatbot-reset" class="chatbot-reset-button" aria-label="Resetta chat" title="Resetta conversazione">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+              <path d="M3 21v-5h5"></path>
+            </svg>
+          </button>
+          <button class="chatbot-modal-close" aria-label="Chiudi">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
       
       <div class="chatbot-messages" id="chatbot-messages">
+        ${conversationHistory.length === 0 ? `
         <div class="chatbot-message chatbot-message-assistant">
           <div class="chatbot-message-content">
             Ciao! Sono il tuo assistente AI. Posso aiutarti ad analizzare i dati della tua attività commerciale, 
             rispondere a domande su appuntamenti, clienti, vendite, KPI e molto altro. Cosa vorresti sapere?
           </div>
         </div>
+        ` : ''}
       </div>
       
       <div class="chatbot-input-container">
@@ -111,12 +177,46 @@ function openChatbotModal() {
 
   document.body.appendChild(overlay);
 
+  // Carica messaggi salvati se esistono
+  if (conversationHistory.length > 0) {
+    conversationHistory.forEach(msg => {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        addMessage(msg.content, msg.role);
+      }
+    });
+    // Scroll to bottom
+    setTimeout(() => {
+      const container = document.getElementById('chatbot-messages');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 100);
+  }
+
   // Event listeners
   const closeBtn = overlay.querySelector('.chatbot-modal-close');
+  const resetBtn = overlay.querySelector('#chatbot-reset');
   const sendBtn = overlay.querySelector('#chatbot-send');
   const voiceBtn = overlay.querySelector('#chatbot-voice');
   const input = overlay.querySelector('#chatbot-input');
   const messagesContainer = overlay.querySelector('#chatbot-messages');
+
+  // Reset conversazione
+  resetBtn.addEventListener('click', () => {
+    if (confirm('Vuoi resettare la conversazione? Tutti i messaggi verranno eliminati.')) {
+      resetConversationHistory(user.id);
+      conversationHistory = [];
+      messagesContainer.innerHTML = `
+        <div class="chatbot-message chatbot-message-assistant">
+          <div class="chatbot-message-content">
+            Ciao! Sono il tuo assistente AI. Posso aiutarti ad analizzare i dati della tua attività commerciale, 
+            rispondere a domande su appuntamenti, clienti, vendite, KPI e molto altro. Cosa vorresti sapere?
+          </div>
+        </div>
+      `;
+      toast('Conversazione resettata', 'info');
+    }
+  });
 
   // Inizializza Speech Recognition se disponibile
   let recognition = null;
@@ -279,6 +379,9 @@ function openChatbotModal() {
         if (conversationHistory.length > 20) {
           conversationHistory = conversationHistory.slice(-20);
         }
+
+        // Salva history in sessionStorage
+        saveConversationHistory(user.id);
       })
       .catch(error => {
         removeMessage(loadingId);
