@@ -407,17 +407,22 @@ module.exports = function(app) {
         });
       }
 
-      // Aggrega per data corso
+      // Aggrega per data corso E consulente (per supportare filtro "Tutti")
       const aggregated = {};
       filteredData.forEach(iscrizione => {
         const dataCorso = iscrizione.corsi_date.data_inizio;
         const nomeCorso = iscrizione.corsi_date.corsi_catalogo.nome_corso;
-        const key = `${dataCorso}_${nomeCorso}`;
+        const consulenteId = iscrizione.consulente_id || '';
+        // Chiave include consulente_id solo se non c'è filtro consulente (per "Tutti")
+        // Se c'è filtro consulente, la chiave è senza consulente_id
+        const key = consulente_id ? `${dataCorso}_${nomeCorso}` : `${dataCorso}_${nomeCorso}_${consulenteId}`;
 
         if (!aggregated[key]) {
           aggregated[key] = {
             data_corso: dataCorso,
             nome_corso: nomeCorso,
+            consulente_id: consulente_id ? undefined : consulenteId, // Includi solo se non c'è filtro
+            consulente_nome: consulente_id ? undefined : (iscrizione.consulente_nome || ''),
             clienti_iscritti: [],
             totale_iscritti: 0,
             vsd_totale: 0

@@ -256,7 +256,7 @@
 .chatbot-input-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 20px 24px;
   border-top: 1px solid var(--hair);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.8));
@@ -284,6 +284,49 @@
 .chatbot-input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.chatbot-voice-button {
+  background: var(--bg-soft);
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+  padding: 0;
+}
+
+.chatbot-voice-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.chatbot-voice-button.chatbot-voice-active {
+  background: linear-gradient(135deg, rgba(255, 92, 92, 0.2), rgba(255, 92, 92, 0.1));
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 92, 92, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 92, 92, 0);
+  }
+}
+
+.chatbot-voice-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .chatbot-send-button {
@@ -363,6 +406,7 @@
 
   .chatbot-input-container {
     padding: 16px 20px;
+    gap: 6px;
   }
 
   .chatbot-input {
@@ -370,9 +414,16 @@
     font-size: 16px; /* Previene zoom su iOS */
   }
 
+  .chatbot-voice-button,
   .chatbot-send-button {
     width: 44px;
     height: 44px;
+  }
+  
+  .chatbot-voice-button svg,
+  .chatbot-send-button svg {
+    width: 18px;
+    height: 18px;
   }
 }
 

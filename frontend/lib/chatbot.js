@@ -91,6 +91,14 @@ function openChatbotModal() {
           placeholder="Scrivi una domanda..."
           autocomplete="off"
         />
+        <button id="chatbot-voice" class="chatbot-voice-button" aria-label="Dettatura vocale" title="Dettatura vocale">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </button>
         <button id="chatbot-send" class="chatbot-send-button" aria-label="Invia">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -106,8 +114,125 @@ function openChatbotModal() {
   // Event listeners
   const closeBtn = overlay.querySelector('.chatbot-modal-close');
   const sendBtn = overlay.querySelector('#chatbot-send');
+  const voiceBtn = overlay.querySelector('#chatbot-voice');
   const input = overlay.querySelector('#chatbot-input');
   const messagesContainer = overlay.querySelector('#chatbot-messages');
+
+  // Inizializza Speech Recognition se disponibile
+  let recognition = null;
+  let isListening = false;
+  
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const hasSpeechSupport = !!SpeechRecognition;
+  
+  if (hasSpeechSupport) {
+    try {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'it-IT';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListening = true;
+        voiceBtn.classList.add('chatbot-voice-active');
+        voiceBtn.setAttribute('aria-label', 'In ascolto...');
+        input.placeholder = 'Sto ascoltando...';
+      };
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Aggiorna input con testo dettato
+        // Pulisci prima eventuale testo provvisorio
+        let currentValue = input.value.replace(/\s*\[.*?\]\s*/g, ' ').trim();
+        
+        if (finalTranscript) {
+          // Aggiungi testo finale
+          input.value = (currentValue + ' ' + finalTranscript).trim();
+          currentValue = input.value; // Aggiorna per evitare duplicati
+        }
+        
+        // Mostra trascrizione provvisoria in tempo reale
+        if (interimTranscript) {
+          input.value = currentValue + (currentValue ? ' ' : '') + '[' + interimTranscript + ']';
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('[Chatbot] Speech recognition error:', event.error);
+        isListening = false;
+        voiceBtn.classList.remove('chatbot-voice-active');
+        voiceBtn.setAttribute('aria-label', 'Dettatura vocale');
+        input.placeholder = 'Scrivi una domanda...';
+        
+        if (event.error === 'no-speech') {
+          toast('Nessun parlato rilevato', 'info');
+        } else if (event.error === 'audio-capture') {
+          toast('Microfono non disponibile', 'error');
+        } else if (event.error === 'not-allowed') {
+          toast('Permesso microfono negato', 'error');
+        } else {
+          toast('Errore dettatura vocale', 'error');
+        }
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        voiceBtn.classList.remove('chatbot-voice-active');
+        voiceBtn.setAttribute('aria-label', 'Dettatura vocale');
+        input.placeholder = 'Scrivi una domanda...';
+        
+        // Pulisci testo provvisorio (rimuovi [testo])
+        const currentValue = input.value;
+        const cleaned = currentValue.replace(/\s*\[.*?\]\s*/g, ' ').trim();
+        if (cleaned !== input.value) {
+          input.value = cleaned;
+          // Piccolo feedback visivo
+          input.style.borderColor = 'var(--accent)';
+          setTimeout(() => {
+            input.style.borderColor = '';
+          }, 500);
+        }
+      };
+    } catch (error) {
+      console.error('[Chatbot] Failed to initialize speech recognition:', error);
+      hasSpeechSupport = false;
+    }
+  }
+
+  // Gestione pulsante voce
+  if (hasSpeechSupport) {
+    voiceBtn.addEventListener('click', () => {
+      if (isListening) {
+        // Ferma la dettatura
+        recognition.stop();
+      } else {
+        try {
+          // Avvia la dettatura
+          input.focus();
+          recognition.start();
+          if (window.haptic) window.haptic('light');
+        } catch (error) {
+          console.error('[Chatbot] Error starting speech recognition:', error);
+          toast('Impossibile avviare la dettatura vocale', 'error');
+        }
+      }
+    });
+  } else {
+    // Nascondi pulsante se non supportato
+    voiceBtn.style.display = 'none';
+  }
 
   // Chiudi modal
   closeBtn.addEventListener('click', () => {

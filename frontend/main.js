@@ -1818,6 +1818,36 @@ function viewCalendar(){
       .calendar .day.busy0{ border-color:#27ae60; background:rgba(39,174,96,.08); }
       .calendar .day.busy1{ border-color:#ff9f1a; background:rgba(255,159,26,.10); }
       .calendar .day.busy2{ border-color:#7d1731; background:rgba(125,23,49,.12); }
+      
+      /* Badge codice corso nel calendario principale */
+      .corso-badge-main {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        line-height: 1;
+        text-transform: uppercase;
+      }
+      
+      /* Label "Oggi" nel calendario principale */
+      .today-label-main {
+        font-size: 9px;
+        color: var(--accent);
+        font-weight: 600;
+        margin-left: 4px;
+        opacity: 0.9;
+      }
       .calendar .day.dense .small{ font-size:11px; line-height:1.1; }
       .calendar .day.dense .tag{ transform:scale(.9); transform-origin:left top; }
 
@@ -2471,6 +2501,11 @@ function viewCalendar(){
     
     const isAdmin = getUser() && getUser().role === 'admin';
     
+    // Calcola range date per caricare corsi e iscrizioni
+    var fromStr = y+'-'+pad2(m)+'-01';
+    var toDate = new Date(y, m, 0);
+    var toStr = y+'-'+pad2(m)+'-'+pad2(toDate.getDate());
+    
     // Gestisci errori individualmente per evitare che Promise.all fallisca completamente
     const apiCalls = [
       GET(baseApps).catch(function(e){
@@ -2504,6 +2539,16 @@ function viewCalendar(){
         }
         console.warn('[Calendar] GET settings failed:', e.message);
         return { commissions: {} };
+      }),
+      // Carica date corsi per il mese
+      GET('/api/corsi-date').catch(function(e){
+        console.warn('[Calendar] GET corsi-date failed:', e.message);
+        return { date: [] };
+      }),
+      // Carica iscrizioni per il mese (con filtro consulente se specificato)
+      GET('/api/corsi-iscrizioni?from='+fromStr+'&to='+toStr+(consultant && consultant !== 'all' ? '&consulente_id='+consultant : '')).catch(function(e){
+        console.warn('[Calendar] GET corsi-iscrizioni failed:', e.message);
+        return { iscrizioni: [] };
       })
     ];
     
@@ -2541,14 +2586,28 @@ function viewCalendar(){
       var usersData = [];
       var settings = { commissions: {} };
       
-      if (isAdmin && arr.length >= 5) {
-        // Admin: users è all'indice 3, settings all'indice 4
+      // Indici dinamici per corsi e iscrizioni
+      var corsiDateIdx, iscrizioniIdx;
+      
+      if (isAdmin && arr.length >= 7) {
+        // Admin: users è all'indice 3, settings all'indice 4, corsi all'indice 5, iscrizioni all'indice 6
         usersData = (arr[3] && arr[3].users) ? arr[3].users : [];
         settings = arr[4] || { commissions: {} };
-      } else if (arr.length >= 4) {
-        // Non-admin: settings è all'indice 3
+        corsiDateIdx = 5;
+        iscrizioniIdx = 6;
+      } else if (arr.length >= 6) {
+        // Non-admin: settings è all'indice 3, corsi all'indice 4, iscrizioni all'indice 5
         settings = arr[3] || { commissions: {} };
+        corsiDateIdx = 4;
+        iscrizioniIdx = 5;
+      } else {
+        // Fallback: nessun dato corsi/iscrizioni
+        corsiDateIdx = -1;
+        iscrizioniIdx = -1;
       }
+      
+      var corsiDate = (corsiDateIdx >= 0 && arr[corsiDateIdx] && arr[corsiDateIdx].date) ? arr[corsiDateIdx].date : [];
+      var iscrizioniData = (iscrizioniIdx >= 0 && arr[iscrizioniIdx] && arr[iscrizioniIdx].iscrizioni) ? arr[iscrizioniIdx].iscrizioni : [];
 
       var from = new Date(y, m-1, 1);
       var to   = new Date(y, m, 0, 23,59,59,999);
@@ -2619,9 +2678,111 @@ function viewCalendar(){
         return provvGi + provvVsd;
       }
       
+      // Funzione helper per calcolare dati corsi per un giorno specifico
+      function calculateCorsiDataForDay(dateStr, selectedConsultant, corsiDateArr, iscrizioniArr) {
+        var vsdIndiretto = 0;
+        var nIscritti = 0;
+        var hasCourse = false;
+        var codiceCorso = '';
+        
+        if (!corsiDateArr || corsiDateArr.length === 0) {
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '' };
+        }
+        
+        // Cerca corsi che includono questo giorno
+        var coursesOnDay = [];
+        for (var i = 0; i < corsiDateArr.length; i++) {
+          var cd = corsiDateArr[i];
+          if (!cd.giorni_dettaglio) continue;
+          
+          // Controlla se questo giorno è incluso nel corso
+          var dayIncluded = false;
+          for (var j = 0; j < cd.giorni_dettaglio.length; j++) {
+            var gd = cd.giorni_dettaglio[j];
+            if (gd.data === dateStr) {
+              dayIncluded = true;
+              if (coursesOnDay.length === 0) {
+                codiceCorso = cd.corsi_catalogo?.codice_corso || '';
+              }
+              break;
+            }
+            // Per corsi multi-giorno, controlla anche giorni successivi
+            if (gd.giorno && gd.giorno > 1) {
+              var dataInizio = new Date(cd.data_inizio);
+              var giornoCorso = new Date(dataInizio);
+              giornoCorso.setDate(dataInizio.getDate() + (gd.giorno - 1));
+              var dataCorsoStr = giornoCorso.toISOString().split('T')[0];
+              if (dataCorsoStr === dateStr) {
+                dayIncluded = true;
+                if (coursesOnDay.length === 0) {
+                  codiceCorso = cd.corsi_catalogo?.codice_corso || '';
+                }
+                break;
+              }
+            }
+          }
+          
+          if (dayIncluded) {
+            coursesOnDay.push(cd);
+            hasCourse = true;
+          }
+        }
+        
+        if (!hasCourse) {
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '' };
+        }
+        
+        // Per ogni corso del giorno, calcola VSD e iscritti filtrati per consulente
+        for (var c = 0; c < coursesOnDay.length; c++) {
+          var course = coursesOnDay[c];
+          var dataInizioCorso = course.data_inizio;
+          var nomeCorso = course.corsi_catalogo?.nome_corso;
+          
+          if (!nomeCorso) continue;
+          
+          // Cerca iscrizioni per questo corso
+          var iscrizioniCorso = [];
+          for (var k = 0; k < iscrizioniArr.length; k++) {
+            var isc = iscrizioniArr[k];
+            if (isc.data_corso === dataInizioCorso && isc.nome_corso === nomeCorso) {
+              // Se consulente è "all", prendi tutte le iscrizioni
+              // Altrimenti filtra per consulente (se disponibile nel backend)
+              // Nota: il backend potrebbe aver già filtrato, ma se non ha, dobbiamo filtrare qui
+              // Per ora assumiamo che le iscrizioni siano già filtrate dal backend o contengono info consulente
+              iscrizioniCorso.push(isc);
+            }
+          }
+          
+          if (iscrizioniCorso.length === 0) continue; // Nessuna iscrizione per questo corso
+          
+          // Calcola VSD totale e numero iscritti per questo corso
+          var vsdTotaleCorso = 0;
+          var nIscrittiCorso = 0;
+          for (var l = 0; l < iscrizioniCorso.length; l++) {
+            var isc = iscrizioniCorso[l];
+            vsdTotaleCorso += Number(isc.vsd_totale || 0);
+            nIscrittiCorso += Number(isc.totale_iscritti || 1); // vsd_totale è già per iscritto
+          }
+          
+          // Distribuisci VSD su tutti i giorni della durata
+          var durataGiorni = course.corsi_catalogo?.durata_giorni || 1;
+          var vsdPerGiorno = vsdTotaleCorso / durataGiorni;
+          
+          vsdIndiretto += vsdPerGiorno;
+          nIscritti += nIscrittiCorso;
+        }
+        
+        return {
+          vsdIndiretto: Math.round(vsdIndiretto),
+          nIscritti: nIscritti,
+          hasCourse: hasCourse,
+          codiceCorso: codiceCorso
+        };
+      }
+      
       // --- util risultati ---
       function sumInRange(s, e){
-        var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0, gi:0};
+        var out = {vss:0, vsd:0, vsdI:0, telefonate:0, appFissati:0, nncf:0, count:0, gi:0, nIscritti:0};
         for(var i=0;i<apps.length;i++){
           var a = apps[i];
           var t = BPTimezone.parseUTCString(a.start);
@@ -2639,6 +2800,16 @@ function viewCalendar(){
               out.count += 1;
             }
           }
+        }
+        
+        // Aggiungi dati corsi (VSD indiretto e n. iscritti) per ogni giorno nel range
+        var currentDate = new Date(s);
+        while (currentDate <= e) {
+          var dateStr = ymd(currentDate);
+          var corsiDay = calculateCorsiDataForDay(dateStr, consultant, corsiDate, iscrizioniData);
+          out.vsdI += corsiDay.vsdIndiretto;
+          out.nIscritti += corsiDay.nIscritti;
+          currentDate.setDate(currentDate.getDate() + 1);
         }
         
         // Calcola GI per il periodo
@@ -2727,6 +2898,10 @@ function viewCalendar(){
             '<div class="cal-result-pill">'+
               '<div class="cal-result-label">GI</div>'+
               '<div class="cal-result-value">'+fmtEuro(tot.gi)+'</div>'+
+            '</div>'+
+            '<div class="cal-result-pill">'+
+              '<div class="cal-result-label">N. iscritti</div>'+
+              '<div class="cal-result-value">'+fmtInt(tot.nIscritti || 0)+'</div>'+
             '</div>'+
             '<div class="cal-result-pill">'+
               '<div class="cal-result-label">Provvigioni</div>'+
@@ -2837,6 +3012,17 @@ function viewCalendar(){
 
           if(!inMonth){ grid += '<div></div>'; }
           else{
+            // Calcola dati corsi per questo giorno
+            var corsiDay = calculateCorsiDataForDay(key, consultant, corsiDate, iscrizioniData);
+            var hasCourseToday = corsiDay.hasCourse;
+            var corsoBadge = hasCourseToday && corsiDay.codiceCorso ? '<span class="corso-badge-main">'+corsiDay.codiceCorso+'</span>' : '';
+            
+            // Controlla se è oggi (solo se è nel mese corretto)
+            var today = new Date();
+            var isToday = inMonth && d.getDate() === today.getDate() && 
+                         d.getMonth() === today.getMonth() && 
+                         d.getFullYear() === today.getFullYear();
+            
             // colore stato
             var cls = '';
             if(!isWeekend){
@@ -2846,6 +3032,10 @@ function viewCalendar(){
             } else {
               if(v.count>0) cls='busy2';          // Weekend con appuntamenti = rosso
             }
+            
+            if (isToday) {
+              cls += ' today';
+            }
 
             // righe
             var lines = '';
@@ -2853,7 +3043,16 @@ function viewCalendar(){
             if(!(isWeekend && v.count===0)){
               if(v.vss>0){  lines += '<div class="small">VSS '+fmtEuro(v.vss)+'</div>'; nLines++; }
               if(v.vsd>0){  lines += '<div class="small">VSD '+fmtEuro(v.vsd)+'</div>'; nLines++; }
+              
+              // VSD indiretto dagli appuntamenti
               if(v.vsdI>0){ lines += '<div class="small">VSD ind '+fmtEuro(v.vsdI)+'</div>'; nLines++; }
+              
+              // VSD indiretto e n.iscritti dai corsi (solo se ci sono iscritti)
+              if(corsiDay.vsdIndiretto > 0 && corsiDay.nIscritti > 0) {
+                lines += '<div class="small">VSDind. '+fmtEuro(corsiDay.vsdIndiretto)+'</div>'; nLines++;
+                lines += '<div class="small">N.iscritti '+fmtInt(corsiDay.nIscritti)+'</div>'; nLines++;
+              }
+              
               if(v.telefonate>0){ lines += '<div class="small">Tel '+fmtInt(v.telefonate)+'</div>'; nLines++; }
               if(v.appFissati>0){ lines += '<div class="small">AppFiss '+fmtInt(v.appFissati)+'</div>'; nLines++; }
               if(v.nncf>0){ lines += '<div class="small">NNCF '+fmtInt(v.nncf)+'</div>'; nLines++; }
@@ -2871,8 +3070,9 @@ function viewCalendar(){
             var extra = (nLines>=3 ? ' dense' : '');
             var slotCls = hasSlot4h ? ' slot-free' : '';
             grid += ''+
-              '<div class="day '+cls+extra+slotCls+'" data-day="'+key+'" title="Settimana '+isoWeekNum(d)+'">'+
-                '<div class="dnum">'+d.getDate()+'</div>'+
+              '<div class="day '+cls+extra+slotCls+'" data-day="'+key+'" title="Settimana '+isoWeekNum(d)+'" style="position:relative">'+
+                corsoBadge+
+                '<div class="dnum">'+d.getDate()+(isToday ? ' <span class="today-label-main">Oggi</span>' : '')+'</div>'+
                 (lines||'')+
               '</div>';
           }
