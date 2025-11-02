@@ -546,7 +546,8 @@ RISPOSTE IN ITALIANO.`;
         
         context += 'APPUNTAMENTI PER CONSULENTE:\n';
         Object.entries(byConsultant).forEach(([uid, info]) => {
-          context += `- UserID ${uid}: ${info.count} appuntamenti\n`;
+          const userName = getUserName(uid);
+          context += `- ${userName}: ${info.count} appuntamenti\n`;
         });
         context += '\n';
         
