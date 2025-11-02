@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/tmp/.npm \
     cd ./backend && \
     for i in 1 2 3; do \
-        npm ci --omit=dev --no-audit --no-fund --prefer-offline --maxsockets 1 && break || \
+        npm install --omit=dev --no-audit --no-fund --maxsockets 1 && break || \
         (echo "Backend attempt $i failed, retrying..." && sleep 5); \
     done
 
