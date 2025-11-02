@@ -1741,6 +1741,11 @@ function cardAppt(x){
 // ===== CALENDARIO =====
 function viewCalendar(){
   if(!getUser()) return viewLogin();
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[viewCalendar] 401 già rilevato globalmente, skip');
+    return;
+  }
   document.title = 'Battle Plan – Calendario';
   setActiveSidebarItem('viewCalendar');
   const isAdmin = getUser().role==='admin';
@@ -2366,6 +2371,11 @@ function viewCalendar(){
   var consSel = document.getElementById('cal_consultant');
   function populateConsultants(){
     if(!consSel) return;
+    // Non fare chiamate API se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      console.log('[Calendar populateConsultants] 401 già rilevato globalmente, skip');
+      return;
+    }
     var me = getUser() || {};
     consSel.innerHTML = '<option value="'+htmlEscape(me.id||'')+'">'+htmlEscape(me.name||'')+'</option>';
     GET('/api/users').then(function(r){
@@ -2391,6 +2401,12 @@ function viewCalendar(){
   if(consSel) populateConsultants();
 
   function renderMonth(y, m, filters, consultant){
+    // Non fare chiamate API se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      console.log('[Calendar renderMonth] 401 già rilevato globalmente, skip API calls');
+      return;
+    }
+    
     var baseApps = '/api/appointments';
     var baseAvail = '/api/availability?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
     var baseGI = '/api/gi?from='+y+'-'+pad2(m)+'-01&to='+y+'-'+pad2(m)+'-'+pad2(new Date(y,m,0).getDate());
