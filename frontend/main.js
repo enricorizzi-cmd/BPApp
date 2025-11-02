@@ -1365,6 +1365,11 @@ function recomputeKPI(){
 // === SOSTITUISCI INTERAMENTE QUESTA FUNZIONE IN viewHome ===
 // === SOSTITUISCI INTERAMENTE QUESTA FUNZIONE IN viewHome ===
 function refreshLists(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[refreshLists] 401 già rilevato globalmente, skip');
+    return;
+  }
   var el = document.getElementById('dash_cons');
   var cons = el ? el.value : getUser().id;
 

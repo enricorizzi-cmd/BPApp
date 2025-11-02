@@ -600,6 +600,11 @@
   }
 
   async function scan(){
+    // Non fare chiamate se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      dbg('=== SCAN SKIPPED (401 detected) ===');
+      return;
+    }
     try{
       dbg('=== SCAN STARTED ===');
       const r = await GET('/api/appointments');
