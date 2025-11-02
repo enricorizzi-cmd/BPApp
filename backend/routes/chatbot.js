@@ -502,7 +502,7 @@ ANALISI COMPARATIVE:
   * Confronta i conteggi e identifica chi ha più disponibilità
   * Se il mese è specificato (es. "novembre"), filtra solo gli appuntamenti di quel mese
 
-${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato" elenca i nomi degli utenti che HANNO fatto il BP previsionale.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
+${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato" elenca i nomi degli utenti che HANNO fatto il BP previsionale. IMPORTANTE: USA SEMPRE I NOMI DEGLI UTENTI, MAI GLI ID.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
 
 RISPOSTE IN ITALIANO.`;
   }
@@ -513,6 +513,19 @@ RISPOSTE IN ITALIANO.`;
   function formatDataContext(data, message = '') {
     let context = 'Dati disponibili dal database:\n\n';
     const lowerMessage = (message || '').toLowerCase();
+    
+    // Crea mappa userid -> nome per sostituire ID con nomi
+    const userIdToName = {};
+    if (data.users && data.users.length > 0) {
+      data.users.forEach(u => {
+        userIdToName[u.id] = u.name || 'Sconosciuto';
+      });
+    }
+    
+    // Helper per ottenere nome utente
+    function getUserName(userId) {
+      return userIdToName[userId] || `UserID: ${userId}`;
+    }
 
     if (data.appointments && data.appointments.length > 0) {
       context += `APPUNTAMENTI (${data.appointments.length} totali):\n`;
@@ -550,7 +563,8 @@ RISPOSTE IN ITALIANO.`;
             hour: '2-digit', 
             minute: '2-digit' 
           });
-          context += `- UserID: ${apt.userid}, ${apt.client} il ${dateStr} alle ${timeStr}, tipo: ${apt.type}\n`;
+          const userName = getUserName(apt.userid);
+          context += `- ${userName}, ${apt.client} il ${dateStr} alle ${timeStr}, tipo: ${apt.type}\n`;
         });
       } else {
         // Formato normale per altre domande
@@ -595,7 +609,8 @@ RISPOSTE IN ITALIANO.`;
         const hasPrev = period.indicatorsprev && Object.keys(period.indicatorsprev).length > 0;
         const hasCons = period.indicatorscons && Object.keys(period.indicatorscons).length > 0;
         const monthName = period.month ? new Date(2000, period.month - 1).toLocaleString('it-IT', { month: 'long' }) : '';
-        context += `- UserID: ${period.userid}, ${type}, anno: ${period.year || '?'}, mese: ${monthName} ${period.month || '?'}, previsionale: ${hasPrev ? 'SÌ' : 'NO'}, consuntivo: ${hasCons ? 'SÌ' : 'NO'}\n`;
+        const userName = getUserName(period.userid);
+        context += `- ${userName}, ${type}, anno: ${period.year || '?'}, mese: ${monthName} ${period.month || '?'}, previsionale: ${hasPrev ? 'SÌ' : 'NO'}, consuntivo: ${hasCons ? 'SÌ' : 'NO'}\n`;
       });
       context += '\n';
     }
@@ -603,20 +618,22 @@ RISPOSTE IN ITALIANO.`;
     if (data.users && data.users.length > 0) {
       context += `UTENTI/CONSULENTI (${data.users.length} totali):\n`;
       data.users.forEach(u => {
-        context += `- ${u.name} (ID: ${u.id}, ruolo: ${u.role})\n`;
+        context += `- ${u.name} (ruolo: ${u.role})\n`;
       });
       context += '\n';
       context += 'ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale, confronta la lista UTENTI con i PERIODI. ';
       context += 'Per ogni utente nella lista, controlla se esiste un periodo con: type="monthly", year=2025, month=11 (novembre), e indicatorsprev non vuoto. ';
       context += '- Gli utenti che HANNO un periodo con queste caratteristiche sono quelli che HANNO fatto il BP previsionale. ';
-      context += '- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per novembre 2025.\n\n';
+      context += '- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per novembre 2025. ';
+      context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI.\n\n';
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
         context += 'ISTRUZIONE PER DISPONIBILITÀ: Per trovare chi ha più slot/giornate libere, confronta la lista UTENTI con gli APPUNTAMENTI. ';
-        context += 'Conta gli appuntamenti per ogni userid nel mese richiesto. ';
+        context += 'Conta gli appuntamenti per ogni utente nel mese richiesto. ';
         context += 'Chi ha MENO appuntamenti = ha PIÙ slot liberi/giornate libere. ';
-        context += 'Ordina gli utenti dal meno appuntamenti al più appuntamenti per identificare chi ha più disponibilità.\n\n';
+        context += 'Ordina gli utenti dal meno appuntamenti al più appuntamenti per identificare chi ha più disponibilità. ';
+        context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID).\n\n';
       }
     }
 
