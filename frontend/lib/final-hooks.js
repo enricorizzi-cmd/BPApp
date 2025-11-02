@@ -1136,7 +1136,7 @@ function __readMode(scope){
   function _effType(t){ try{ return (typeof effectivePeriodType==='function') ? effectivePeriodType(String(t||'mensile').toLowerCase()) : String(t||'mensile').toLowerCase(); }catch(_){ return String(t||'mensile').toLowerCase(); } }
   async function ensurePeriods(scopeOrOpts){
     // Non fare chiamate se l'utente non è loggato
-    if (!getUser()) {
+    if (!window.getUser || !window.getUser()) {
       return window.periods || [];
     }
     
@@ -1219,7 +1219,7 @@ function drawLineGeneric(canvasId, labels, data){
 
 async function recomputeDashboardMini(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     console.log('[recomputeDashboardMini] Utente non loggato, skip');
     return;
   }
@@ -1356,7 +1356,7 @@ async function recomputeDashboardMini(){
 
 async function recomputeCommsMini(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     console.log('[recomputeCommsMini] Utente non loggato, skip');
     return;
   }
@@ -1406,7 +1406,7 @@ async function recomputeCommsMini(){
 
 async function recomputeTeamChart(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     console.log('[recomputeTeamChart] Utente non loggato, skip');
     return;
   }
@@ -1423,7 +1423,7 @@ var __bp_settingsCache = null;
 
 function ensureUsers(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     return Promise.resolve(__bp_usersCache || []);
   }
   
@@ -1443,7 +1443,7 @@ function ensureUsers(){
 
 function ensureSettings(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     return Promise.resolve(__bp_settingsCache || {});
   }
   
@@ -1508,7 +1508,7 @@ function sumProvvForPeriod(p, mode, which, rates){
 
   function recomputeTeamAggChart(){
   // Non fare chiamate API se l'utente non è loggato
-  if (!getUser()) {
+  if (!window.getUser || !window.getUser()) {
     console.log('[recomputeTeamAggChart] Utente non loggato, skip');
     return;
   }
@@ -2348,6 +2348,11 @@ BPFinal.ensureClientSection = function ensureClientSection(){
   }
 
   function scanNNCF(){
+    // Non fare chiamate se l'utente non è loggato
+    if (!window.getUser || !window.getUser()) {
+      return;
+    }
+    
     // mostra una sola volta l'ultimo NNCF concluso da almeno 1 minuto
     // SOLO PER GLI APPUNTAMENTI DEL CONSULENTE CORRENTE
     return GET('/api/appointments').then(function(r){
@@ -2383,6 +2388,11 @@ BPFinal.ensureClientSection = function ensureClientSection(){
 
   // === Banner Vendite Riordini ===
   function scanVenditeRiordini(){
+    // Non fare chiamate se l'utente non è loggato
+    if (!window.getUser || !window.getUser()) {
+      return;
+    }
+    
     // Mostra banner per preventivi con data_feedback = oggi
     return GET('/api/vendite-riordini').then(function(r){
       var today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD

@@ -600,6 +600,12 @@
   }
 
   async function scan(){
+    // Non fare chiamate se l'utente non è loggato
+    if (!window.getUser || !window.getUser()) {
+      dbg('=== SCAN SKIPPED (user not logged in) ===');
+      return;
+    }
+    
     // Non fare chiamate se è stato rilevato un 401 globale
     if (window.__BP_401_DETECTED === true) {
       dbg('=== SCAN SKIPPED (401 detected) ===');
