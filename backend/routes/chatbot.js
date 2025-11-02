@@ -649,6 +649,17 @@ RISPOSTE IN ITALIANO.`;
     }
 
     if (data.periods && data.periods.length > 0) {
+      context += 'NOTA CRITICA SULLA FORMATTAZIONE PERIODI:\n';
+      context += 'Ogni periodo mostra due stati SEPARATI e INDIPENDENTI:\n';
+      context += '- PREVISIONALE: COMPILATO significa che indicatorsprev contiene dati reali (non è vuoto/null)\n';
+      context += '- CONSUNTIVO: COMPILATO significa che indicatorscons contiene dati reali (non è vuoto/null)\n';
+      context += 'IMPORTANTE: Questi due stati sono INDIPENDENTI. Un periodo può avere:\n';
+      context += '  * Solo PREVISIONALE compilato (indicatorsprev pieno, indicatorscons vuoto/null)\n';
+      context += '  * Solo CONSUNTIVO compilato (indicatorsprev vuoto/null, indicatorscons pieno)\n';
+      context += '  * Entrambi compilati\n';
+      context += '  * Nessuno dei due compilati\n';
+      context += 'Quando qualcuno chiede "chi ha compilato il BP di [mese]" senza specificare, si riferisce SOLO al PREVISIONALE.\n\n';
+      
       // Se specificato mese/anno, evidenzia i periodi corrispondenti
       let relevantPeriods = data.periods;
       if (targetMonth) {
