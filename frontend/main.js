@@ -1147,6 +1147,12 @@ function viewHome(){
     }
   }
   function computeSeriesLocallyDash(indicator, mode, userId, range){
+    // Non fare chiamate API se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      console.log('[computeSeriesLocallyDash] 401 già rilevato globalmente, skip');
+      return Promise.resolve({ periods: [] });
+    }
+    
     var r = range || readUnifiedRange('dash');
     var tSel = String(r.type||'mensile').toLowerCase();
     var baseType = (tSel==='ytd' || tSel==='ltm') ? 'mensile' : tSel;
@@ -1182,17 +1188,25 @@ function viewHome(){
       return s;
     })();
     return GET('/api/periods'+__qsDash).catch(function(error){
-    console.warn('[Dashboard Chart] GET /api/periods'+__qsDash+' failed:', error.message);
-    // Se fallisce con global=1, prova senza global (per utenti non-admin)
-    if (__qsDash.indexOf('global=1') !== -1) {
-      console.log('[Dashboard Chart] Retrying without global=1');
-      return GET('/api/periods'+__qsDash.replace('?global=1','')).catch(function(e2){
-        console.warn('[Dashboard Chart] Retry without global=1 also failed:', e2.message);
+      console.warn('[Dashboard Chart] GET /api/periods'+__qsDash+' failed:', error.message);
+      // Se è un 401, non fare retry
+      if (window.__BP_401_DETECTED === true) {
         return { periods: [] };
-      });
-    }
-    // Se già senza global e fallisce, ritorna array vuoto
-    return { periods: [] };
+      }
+      // Se fallisce con global=1, prova senza global (per utenti non-admin)
+      if (__qsDash.indexOf('global=1') !== -1) {
+        console.log('[Dashboard Chart] Retrying without global=1');
+        return GET('/api/periods'+__qsDash.replace('?global=1','')).catch(function(e2){
+          // Se è un 401, non fare altri retry
+          if (e2.message && e2.message.includes('401')) {
+            window.__BP_401_DETECTED = true;
+          }
+          console.warn('[Dashboard Chart] Retry without global=1 also failed:', e2.message);
+          return { periods: [] };
+        });
+      }
+      // Se già senza global e fallisce, ritorna array vuoto
+      return { periods: [] };
   }).then(function(resp){
     var periods = (resp && resp.periods) || [];
     console.log('[Dashboard Chart] Loaded periods:', periods.length);
@@ -1327,6 +1341,12 @@ function recomputeKPI(){
   function recomputeMini(){
     var mode = (document.getElementById('dash_mode')||{}).value || 'previsionale';
     var el = document.getElementById('dash_cons');
+    // Non fare chiamate API se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      console.log('[recomputeMini] 401 già rilevato globalmente, skip');
+      return;
+    }
+    
     var cons = el ? el.value : getUser().id;
     var range= readUnifiedRange('dash');
     var type = String(range.type||'mensile').toLowerCase();

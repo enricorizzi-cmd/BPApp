@@ -1213,6 +1213,12 @@ function drawLineGeneric(canvasId, labels, data){
 
 
 async function recomputeDashboardMini(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[recomputeDashboardMini] 401 già rilevato globalmente, skip');
+    return;
+  }
+  
   // NB: scope 'dash' (non 'd')
   const r = (window.readUnifiedRange && window.readUnifiedRange('dash')) || { type:'mensile', end:new Date() };
   const type = r.type || 'mensile';
@@ -1338,6 +1344,12 @@ async function recomputeDashboardMini(){
 }
 
 async function recomputeCommsMini(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[recomputeCommsMini] 401 già rilevato globalmente, skip');
+    return;
+  }
+  
   // Scope coerente con main: 'comm' (fallback 'cm')
   const scope = 'comm';
   const r = (window.readUnifiedRange && (window.readUnifiedRange(scope) || window.readUnifiedRange('cm'))) 
@@ -1376,23 +1388,43 @@ async function recomputeCommsMini(){
 }
 
 async function recomputeTeamChart(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[recomputeTeamChart] 401 già rilevato globalmente, skip');
+    return;
+  }
+
 // ---------- Team: grafico aggregato (admin) ----------
 var __bp_usersCache = null;
 var __bp_settingsCache = null;
 
 function ensureUsers(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    return Promise.resolve(__bp_usersCache || []);
+  }
   if (__bp_usersCache) return Promise.resolve(__bp_usersCache);
   return GET('/api/usernames').then(function(r){
     __bp_usersCache = (r && r.users) || [];
     return __bp_usersCache;
+  }).catch(function(e){
+    if (window.__BP_401_DETECTED === true) return __bp_usersCache || [];
+    throw e;
   });
 }
 
 function ensureSettings(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    return Promise.resolve(__bp_settingsCache || {});
+  }
   if (__bp_settingsCache) return Promise.resolve(__bp_settingsCache);
   return GET('/api/settings').then(function(r){
     __bp_settingsCache = r || {};
     return __bp_settingsCache;
+  }).catch(function(e){
+    if (window.__BP_401_DETECTED === true) return __bp_settingsCache || {};
+    throw e;
   });
 }
 
@@ -1442,6 +1474,12 @@ function sumProvvForPeriod(p, mode, which, rates){
 }
 
   function recomputeTeamAggChart(){
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[recomputeTeamAggChart] 401 già rilevato globalmente, skip');
+    return;
+  }
+  
   var canvas = $1('#t_chart');
   if (!canvas) return;
 
