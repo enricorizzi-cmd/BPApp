@@ -19,23 +19,67 @@
     return null;
   }
   if (typeof window.users === 'undefined') window.users = [];
+  // Contatore di tentativi per evitare loop infiniti
+  let __preloadUsersAttempts = 0;
+  const MAX_PRELOAD_ATTEMPTS = 2; // Massimo 2 tentativi
   (async function preloadUsers(){
+    // Non fare retry se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      console.log('[preloadUsers] 401 già rilevato globalmente, skip');
+      return;
+    }
+    
+    // Ferma dopo un numero massimo di tentativi
+    if (__preloadUsersAttempts >= MAX_PRELOAD_ATTEMPTS) {
+      console.log('[preloadUsers] Massimo numero di tentativi raggiunto, skip');
+      return;
+    }
+    
+    // Controlla se c'è un token prima di fare la richiesta
+    const t = coreAuthToken();
+    if (!t) {
+      console.log('[preloadUsers] Nessun token trovato, skip');
+      return;
+    }
+    
+    __preloadUsersAttempts++;
     try{
       if (window.GET) {
-        const j = await window.GET('/api/usernames');
-        if (j && Array.isArray(j.users)) window.users = j.users;
-        return;
+        try {
+          const j = await window.GET('/api/usernames');
+          if (j && Array.isArray(j.users)) window.users = j.users;
+          return;
+        } catch (e) {
+          // Se window.GET lancia errore per 401, non fare retry
+          if (window.__BP_401_DETECTED === true) return;
+          throw e;
+        }
       }
-      const t = coreAuthToken();
       const r = await fetch('/api/usernames', {
         headers: { 'Accept': 'application/json', ...(t?{ 'Authorization':'Bearer '+t }: {}) }
       });
-      if (r.status === 401) { setTimeout(preloadUsers, 800); return; }
+      
+      // Se riceviamo 401, NON fare retry - l'utente non è autenticato
+      if (r.status === 401) {
+        console.log('[preloadUsers] 401 ricevuto, non autenticato, stop');
+        if (typeof window.__BP_401_DETECTED !== 'undefined') {
+          window.__BP_401_DETECTED = true;
+        }
+        return;
+      }
+      
       if (r.ok) {
         const j = await r.json();
         if (j && Array.isArray(j.users)) window.users = j.users;
       }
-    }catch(_){ setTimeout(preloadUsers, 1200); }
+    }catch(e){
+      // Solo se NON è un 401 e abbiamo ancora tentativi disponibili
+      if (window.__BP_401_DETECTED === true || __preloadUsersAttempts >= MAX_PRELOAD_ATTEMPTS) {
+        return;
+      }
+      // Attendi un po' prima di riprovare solo se abbiamo ancora tentativi
+      setTimeout(preloadUsers, 1200);
+    }
   })();
 
   // ----------------------------- Period type helpers (provided by globals-polyfills.js)

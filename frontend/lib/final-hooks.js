@@ -1122,10 +1122,21 @@ function __readMode(scope){
   function _toYMD(d){ try{ const x=new Date(d); const y=x.getUTCFullYear(); const m=String(x.getUTCMonth()+1).padStart(2,'0'); const dy=String(x.getUTCDate()).padStart(2,'0'); return y+'-'+m+'-'+dy; }catch(_){ return ''; } }
   function _effType(t){ try{ return (typeof effectivePeriodType==='function') ? effectivePeriodType(String(t||'mensile').toLowerCase()) : String(t||'mensile').toLowerCase(); }catch(_){ return String(t||'mensile').toLowerCase(); } }
   async function ensurePeriods(scopeOrOpts){
+    // Non fare chiamate se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      return window.periods || [];
+    }
+    
     // Backcompat: nessun argomento -> usa cache globale legacy
     if (!scopeOrOpts){
       if (Array.isArray(window.periods) && window.periods.length) return window.periods;
-      try{ const j = await GET('/api/periods?global=1'); if (j && Array.isArray(j.periods)){ window.periods=j.periods; return j.periods; } }catch(_){}
+      try{ 
+        const j = await GET('/api/periods?global=1'); 
+        if (j && Array.isArray(j.periods)){ window.periods=j.periods; return j.periods; } 
+      }catch(e){
+        // Se è un 401, non fare retry
+        if (window.__BP_401_DETECTED === true) return window.periods || [];
+      }
       return window.periods || [];
     }
 
@@ -1158,11 +1169,22 @@ function __readMode(scope){
     const qs = ['?global=1','type='+encodeURIComponent(eff),'from='+encodeURIComponent(fromISO),'to='+encodeURIComponent(toISO)]
                 .concat(userId?[ 'userId='+encodeURIComponent(userId) ]:[]).join('&').replace('?&','?');
     try{
-      const j = await GET('/api/periods'+qs).catch(function(){ return GET('/api/periods'+qs.replace('?global=1','?').replace('??','?')); });
+      // Non fare chiamate se è stato rilevato un 401 globale
+      if (window.__BP_401_DETECTED === true) return [];
+      
+      const j = await GET('/api/periods'+qs).catch(function(e){
+        // Se è un 401, non fare retry alternativo
+        if (window.__BP_401_DETECTED === true) throw e;
+        return GET('/api/periods'+qs.replace('?global=1','?').replace('??','?'));
+      });
       const rows = (j && Array.isArray(j.periods)) ? j.periods : [];
       __periodsCache[key] = rows;
       return rows;
-    }catch(_){ return []; }
+    }catch(e){
+      // Se è un 401, non fare retry
+      if (window.__BP_401_DETECTED === true) return [];
+      return [];
+    }
   }
   function sumIndicator(p, mode, k){
     const bag = (String(mode).toLowerCase()==='previsionale') ? (p.indicatorsPrev||{}) : (p.indicatorsCons||{});
