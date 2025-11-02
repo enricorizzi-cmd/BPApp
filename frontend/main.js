@@ -3031,11 +3031,9 @@ function viewCalendar(){
             var hasCourseToday = corsiDay.hasCourse;
             var corsoBadge = hasCourseToday && corsiDay.codiceCorso ? '<span class="corso-badge-main">'+corsiDay.codiceCorso+'</span>' : '';
             
-            // Controlla se è oggi (solo se è nel mese corretto) - usa stringa YYYY-MM-DD per confronto sicuro
+            // Controlla se è oggi (solo se è nel mese corretto) - usa ymd() per confronto sicuro YYYY-MM-DD (solo logica interna)
             var today = new Date();
-            var todayStr = today.getFullYear() + '-' + 
-                        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                        String(today.getDate()).padStart(2, '0');
+            var todayStr = ymd(today);
             var dayStr = ymd(d);
             var isToday = inMonth && dayStr === todayStr;
             
@@ -12380,11 +12378,10 @@ function viewCorsiInteraziendali(){
             });
           }) : [];
 
-          // Controlla se è oggi - usa stringa YYYY-MM-DD per confronto sicuro
+          // Controlla se è oggi - usa formato YYYY-MM-DD solo per confronto interno (visualizzazione rimane GG/MM/AAAA)
+          // dateStr è già in formato YYYY-MM-DD (costruito sopra con padStart)
           const today = new Date();
-          const todayStr = today.getFullYear() + '-' + 
-                          String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                          String(today.getDate()).padStart(2, '0');
+          const todayStr = ymd(today);
           const isToday = dateStr === todayStr;
           
           // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
@@ -12606,11 +12603,10 @@ function viewCorsiInteraziendali(){
               });
             }) : [];
 
-            // Controlla se è oggi - usa stringa YYYY-MM-DD per confronto sicuro
+            // Controlla se è oggi - usa formato YYYY-MM-DD solo per confronto interno (visualizzazione rimane GG/MM/AAAA)
+            // dateStr è già in formato YYYY-MM-DD (costruito sopra con padStart)
             const today = new Date();
-            const todayStr = today.getFullYear() + '-' + 
-                            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                            String(today.getDate()).padStart(2, '0');
+            const todayStr = ymd(today);
             const isToday = dateStr === todayStr;
             
             // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
