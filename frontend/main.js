@@ -2419,31 +2419,86 @@ function viewCalendar(){
       baseGI += '&user='+consultant;
     }
     
-    Promise.all([
-      GET(baseApps),
-      GET(baseAvail),
-      GET(baseGI),
-      GET('/api/users'),
-      GET('/api/settings')
-    ])
-    .catch(function(error){
-      // ERRORE 401: token scaduto, logout e stop
-      console.error('[Calendar] Authentication error in Promise.all, logging out');
-      logout();
-      return;
-    })
+    const isAdmin = getUser() && getUser().role === 'admin';
+    
+    // Gestisci errori individualmente per evitare che Promise.all fallisca completamente
+    const apiCalls = [
+      GET(baseApps).catch(function(e){
+        if (window.__BP_401_DETECTED === true) {
+          console.warn('[Calendar] 401 rilevato durante GET appointments');
+          return { appointments: [] };
+        }
+        console.warn('[Calendar] GET appointments failed:', e.message);
+        return { appointments: [] };
+      }),
+      GET(baseAvail).catch(function(e){
+        if (window.__BP_401_DETECTED === true) {
+          console.warn('[Calendar] 401 rilevato durante GET availability');
+          return {slots:[],summary:{total:0,mondays:0,others:0}};
+        }
+        console.warn('[Calendar] GET availability failed:', e.message);
+        return {slots:[],summary:{total:0,mondays:0,others:0}};
+      }),
+      GET(baseGI).catch(function(e){
+        if (window.__BP_401_DETECTED === true) {
+          console.warn('[Calendar] 401 rilevato durante GET gi');
+          return { sales: [] };
+        }
+        console.warn('[Calendar] GET gi failed:', e.message);
+        return { sales: [] };
+      }),
+      GET('/api/settings').catch(function(e){
+        if (window.__BP_401_DETECTED === true) {
+          console.warn('[Calendar] 401 rilevato durante GET settings');
+          return { commissions: {} };
+        }
+        console.warn('[Calendar] GET settings failed:', e.message);
+        return { commissions: {} };
+      })
+    ];
+    
+    // Aggiungi chiamata a /api/users solo se admin
+    if (isAdmin) {
+      apiCalls.splice(3, 0, GET('/api/users').catch(function(e){
+        // Per 403 (permission denied), ritorna array vuoto invece di fallire
+        if (e && ((e.message && e.message.includes('403')) || (e.message && e.message.includes('Forbidden')))) {
+          console.warn('[Calendar] Permission denied for /api/users (expected for non-admin), using empty array');
+          return { users: [] };
+        }
+        if (window.__BP_401_DETECTED === true) {
+          console.warn('[Calendar] 401 rilevato durante GET users');
+          return { users: [] };
+        }
+        console.warn('[Calendar] GET users failed:', e.message);
+        return { users: [] };
+      })); // Inserisci prima di settings
+    }
+    
+    Promise.all(apiCalls)
     .then(function(arr){
       // Verifica che le chiamate siano andate a buon fine
-      if (!arr || arr.length < 5) {
-        console.error('[Calendar] API calls failed or incomplete');
+      if (!arr) {
+        console.error('[Calendar] API calls failed');
         return;
       }
+      
       var apps  = (arr[0] && arr[0].appointments) ? arr[0].appointments : [];
       var avAll = arr[1]||{slots:[],summary:{total:0,mondays:0,others:0}};
       var slots = avAll.slots||[];
       var giData = (arr[2] && arr[2].sales) ? arr[2].sales : [];
-      var usersData = (arr[3] && arr[3].users) ? arr[3].users : [];
-      var settings = arr[4] || { commissions: {} };
+      
+      // Gestisci usersData e settings in base al numero di chiamate
+      var usersData = [];
+      var settings = { commissions: {} };
+      
+      if (isAdmin && arr.length >= 5) {
+        // Admin: users è all'indice 3, settings all'indice 4
+        usersData = (arr[3] && arr[3].users) ? arr[3].users : [];
+        settings = arr[4] || { commissions: {} };
+      } else if (arr.length >= 4) {
+        // Non-admin: settings è all'indice 3
+        settings = arr[3] || { commissions: {} };
+      }
 
       var from = new Date(y, m-1, 1);
       var to   = new Date(y, m, 0, 23,59,59,999);
