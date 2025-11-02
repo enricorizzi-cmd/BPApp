@@ -545,7 +545,7 @@ ANALISI COMPARATIVE:
   * Confronta i conteggi e identifica chi ha più disponibilità
   * Se il mese è specificato (es. "novembre"), filtra solo gli appuntamenti di quel mese
 
-${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato" elenca i nomi degli utenti che HANNO fatto il BP previsionale. IMPORTANTE: USA SEMPRE I NOMI DEGLI UTENTI, MAI GLI ID.' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti.'}
+${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato il BP" (senza specificare previsionale/consuntivo) si intende SOLO il PREVISIONALE (indicatorsprev non vuoto). IMPORTANTE: USA SEMPRE I NOMI DEGLI UTENTI, MAI GLI ID. DISTINGUI SEMPRE tra previsionale (indicatorsprev) e consuntivo (indicatorscons).' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti. Quando rispondi sui tuoi BP, distingui chiaramente tra previsionale (indicatorsprev) e consuntivo (indicatorscons).'}
 
 RISPOSTE IN ITALIANO.`;
   }
@@ -733,9 +733,15 @@ RISPOSTE IN ITALIANO.`;
       context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
       context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="monthly" o "mensile") che corrisponde a ${instructionMonthName} ${instructionYear}. `;
       context += `Un periodo corrisponde se: (year=${instructionYear} E month=${instructionMonth}) OPPURE (startDate/endDate si sovrappone al mese ${instructionMonthName} ${instructionYear}). `;
-      context += `Poi controlla se quel periodo ha indicatorsprev non vuoto. `;
-      context += '- Gli utenti che HANNO un periodo con queste caratteristiche sono quelli che HANNO fatto il BP previsionale. ';
-      context += `- Gli utenti che NON hanno un periodo con queste caratteristiche sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
+      context += `Poi controlla se quel periodo ha indicatorsprev non vuoto (questo indica PREVISIONALE compilato). `;
+      context += '- Gli utenti che HANNO un periodo con indicatorsprev non vuoto sono quelli che HANNO fatto il BP PREVISIONALE. ';
+      context += `- Gli utenti che NON hanno un periodo con indicatorsprev non vuoto sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
+      context += 'CRITICO - DISTINGUI SEMPRE PREVISIONALE E CONSUNTIVO: ';
+      context += '- PREVISIONALE = indicatorsprev non vuoto (si compila all\'inizio del periodo) ';
+      context += '- CONSUNTIVO = indicatorscons non vuoto (si compila alla fine del periodo) ';
+      context += '- Se qualcuno chiede "chi ha compilato il BP" senza specificare, si intende SOLO il PREVISIONALE ';
+      context += '- NON dire mai che qualcuno ha compilato "sia previsionale che consuntivo" a meno che indicatorsprev E indicatorscons siano entrambi non vuoti ';
+      context += '- Quando rispondi su un utente specifico, indica chiaramente cosa ha compilato: solo previsionale, solo consuntivo, o entrambi ';
       context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI. ';
       context += 'ATTENZIONE: Guarda TUTTI i periodi forniti nella lista PERIODI, anche quelli che sembrano non corrispondere - controlla sia month/year che startDate/endDate. I periodi rilevanti sono marcati con ⭐.\n\n';
       
