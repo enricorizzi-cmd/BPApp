@@ -763,6 +763,10 @@ function esc(s){
 
   // Mappa: nome cliente (lower) -> timestamp ultimo appuntamento
   async function mapLastAppointments(){
+    // Non fare chiamate se è stato rilevato un 401 globale o se non c'è autenticazione
+    if (window.__BP_401_DETECTED === true) {
+      return {};
+    }
     try{
       var j = await GET('/api/appointments');
       var arr = (j && j.appointments) || [];
@@ -774,11 +778,20 @@ function esc(s){
         if (!last[key] || t>last[key]) last[key]=t;
       }
       return last;
-    }catch(err){ logger.error(err); return {}; }
+    }catch(err){
+      // Se è un 401, non fare retry
+      if (window.__BP_401_DETECTED === true) return {};
+      logger.error(err);
+      return {};
+    }
   }
 
-  // Applica la data “ultimo appuntamento” alle card in #cl_list
+  // Applica la data "ultimo appuntamento" alle card in #cl_list
   async function applyClientsLastAppointment(){
+    // Non fare chiamate se è stato rilevato un 401 globale
+    if (window.__BP_401_DETECTED === true) {
+      return;
+    }
     var host = document.getElementById('cl_list'); if(!host) return;
     var last = await mapLastAppointments();
     selAll('.card', host).forEach(function(card){
