@@ -120,9 +120,12 @@ module.exports = function(app) {
       lowerMessage.includes('team') ||
       lowerMessage.includes('chi non ha') ||
       lowerMessage.includes('chi ha fatto') ||
+      lowerMessage.includes('chi ha compilato') ||
+      lowerMessage.includes('chi ha') ||
       lowerMessage.includes('chi manca') ||
       lowerMessage.includes('manca il bp') ||
-      lowerMessage.includes('non hanno fatto')
+      lowerMessage.includes('non hanno fatto') ||
+      lowerMessage.includes('chi compilato')
     );
     
     // Estrae nome consulente se specificato (solo per admin)
@@ -263,12 +266,16 @@ module.exports = function(app) {
           lowerMessage.includes('consuntivo') ||
           lowerMessage.includes('chi non ha') ||
           lowerMessage.includes('chi ha fatto') ||
+          lowerMessage.includes('chi ha compilato') ||
+          lowerMessage.includes('chi compilato') ||
           lowerMessage.includes('manca')) {
         
-        // Per domande su "chi non ha fatto" servono tutti i periodi
+        // Per domande su "chi non ha fatto" o "chi ha compilato" servono tutti i periodi
         const needsAllPeriods = wantsAllConsultants || 
                                 lowerMessage.includes('chi non ha') ||
                                 lowerMessage.includes('chi ha fatto') ||
+                                lowerMessage.includes('chi ha compilato') ||
+                                lowerMessage.includes('chi compilato') ||
                                 lowerMessage.includes('manca');
         
         let query = supabase
