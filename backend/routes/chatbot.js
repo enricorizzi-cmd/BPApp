@@ -692,9 +692,28 @@ RISPOSTE IN ITALIANO.`;
         const type = typeLabels[period.type] || period.type;
         const hasPrev = period.indicatorsprev && Object.keys(period.indicatorsprev).length > 0;
         const hasCons = period.indicatorscons && Object.keys(period.indicatorscons).length > 0;
-        const monthName = period.month ? new Date(2000, period.month - 1).toLocaleString('it-IT', { month: 'long' }) : '';
+        
+        // Calcola mese/anno da startDate se non sono popolati
+        let periodMonth = period.month;
+        let periodYear = period.year;
+        if (!periodMonth && period.startdate) {
+          try {
+            const startDate = new Date(period.startdate);
+            periodMonth = startDate.getMonth() + 1;
+            periodYear = startDate.getFullYear();
+          } catch (e) {
+            // Ignora errori
+          }
+        }
+        
+        const monthName = periodMonth ? new Date(2000, periodMonth - 1).toLocaleString('it-IT', { month: 'long' }) : '';
         const userName = getUserName(period.userid);
-        context += `- ${userName}, ${type}, anno: ${period.year || '?'}, mese: ${monthName} ${period.month || '?'}, previsionale: ${hasPrev ? 'SÌ' : 'NO'}, consuntivo: ${hasCons ? 'SÌ' : 'NO'}\n`;
+        
+        // Evidenzia se corrisponde al mese richiesto
+        const isRelevant = targetMonth && periodMonth == targetMonth && (!targetYear || periodYear == targetYear);
+        const marker = isRelevant ? ' ⭐' : '';
+        
+        context += `- ${userName}, ${type}, anno: ${periodYear || '?'}, mese: ${periodMonth ? (monthName || `mese ${periodMonth}`) : (period.startdate ? 'da startDate' : '?')}${marker}, previsionale: ${hasPrev ? 'SÌ' : 'NO'}, consuntivo: ${hasCons ? 'SÌ' : 'NO'}\n`;
       });
       context += '\n';
     }
