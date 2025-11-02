@@ -426,7 +426,9 @@ module.exports = function(app) {
 
         aggregated[key].clienti_iscritti.push(iscrizione.cliente_nome);
         aggregated[key].totale_iscritti += 1;
-        aggregated[key].vsd_totale += Number(iscrizione.costo_personalizzato);
+        // Assicurati che vsd_totale sia sempre un numero valido
+        const costoPersonalizzato = Number(iscrizione.costo_personalizzato) || 0;
+        aggregated[key].vsd_totale = (aggregated[key].vsd_totale || 0) + costoPersonalizzato;
       });
 
       // Converti in array e ordina per data

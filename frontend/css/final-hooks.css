@@ -86,16 +86,21 @@
 
 #bp-overlay .bp-form-group {
   margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 #bp-overlay .bp-form-group label {
   font-weight: 600;
   color: var(--accent);
-  margin-bottom: 12px;
+  margin: 0;
   display: block;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  line-height: 1.4;
+  min-height: 20px;
 }
 
 #bp-overlay .bp-form-group input,
@@ -110,6 +115,8 @@
   transition: all 0.2s ease;
   color: var(--text);
   font-size: 15px;
+  box-sizing: border-box;
+  line-height: 1.5;
 }
 
 #bp-overlay .bp-form-group input:focus,
@@ -137,6 +144,20 @@
 #bp-overlay .bp-form-group textarea {
   resize: vertical;
   min-height: 80px;
+  font-family: inherit;
+}
+
+/* Migliora allineamento del client dropdown */
+#bp-overlay .bp-form-group .client-dropdown {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#bp-overlay .bp-form-group .client-dropdown-input {
+  min-height: 47px; /* Allinea con altri input (14px padding top + 14px padding bottom + 19px line-height) */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
 }
 
 #bp-overlay .bp-modal-footer {
@@ -212,11 +233,12 @@
   
   #bp-overlay .bp-form-group {
     margin-bottom: 20px;
+    gap: 6px;
   }
   
   #bp-overlay .bp-form-group label {
     font-size: 13px;
-    margin-bottom: 8px;
+    margin: 0;
   }
   
   #bp-overlay .bp-form-group input,

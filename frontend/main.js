@@ -11154,12 +11154,13 @@ function viewCorsiInteraziendali(){
                 <th>Descrizione</th>
                 <th>Costo (VSD Indiretto)</th>
                 <th>Date Programmate</th>
+                <th>N. Iscritti</th>
                 ${isAdmin ? '<th>Azioni</th>' : ''}
               </tr>
             </thead>
             <tbody id="catalogo-tbody">
               <tr>
-                <td colspan="${isAdmin ? '7' : '6'}" class="loading">Caricamento...</td>
+                <td colspan="${isAdmin ? '8' : '7'}" class="loading">Caricamento...</td>
               </tr>
             </tbody>
           </table>
@@ -11380,38 +11381,56 @@ function viewCorsiInteraziendali(){
       const response = await GET(`/api/corsi-catalogo?${params}`);
       
       if (response.corsi) {
-        // Carica anche i dati delle date per la colonna "Date Programmate"
+        // Carica anche i dati delle date per la colonna "Date Programmate" e iscrizioni per "N. Iscritti"
         try {
-          const dateResponse = await GET('/api/corsi-date');
+          const [dateResponse, iscrizioniResponse] = await Promise.all([
+            GET('/api/corsi-date'),
+            GET('/api/corsi-iscrizioni')
+          ]);
           console.log('Date response:', dateResponse);
-          renderCatalogoTable(response.corsi, dateResponse.date || []);
-        } catch (dateError) {
-          console.warn('Error loading date data:', dateError);
-          renderCatalogoTable(response.corsi, []);
+          console.log('Iscrizioni response:', iscrizioniResponse);
+          renderCatalogoTable(response.corsi, dateResponse.date || [], iscrizioniResponse.iscrizioni || []);
+        } catch (error) {
+          console.warn('Error loading date or iscrizioni data:', error);
+          renderCatalogoTable(response.corsi, [], []);
         }
-      } else {
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">Nessun corso trovato</td></tr>';
-      }
+        } else {
+          tbody.innerHTML = '<tr><td colspan="8" class="loading">Nessun corso trovato</td></tr>';
+        }
     } catch (error) {
       console.error('Error loading catalogo data:', error);
       const tbody = document.getElementById('catalogo-tbody');
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">Errore nel caricamento</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="loading">Errore nel caricamento</td></tr>';
       }
     }
   }
 
-  function renderCatalogoTable(corsi, corsiDate = []) {
+  function renderCatalogoTable(corsi, corsiDate = [], iscrizioniData = []) {
     const tbody = document.getElementById('catalogo-tbody');
     if (!tbody) return;
 
     if (corsi.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="loading">Nessun corso trovato</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="loading">Nessun corso trovato</td></tr>';
       return;
     }
 
     const isAdmin = getUser().role === 'admin';
-    const rows = corsi.map(corso => `
+    const rows = corsi.map(corso => {
+      // Calcola numero iscritti per questo corso
+      // Le iscrizioni sono aggregate per data_inizio e nome_corso
+      const dateCorso = corsiDate.find(cd => cd.corso_id === corso.id);
+      let nIscritti = 0;
+      
+      if (dateCorso && dateCorso.data_inizio) {
+        const iscrizioniCorso = iscrizioniData.filter(iscrizione => 
+          iscrizione.nome_corso === corso.nome_corso &&
+          iscrizione.data_corso === dateCorso.data_inizio
+        );
+        nIscritti = iscrizioniCorso.length;
+      }
+      
+      return `
       <tr>
         <td>${corso.codice_corso || '-'}</td>
         <td>${corso.nome_corso}</td>
@@ -11419,6 +11438,7 @@ function viewCorsiInteraziendali(){
         <td>${corso.descrizione || '-'}</td>
         <td>€${Number(corso.costo_corso).toLocaleString()}</td>
         <td>${formatDateProgrammate(corso.id, corsiDate)}</td>
+        <td>${nIscritti}</td>
         ${isAdmin ? `
           <td class="actions">
             <button class="btn-small" onclick="editCorso('${corso.id}')" title="Modifica">
@@ -11433,7 +11453,8 @@ function viewCorsiInteraziendali(){
           </td>
         ` : ''}
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     tbody.innerHTML = rows;
   }
@@ -12071,22 +12092,38 @@ function viewCorsiInteraziendali(){
               ${hasCourse ? `
                 <div class="small">
                   ${coursesOnDay.map(course => {
-                    // Calcola il VSD indiretto totale per questo corso in questo giorno
-                    const vsdTotale = iscrizioniData
-                      .filter(iscrizione => 
-                        iscrizione.data_corso === dateStr && 
-                        iscrizione.nome_corso === course.corsi_catalogo.nome_corso
-                      )
-                      .reduce((total, iscrizione) => total + iscrizione.vsd_totale, 0);
+                    // IMPORTANTE: Le iscrizioni sono sempre per l'intero corso (non per singoli giorni)
+                    // quindi le iscrizioni sono sempre aggregate per data_inizio (giorno uno)
+                    const dataInizioCorso = course.data_inizio;
+                    const nomeCorso = course.corsi_catalogo.nome_corso;
                     
-                    // Calcola VSD per giorno: totale diviso durata corso
+                    // Cerca iscrizioni per la data di INIZIO del corso (giorno uno)
+                    // Anche se questo è il giorno 2, 3, etc., le iscrizioni si trovano solo per data_inizio
+                    const iscrizioniCorso = iscrizioniData.filter(iscrizione => 
+                      iscrizione.data_corso === dataInizioCorso && 
+                      iscrizione.nome_corso === nomeCorso
+                    );
+                    
+                    // Calcola numero iscritti e VSD totale dalle iscrizioni (questo è per l'intero corso)
+                    const nIscritti = iscrizioniCorso.length;
+                    const vsdTotale = iscrizioniCorso.reduce((total, iscrizione) => {
+                      const vsd = Number(iscrizione.vsd_totale) || 0;
+                      return total + vsd;
+                    }, 0);
+                    
+                    // VSD per giorno: distribuisce il VSD totale su tutti i giorni della durata
+                    // Se non ci sono iscrizioni, mostra ZERO (non il costo teorico)
                     const durataGiorni = course.corsi_catalogo.durata_giorni || 1;
-                    const vsdPerGiorno = vsdTotale > 0 ? vsdTotale / durataGiorni : (Number(course.corsi_catalogo.costo_corso) / durataGiorni);
+                    const vsdPerGiorno = vsdTotale > 0 ? vsdTotale / durataGiorni : 0;
                     
-                    const nomeCorso = course.corsi_catalogo.nome_corso.substring(0, 15); // Abbrevia nome corso
-                    const valoreVSD = `VSDindiretto ${vsdPerGiorno.toFixed(0)}€`;
+                    // Formatta il valore VSD e numero iscritti
+                    const nomeCorsoAbbr = nomeCorso.substring(0, 15); // Abbrevia nome corso
+                    const valoreVSD = vsdPerGiorno > 0 
+                      ? `VSDindiretto ${Math.round(vsdPerGiorno).toLocaleString('it-IT')}€`
+                      : 'VSDindiretto 0€';
+                    const testoIscritti = `Iscritti: ${nIscritti}`;
                     
-                    return `${nomeCorso}<br/>${valoreVSD}`;
+                    return `${nomeCorsoAbbr}<br/>${valoreVSD}<br/>${testoIscritti}`;
                   }).join('<br/>')}
                 </div>
               ` : ''}
@@ -12291,6 +12328,20 @@ function viewCorsiInteraziendali(){
     document.getElementById('btn-mensile')?.classList.toggle('active', view === 'mensile');
     document.getElementById('btn-annuale')?.classList.toggle('active', view === 'annuale');
     
+    // Aggiorna immediatamente il titolo in base alla visualizzazione
+    const title = document.getElementById('calendario-title');
+    if (title) {
+      if (view === 'annuale') {
+        title.textContent = corsiCurrentPeriod.year.toString();
+      } else {
+        const date = new Date(corsiCurrentPeriod.year, corsiCurrentPeriod.month);
+        title.textContent = date.toLocaleDateString('it-IT', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+      }
+    }
+    
     loadCalendarioData();
   };
 
@@ -12321,11 +12372,20 @@ function viewCorsiInteraziendali(){
       return;
     }
 
-    // Carica dati iscrizioni per questa data
+    // Carica TUTTI i dati iscrizioni (non filtrati per data cliccata)
+    // perché dobbiamo cercare per data_inizio del corso
     let iscrizioniData = [];
     try {
-      const response = await GET(`/api/corsi-iscrizioni?from=${dateStr}&to=${dateStr}`);
-      iscrizioniData = response.iscrizioni || [];
+      // Calcola il range minimo necessario basato sulle date dei corsi
+      const allDates = coursesOnDay.map(c => c.data_inizio).filter(Boolean);
+      if (allDates.length > 0) {
+        const minDate = Math.min(...allDates.map(d => new Date(d).getTime()));
+        const maxDate = Math.max(...allDates.map(d => new Date(d).getTime()));
+        const fromDate = new Date(minDate).toISOString().split('T')[0];
+        const toDate = new Date(maxDate).toISOString().split('T')[0];
+        const response = await GET(`/api/corsi-iscrizioni?from=${fromDate}&to=${toDate}`);
+        iscrizioniData = response.iscrizioni || [];
+      }
     } catch (error) {
       console.error('Error loading iscrizioni data for modal:', error);
     }
@@ -12347,26 +12407,35 @@ function viewCorsiInteraziendali(){
             ${coursesOnDay && coursesOnDay.length > 0 ? `
               <div class="courses-list">
                 ${coursesOnDay.map(course => {
-                  // Calcola iscritti e VSD per questo corso in questa data specifica
+                  // IMPORTANTE: Le iscrizioni sono sempre per l'intero corso (non per singoli giorni)
+                  // quindi cerchiamo sempre per data_inizio (giorno uno), indipendentemente dal giorno cliccato
+                  const dataInizioCorso = course.data_inizio;
+                  const nomeCorso = course.corsi_catalogo.nome_corso;
+                  
+                  // Cerca iscrizioni per la data di INIZIO del corso (giorno uno)
+                  // Le iscrizioni esistono solo per l'intera durata del corso
                   const corsoIscrizioni = iscrizioniData.filter(iscrizione => 
-                    iscrizione.nome_corso === course.corsi_catalogo.nome_corso &&
-                    iscrizione.data_corso === dateStr
+                    iscrizione.nome_corso === nomeCorso &&
+                    iscrizione.data_corso === dataInizioCorso
                   );
                   
+                  // Numero di iscritti all'intero corso
                   const nIscritti = corsoIscrizioni.length;
-                  const vsdTotale = corsoIscrizioni.reduce((total, iscrizione) => 
-                    total + (iscrizione.vsd_totale || 0), 0
-                  );
+                  // VSD totale dell'intero corso (non di un singolo giorno)
+                  const vsdTotale = corsoIscrizioni.reduce((total, iscrizione) => {
+                    const vsd = Number(iscrizione.vsd_totale) || 0;
+                    return total + vsd;
+                  }, 0);
                   
                   return `
                     <div class="course-item">
-                      <div class="course-name">${course.corsi_catalogo.nome_corso}</div>
+                      <div class="course-name">${nomeCorso}</div>
                       <div class="course-details">
                         <div class="course-code">Codice: ${course.corsi_catalogo.codice_corso}</div>
                         <div class="course-duration">Durata: ${course.corsi_catalogo.durata_giorni} giorni</div>
-                        <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso}</div>
-                        <div class="course-enrollments">N. iscritti (${dateStr}): ${nIscritti}</div>
-                        <div class="course-vsd">VSD indiretto totale (${dateStr}): €${vsdTotale.toFixed(0)}</div>
+                        <div class="course-cost">Costo: €${course.corsi_catalogo.costo_corso || 0}</div>
+                        <div class="course-enrollments">N. iscritti al corso (${dataInizioCorso}): ${nIscritti}</div>
+                        <div class="course-vsd">VSD indiretto totale corso (${dataInizioCorso}): €${vsdTotale.toLocaleString('it-IT')}</div>
                       </div>
                       <div class="course-schedule">
                         ${course.giorni_dettaglio.map(giorno => `
@@ -12428,47 +12497,37 @@ function viewCorsiInteraziendali(){
     
     console.log('giorni_dettaglio found:', dateCorso.giorni_dettaglio);
     
-    // Raggruppa le date per corso (corso multi-giorno)
-    const dateGroups = [];
-    const processedDates = new Set();
-    
-    dateCorso.giorni_dettaglio.forEach(giorno => {
-      if (processedDates.has(giorno.data)) return;
-      
-      // Trova tutti i giorni consecutivi per questo corso
-      const corsoDates = dateCorso.giorni_dettaglio
-        .filter(g => g.corso_id === giorno.corso_id)
-        .sort((a, b) => new Date(a.data) - new Date(b.data));
-      
-      if (corsoDates.length === 1) {
-        // Corso di un solo giorno
-        const date = new Date(giorno.data);
-        dateGroups.push(date.toLocaleDateString('it-IT', { 
-          day: 'numeric', 
-          month: 'long' 
-        }));
-        processedDates.add(giorno.data);
-      } else {
-        // Corso multi-giorno
-        const firstDate = new Date(corsoDates[0].data);
-        const lastDate = new Date(corsoDates[corsoDates.length - 1].data);
-        
-        console.log('DEBUG: First day data:', corsoDates[0].data);
-        console.log('DEBUG: Last day data:', corsoDates[corsoDates.length - 1].data);
-        
-        if (firstDate.getMonth() === lastDate.getMonth()) {
-          // Stesso mese
-          dateGroups.push(`${firstDate.getDate()}-${lastDate.getDate()} ${firstDate.toLocaleDateString('it-IT', { month: 'long' })}`);
-        } else {
-          // Mesi diversi
-          dateGroups.push(`${firstDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} - ${lastDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`);
-        }
-        
-        corsoDates.forEach(g => processedDates.add(g.data));
-      }
+    // Ordina tutti i giorni per data
+    const giorniOrdinati = [...dateCorso.giorni_dettaglio].sort((a, b) => {
+      const dateA = new Date(a.data);
+      const dateB = new Date(b.data);
+      return dateA.getTime() - dateB.getTime();
     });
     
-    return dateGroups.join('<br>');
+    if (giorniOrdinati.length === 0) {
+      return '-';
+    }
+    
+    // Prendi il primo e l'ultimo giorno
+    const firstDate = new Date(giorniOrdinati[0].data);
+    const lastDate = new Date(giorniOrdinati[giorniOrdinati.length - 1].data);
+    
+    // Se c'è solo un giorno
+    if (giorniOrdinati.length === 1) {
+      return firstDate.toLocaleDateString('it-IT', { 
+        day: 'numeric', 
+        month: 'long' 
+      });
+    }
+    
+    // Corso multi-giorno
+    if (firstDate.getMonth() === lastDate.getMonth() && firstDate.getFullYear() === lastDate.getFullYear()) {
+      // Stesso mese e anno
+      return `${firstDate.getDate()}-${lastDate.getDate()} ${firstDate.toLocaleDateString('it-IT', { month: 'long' })}`;
+    } else {
+      // Mesi o anni diversi
+      return `${firstDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} - ${lastDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`;
+    }
   }
 
   // Carica consulenti per i filtri
@@ -12703,10 +12762,15 @@ function viewCorsiInteraziendali(){
       
       if (response.corsi) {
         const options = response.corsi.map(corso => 
-          `<option value="${corso.id}" data-costo="${corso.costo_corso}">${corso.nome_corso}</option>`
+          `<option value="${corso.id}" data-costo="${corso.costo_corso || 0}">${corso.nome_corso}</option>`
         ).join('');
         
         select.innerHTML = '<option value="">Seleziona corso...</option>' + options;
+        
+        // Se c'è già un corso selezionato, aggiorna i costi
+        if (select.value) {
+          await loadCorsoDates();
+        }
       }
     } catch (error) {
       console.error('Error loading corsi options:', error);
@@ -12718,9 +12782,12 @@ function viewCorsiInteraziendali(){
       const response = await GET('/api/clients');
       
       if (response.clients) {
-        const options = response.clients.map(client => 
-          `<option value="${client.id}" data-consulente="${client.consultantname || ''}" data-consulente-id="${client.consultantid || ''}">${client.name}</option>`
-        ).join('');
+        const options = response.clients.map(client => {
+          // Supporta sia consultantid che consultantId (per compatibilità)
+          const consultantId = client.consultantid || client.consultantId || '';
+          const consultantName = client.consultantname || client.consultantName || '';
+          return `<option value="${client.id}" data-consulente="${consultantName}" data-consulente-id="${consultantId}">${client.name}</option>`;
+        }).join('');
         
         if (targetSelectId) {
           // Carica solo il select specifico
@@ -12786,13 +12853,31 @@ function viewCorsiInteraziendali(){
   }
 
   window.loadCorsoDates = async function() {
-    const corsoId = document.getElementById('corso-select').value;
+    const corsoSelect = document.getElementById('corso-select');
+    const corsoId = corsoSelect.value;
     const dataSelect = document.getElementById('data-corso');
     
     if (!corsoId) {
       dataSelect.innerHTML = '<option value="">Seleziona prima un corso...</option>';
+      // Reset tutti i costi quando non c'è corso selezionato
+      const allCostiInputs = document.querySelectorAll('[id^="costo-"]');
+      allCostiInputs.forEach(input => {
+        if (input.type === 'number') input.value = '0';
+      });
       return;
     }
+
+    // Ottieni il costo del corso dall'opzione selezionata
+    const selectedOption = corsoSelect.selectedOptions[0];
+    const costoCorso = selectedOption?.dataset.costo || '0';
+    
+    // Pre-compila il costo in tutti i campi costo dei clienti
+    const allCostiInputs = document.querySelectorAll('input[id^="costo-"]');
+    allCostiInputs.forEach(input => {
+      if (input.type === 'number' && input.id.startsWith('costo-')) {
+        input.value = costoCorso;
+      }
+    });
 
     try {
       const response = await GET(`/api/corsi-date-disponibili?corso_id=${corsoId}`);
@@ -12814,52 +12899,61 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  window.loadClienteInfo = function(index) {
+  window.loadClienteInfo = async function(index) {
     const clienteSelect = document.getElementById(`cliente-${index}`);
     const consulenteSelect = document.getElementById(`consulente-${index}`);
     const costoInput = document.getElementById(`costo-${index}`);
     const corsoSelect = document.getElementById('corso-select');
     
-    console.log(`[loadClienteInfo] Index: ${index}`);
-    console.log(`[loadClienteInfo] Cliente select:`, clienteSelect);
-    console.log(`[loadClienteInfo] Consulente select:`, consulenteSelect);
-    
-    const selectedOption = clienteSelect.selectedOptions[0];
-    console.log(`[loadClienteInfo] Selected option:`, selectedOption);
-    console.log(`[loadClienteInfo] Consulente name:`, selectedOption?.dataset.consulente);
-    console.log(`[loadClienteInfo] Consulente ID:`, selectedOption?.dataset.consulenteId);
-    
-    if (selectedOption && selectedOption.dataset.consulente) {
-      // Trova e seleziona il consulente nel dropdown
-      const consulenteOptions = consulenteSelect.querySelectorAll('option');
-      console.log(`[loadClienteInfo] Available consulente options:`, consulenteOptions.length);
-      
-      for (let option of consulenteOptions) {
-        console.log(`[loadClienteInfo] Checking option:`, option.value, option.textContent);
-        if (option.value === selectedOption.dataset.consulenteId) {
-          console.log(`[loadClienteInfo] Found match by ID:`, option.value);
-          consulenteSelect.value = option.value;
-          break;
-        }
-      }
-      
-      // Se non trova per ID, prova per nome
-      if (!consulenteSelect.value) {
-        console.log(`[loadClienteInfo] No ID match, trying by name...`);
-        for (let option of consulenteOptions) {
-          if (option.textContent === selectedOption.dataset.consulente) {
-            console.log(`[loadClienteInfo] Found match by name:`, option.textContent);
-            consulenteSelect.value = option.value;
-            break;
-          }
-        }
-      }
-      
-      console.log(`[loadClienteInfo] Final consulente value:`, consulenteSelect.value);
+    if (!clienteSelect || !consulenteSelect) {
+      console.warn(`[loadClienteInfo] Missing elements for index ${index}`);
+      return;
     }
     
+    const selectedOption = clienteSelect.selectedOptions[0];
+    if (!selectedOption || !selectedOption.value) {
+      // Nessun cliente selezionato, reset consulente
+      consulenteSelect.value = '';
+      return;
+    }
+    
+    const consultantId = selectedOption.dataset.consulenteId || '';
+    const consultantName = selectedOption.dataset.consulente || '';
+    
+    // Assicura che i consulenti siano caricati prima di cercare
+    if (consulenteSelect.options.length <= 1) {
+      // Le opzioni non sono ancora caricate, caricale prima
+      await loadConsulentiOptions(`consulente-${index}`);
+    }
+    
+    // Trova e seleziona il consulente nel dropdown
+    if (consultantId) {
+      // Cerca per ID (più affidabile)
+      const matchingOption = Array.from(consulenteSelect.options).find(
+        option => option.value === consultantId
+      );
+      if (matchingOption) {
+        consulenteSelect.value = consultantId;
+        return;
+      }
+    }
+    
+    // Se non trova per ID, prova per nome
+    if (consultantName) {
+      const matchingOption = Array.from(consulenteSelect.options).find(
+        option => option.textContent.trim() === consultantName.trim()
+      );
+      if (matchingOption) {
+        consulenteSelect.value = matchingOption.value;
+        return;
+      }
+    }
+    
+    // Se non trova match, lascia il campo vuoto
+    consulenteSelect.value = '';
+    
     // Imposta costo base del corso
-    if (corsoSelect.selectedOptions[0] && corsoSelect.selectedOptions[0].dataset.costo) {
+    if (costoInput && corsoSelect?.selectedOptions[0]?.dataset?.costo) {
       costoInput.value = corsoSelect.selectedOptions[0].dataset.costo;
     }
   }
@@ -12895,8 +12989,10 @@ function viewCorsiInteraziendali(){
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
     // Carica opzioni clienti e consulenti solo per il nuovo select
-    loadClientiOptions(`cliente-${clienteCount}`);
-    loadConsulentiOptions(`consulente-${clienteCount}`);
+    // Assicurati che i consulenti siano caricati prima per permettere il match automatico
+    loadConsulentiOptions(`consulente-${clienteCount}`).then(() => {
+      loadClientiOptions(`cliente-${clienteCount}`);
+    });
   };
 
   window.removeCliente = function(index) {
@@ -15840,16 +15936,21 @@ window.showVenditaRiordiniModal = function(opts = {}) {
       
       #bp-overlay .bp-form-group {
         margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
       }
       
       #bp-overlay .bp-form-group label {
         font-weight: 600;
         color: var(--accent);
-        margin-bottom: 12px;
+        margin: 0;
         display: block;
         font-size: 14px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        line-height: 1.4;
+        min-height: 20px;
       }
       
       #bp-overlay .bp-form-group input,
@@ -15864,6 +15965,8 @@ window.showVenditaRiordiniModal = function(opts = {}) {
         transition: all 0.2s ease;
         color: var(--text);
         font-size: 15px;
+        box-sizing: border-box;
+        line-height: 1.5;
       }
       
       #bp-overlay .bp-form-group input:focus,
@@ -15891,6 +15994,20 @@ window.showVenditaRiordiniModal = function(opts = {}) {
       #bp-overlay .bp-form-group textarea {
         resize: vertical;
         min-height: 80px;
+        font-family: inherit;
+      }
+      
+      /* Migliora allineamento del client dropdown */
+      #bp-overlay .bp-form-group .client-dropdown {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      
+      #bp-overlay .bp-form-group .client-dropdown-input {
+        min-height: 47px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
       }
       
       #bp-overlay .bp-modal-footer {
@@ -16111,11 +16228,12 @@ window.showVenditaRiordiniModal = function(opts = {}) {
         
         #bp-overlay .bp-form-group {
           margin-bottom: 20px;
+          gap: 6px;
         }
         
         #bp-overlay .bp-form-group label {
           font-size: 13px;
-          margin-bottom: 8px;
+          margin: 0;
         }
         
         #bp-overlay .bp-form-group input,
