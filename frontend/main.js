@@ -26,6 +26,7 @@ import "./lib/targets.js";
 import "./lib/telemetry.js";
 import "./lib/undo.js";
 // Ensure post-sale/NNCF banners are registered before final-hooks tries to init them
+import "./lib/chatbot.js";
 import "./lib/final-hooks.js";
 import "./lib/ics-single.js";
 import "./lib/leaderboard-hooks.js";
@@ -316,6 +317,7 @@ function viewLogin(){
       toast('Bentornato '+r.user.name+'!'); window.addXP(10);
       viewHome(); renderTopbar();
       if(window.BPPush) window.BPPush.subscribe();
+      if(window.initChatbot) window.initChatbot(); // Inizializza chatbot dopo login
     }, function(err){
       toast('Credenziali errate'); logger.error(err);
     }).catch(function(err){
@@ -18251,6 +18253,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       // Aggiorna la visibilità del pulsante installazione dopo il rendering
       setTimeout(updateInstallButtonVisibility, 100);
       viewHome();
+      // Inizializza chatbot se disponibile
+      if(window.initChatbot) setTimeout(() => window.initChatbot(), 1000);
     } catch (error) {
       // Token scaduto o non valido: logout (pulisce token) e reindirizza
       console.log('Token scaduto, logout e reindirizzamento al login');

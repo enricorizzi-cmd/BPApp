@@ -94,6 +94,27 @@ SMTP_FROM=no-reply@example.com
 
 ---
 
+## 🤖 **CHATBOT AI (OpenAI)**
+### **Variabili Opzionali**
+```bash
+# Chiave API OpenAI per il chatbot AI
+OPENAI_API_KEY=sk-proj-...
+```
+
+### **Descrizione**
+- **OPENAI_API_KEY**: Chiave API di OpenAI per abilitare il chatbot AI integrato
+  - Il chatbot può rispondere a domande sui dati del database (appuntamenti, clienti, KPI, vendite, ecc.)
+  - Se non configurata, il chatbot non sarà disponibile (l'app continuerà a funzionare normalmente)
+  - **IMPORTANTE**: Questa chiave deve essere configurata solo su Render come variabile d'ambiente, mai committata nel codice
+
+### **Configurazione su Render**
+1. Vai su **Environment** nel dashboard Render
+2. Aggiungi variabile: `OPENAI_API_KEY`
+3. Inserisci la chiave API fornita
+4. Riavvia il servizio
+
+---
+
 ## ⚙️ **SISTEMA**
 
 ### **Variabili Obbligatorie**
@@ -147,9 +168,10 @@ curl https://bpapp-battle-plan.onrender.com/api/appointments
 ## 🛡️ **SICUREZZA**
 
 ### **Variabili Critiche (NON CONDIVIDERE)**
-- `BP_JWT_SECRET`
-- `VAPID_PRIVATE_KEY`
-- `SMTP_URL` (contiene password)
+- `BP_JWT_SECRET` - Chiave segreta JWT
+- `OPENAI_API_KEY` - Chiave API OpenAI per chatbot AI
+- `VAPID_PRIVATE_KEY` - Chiave privata VAPID per push notifications
+- `SMTP_URL` - URL SMTP con credenziali email (contiene password)
 
 ### **Variabili Pubbliche (Sicure)**
 - `SUPABASE_URL`
