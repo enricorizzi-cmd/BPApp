@@ -1840,13 +1840,27 @@ function viewCalendar(){
         text-transform: uppercase;
       }
       
-      /* Label "Oggi" nel calendario principale */
-      .today-label-main {
-        font-size: 9px;
-        color: var(--accent);
-        font-weight: 600;
-        margin-left: 4px;
-        opacity: 0.9;
+      /* Badge "OGGI" nel calendario principale - riquadro azzurro in alto a destra */
+      .today-badge-main {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--accent);
+        color: white;
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-size: 8px;
+        font-weight: 700;
+        z-index: 11;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        line-height: 1;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      
+      /* Se ci sono entrambi i badge (corso + oggi), posiziona oggi sopra e corso sotto */
+      .day.today .corso-badge-main {
+        top: 30px;
       }
       .calendar .day.dense .small{ font-size:11px; line-height:1.1; }
       .calendar .day.dense .tag{ transform:scale(.9); transform-origin:left top; }
@@ -3017,11 +3031,13 @@ function viewCalendar(){
             var hasCourseToday = corsiDay.hasCourse;
             var corsoBadge = hasCourseToday && corsiDay.codiceCorso ? '<span class="corso-badge-main">'+corsiDay.codiceCorso+'</span>' : '';
             
-            // Controlla se è oggi (solo se è nel mese corretto)
+            // Controlla se è oggi (solo se è nel mese corretto) - usa stringa YYYY-MM-DD per confronto sicuro
             var today = new Date();
-            var isToday = inMonth && d.getDate() === today.getDate() && 
-                         d.getMonth() === today.getMonth() && 
-                         d.getFullYear() === today.getFullYear();
+            var todayStr = today.getFullYear() + '-' + 
+                        String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                        String(today.getDate()).padStart(2, '0');
+            var dayStr = ymd(d);
+            var isToday = inMonth && dayStr === todayStr;
             
             // colore stato
             var cls = '';
@@ -3072,7 +3088,8 @@ function viewCalendar(){
             grid += ''+
               '<div class="day '+cls+extra+slotCls+'" data-day="'+key+'" title="Settimana '+isoWeekNum(d)+'" style="position:relative">'+
                 corsoBadge+
-                '<div class="dnum">'+d.getDate()+(isToday ? ' <span class="today-label-main">Oggi</span>' : '')+'</div>'+
+                (isToday ? '<span class="today-badge-main">OGGI</span>' : '')+
+                '<div class="dnum">'+d.getDate()+'</div>'+
                 (lines||'')+
               '</div>';
           }
@@ -11000,18 +11017,39 @@ function viewCorsiInteraziendali(){
         right: 2px;
       }
       
-      /* Label "Oggi" */
-      .today-label {
-        font-size: 9px;
-        color: var(--accent);
-        font-weight: 600;
-        margin-left: 4px;
-        opacity: 0.9;
+      /* Badge "OGGI" - riquadro azzurro in alto a destra */
+      .today-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: var(--accent);
+        color: white;
+        border-radius: 4px;
+        padding: 1px 4px;
+        font-size: 7px;
+        font-weight: 700;
+        z-index: 11;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        line-height: 1;
+        text-transform: uppercase;
+        white-space: nowrap;
       }
       
-      .mini-day .today-label {
-        font-size: 7px;
-        margin-left: 2px;
+      /* Se ci sono entrambi i badge (corso + oggi), posiziona oggi sopra e corso sotto */
+      .day.today .corso-badge {
+        top: 18px;
+      }
+      
+      .mini-day .today-badge {
+        top: 1px;
+        right: 1px;
+        font-size: 6px;
+        padding: 1px 3px;
+        border-radius: 3px;
+      }
+      
+      .mini-day.today .corso-badge {
+        top: 14px;
       }
       
       .calendario-view-switch {
@@ -12342,11 +12380,12 @@ function viewCorsiInteraziendali(){
             });
           }) : [];
 
-          // Controlla se è oggi - IMPORTANTE: controlla anche mese e anno per evitare evidenziare il giorno sbagliato in altri mesi
+          // Controlla se è oggi - usa stringa YYYY-MM-DD per confronto sicuro
           const today = new Date();
-          const isToday = day === today.getDate() && 
-                         month === today.getMonth() && 
-                         year === today.getFullYear();
+          const todayStr = today.getFullYear() + '-' + 
+                          String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(today.getDate()).padStart(2, '0');
+          const isToday = dateStr === todayStr;
           
           // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
           const dayOfWeek = new Date(year, month, day).getDay();
@@ -12380,7 +12419,8 @@ function viewCorsiInteraziendali(){
             <div class="day ${dayClass}" 
                  onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
               ${courseBadge}
-              <div class="dnum">${day}${isToday ? ' <span class="today-label">Oggi</span>' : ''}</div>
+              ${isToday ? '<span class="today-badge">OGGI</span>' : ''}
+              <div class="dnum">${day}</div>
               ${hasCourse ? `
                 <div class="small">
                   ${coursesOnDay.map(course => {
@@ -12566,11 +12606,12 @@ function viewCorsiInteraziendali(){
               });
             }) : [];
 
-            // Controlla se è oggi - IMPORTANTE: controlla anche mese e anno per evitare evidenziare il giorno sbagliato in altri mesi
+            // Controlla se è oggi - usa stringa YYYY-MM-DD per confronto sicuro
             const today = new Date();
-            const isToday = day === today.getDate() && 
-                           monthIndex === today.getMonth() && 
-                           currentYear === today.getFullYear();
+            const todayStr = today.getFullYear() + '-' + 
+                            String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(today.getDate()).padStart(2, '0');
+            const isToday = dateStr === todayStr;
             
             // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
             const dayOfWeek = new Date(currentYear, monthIndex, day).getDay();
@@ -12604,7 +12645,8 @@ function viewCorsiInteraziendali(){
               <div class="mini-day ${dayClass}" 
                    onclick="showDayCourses('${dateStr}', ${JSON.stringify(coursesOnDay).replace(/"/g, '&quot;')})">
                 ${courseBadgeAnnual}
-                ${day}${isToday ? ' <span class="today-label">Oggi</span>' : ''}
+                ${isToday ? '<span class="today-badge">OGGI</span>' : ''}
+                ${day}
               </div>
             `;
           }
