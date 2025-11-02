@@ -12951,8 +12951,9 @@ function viewCorsiInteraziendali(){
         <td>€${Number(iscrizione.vsd_totale).toLocaleString()}</td>
         ${isAdmin ? `
           <td>
-            <button onclick="editIscrizioni(${JSON.stringify(iscrizione.data_corso)}, ${JSON.stringify(iscrizione.nome_corso)})" 
-                    class="btn-small" 
+            <button class="btn-edit-iscrizione btn-small" 
+                    data-data-corso="${iscrizione.data_corso}" 
+                    data-nome-corso="${iscrizione.nome_corso.replace(/"/g, '&quot;')}"
                     style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
               ✏️ Modifica
             </button>
@@ -12962,6 +12963,25 @@ function viewCorsiInteraziendali(){
     `).join('');
 
     tbody.innerHTML = rows;
+    
+    // Aggiungi event listeners ai pulsanti modifica
+    if (isAdmin) {
+      const editButtons = tbody.querySelectorAll('.btn-edit-iscrizione');
+      editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+          const dataCorso = this.dataset.dataCorso;
+          const nomeCorso = this.dataset.nomeCorso;
+          if (window.editIscrizioni) {
+            window.editIscrizioni(dataCorso, nomeCorso);
+          } else {
+            console.error('editIscrizioni function not found');
+            if (typeof toast === 'function') {
+              toast('Errore: funzione modifica non disponibile', 'error');
+            }
+          }
+        });
+      });
+    }
   }
 
   window.updateIscrizioniFilters = function() {
