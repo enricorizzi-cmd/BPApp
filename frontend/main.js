@@ -656,6 +656,11 @@ function labelsForBuckets(type, buckets){
 // ===== DASHBOARD =====
 function viewHome(){
   if(!getUser()) return viewLogin();
+  // Non fare chiamate API se è stato rilevato un 401 globale
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[viewHome] 401 già rilevato globalmente, skip API calls');
+    return;
+  }
   document.title = 'Battle Plan – Dashboard';
   setActiveSidebarItem('viewHome');
   const isAdmin = getUser().role==='admin';
@@ -1456,16 +1461,38 @@ function cardAppt(x){
     console.log('[Dashboard viewHome] Query string:', s);
     return s;
   })();
+  
+  // Doppio controllo: non fare chiamate se è stato rilevato un 401 dopo la creazione di __qsDash
+  if (window.__BP_401_DETECTED === true) {
+    console.log('[viewHome] 401 rilevato prima di Promise.all, skip API calls');
+    return;
+  }
+  
   Promise.all([
     GET('/api/appointments').catch(function(e){ 
+      // Se riceviamo un 401, imposta il flag globale e ritorna array vuoto
+      if (window.__BP_401_DETECTED === true) {
+        console.warn('[Dashboard] 401 rilevato durante GET /api/appointments');
+        return { appointments: [] }; 
+      }
       console.warn('[Dashboard] GET /api/appointments failed:', e.message);
       return { appointments: [] }; 
     }),
     GET('/api/periods'+__qsDash).catch(function(e){ 
+      // Se riceviamo un 401, imposta il flag globale e ritorna array vuoto
+      if (window.__BP_401_DETECTED === true) {
+        console.warn('[Dashboard] 401 rilevato durante GET /api/periods');
+        return { periods: [] }; 
+      }
       console.warn('[Dashboard] GET /api/periods'+__qsDash+' failed:', e.message);
       return { periods: [] }; 
     }),
     GET('/api/periods').catch(function(e){ 
+      // Se riceviamo un 401, imposta il flag globale e ritorna array vuoto
+      if (window.__BP_401_DETECTED === true) {
+        console.warn('[Dashboard] 401 rilevato durante GET /api/periods');
+        return { periods: [] }; 
+      }
       console.warn('[Dashboard] GET /api/periods failed:', e.message);
       return { periods: [] }; 
     })
