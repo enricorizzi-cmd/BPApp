@@ -15213,6 +15213,10 @@ function viewGestioneLead(){
             <input type="checkbox" id="lead-without-consultant" checked>
             Senza consulente assegnato
           </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="lead-enable-period-filters">
+            Abilita filtri periodo
+          </label>
           <div class="selector-group">
             <label for="lead-contact-status" style="font-size: 14px; color: var(--text); margin-bottom: 4px; display: block;">Stato contatto:</label>
             <select id="lead-contact-status" style="padding: 8px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; background: white; color: var(--text);">
@@ -15292,6 +15296,13 @@ function viewGestioneLead(){
             </select>
           </div>
         ` : ''}
+        
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="contact-enable-period-filters">
+            Abilita filtri periodo
+          </label>
+        </div>
       </div>
       
       <div style="padding: 20px;">
@@ -15471,20 +15482,22 @@ function viewGestioneLead(){
       const consultant = savedConsultantValue; // Usa il valore salvato
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
+      const enablePeriodFilters = document.getElementById('lead-enable-period-filters')?.checked || false;
       console.log('🔍 DEBUG: contactStatus =', contactStatus);
+      console.log('🔍 DEBUG: enablePeriodFilters =', enablePeriodFilters);
       
       // Aggiorna granularità corrente
       currentGranularity = granularity;
       
-      // Calcola periodo corrente (NON usato per "da contattare")
+      // Calcola periodo corrente (usato solo se il flag è abilitato)
       const { from, to } = calculatePeriod(granularity, currentPeriod);
       
       // Costruisci query parameters
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
-      // NON aggiungere filtri periodo se contactStatus è 'to_contact'
-      // Il backend mostrerà tutti i lead da contattare indipendentemente dal periodo
-      if (contactStatus !== 'to_contact') {
+      // Aggiungi filtri periodo solo se il flag è abilitato E contactStatus non è 'to_contact'
+      // Se enablePeriodFilters è false, mostra tutti i lead indipendentemente dal periodo
+      if (enablePeriodFilters && contactStatus !== 'to_contact') {
         if (granularity) params.append('period', granularity);
         params.append('from', from);
         params.append('to', to);
@@ -15493,7 +15506,14 @@ function viewGestioneLead(){
       params.append('contactStatus', contactStatus);
       
       const response = await GET(`/api/leads?${params.toString()}`);
-      const leads = response.leads || [];
+      let leads = response.leads || [];
+      
+      // Ordina sempre i lead dal più recente al più vecchio (per data_inserimento)
+      leads = leads.sort((a, b) => {
+        const dateA = new Date(a.dataInserimento || 0).getTime();
+        const dateB = new Date(b.dataInserimento || 0).getTime();
+        return dateB - dateA; // Ordine decrescente (più recente prima)
+      });
       
       // Aggiorna variabile globale
       currentLeadsData = leads;
@@ -15551,19 +15571,33 @@ function viewGestioneLead(){
       const consultant = isAdmin ? savedConsultantValue : (currentUser?.id || '');
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
+      const enablePeriodFilters = document.getElementById('contact-enable-period-filters')?.checked || false;
       
-      // ECCEZIONE: Lead da Contattare non segue filtri periodo/granularità
-      // Mostra sempre tutti i lead da contattare del consulente selezionato
-      
-      // Costruisci query parameters (solo consulente)
+      // Costruisci query parameters
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       params.append('contactStatus', contactStatus);
-      // NON aggiungere filtri periodo per questa sezione
+      
+      // Aggiungi filtri periodo solo se il flag è abilitato E contactStatus non è 'to_contact'
+      // Se enablePeriodFilters è false, mostra tutti i lead indipendentemente dal periodo
+      if (enablePeriodFilters && contactStatus !== 'to_contact') {
+        const granularity = document.getElementById('contact-granularity')?.value || 'mensile';
+        const { from, to } = calculatePeriod(granularity, currentContactPeriod || currentPeriod);
+        if (granularity) params.append('period', granularity);
+        params.append('from', from);
+        params.append('to', to);
+      }
       
       const response = await GET(`/api/leads?${params.toString()}`);
-      const allLeads = response.leads || [];
+      let allLeads = response.leads || [];
+      
+      // Ordina sempre i lead dal più recente al più vecchio (per data_inserimento)
+      allLeads = allLeads.sort((a, b) => {
+        const dateA = new Date(a.dataInserimento || 0).getTime();
+        const dateB = new Date(b.dataInserimento || 0).getTime();
+        return dateB - dateA; // Ordine decrescente (più recente prima)
+      });
       
       // Aggiorna variabile globale
       currentLeadsData = allLeads;
@@ -16966,7 +17000,8 @@ Comune: ${lead.comune || 'N/A'}
     document.addEventListener('change', (e) => {
       if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
           e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
-          e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status') {
+          e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status' ||
+          e.target.id === 'lead-enable-period-filters' || e.target.id === 'contact-enable-period-filters') {
       if (typeof haptic === 'function') haptic('light');
       
       // Se cambia la granularità, aggiorna il periodo corrente
