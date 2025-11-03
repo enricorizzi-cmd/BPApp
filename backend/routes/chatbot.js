@@ -315,6 +315,16 @@ module.exports = function(app) {
       }
 
       // Query per periodi/KPI/BP
+      // Includi anche domande di follow-up comuni che potrebbero riferirsi a dati già discussi
+      const isBPFollowUp = lowerMessage.includes('sicuro') || 
+                           lowerMessage.includes('conferma') ||
+                           lowerMessage.includes('verifica') ||
+                           lowerMessage.includes('hai accesso') ||
+                           lowerMessage.includes('cosa ti serve') ||
+                           lowerMessage.includes('cosa ti blocca') ||
+                           lowerMessage.includes('dati') ||
+                           lowerMessage.includes('informazioni');
+      
       if (lowerMessage.includes('periodo') || 
           lowerMessage.includes('kpi') ||
           lowerMessage.includes('indicatore') ||
@@ -329,7 +339,8 @@ module.exports = function(app) {
           lowerMessage.includes('chi ha fatto') ||
           lowerMessage.includes('chi ha compilato') ||
           lowerMessage.includes('chi compilato') ||
-          lowerMessage.includes('manca')) {
+          lowerMessage.includes('manca') ||
+          (isBPFollowUp && (conversationContext.includes('bp') || conversationContext.includes('previsionale') || conversationContext.includes('novembre') || conversationContext.includes('compilato')))) {
         
         // Per domande su "chi non ha fatto" o "chi ha compilato" servono tutti i periodi
         const needsAllPeriods = wantsAllConsultants || 
@@ -786,9 +797,19 @@ RISPOSTE IN ITALIANO.`;
       context += `PERIODI/KPI/BP (${data.periods.length} totali${relevantPeriods.length !== data.periods.length && targetMonth ? `, ${relevantPeriods.length} rilevanti per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : ''}):\n`;
       
       // Mostra prima i periodi rilevanti, poi tutti gli altri
-      const periodsToShow = relevantPeriods.length > 0 && relevantPeriods.length <= 30 && targetMonth
-        ? [...relevantPeriods, ...data.periods.filter(p => !relevantPeriods.find(rp => rp.id === p.id))].slice(0, 50)
-        : data.periods.slice(0, 50);
+      // IMPORTANTE: Se è una domanda su BP mensili e abbiamo periodi rilevanti filtrati, usa SOLO quelli
+      // NON includere altri periodi che potrebbero confondere l'AI
+      let periodsToShow;
+      if (shouldFilterMonthlyOnly && relevantPeriods.length > 0) {
+        // Per domande su BP mensili, mostra SOLO i periodi mensili rilevanti (già filtrati)
+        periodsToShow = relevantPeriods;
+      } else if (relevantPeriods.length > 0 && relevantPeriods.length <= 30 && targetMonth) {
+        // Per altre domande con mese specificato, mostra rilevanti + altri
+        periodsToShow = [...relevantPeriods, ...data.periods.filter(p => !relevantPeriods.find(rp => rp.id === p.id))].slice(0, 50);
+      } else {
+        // Altrimenti mostra tutti (limitati)
+        periodsToShow = data.periods.slice(0, 50);
+      }
       
       periodsToShow.forEach(period => {
         // I tipi nel database sono in italiano, non in inglese!
