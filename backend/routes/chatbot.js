@@ -1097,6 +1097,7 @@ RISPOSTE IN ITALIANO.`;
         context += `  → PREVISIONALE: ${prevStatus} | CONSUNTIVO: ${consStatus}\n`;
         
         // Se il previsionale è compilato, mostra gli indicatori principali per analisi comparative
+        // IMPORTANTE: Se anche il consuntivo è compilato, mostra sempre tutti gli indicatori (anche zero) per calcolare scostamenti
         if (hasPrev && period.indicatorsprev && typeof period.indicatorsprev === 'object') {
           const indicators = period.indicatorsprev;
           const gi = indicators.gi || indicators.GI || 0;
@@ -1104,12 +1105,20 @@ RISPOSTE IN ITALIANO.`;
           const vsdPersonale = indicators.vsdpersonale || indicators.VSDPersonale || indicators.vsd_personale || 0;
           const nncf = indicators.nncf || indicators.NNCF || 0;
           
-          // Mostra solo se ci sono valori significativi (non zero)
           const values = [];
-          if (gi > 0) values.push(`GI: €${gi.toLocaleString('it-IT')}`);
-          if (vss > 0) values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
-          if (vsdPersonale > 0) values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
-          if (nncf > 0) values.push(`NNCF: ${nncf}`);
+          // Se il consuntivo è anche compilato, mostra sempre tutti gli indicatori (anche zero) per calcolare scostamenti
+          if (hasCons) {
+            values.push(`GI: €${gi.toLocaleString('it-IT')}`);
+            values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
+            values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
+            values.push(`NNCF: ${nncf}`);
+          } else {
+            // Altrimenti mostra solo valori significativi (non zero)
+            if (gi > 0) values.push(`GI: €${gi.toLocaleString('it-IT')}`);
+            if (vss > 0) values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
+            if (vsdPersonale > 0) values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
+            if (nncf > 0) values.push(`NNCF: ${nncf}`);
+          }
           
           if (values.length > 0) {
             context += `  → Indicatori PREVISIONALE: ${values.join(', ')}\n`;
