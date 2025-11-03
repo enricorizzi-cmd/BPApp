@@ -83,7 +83,7 @@ module.exports = function(app) {
 
       // Costruisci il contesto per il sistema
       const systemPrompt = buildSystemPrompt(req.user);
-      const dataContext = formatDataContext(relevantData, message, targetMonth, targetYear, monthNames);
+      const dataContext = formatDataContext(relevantData, message, targetMonth, targetYear, monthNames, req.user);
 
       // Prepara i messaggi per OpenAI con struttura corretta
       // IMPORTANTE: Includiamo TUTTA la conversazione per mantenere il contesto
@@ -767,8 +767,10 @@ ANALISI COMPARATIVE:
   * Identifica quali utenti MANCANO confrontando la lista utenti con i periodi presenti
   * Analizza indicatori previsionali vs consuntivi
 
-- Quando l'utente chiede "chi ha previsto più GI", "chi ha più VSS", "chi ha fatto più GI", ecc.:
+- Quando l'utente chiede "chi ha previsto più GI", "chi ha più VSS", "chi ha fatto più GI", "classifica", "ranking", ecc.:
   * Cerca nella lista PERIODI i periodi rilevanti (es. novembre 2025 se menzionato nella conversazione)
+  * CRITICO: Per classifiche di un MESE, usa SOLO periodi con type="mensile". NON includere periodi settimanali
+  * NON SOMMARE MAI periodi settimanali con periodi mensili - i settimanali sono solo lo spaccato del mensile
   * Leggi gli indicatori mostrati nelle righe "Indicatori PREVISIONALE" o "Indicatori CONSUNTIVO"
   * Estrai i valori numerici (es. "GI: €10.000" → valore 10000)
   * Confronta i valori tra tutti i consulenti
@@ -803,7 +805,7 @@ RISPOSTE IN ITALIANO.`;
   /**
    * Formatta i dati per il contesto del chatbot
    */
-  function formatDataContext(data, message = '', targetMonth = null, targetYear = null, monthNames = null) {
+  function formatDataContext(data, message = '', targetMonth = null, targetYear = null, monthNames = null, user = null) {
     let context = 'Dati disponibili dal database:\n\n';
     const lowerMessage = (message || '').toLowerCase();
     
@@ -908,10 +910,47 @@ RISPOSTE IN ITALIANO.`;
     }
 
     if (data.clients && data.clients.length > 0) {
-      context += `CLIENTI (${data.clients.length}):\n`;
-      data.clients.slice(0, 15).forEach(client => {
-        context += `- ${client.name} (${client.status})\n`;
-      });
+      const isAdmin = user && user.role === 'admin';
+      
+      // Se admin e ci sono clienti di più consulenti, raggruppa per consulente
+      if (isAdmin) {
+        const clientsByConsultant = {};
+        data.clients.forEach(client => {
+          const consultantId = client.consultantid || client.consultantId || 'senza_consulente';
+          const consultantName = client.consultantname || client.consultantName || getUserName(consultantId) || 'Sconosciuto';
+          if (!clientsByConsultant[consultantName]) {
+            clientsByConsultant[consultantName] = [];
+          }
+          clientsByConsultant[consultantName].push(client);
+        });
+        
+        const consultantNames = Object.keys(clientsByConsultant).sort();
+        if (consultantNames.length > 1) {
+          context += `CLIENTI (${data.clients.length} totali, suddivisi per consulente):\n`;
+          consultantNames.forEach(consultantName => {
+            const clients = clientsByConsultant[consultantName];
+            context += `- ${consultantName}: ${clients.length} clienti\n`;
+            clients.slice(0, 5).forEach(client => {
+              context += `  • ${client.name} (${client.status})\n`;
+            });
+            if (clients.length > 5) {
+              context += `  ... e altri ${clients.length - 5} clienti\n`;
+            }
+          });
+        } else {
+          // Un solo consulente, formato normale
+          context += `CLIENTI (${data.clients.length}):\n`;
+          data.clients.slice(0, 15).forEach(client => {
+            context += `- ${client.name} (${client.status})\n`;
+          });
+        }
+      } else {
+        // Non admin: formato normale
+        context += `CLIENTI (${data.clients.length}):\n`;
+        data.clients.slice(0, 15).forEach(client => {
+          context += `- ${client.name} (${client.status})\n`;
+        });
+      }
       context += '\n';
     }
 
@@ -927,11 +966,21 @@ RISPOSTE IN ITALIANO.`;
       context += '  * Nessuno dei due compilati\n';
       context += 'Quando qualcuno chiede "chi ha compilato il BP di [mese]" senza specificare, si riferisce SOLO al PREVISIONALE.\n\n';
       
+      context += 'ISTRUZIONE CRITICA SU PERIODI SETTIMANALI E MENSILI:\n';
+      context += 'I PERIODI SETTIMANALI NON SI SOMMANO AI MENSILI!\n';
+      context += '- Un BP SETTIMANALE è solo lo "SPACCATO" (dettaglio) del BP MENSILE\n';
+      context += '- I settimanali sono parte del mensile, NON una somma aggiuntiva\n';
+      context += '- Per classifiche o analisi di un MESE: usa SOLO il periodo MENSILE (type="mensile")\n';
+      context += '- NON sommare MAI i valori di periodi settimanali con quelli mensili\n';
+      context += '- Se per un mese esiste sia un periodo mensile che settimanali, usa SOLO il MENSILE\n';
+      context += '- I periodi settimanali servono solo per vedere il dettaglio settimana per settimana\n\n';
+      
       // Se specificato mese/anno, evidenzia i periodi corrispondenti
-      // IMPORTANTE: Se la domanda riguarda "BP di [mese]" o "BP mensile", filtra SOLO periodi MENSILI
+      // IMPORTANTE: Se la domanda riguarda "BP di [mese]", "BP mensile", "classifica", "ranking", filtra SOLO periodi MENSILI
       const lowerMsg = (message || '').toLowerCase();
       const isMonthlyBPQuestion = lowerMsg.includes('bp') || lowerMsg.includes('battle plan') || lowerMsg.includes('previsionale') || lowerMsg.includes('consuntivo');
-      const shouldFilterMonthlyOnly = isMonthlyBPQuestion && targetMonth;
+      const isRankingQuestion = lowerMsg.includes('classifica') || lowerMsg.includes('ranking') || lowerMsg.includes('chi ha più') || lowerMsg.includes('chi ha previsto più');
+      const shouldFilterMonthlyOnly = (isMonthlyBPQuestion || isRankingQuestion) && targetMonth;
       
       let relevantPeriods = data.periods;
       if (targetMonth) {
@@ -1179,7 +1228,9 @@ RISPOSTE IN ITALIANO.`;
       context += `- USA SEMPRE I NOMI dalla lista UTENTI/CONSULENTI, MAI gli ID\n`;
       context += `- NON dire "altri" o "altri 2" - elenca SEMPRE i nomi completi\n`;
       context += `- Se hai 4 periodi mensili con previsionale compilato, devi elencare 4 NOMI\n`;
-      context += `- NON inventare o supporre - usa SOLO i dati forniti nella lista PERIODI\n\n`;
+      context += `- NON inventare o supporre - usa SOLO i dati forniti nella lista PERIODI\n`;
+      context += `- PER CLASSIFICHE/ANALISI DI UN MESE: usa SOLO periodi MENSILI (type="mensile"), NON settimanali\n`;
+      context += `- NON SOMMARE MAI periodi settimanali con mensili - i settimanali sono solo lo spaccato del mensile\n\n`;
       context += `CALCOLO SCOSTAMENTI PREVISIONALE vs CONSUNTIVO:\n`;
       context += `- Quando l'utente chiede "scostamento", "differenza", "confronto", "divergenza", "gap" tra previsionale e consuntivo:\n`;
       context += `  * Per ogni periodo rilevante, verifica se ha ENTRAMBI "PREVISIONALE: COMPILATO" E "CONSUNTIVO: COMPILATO"\n`;
@@ -1207,10 +1258,47 @@ RISPOSTE IN ITALIANO.`;
     }
 
     if (data.leads && data.leads.length > 0) {
-      context += `LEADS (${data.leads.length}):\n`;
-      data.leads.slice(0, 10).forEach(lead => {
-        context += `- ${lead.nome_lead}${lead.azienda_lead ? ` (${lead.azienda_lead})` : ''}, stato: ${lead.contatto_avvenuto ? 'contattato' : 'da contattare'}\n`;
-      });
+      const isAdmin = user && user.role === 'admin';
+      
+      // Se admin e ci sono lead di più consulenti, raggruppa per consulente
+      if (isAdmin) {
+        const leadsByConsultant = {};
+        data.leads.forEach(lead => {
+          const consultantId = lead.consulente_assegnato || lead.consultantId || 'senza_consulente';
+          const consultantName = getUserName(consultantId) || 'Sconosciuto';
+          if (!leadsByConsultant[consultantName]) {
+            leadsByConsultant[consultantName] = [];
+          }
+          leadsByConsultant[consultantName].push(lead);
+        });
+        
+        const consultantNames = Object.keys(leadsByConsultant).sort();
+        if (consultantNames.length > 1) {
+          context += `LEADS (${data.leads.length} totali, suddivisi per consulente):\n`;
+          consultantNames.forEach(consultantName => {
+            const leads = leadsByConsultant[consultantName];
+            context += `- ${consultantName}: ${leads.length} lead\n`;
+            leads.slice(0, 5).forEach(lead => {
+              context += `  • ${lead.nome_lead}${lead.azienda_lead ? ` (${lead.azienda_lead})` : ''}, stato: ${lead.contatto_avvenuto ? 'contattato' : 'da contattare'}\n`;
+            });
+            if (leads.length > 5) {
+              context += `  ... e altri ${leads.length - 5} lead\n`;
+            }
+          });
+        } else {
+          // Un solo consulente, formato normale
+          context += `LEADS (${data.leads.length}):\n`;
+          data.leads.slice(0, 10).forEach(lead => {
+            context += `- ${lead.nome_lead}${lead.azienda_lead ? ` (${lead.azienda_lead})` : ''}, stato: ${lead.contatto_avvenuto ? 'contattato' : 'da contattare'}\n`;
+          });
+        }
+      } else {
+        // Non admin: formato normale
+        context += `LEADS (${data.leads.length}):\n`;
+        data.leads.slice(0, 10).forEach(lead => {
+          context += `- ${lead.nome_lead}${lead.azienda_lead ? ` (${lead.azienda_lead})` : ''}, stato: ${lead.contatto_avvenuto ? 'contattato' : 'da contattare'}\n`;
+        });
+      }
       context += '\n';
     }
 
