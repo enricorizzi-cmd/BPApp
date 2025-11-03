@@ -12878,10 +12878,11 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  // Carica consulenti per i filtri
+  // Carica consulenti per i filtri - usa stesso approccio del calendario generale
   async function loadConsulentiOptions() {
     try {
-      const response = await GET('/api/corsi-consulenti');
+      const me = getUser() || {};
+      const isAdmin = me.role === 'admin';
       const select = document.getElementById('filtro-consulente');
       
       if (!select) {
@@ -12889,22 +12890,38 @@ function viewCorsiInteraziendali(){
         return;
       }
       
-      if (response && response.consulenti && response.consulenti.length > 0) {
-        const options = response.consulenti.map(consulente => 
-          `<option value="${consulente.id}">${consulente.name}</option>`
-        ).join('');
+      // Popola con se stesso di default (come calendario generale)
+      select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
+      
+      // Carica lista consulenti
+      GET('/api/usernames').then(function(r){
+        var list = (r && r.users) || [];
+        var h = '';
         
-        select.innerHTML = '<option value="">Tutti i consulenti</option>' + options;
-        console.log(`Caricati ${response.consulenti.length} consulenti`);
-      } else {
-        console.warn('Nessun consulente trovato nella risposta:', response);
-        select.innerHTML = '<option value="">Tutti i consulenti</option>';
-      }
+        // Solo admin può vedere "Tutti" e altri utenti (come calendario generale)
+        if(isAdmin) {
+          h += '<option value="all">Tutti</option>';
+          for(var i=0;i<list.length;i++){
+            var u = list[i];
+            h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
+          }
+        }
+        
+        select.innerHTML = h;
+        // Tutti vedono se stessi di default, admin può cambiare (come calendario generale)
+        select.value = me.id;
+      }).catch(function(error){
+        console.error('Error loading usernames:', error);
+        // Fallback: mostra solo se stesso
+        const me = getUser() || {};
+        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
+      });
     } catch (error) {
       console.error('Error loading consulenti options:', error);
       const select = document.getElementById('filtro-consulente');
+      const me = getUser() || {};
       if (select) {
-        select.innerHTML = '<option value="">Errore nel caricamento</option>';
+        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
       }
     }
   }
@@ -12938,7 +12955,10 @@ function viewCorsiInteraziendali(){
       tbody.innerHTML = '<tr><td colspan="5" class="loading">Caricamento...</td></tr>';
 
       const corsoNome = document.getElementById('filtro-corso')?.value || '';
-      const consulenteId = document.getElementById('filtro-consulente')?.value || '';
+      const consulenteSelect = document.getElementById('filtro-consulente');
+      const consulenteValue = consulenteSelect ? consulenteSelect.value : '';
+      // Gestisci "all" come nel calendario generale: non passare consulente_id per mostrare tutti
+      const consulenteId = (consulenteValue && consulenteValue !== 'all') ? consulenteValue : '';
       const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
       
       // Calcola periodo basato su granularità

@@ -380,14 +380,14 @@ module.exports = function(app) {
         .order('created_at', { ascending: true });
 
       // Filtro consulente
-      if (!isAdmin && consulente_id) {
-        query = query.eq('consulente_id', consulente_id);
-      } else if (isAdmin && consulente_id) {
+      // Se c'è consulente_id specificato, filtra per quello
+      if (consulente_id) {
         query = query.eq('consulente_id', consulente_id);
       } else if (!isAdmin) {
-        // Consultant vede solo i propri clienti
+        // Consultant (non admin) senza filtro vede solo i propri clienti
         query = query.eq('consulente_id', req.user.id);
       }
+      // Admin senza consulente_id vede tutti (non aggiunge filtro)
 
       // Filtro periodo - applicato dopo il fetch per evitare problemi con JOIN
       // (i filtri sui JOIN non funzionano sempre bene con Supabase)
@@ -437,29 +437,29 @@ module.exports = function(app) {
         return;
       }
 
-      // Aggrega per data corso E consulente (per supportare filtro "Tutti")
+      // Aggrega SEMPRE per data corso e nome corso (una riga per corso, indipendentemente dal consulente)
+      // Il filtro consulente serve solo a filtrare quali iscrizioni includere nell'aggregazione
       const aggregated = {};
       filteredData.forEach(iscrizione => {
         const dataCorso = iscrizione.corsi_date.data_inizio;
         const nomeCorso = iscrizione.corsi_date.corsi_catalogo.nome_corso;
-        const consulenteId = iscrizione.consulente_id || '';
-        // Chiave include consulente_id solo se non c'è filtro consulente (per "Tutti")
-        // Se c'è filtro consulente, la chiave è senza consulente_id
-        const key = consulente_id ? `${dataCorso}_${nomeCorso}` : `${dataCorso}_${nomeCorso}_${consulenteId}`;
+        // Chiave SEMPRE solo dataCorso_nomeCorso (una riga per corso)
+        const key = `${dataCorso}_${nomeCorso}`;
 
         if (!aggregated[key]) {
           aggregated[key] = {
             data_corso: dataCorso,
             nome_corso: nomeCorso,
-            consulente_id: consulente_id ? undefined : consulenteId, // Includi solo se non c'è filtro
-            consulente_nome: consulente_id ? undefined : (iscrizione.consulente_nome || ''),
             clienti_iscritti: [],
             totale_iscritti: 0,
             vsd_totale: 0
           };
         }
 
-        aggregated[key].clienti_iscritti.push(iscrizione.cliente_nome);
+        // Aggiungi cliente (può esserci duplicati se stesso cliente è iscritto da consulenti diversi, ma è ok per la visualizzazione)
+        if (!aggregated[key].clienti_iscritti.includes(iscrizione.cliente_nome)) {
+          aggregated[key].clienti_iscritti.push(iscrizione.cliente_nome);
+        }
         aggregated[key].totale_iscritti += 1;
         // Assicurati che vsd_totale sia sempre un numero valido
         const costoPersonalizzato = Number(iscrizione.costo_personalizzato) || 0;
