@@ -12081,10 +12081,16 @@ function viewCorsiInteraziendali(){
           ]);
           console.log('Date response:', dateResponse);
           console.log('Iscrizioni response:', iscrizioniResponse);
-          renderCatalogoTable(response.corsi, dateResponse.date || [], iscrizioniResponse.iscrizioni || []);
+          const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
+          const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
+          const periodo = tuttiCorsi ? null : calculatePeriod(granularity, corsiCurrentPeriod);
+          renderCatalogoTable(response.corsi, dateResponse.date || [], iscrizioniResponse.iscrizioni || [], periodo);
         } catch (error) {
           console.warn('Error loading date or iscrizioni data:', error);
-          renderCatalogoTable(response.corsi, [], []);
+          const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
+          const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
+          const periodo = tuttiCorsi ? null : calculatePeriod(granularity, corsiCurrentPeriod);
+          renderCatalogoTable(response.corsi, [], [], periodo);
         }
         } else {
           tbody.innerHTML = '<tr><td colspan="8" class="loading">Nessun corso trovato</td></tr>';
@@ -12098,7 +12104,7 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  function renderCatalogoTable(corsi, corsiDate = [], iscrizioniData = []) {
+  function renderCatalogoTable(corsi, corsiDate = [], iscrizioniData = [], periodo = null) {
     const tbody = document.getElementById('catalogo-tbody');
     if (!tbody) return;
 
@@ -12129,7 +12135,7 @@ function viewCorsiInteraziendali(){
         <td>${corso.durata_giorni}</td>
         <td>${corso.descrizione || '-'}</td>
         <td>€${Number(corso.costo_corso).toLocaleString()}</td>
-        <td>${formatDateProgrammate(corso.id, corsiDate)}</td>
+        <td>${formatDateProgrammate(corso.id, corsiDate, periodo)}</td>
         <td>${nIscritti}</td>
         ${isAdmin ? `
           <td class="actions">
@@ -13194,8 +13200,8 @@ function viewCorsiInteraziendali(){
   };
 
   // Formatta le date programmate per la visualizzazione
-  function formatDateProgrammate(corsoId, corsiDate) {
-    console.log('formatDateProgrammate called with:', { corsoId, corsiDate });
+  function formatDateProgrammate(corsoId, corsiDate, periodo = null) {
+    console.log('formatDateProgrammate called with:', { corsoId, corsiDate, periodo });
     
     // Controllo di sicurezza per evitare errori
     if (!corsiDate || !Array.isArray(corsiDate)) {
@@ -13203,47 +13209,86 @@ function viewCorsiInteraziendali(){
       return '-';
     }
     
-    const dateCorso = corsiDate.find(cd => cd.corso_id === corsoId);
-    console.log('Found dateCorso:', dateCorso);
+    // Trova TUTTE le date per questo corso (non solo la prima)
+    const allDateCorso = corsiDate.filter(cd => cd.corso_id === corsoId);
+    console.log('Found allDateCorso:', allDateCorso);
     
-    if (!dateCorso || !dateCorso.giorni_dettaglio || dateCorso.giorni_dettaglio.length === 0) {
+    if (allDateCorso.length === 0) {
       console.log('No date data found, returning "-"');
       return '-';
     }
     
-    console.log('giorni_dettaglio found:', dateCorso.giorni_dettaglio);
+    // Filtra le date per il periodo corrente se necessario
+    let filteredDates = allDateCorso;
     
-    // Ordina tutti i giorni per data
-    const giorniOrdinati = [...dateCorso.giorni_dettaglio].sort((a, b) => {
-      const dateA = new Date(a.data);
-      const dateB = new Date(b.data);
-      return dateA.getTime() - dateB.getTime();
-    });
-    
-    if (giorniOrdinati.length === 0) {
-      return '-';
-    }
-    
-    // Prendi il primo e l'ultimo giorno
-    const firstDate = new Date(giorniOrdinati[0].data);
-    const lastDate = new Date(giorniOrdinati[giorniOrdinati.length - 1].data);
-    
-    // Se c'è solo un giorno
-    if (giorniOrdinati.length === 1) {
-      return firstDate.toLocaleDateString('it-IT', { 
-        day: 'numeric', 
-        month: 'long' 
+    if (periodo && periodo.from && periodo.to) {
+      filteredDates = allDateCorso.filter(cd => {
+        if (!cd.data_inizio) return false;
+        return cd.data_inizio >= periodo.from && cd.data_inizio <= periodo.to;
       });
     }
     
-    // Corso multi-giorno
-    if (firstDate.getMonth() === lastDate.getMonth() && firstDate.getFullYear() === lastDate.getFullYear()) {
-      // Stesso mese e anno
-      return `${firstDate.getDate()}-${lastDate.getDate()} ${firstDate.toLocaleDateString('it-IT', { month: 'long' })}`;
-    } else {
-      // Mesi o anni diversi
-      return `${firstDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} - ${lastDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`;
+    if (filteredDates.length === 0) {
+      return '-';
     }
+    
+    // Ordina tutte le date per data_inizio (cronologico)
+    filteredDates.sort((a, b) => {
+      const dateA = new Date(a.data_inizio);
+      const dateB = new Date(b.data_inizio);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    // Formatta ogni data
+    const formattedDates = filteredDates.map(dateCorso => {
+      if (!dateCorso.giorni_dettaglio || !Array.isArray(dateCorso.giorni_dettaglio) || dateCorso.giorni_dettaglio.length === 0) {
+        // Se non ci sono giorni_dettaglio, usa solo data_inizio
+        const date = new Date(dateCorso.data_inizio);
+        return date.toLocaleDateString('it-IT', { 
+          day: 'numeric', 
+          month: 'long' 
+        });
+      }
+      
+      // Ordina i giorni per data
+      const giorniOrdinati = [...dateCorso.giorni_dettaglio].sort((a, b) => {
+        const dateA = new Date(a.data);
+        const dateB = new Date(b.data);
+        return dateA.getTime() - dateB.getTime();
+      });
+      
+      if (giorniOrdinati.length === 0) {
+        const date = new Date(dateCorso.data_inizio);
+        return date.toLocaleDateString('it-IT', { 
+          day: 'numeric', 
+          month: 'long' 
+        });
+      }
+      
+      // Prendi il primo e l'ultimo giorno per calcolare l'intervallo
+      const firstDate = new Date(giorniOrdinati[0].data);
+      const lastDate = new Date(giorniOrdinati[giorniOrdinati.length - 1].data);
+      
+      // Se c'è solo un giorno
+      if (giorniOrdinati.length === 1) {
+        return firstDate.toLocaleDateString('it-IT', { 
+          day: 'numeric', 
+          month: 'long' 
+        });
+      }
+      
+      // Corso multi-giorno - calcola l'intervallo corretto
+      if (firstDate.getMonth() === lastDate.getMonth() && firstDate.getFullYear() === lastDate.getFullYear()) {
+        // Stesso mese e anno: "11-12 novembre"
+        return `${firstDate.getDate()}-${lastDate.getDate()} ${firstDate.toLocaleDateString('it-IT', { month: 'long' })}`;
+      } else {
+        // Mesi o anni diversi: "11 novembre - 12 dicembre"
+        return `${firstDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })} - ${lastDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}`;
+      }
+    });
+    
+    // Restituisci tutte le date una sotto l'altra
+    return formattedDates.map(date => `<div style="margin-bottom: 4px;">${date}</div>`).join('');
   }
 
   // Carica consulenti per i filtri - usa stesso approccio del calendario generale
