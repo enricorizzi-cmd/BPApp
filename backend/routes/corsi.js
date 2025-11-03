@@ -365,6 +365,8 @@ module.exports = function(app) {
     try {
       const { from, to, corso_nome, consulente_id, detailed, data_corso, nome_corso } = req.query || {};
       const isAdmin = (req.user.role === "admin");
+      
+      console.log('[CorsiIscrizioni] GET params:', { from, to, corso_nome, consulente_id, isAdmin });
 
       // Costruisci query base con JOIN
       let query = supabase
@@ -382,10 +384,14 @@ module.exports = function(app) {
       // Filtro consulente
       // Se c'è consulente_id specificato, filtra per quello
       if (consulente_id) {
+        console.log('[CorsiIscrizioni] Filtro consulente applicato:', consulente_id);
         query = query.eq('consulente_id', consulente_id);
       } else if (!isAdmin) {
         // Consultant (non admin) senza filtro vede solo i propri clienti
+        console.log('[CorsiIscrizioni] Non-admin, filtro automatico su:', req.user.id);
         query = query.eq('consulente_id', req.user.id);
+      } else {
+        console.log('[CorsiIscrizioni] Admin senza consulente_id, mostra tutti');
       }
       // Admin senza consulente_id vede tutti (non aggiunge filtro)
 
@@ -405,6 +411,14 @@ module.exports = function(app) {
         filteredData = filteredData.filter(iscrizione => {
           const dataCorso = iscrizione.corsi_date?.data_inizio;
           return dataCorso && dataCorso >= from && dataCorso <= to;
+        });
+      }
+
+      // Filtro per nome corso (se specificato)
+      if (corso_nome) {
+        filteredData = filteredData.filter(iscrizione => {
+          const nomeCorso = iscrizione.corsi_date?.corsi_catalogo?.nome_corso;
+          return nomeCorso === corso_nome;
         });
       }
 

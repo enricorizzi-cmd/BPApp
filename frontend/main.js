@@ -13039,8 +13039,14 @@ function viewCorsiInteraziendali(){
       const corsoNome = document.getElementById('filtro-corso')?.value || '';
       const consulenteSelect = document.getElementById('filtro-consulente');
       const consulenteValue = consulenteSelect ? consulenteSelect.value : '';
+      
+      console.log('[loadIscrizioniData] Filtro consulente selezionato:', consulenteValue);
+      
       // Gestisci "all" come nel calendario generale: non passare consulente_id per mostrare tutti
-      const consulenteId = (consulenteValue && consulenteValue !== 'all') ? consulenteValue : '';
+      const consulenteId = (consulenteValue && consulenteValue !== 'all' && consulenteValue !== '') ? consulenteValue : '';
+      
+      console.log('[loadIscrizioniData] Consulente ID da passare:', consulenteId || 'Nessuno (tutti)');
+      
       const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
       
       // Calcola periodo basato su granularità
@@ -13050,10 +13056,20 @@ function viewCorsiInteraziendali(){
       params.append('from', from);
       params.append('to', to);
       if (corsoNome) params.append('corso_nome', corsoNome);
-      if (consulenteId) params.append('consulente_id', consulenteId);
+      if (consulenteId) {
+        params.append('consulente_id', consulenteId);
+        console.log('[loadIscrizioniData] Aggiunto consulente_id al parametro:', consulenteId);
+      } else {
+        console.log('[loadIscrizioniData] Nessun consulente_id passato (mostra tutti per admin)');
+      }
 
-      const response = await GET(`/api/corsi-iscrizioni?${params}`);
+      const url = `/api/corsi-iscrizioni?${params}`;
+      console.log('[loadIscrizioniData] Chiamata API:', url);
       
+      const response = await GET(url);
+      
+      console.log('[loadIscrizioniData] Risposta ricevuta:', response.iscrizioni?.length || 0, 'iscrizioni');
+
       if (response.iscrizioni) {
         renderIscrizioniTable(response.iscrizioni);
       } else {
@@ -13226,9 +13242,18 @@ function viewCorsiInteraziendali(){
               <div class="cliente-group">
                 <div class="form-group">
                   <label for="cliente-1">Cliente *</label>
-                  <select id="cliente-1" required onchange="loadClienteInfo(1)">
-                    <option value="">Seleziona cliente...</option>
-                  </select>
+                  <div style="position:relative">
+                    <input type="hidden" id="cliente-select-1" value="" required>
+                    <input type="text" id="cliente-display-1" placeholder="Seleziona cliente..." autocomplete="off" style="width:100%;padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--text);">
+                    <div class="client-dropdown-list" id="cliente-list-1" style="display:none">
+                      <div class="client-dropdown-search">
+                        <input type="text" id="cliente-search-1" placeholder="Cerca cliente..." autocomplete="off">
+                      </div>
+                      <div class="client-dropdown-options" id="cliente-options-1">
+                        <div style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="consulente-1">Consulente</label>
@@ -13254,25 +13279,9 @@ function viewCorsiInteraziendali(){
 
     showOverlay(modalHtml, 'iscrizione-modal-overlay');
     loadCorsiOptions();
-    loadClientiOptions();
-    
-    // Carica consulenti e poi precompila con utente corrente per non admin
-    loadConsulentiOptions().then(() => {
-      const me = getUser();
-      if (me && me.role !== 'admin') {
-        // Per non admin, precompila automaticamente il consulente con l'utente corrente
-        const consulenteSelect = document.getElementById('consulente-1');
-        if (consulenteSelect) {
-          // Cerca l'opzione corrispondente all'utente corrente
-          const userOption = Array.from(consulenteSelect.options).find(
-            opt => opt.value === me.id
-          );
-          if (userOption) {
-            consulenteSelect.value = me.id;
-          }
-        }
-      }
-    });
+    loadConsulentiOptions();
+    // Inizializza dropdown clienti per il primo cliente
+    setTimeout(() => setupClienteDropdown(1), 100);
   }
 
   async function loadCorsiOptions() {
@@ -13420,25 +13429,31 @@ function viewCorsiInteraziendali(){
   }
 
   window.loadClienteInfo = async function(index) {
-    const clienteSelect = document.getElementById(`cliente-${index}`);
+    const clienteHidden = document.getElementById(`cliente-select-${index}`);
     const consulenteSelect = document.getElementById(`consulente-${index}`);
     const costoInput = document.getElementById(`costo-${index}`);
     const corsoSelect = document.getElementById('corso-select');
     
-    if (!clienteSelect || !consulenteSelect) {
+    if (!clienteHidden || !consulenteSelect) {
       console.warn(`[loadClienteInfo] Missing elements for index ${index}`);
       return;
     }
     
-    const selectedOption = clienteSelect.selectedOptions[0];
-    if (!selectedOption || !selectedOption.value) {
+    const clienteId = clienteHidden.value;
+    if (!clienteId) {
       // Nessun cliente selezionato, reset consulente
       consulenteSelect.value = '';
       return;
     }
     
-    const consultantId = selectedOption.dataset.consulenteId || '';
-    const consultantName = selectedOption.dataset.consulente || '';
+    // Trova i dati del cliente selezionato dalle opzioni del dropdown
+    const clientOption = document.querySelector(`#cliente-options-${index} .client-option[data-client-id="${clienteId}"]`);
+    if (!clientOption) {
+      return;
+    }
+    
+    const consultantId = clientOption.dataset.consultantId || '';
+    const consultantName = clientOption.dataset.consultantName || '';
     
     // Assicura che i consulenti siano caricati prima di cercare
     if (consulenteSelect.options.length <= 1) {
@@ -13478,6 +13493,124 @@ function viewCorsiInteraziendali(){
     }
   }
 
+  // Setup client dropdown per modal iscrizioni
+  async function setupClienteDropdown(index) {
+    const display = document.getElementById(`cliente-display-${index}`);
+    const hidden = document.getElementById(`cliente-select-${index}`);
+    const list = document.getElementById(`cliente-list-${index}`);
+    const options = document.getElementById(`cliente-options-${index}`);
+    const search = document.getElementById(`cliente-search-${index}`);
+    
+    if (!display || !hidden || !list || !options || !search) return;
+    
+    // Carica clienti
+    let clients = window._clients || [];
+    if (clients.length === 0) {
+      try {
+        const response = await GET('/api/clients');
+        clients = (response && response.clients) || [];
+        window._clients = clients;
+      } catch (error) {
+        console.error('Errore caricamento clienti:', error);
+        options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--danger)">Errore caricamento clienti</div>';
+        return;
+      }
+    }
+    
+    // Ordina clienti alfabeticamente
+    const sortedClients = [...clients].sort((a, b) => 
+      String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' })
+    );
+    
+    // Funzione per renderizzare le opzioni
+    function renderOptions(clientsToShow = sortedClients) {
+      if (clientsToShow.length === 0) {
+        options.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">Nessun cliente trovato</div>';
+        return;
+      }
+      
+      options.innerHTML = clientsToShow.map(client => {
+        const initials = (client.name || '').split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
+        const consultantId = client.consultantid || client.consultantId || '';
+        const consultantName = client.consultantname || client.consultantName || '';
+        return `
+          <div class="client-option" 
+               data-client-id="${client.id}" 
+               data-client-name="${htmlEscape(client.name || '')}" 
+               data-consultant-id="${consultantId}"
+               data-consultant-name="${htmlEscape(consultantName)}">
+            <div class="client-option-icon">${initials}</div>
+            <div class="client-option-text">
+              <div class="client-option-name">${htmlEscape(client.name || '')}</div>
+              ${consultantName ? `<div class="client-option-consultant">${htmlEscape(consultantName)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Renderizza le opzioni iniziali
+    renderOptions();
+    
+    // Event listeners
+    display.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.style.display = 'block';
+      search.focus();
+    });
+    
+    display.addEventListener('focus', () => {
+      list.style.display = 'block';
+    });
+    
+    display.addEventListener('blur', (e) => {
+      setTimeout(() => {
+        if (!list.contains(document.activeElement)) {
+          list.style.display = 'none';
+        }
+      }, 200);
+    });
+    
+    // Ricerca
+    search.addEventListener('input', (e) => {
+      const query = String(e.target.value || '').trim().toLowerCase();
+      if (!query) {
+        renderOptions();
+        return;
+      }
+      
+      const filtered = sortedClients.filter(client => 
+        String(client.name || '').toLowerCase().includes(query)
+      );
+      renderOptions(filtered);
+    });
+    
+    // Selezione opzione
+    options.addEventListener('click', (e) => {
+      const option = e.target.closest('.client-option');
+      if (!option) return;
+      
+      const clientId = option.dataset.clientId;
+      const clientName = option.dataset.clientName;
+      const consultantId = option.dataset.consultantId || '';
+      const consultantName = option.dataset.consultantName || '';
+      
+      hidden.value = clientId;
+      display.value = clientName;
+      list.style.display = 'none';
+      
+      // Carica info cliente (consulente, costo)
+      loadClienteInfo(index);
+    });
+    
+    // Click fuori per chiudere
+    document.addEventListener('click', (e) => {
+      if (!list.contains(e.target) && e.target !== display && e.target !== search) {
+        list.style.display = 'none';
+      }
+    });
+  }
+
   let clienteCount = 1;
 
   window.addCliente = function() {
@@ -13488,9 +13621,18 @@ function viewCorsiInteraziendali(){
       <div class="cliente-group">
         <div class="form-group">
           <label for="cliente-${clienteCount}">Cliente *</label>
-          <select id="cliente-${clienteCount}" required onchange="loadClienteInfo(${clienteCount})">
-            <option value="">Seleziona cliente...</option>
-          </select>
+          <div style="position:relative">
+            <input type="hidden" id="cliente-select-${clienteCount}" value="" required>
+            <input type="text" id="cliente-display-${clienteCount}" placeholder="Seleziona cliente..." autocomplete="off" style="width:100%;padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--text);">
+            <div class="client-dropdown-list" id="cliente-list-${clienteCount}" style="display:none">
+              <div class="client-dropdown-search">
+                <input type="text" id="cliente-search-${clienteCount}" placeholder="Cerca cliente..." autocomplete="off">
+              </div>
+              <div class="client-dropdown-options" id="cliente-options-${clienteCount}">
+                <div style="padding:16px;text-align:center;color:var(--muted)">Caricamento clienti...</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label for="consulente-${clienteCount}">Consulente</label>
@@ -13508,31 +13650,19 @@ function viewCorsiInteraziendali(){
     
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
-    // Carica opzioni clienti e consulenti solo per il nuovo select
-    // Assicurati che i consulenti siano caricati prima per permettere il match automatico
+    // Carica opzioni consulenti e inizializza dropdown clienti
     loadConsulentiOptions(`consulente-${clienteCount}`).then(() => {
-      loadClientiOptions(`cliente-${clienteCount}`);
-      
-      // Per non admin, precompila automaticamente il consulente con l'utente corrente
-      const me = getUser();
-      if (me && me.role !== 'admin') {
-        const consulenteSelect = document.getElementById(`consulente-${clienteCount}`);
-        if (consulenteSelect) {
-          const userOption = Array.from(consulenteSelect.options).find(
-            opt => opt.value === me.id
-          );
-          if (userOption) {
-            consulenteSelect.value = me.id;
-          }
-        }
-      }
+      setTimeout(() => setupClienteDropdown(clienteCount), 100);
     });
   };
 
   window.removeCliente = function(index) {
-    const clienteGroup = document.querySelector(`#cliente-${index}`).closest('.cliente-group');
-    if (clienteGroup) {
-      clienteGroup.remove();
+    const clienteDisplay = document.getElementById(`cliente-display-${index}`);
+    if (clienteDisplay) {
+      const clienteGroup = clienteDisplay.closest('.cliente-group');
+      if (clienteGroup) {
+        clienteGroup.remove();
+      }
     }
   };
 
@@ -13838,18 +13968,18 @@ function viewCorsiInteraziendali(){
       const clienteGroups = document.querySelectorAll('.cliente-group');
       
       for (const group of clienteGroups) {
-        const clienteSelect = group.querySelector('select[id^="cliente-"]');
+        const clienteHidden = group.querySelector('input[id^="cliente-select-"]');
+        const clienteDisplay = group.querySelector('input[id^="cliente-display-"]');
         const consulenteSelect = group.querySelector('select[id^="consulente-"]');
         const costoInput = group.querySelector('input[id^="costo-"]');
         
-        if (clienteSelect.value && consulenteSelect.value && costoInput.value) {
-          const selectedOption = clienteSelect.selectedOptions[0];
+        if (clienteHidden && clienteHidden.value && consulenteSelect && consulenteSelect.value && costoInput && costoInput.value) {
           const consulenteOption = consulenteSelect.selectedOptions[0];
           clienti.push({
-            cliente_id: clienteSelect.value,
-            cliente_nome: selectedOption.textContent,
+            cliente_id: clienteHidden.value,
+            cliente_nome: clienteDisplay ? clienteDisplay.value : '',
             consulente_id: consulenteSelect.value,
-            consulente_nome: consulenteOption.textContent,
+            consulente_nome: consulenteOption ? consulenteOption.textContent : '',
             costo_personalizzato: Number(costoInput.value)
           });
         }
