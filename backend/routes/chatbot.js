@@ -840,7 +840,11 @@ RISPOSTE IN ITALIANO.`;
       context += '- Se qualcuno chiede "chi ha compilato il BP" senza specificare, si intende SOLO il PREVISIONALE ';
       context += '- NON dire mai che qualcuno ha compilato "sia previsionale che consuntivo" a meno che indicatorsprev E indicatorscons siano entrambi non vuoti ';
       context += '- Quando rispondi su un utente specifico, indica chiaramente cosa ha compilato: solo previsionale, solo consuntivo, o entrambi ';
-      context += 'IMPORTANTE: Quando rispondi, usa SEMPRE i NOMI degli utenti (non gli ID). I nomi sono nella lista UTENTI/CONSULENTI. ';
+      context += 'CRITICO - FORMATTAZIONE RISPOSTE: ';
+      context += '- USA SEMPRE E SOLO I NOMI degli utenti (MAI gli ID o "UserID: xxx"). Se non conosci un nome dalla lista UTENTI/CONSULENTI, NON includere quell\'utente nella risposta ma chiedi chiarimenti. ';
+      context += '- NON duplicare mai lo stesso nome nella lista. Se vedi lo stesso utente più volte nei periodi, conta solo UNA volta. ';
+      context += '- Elenca i nomi in ordine alfabetico, senza duplicati e senza ID. ';
+      context += '- Se qualcosa non è chiaro dai dati forniti, CHIEDI CHIARIMENTI invece di inventare o supporre. ';
       context += 'ATTENZIONE: Guarda TUTTI i periodi forniti nella lista PERIODI, anche quelli che sembrano non corrispondere - controlla sia month/year che startDate/endDate. I periodi rilevanti sono marcati con ⭐.\n\n';
       
       // Istruzione per disponibilità/slot liberi
