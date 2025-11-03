@@ -664,24 +664,56 @@ RISPOSTE IN ITALIANO.`;
       let relevantPeriods = data.periods;
       if (targetMonth) {
         relevantPeriods = data.periods.filter(p => {
-          // Controlla se il periodo corrisponde al mese/anno richiesto
-          const matchesYear = !p.year || p.year == targetYear;
-          const matchesMonth = !p.month || p.month == targetMonth;
-          // Controlla anche startDate/endDate se month/year non sono popolati
-          let matchesDate = false;
-          if (p.startdate && p.enddate) {
+          // PRIORITÀ 1: Se year E month sono popolati, usa quelli (più preciso)
+          if (p.year != null && p.month != null) {
+            return p.year == targetYear && p.month == targetMonth;
+          }
+          
+          // PRIORITÀ 2: Se year/month sono NULL, usa startdate (IMPORTANTE: molti periodi hanno year/month NULL!)
+          if (p.startdate) {
             try {
               const start = new Date(p.startdate);
-              const end = new Date(p.enddate);
-              const targetStart = new Date(targetYear, targetMonth - 1, 1);
-              const targetEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59);
-              // Il periodo si sovrappone al mese richiesto
-              matchesDate = start <= targetEnd && end >= targetStart;
+              // Verifica che la data sia valida
+              if (isNaN(start.getTime())) return false;
+              
+              const startYear = start.getFullYear();
+              const startMonth = start.getMonth() + 1; // getMonth() è 0-based
+              
+              // Il periodo corrisponde se startDate è nel mese richiesto
+              if (startYear == targetYear && startMonth == targetMonth) {
+                return true;
+              }
+              
+              // Oppure controlla se startDate/endDate si sovrappone al mese richiesto
+              if (p.enddate) {
+                const end = new Date(p.enddate);
+                if (!isNaN(end.getTime())) {
+                  const targetStart = new Date(targetYear, targetMonth - 1, 1);
+                  const targetEnd = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+                  return start <= targetEnd && end >= targetStart;
+                }
+              }
             } catch (e) {
-              // Ignora errori di parsing date
+              // Ignora errori di parsing
+              return false;
             }
           }
-          return matchesYear && (matchesMonth || matchesDate);
+          
+          // PRIORITÀ 3: Se solo year o month è popolato, usa quello che c'è
+          if (p.year != null) {
+            if (p.year != targetYear) return false;
+            // Se year corrisponde ma month è NULL, controlla startdate se disponibile
+            if (p.month == null && p.startdate) {
+              try {
+                const start = new Date(p.startdate);
+                if (!isNaN(start.getTime())) {
+                  return start.getMonth() + 1 == targetMonth;
+                }
+              } catch (e) {}
+            }
+          }
+          
+          return false;
         });
       }
       
