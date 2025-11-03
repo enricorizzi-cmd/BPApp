@@ -112,8 +112,9 @@ module.exports = function(app) {
       ];
 
       // Chiama OpenAI con parametri ottimizzati per analisi approfondite
+      // Usa gpt-4o-mini per ridurre i costi mantenendo ottime prestazioni
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: messages,
         temperature: 0.3, // Più deterministico per analisi dati accurate
         max_tokens: 2500, // Più spazio per risposte dettagliate e analisi approfondite
@@ -141,6 +142,7 @@ module.exports = function(app) {
   /**
    * Helper: Estrae mese e anno dalla query (può includere conversazione completa)
    * Questo è fondamentale per mantenere il contesto tra domande successive
+   * GESTISCE DATE RELATIVE: ieri, domani, questo mese, mese scorso, ecc.
    */
   function extractMonthYear(message) {
     // Se message è un array o oggetto, estrai il testo
@@ -165,9 +167,30 @@ module.exports = function(app) {
       'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
       'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
     };
-    let targetMonth = null;
-    let targetYear = new Date().getFullYear();
     
+    const now = new Date();
+    let targetMonth = null;
+    let targetYear = now.getFullYear();
+    
+    // Gestisci date relative PRIMA di cercare mesi espliciti
+    // "questo mese", "mese corrente", "attuale"
+    if (lowerMessage.includes('questo mese') || lowerMessage.includes('mese corrente') || 
+        lowerMessage.includes('mese attuale') || lowerMessage.includes('current month')) {
+      targetMonth = now.getMonth() + 1;
+      targetYear = now.getFullYear();
+      return { targetMonth, targetYear };
+    }
+    
+    // "mese scorso", "ultimo mese"
+    if (lowerMessage.includes('mese scorso') || lowerMessage.includes('ultimo mese') || 
+        lowerMessage.includes('mese precedente')) {
+      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      targetMonth = lastMonth.getMonth() + 1;
+      targetYear = lastMonth.getFullYear();
+      return { targetMonth, targetYear };
+    }
+    
+    // Cerca mesi espliciti nel testo
     for (const [name, num] of Object.entries(monthNames)) {
       if (lowerMessage.includes(name)) {
         targetMonth = num;
@@ -217,6 +240,7 @@ module.exports = function(app) {
 
   /**
    * Helper: Carica appuntamenti rilevanti
+   * GESTISCE DATE RELATIVE: ieri, oggi, domani, questa settimana, questo mese
    */
   async function loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear) {
     const needsAppointments = lowerMessage.includes('appuntamento') || 
@@ -225,18 +249,22 @@ module.exports = function(app) {
         lowerMessage.includes('prossim') ||
         lowerMessage.includes('oggi') ||
         lowerMessage.includes('domani') ||
+        lowerMessage.includes('ieri') ||
         lowerMessage.includes('settimana') ||
         lowerMessage.includes('slot') ||
         lowerMessage.includes('disponibil') ||
         lowerMessage.includes('giornate libere') ||
         lowerMessage.includes('giorni liberi') ||
         lowerMessage.includes('liber') ||
+        lowerMessage.includes('cosa è successo') ||
+        lowerMessage.includes('succede') ||
         targetMonth !== null;
     
     if (!needsAppointments) return null;
     
     const wantsToday = lowerMessage.includes('oggi');
     const wantsTomorrow = lowerMessage.includes('domani');
+    const wantsYesterday = lowerMessage.includes('ieri');
     const wantsThisWeek = lowerMessage.includes('settimana') || lowerMessage.includes('questa settimana');
     const wantsFuture = lowerMessage.includes('prossim') || 
                        wantsTomorrow || 
@@ -250,11 +278,27 @@ module.exports = function(app) {
     if (targetMonth !== null) {
       startDate = new Date(targetYear, targetMonth - 1, 1);
       endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+    } else if (wantsYesterday) {
+      // Solo ieri
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      startDate = new Date(yesterday);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(yesterday);
+      endDate.setHours(23, 59, 59, 999);
     } else if (wantsToday) {
       // Solo oggi
       startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+    } else if (wantsTomorrow) {
+      // Solo domani
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      startDate = new Date(tomorrow);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(tomorrow);
       endDate.setHours(23, 59, 59, 999);
     } else if (wantsThisWeek) {
       // Questa settimana: da lunedì della settimana corrente a domenica
@@ -542,53 +586,129 @@ module.exports = function(app) {
       }
 
       // Query per corsi - analizza tutto il contesto
-      if (fullContext.toLowerCase().includes('corso') || 
-          fullContext.toLowerCase().includes('iscrizion')) {
+      // Riconosce: corso, corsi, iscrizione, iscrizioni, leadership, interaziendali
+      const lowerFullContext = fullContext.toLowerCase();
+      if (lowerFullContext.includes('corso') || 
+          lowerFullContext.includes('corsi') ||
+          lowerFullContext.includes('iscrizion') ||
+          lowerFullContext.includes('leadership') ||
+          lowerFullContext.includes('interaziendal')) {
         
-        const { data: corsi } = await supabase
+        let corsiQuery = supabase
           .from('corsi_catalogo')
           .select(`
             *,
             corsi_date(*),
             corsi_iscrizioni(*)
           `)
-          .limit(20);
+          .limit(100);
         
-        data.corsi = corsi || [];
+        const { data: corsi } = await corsiQuery;
+        
+        // Filtra in memoria per mese/anno se specificato
+        if (targetMonth !== null && corsi && corsi.length > 0) {
+          const startMonth = new Date(targetYear, targetMonth - 1, 1);
+          const endMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+          
+          const filtered = corsi.filter(corso => {
+            // Filtra per date dei corsi o iscrizioni nel mese target
+            const hasDateInMonth = corso.corsi_date && corso.corsi_date.some(date => {
+              if (!date.data_corso) return false;
+              const dateObj = new Date(date.data_corso);
+              if (isNaN(dateObj.getTime())) return false;
+              return dateObj.getFullYear() === targetYear && dateObj.getMonth() + 1 === targetMonth;
+            });
+            const hasIscrizioneInMonth = corso.corsi_iscrizioni && corso.corsi_iscrizioni.some(isc => {
+              const iscDate = isc.data_iscrizione || isc.created_at;
+              if (!iscDate) return false;
+              const dateObj = new Date(iscDate);
+              if (isNaN(dateObj.getTime())) return false;
+              return dateObj.getFullYear() === targetYear && dateObj.getMonth() + 1 === targetMonth;
+            });
+            return hasDateInMonth || hasIscrizioneInMonth;
+          });
+          data.corsi = filtered;
+        } else {
+          data.corsi = corsi || [];
+        }
       }
 
       // Query per vendite/riordini - analizza tutto il contesto
-      if (fullContext.toLowerCase().includes('vendita') || 
-          fullContext.toLowerCase().includes('riordino') ||
-          fullContext.toLowerCase().includes('gi') ||
-          fullContext.toLowerCase().includes('fatturato')) {
+      // Riconosce: vendita, vendite, riordino, riordini, gi, fatturato
+      if (lowerFullContext.includes('vendita') || 
+          lowerFullContext.includes('vendite') ||
+          lowerFullContext.includes('riordino') ||
+          lowerFullContext.includes('riordini') ||
+          lowerFullContext.includes('gi') ||
+          lowerFullContext.includes('fatturato')) {
         
-        let query = supabase
+        let venditeQuery = supabase
           .from('vendite_riordini')
           .select('*')
-          .limit(50);
+          .limit(200);
         
         // Filtro per consulente
-        if (!isAdmin || !wantsAllConsultants) {
-          query = query.eq('consultantid', user.id);
+        const wantsAll = wantsAllConsultants(fullContext, isAdmin);
+        if (!isAdmin || !wantsAll) {
+          venditeQuery = venditeQuery.eq('consultantid', user.id);
         }
         
-        const { data: vendite } = await query;
-        data.vendite = vendite || [];
+        const { data: vendite } = await venditeQuery;
+        
+        // Filtra in memoria per mese/anno se specificato
+        if (targetMonth !== null && vendite && vendite.length > 0) {
+          const startMonth = new Date(targetYear, targetMonth - 1, 1);
+          const endMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+          
+          const filtered = vendite.filter(v => {
+            // Controlla data_vendita o created_at
+            const checkDate = (dateStr) => {
+              if (!dateStr) return false;
+              const dateObj = new Date(dateStr);
+              if (isNaN(dateObj.getTime())) return false;
+              return dateObj >= startMonth && dateObj <= endMonth;
+            };
+            
+            return checkDate(v.data_vendita) || checkDate(v.created_at);
+          });
+          data.vendite = filtered;
+        } else {
+          data.vendite = vendite || [];
+        }
 
         // Query anche per GI
         let giQuery = supabase
           .from('gi')
           .select('*')
-          .limit(50);
+          .limit(200);
         
         // Filtro per consulente
-        if (!isAdmin || !wantsAllConsultants) {
+        if (!isAdmin || !wantsAll) {
           giQuery = giQuery.eq('consultantid', user.id);
         }
         
         const { data: gi } = await giQuery;
-        data.gi = gi || [];
+        
+        // Filtra in memoria per mese/anno se specificato
+        if (targetMonth !== null && gi && gi.length > 0) {
+          const startMonth = new Date(targetYear, targetMonth - 1, 1);
+          const endMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+          
+          const filtered = gi.filter(g => {
+            // Controlla data_gi o created_at
+            const checkDate = (dateStr) => {
+              if (!dateStr) return false;
+              const dateObj = new Date(dateStr);
+              if (isNaN(dateObj.getTime())) return false;
+              return dateObj >= startMonth && dateObj <= endMonth;
+            };
+            
+            return checkDate(g.data_gi) || checkDate(g.created_at);
+          });
+          data.gi = filtered;
+        } else {
+          data.gi = gi || [];
+        }
       }
 
     } catch (error) {
@@ -657,6 +777,9 @@ ANALISI CONTESTUALE:
 - Se l'utente menziona un mese/nome senza altro contesto, chiedi chiarimenti se necessario
 - Se i dati non sono chiari o mancanti, dillo esplicitamente e chiedi se vuole informazioni diverse
 - Non dire mai "non ho accesso" se hai i dati - usa i dati che hai e spiega se sono incompleti
+- CRITICO: Se una sezione dati è vuota o mostra "Nessuna vendita trovata", "Nessun corso trovato", "APPUNTAMENTI (0 totali)", NON dire "non ho accesso" - dì esplicitamente "Non ho trovato [tipo] per [periodo se specificato]" o "Non ci sono [tipo] registrati per [periodo]"
+- USA SEMPRE i dati forniti nelle sezioni qui sotto: se vedi "APPUNTAMENTI (0 totali)" o "VENDITE/RIORDINI: Nessuna vendita trovata per novembre 2025", rispondi basandoti su questi dati reali
+- Se una domanda riguarda vendite, corsi, appuntamenti e la sezione corrispondente è vuota o indica "Nessun [tipo] trovato", rispondi con "Non ho trovato [tipo] per [periodo se specificato]" invece di dire "non ho accesso" o "avrei bisogno di accedere"
 
 Il sistema gestisce:
 - Appuntamenti: incontri con clienti, con tipo (vendita, mezza, full, ecc.), VSS, VSD, NNCF
@@ -1303,19 +1426,48 @@ RISPOSTE IN ITALIANO.`;
     }
 
     if (data.vendite && data.vendite.length > 0) {
-      context += `VENDITE/RIORDINI (${data.vendite.length}):\n`;
-      data.vendite.slice(0, 10).forEach(v => {
-        context += `- ${v.cliente}: €${v.valore_proposto || 0} (${v.stato})\n`;
+      const monthLabel = targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : '';
+      context += `VENDITE/RIORDINI (${data.vendite.length}${monthLabel}):\n`;
+      data.vendite.slice(0, 20).forEach(v => {
+        const dataVendita = v.data_vendita ? new Date(v.data_vendita).toLocaleDateString('it-IT') : 'data non disponibile';
+        context += `- ${v.cliente || v.nome_cliente || 'Cliente sconosciuto'}: €${(v.valore_proposto || v.valore || 0).toLocaleString('it-IT')} (${v.stato || 'stato sconosciuto'}), data: ${dataVendita}\n`;
       });
+      if (data.vendite.length > 20) {
+        context += `... e altri ${data.vendite.length - 20} vendite\n`;
+      }
       context += '\n';
+    } else if (lowerMessage.includes('vendita') || lowerMessage.includes('vendite')) {
+      // Se la domanda riguarda vendite ma non ci sono risultati
+      context += `VENDITE/RIORDINI: Nessuna vendita trovata${targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : ''}.\n\n`;
     }
 
     if (data.corsi && data.corsi.length > 0) {
-      context += `CORSI (${data.corsi.length}):\n`;
-      data.corsi.slice(0, 10).forEach(corso => {
-        context += `- ${corso.nome_corso}, costo: €${corso.costo_corso || 0}\n`;
+      const monthLabel = targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : '';
+      context += `CORSI INTERAZIENDALI (${data.corsi.length}${monthLabel}):\n`;
+      data.corsi.slice(0, 20).forEach(corso => {
+        const nome = corso.nome_corso || corso.titolo || 'Corso sconosciuto';
+        const costo = corso.costo_corso || corso.costo || 0;
+        const iscrizioni = corso.corsi_iscrizioni ? corso.corsi_iscrizioni.length : 0;
+        context += `- ${nome}, costo: €${costo.toLocaleString('it-IT')}, iscrizioni: ${iscrizioni}`;
+        
+        // Mostra date se disponibili
+        if (corso.corsi_date && corso.corsi_date.length > 0) {
+          const dates = corso.corsi_date.map(d => {
+            if (!d.data_corso) return '';
+            const date = new Date(d.data_corso);
+            return date.toLocaleDateString('it-IT');
+          }).filter(d => d).join(', ');
+          if (dates) context += `, date: ${dates}`;
+        }
+        context += '\n';
       });
+      if (data.corsi.length > 20) {
+        context += `... e altri ${data.corsi.length - 20} corsi\n`;
+      }
       context += '\n';
+    } else if (lowerMessage.includes('corso') || lowerMessage.includes('corsi') || lowerMessage.includes('leadership')) {
+      // Se la domanda riguarda corsi ma non ci sono risultati
+      context += `CORSI INTERAZIENDALI: Nessun corso trovato${targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : ''}.\n\n`;
     }
 
     if (context === 'Dati disponibili dal database:\n\n') {
