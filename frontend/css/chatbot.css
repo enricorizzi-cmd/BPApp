@@ -22,12 +22,12 @@
   margin: 0;
 }
 
-/* Desktop: posiziona FAB a destra della sidebar, a sinistra dei riquadri */
+/* Desktop: posiziona FAB a destra della sidebar, a sinistra dei riquadri, ma mantiene bottom */
 @media (min-width: 981px) {
   .chatbot-fab {
     left: calc(280px + 20px); /* 280px sidebar + 20px padding */
-    top: calc(56px + env(safe-area-inset-top, 0px) + 20px); /* Sotto la topbar */
-    bottom: auto;
+    bottom: 24px; /* Mantiene posizione in basso */
+    top: auto;
     right: auto;
   }
 }

@@ -15532,23 +15532,19 @@ function viewGestioneLead(){
 
       // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione
       const consultantSelect = document.getElementById('contact-consultant');
+      const currentUser = getUser();
       let savedConsultantValue = '';
       
       if (consultantSelect) {
         savedConsultantValue = consultantSelect.value || '';
-        // Se il valore è vuoto e non siamo admin, imposta il consulente corrente come default
+        // Se il valore è vuoto e non siamo admin, usa il consulente corrente
         if (!savedConsultantValue && !isAdmin) {
-          const currentUser = getUser();
           savedConsultantValue = currentUser?.id || '';
-          // Imposta il valore nel dropdown se è vuoto
-          if (savedConsultantValue && consultantSelect.options.length > 1) {
-            consultantSelect.value = savedConsultantValue;
-          }
         }
       }
       
-      // Per non-admin, usa sempre il proprio ID
-      const consultant = isAdmin ? savedConsultantValue : (getUser()?.id || '');
+      // Per non-admin, usa SEMPRE il proprio ID (anche se il dropdown mostra "Tutti")
+      const consultant = isAdmin ? savedConsultantValue : (currentUser?.id || '');
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
@@ -15570,27 +15566,36 @@ function viewGestioneLead(){
       
       // Popola dropdown consulenti se necessario
       if (consultantSelect) {
+        const shouldSetToCurrentUser = !isAdmin;
+        const userIdToSet = shouldSetToCurrentUser ? (currentUser?.id || '') : savedConsultantValue;
+        
         // Popola dropdown consulenti solo se non ha opzioni
         if (consultantSelect.options.length <= 1) {
           await loadConsultantsDropdown('contact-consultant');
         }
         
-        // Se non siamo admin, imposta sempre il consulente corrente
-        if (!isAdmin) {
-          const currentUser = getUser();
-          if (currentUser?.id) {
-            consultantSelect.value = currentUser.id;
-          }
-        } else {
-          // Per admin, ripristina il valore selezionato
-          if (savedConsultantValue !== undefined && savedConsultantValue !== '') {
-            // Usa setTimeout per assicurarsi che il DOM sia aggiornato
-            setTimeout(() => {
-              if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
-                consultantSelect.value = savedConsultantValue;
-              }
-            }, 50);
-          }
+        // Imposta il valore: per non-admin SEMPRE il proprio ID, per admin il valore salvato
+        if (shouldSetToCurrentUser && userIdToSet) {
+          // Per non-admin: imposta SEMPRE il consulente corrente dopo che il dropdown è popolato
+          setTimeout(() => {
+            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === userIdToSet)) {
+              consultantSelect.value = userIdToSet;
+            } else if (consultantSelect && consultantSelect.options.length > 1) {
+              // Se ancora non c'è, riprova dopo un altro breve delay
+              setTimeout(() => {
+                if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === userIdToSet)) {
+                  consultantSelect.value = userIdToSet;
+                }
+              }, 100);
+            }
+          }, 100);
+        } else if (!shouldSetToCurrentUser && savedConsultantValue !== undefined && savedConsultantValue !== '') {
+          // Per admin: ripristina il valore selezionato
+          setTimeout(() => {
+            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
+              consultantSelect.value = savedConsultantValue;
+            }
+          }, 50);
         }
       }
       
@@ -17026,18 +17031,20 @@ Comune: ${lead.comune || 'N/A'}
         const currentUser = getUser();
         if (currentUser?.id) {
           // Attendi che il dropdown sia popolato
-          const checkAndSet = () => {
+          const checkAndSet = (attempts = 0) => {
             if (consultantSelect.options.length > 1) {
-              consultantSelect.value = currentUser.id;
-            } else {
-              // Se non è ancora popolato, riprova dopo 100ms
-              setTimeout(checkAndSet, 100);
+              if (Array.from(consultantSelect.options).some(opt => opt.value === currentUser.id)) {
+                consultantSelect.value = currentUser.id;
+              }
+            } else if (attempts < 10) {
+              // Se non è ancora popolato, riprova dopo 100ms (max 10 tentativi)
+              setTimeout(() => checkAndSet(attempts + 1), 100);
             }
           };
           checkAndSet();
         }
       }
-    }, 200);
+    }, 300);
   }
 }
 

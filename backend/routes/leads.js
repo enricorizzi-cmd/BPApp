@@ -132,23 +132,27 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         // Se contactStatus === 'all', non applicare nessun filtro
         
         // Filtro per periodo se specificato
-        // NOTA: Se contactStatus è 'contacted', filtriamo per contatto_avvenuto nel periodo
-        // Altrimenti filtriamo per data_inserimento nel periodo
+        // NOTA: 
+        // - Se contactStatus è 'contacted', filtriamo per contatto_avvenuto nel periodo
+        // - Se contactStatus è 'to_contact', NON applichiamo il filtro periodo (mostriamo tutti i lead non contattati)
+        // - Altrimenti filtriamo per data_inserimento nel periodo
         const periodFilter = req.query.period;
         const fromDate = req.query.from;
         const toDate = req.query.to;
         
-        if (fromDate && toDate) {
-          if (contactStatus === 'contacted') {
-            // Per lead contattati, filtra per data di contatto nel periodo
-            query = query.gte('contatto_avvenuto', fromDate);
-            query = query.lte('contatto_avvenuto', toDate);
-          } else {
-            // Per tutti gli altri casi, filtra per data di inserimento nel periodo
-            query = query.gte('data_inserimento', fromDate);
-            query = query.lte('data_inserimento', toDate);
-          }
-        } else if (periodFilter && periodFilter !== '') {
+        // NON applicare filtro periodo se contactStatus è 'to_contact'
+        if (contactStatus !== 'to_contact') {
+          if (fromDate && toDate) {
+            if (contactStatus === 'contacted') {
+              // Per lead contattati, filtra per data di contatto nel periodo
+              query = query.gte('contatto_avvenuto', fromDate);
+              query = query.lte('contatto_avvenuto', toDate);
+            } else {
+              // Per 'all', filtra per data di inserimento nel periodo
+              query = query.gte('data_inserimento', fromDate);
+              query = query.lte('data_inserimento', toDate);
+            }
+          } else if (periodFilter && periodFilter !== '') {
           // Fallback alla logica precedente se from/to non sono forniti
           const now = new Date();
           let startDate, endDate;
@@ -192,11 +196,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
               // Per lead contattati, filtra per data di contatto nel periodo
               query = query.gte('contatto_avvenuto', startDate.toISOString()).lt('contatto_avvenuto', endDate.toISOString());
             } else {
-              // Per tutti gli altri casi, filtra per data di inserimento nel periodo
+              // Per 'all', filtra per data di inserimento nel periodo
               query = query.gte('data_inserimento', startDate.toISOString()).lt('data_inserimento', endDate.toISOString());
             }
           }
         }
+        // Se contactStatus è 'to_contact', non applichiamo il filtro periodo
         
         const { data, error } = await query;
         

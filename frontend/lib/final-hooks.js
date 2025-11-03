@@ -1257,7 +1257,32 @@ async function recomputeDashboardMini(){
   const cons = (consValue && consValue !== '') ? consValue : (isAdmin ? null : (window.getUser() ? window.getUser().id : null));
 
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
-  const periods = await ensurePeriods('dash', cons ? { userId: cons } : {});
+  
+  // Calcola from/to dai buckets per passare correttamente userId a ensurePeriods
+  // NOTA: ensurePeriods accetta un solo argomento. Se passiamo 'dash' come stringa,
+  // calcola from/to automaticamente ma IGNORA qualsiasi secondo argomento (come userId).
+  // Dobbiamo quindi passare un oggetto esplicito con type, from, to, userId.
+  let fromISO, toISO;
+  if (buckets && buckets.length) {
+    fromISO = _toYMD(new Date(buckets[0].s));
+    toISO = _toYMD(new Date(buckets[buckets.length - 1].e));
+  } else if (r.start && r.end) {
+    fromISO = _toYMD(new Date(r.start));
+    toISO = _toYMD(new Date(r.end));
+  } else {
+    const now = new Date();
+    fromISO = _toYMD(now);
+    toISO = _toYMD(now);
+  }
+  
+  // Passa un oggetto invece di una stringa per includere userId
+  // Questo è il FIX: ora userId viene correttamente passato a ensurePeriods
+  const periods = await ensurePeriods({
+    type: type,
+    from: fromISO,
+    to: toISO,
+    userId: cons || null
+  });
   const L = labelsFor(type, buckets);
 
   ['VSS','VSDPersonale','GI','NNCF'].forEach(k=>{
