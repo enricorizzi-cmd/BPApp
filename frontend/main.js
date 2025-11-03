@@ -15181,27 +15181,6 @@ function viewGestioneLead(){
     return `
       <div class="leads-filters">
         <div>
-          <label>Granularità</label>
-          <select id="lead-granularity">
-            <option value="giornaliera">Giornaliera</option>
-            <option value="settimanale">Settimanale</option>
-            <option value="mensile">Mensile</option>
-            <option value="trimestrale">Trimestrale</option>
-            <option value="semestrale">Semestrale</option>
-            <option value="annuale" selected>Annuale</option>
-          </select>
-        </div>
-        
-        <div>
-          <label>Periodo</label>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="lead-prev-period">‹</button>
-            <span id="lead-current-period">Ottobre 2025</span>
-            <button id="lead-next-period">›</button>
-          </div>
-        </div>
-        
-        <div>
           <label>Consulente</label>
           <select id="lead-consultant">
             <option value="">Tutti</option>
@@ -15212,10 +15191,6 @@ function viewGestioneLead(){
           <label class="checkbox-label">
             <input type="checkbox" id="lead-without-consultant" checked>
             Senza consulente assegnato
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" id="lead-enable-period-filters">
-            Abilita filtri periodo
           </label>
           <div class="selector-group">
             <label for="lead-contact-status" style="font-size: 14px; color: var(--text); margin-bottom: 4px; display: block;">Stato contatto:</label>
@@ -15267,27 +15242,6 @@ function viewGestioneLead(){
   function renderLeadDaContattareSection() {
     return `
       <div class="leads-filters">
-        <div>
-          <label>Granularità</label>
-          <select id="contact-granularity">
-            <option value="giornaliera">Giornaliera</option>
-            <option value="settimanale">Settimanale</option>
-            <option value="mensile" selected>Mensile</option>
-            <option value="trimestrale">Trimestrale</option>
-            <option value="semestrale">Semestrale</option>
-            <option value="annuale">Annuale</option>
-          </select>
-        </div>
-        
-        <div>
-          <label>Periodo</label>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="contact-prev-period">‹</button>
-            <span id="contact-current-period">Ottobre 2025</span>
-            <button id="contact-next-period">›</button>
-          </div>
-        </div>
-        
         ${isAdmin ? `
           <div>
             <label>Consulente</label>
@@ -15296,13 +15250,6 @@ function viewGestioneLead(){
             </select>
           </div>
         ` : ''}
-        
-        <div class="checkbox-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="contact-enable-period-filters">
-            Abilita filtri periodo
-          </label>
-        </div>
       </div>
       
       <div style="padding: 20px;">
@@ -15478,30 +15425,13 @@ function viewGestioneLead(){
       const consultantSelect = document.getElementById('lead-consultant');
       const savedConsultantValue = consultantSelect?.value || '';
       
-      const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
       const consultant = savedConsultantValue; // Usa il valore salvato
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
-      const enablePeriodFilters = document.getElementById('lead-enable-period-filters')?.checked || false;
-      console.log('🔍 DEBUG: contactStatus =', contactStatus);
-      console.log('🔍 DEBUG: enablePeriodFilters =', enablePeriodFilters);
       
-      // Aggiorna granularità corrente
-      currentGranularity = granularity;
-      
-      // Calcola periodo corrente (usato solo se il flag è abilitato)
-      const { from, to } = calculatePeriod(granularity, currentPeriod);
-      
-      // Costruisci query parameters
+      // Costruisci query parameters (solo consulente e stato contatto, senza filtri periodo)
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
-      // Aggiungi filtri periodo solo se il flag è abilitato E contactStatus non è 'to_contact'
-      // Se enablePeriodFilters è false, mostra tutti i lead indipendentemente dal periodo
-      if (enablePeriodFilters && contactStatus !== 'to_contact') {
-        if (granularity) params.append('period', granularity);
-        params.append('from', from);
-        params.append('to', to);
-      }
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       params.append('contactStatus', contactStatus);
       
@@ -15571,23 +15501,12 @@ function viewGestioneLead(){
       const consultant = isAdmin ? savedConsultantValue : (currentUser?.id || '');
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
-      const enablePeriodFilters = document.getElementById('contact-enable-period-filters')?.checked || false;
       
-      // Costruisci query parameters
+      // Costruisci query parameters (solo consulente e stato contatto, senza filtri periodo)
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       params.append('contactStatus', contactStatus);
-      
-      // Aggiungi filtri periodo solo se il flag è abilitato E contactStatus non è 'to_contact'
-      // Se enablePeriodFilters è false, mostra tutti i lead indipendentemente dal periodo
-      if (enablePeriodFilters && contactStatus !== 'to_contact') {
-        const granularity = document.getElementById('contact-granularity')?.value || 'mensile';
-        const { from, to } = calculatePeriod(granularity, currentContactPeriod || currentPeriod);
-        if (granularity) params.append('period', granularity);
-        params.append('from', from);
-        params.append('to', to);
-      }
       
       const response = await GET(`/api/leads?${params.toString()}`);
       let allLeads = response.leads || [];
@@ -16983,60 +16902,14 @@ Comune: ${lead.comune || 'N/A'}
       if (typeof haptic === 'function') haptic('light');
       showLeadModal();
     }
-    
-    // Filtri periodo
-    if (e.target.id === 'lead-prev-period' || e.target.id === 'contact-prev-period') {
-      if (typeof haptic === 'function') haptic('light');
-      shiftLeadPeriod(-1);
-    }
-    
-    if (e.target.id === 'lead-next-period' || e.target.id === 'contact-next-period') {
-      if (typeof haptic === 'function') haptic('light');
-      shiftLeadPeriod(+1);
-    }
   });
 
   // Event listeners per cambio filtri
-    document.addEventListener('change', (e) => {
-      if (e.target.id === 'lead-granularity' || e.target.id === 'lead-consultant' ||
-          e.target.id === 'contact-granularity' || e.target.id === 'contact-consultant' ||
-          e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status' ||
-          e.target.id === 'lead-enable-period-filters' || e.target.id === 'contact-enable-period-filters') {
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'lead-consultant' ||
+        e.target.id === 'contact-consultant' ||
+        e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status') {
       if (typeof haptic === 'function') haptic('light');
-      
-      // Se cambia la granularità, aggiorna il periodo corrente
-      if (e.target.id === 'lead-granularity') {
-        currentGranularity = e.target.value;
-        window.currentGranularity = currentGranularity;
-        
-        // Imposta il periodo iniziale basato sulla granularità
-        const now = new Date();
-        switch (currentGranularity) {
-          case 'giornaliera':
-            currentPeriod = now;
-            break;
-          case 'settimanale':
-            currentPeriod = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-            break;
-          case 'mensile':
-            currentPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
-            break;
-          case 'trimestrale':
-            const quarter = Math.floor(now.getMonth() / 3);
-            currentPeriod = new Date(now.getFullYear(), quarter * 3, 1);
-            break;
-          case 'semestrale':
-            const semester = Math.floor(now.getMonth() / 6);
-            currentPeriod = new Date(now.getFullYear(), semester * 6, 1);
-            break;
-          case 'annuale':
-            currentPeriod = new Date(now.getFullYear(), 0, 1);
-            break;
-        }
-        window.currentPeriod = currentPeriod;
-        updateLeadPeriodDisplay();
-      }
-      
       loadLeadsData();
     }
   });
