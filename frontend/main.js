@@ -3985,10 +3985,26 @@ function viewPeriods(){
   function doImportAgenda(){
     var s=startH.value, e=endH.value; if(!s||!e){toast('Seleziona il periodo');return;}
     
-    // Fetch appuntamenti E GI in parallelo
+    // Converti date in formato YYYY-MM-DD per le query API
+    var sD=new Date(s), eD=new Date(e);
+    var fromISO = ymd(sD); // formato YYYY-MM-DD
+    var toISO = ymd(eD);   // formato YYYY-MM-DD
+    
+    // Ottieni userId del consulente corrente (sempre il proprio, anche per admin)
+    var me = getUser();
+    if(!me || !me.id){
+      toast('Errore: utente non trovato');
+      return;
+    }
+    var userId = me.id;
+    
+    console.log('[Import Agenda] Periodo:', fromISO, '->', toISO, 'User:', userId);
+    
+    // Fetch appuntamenti, GI e iscrizioni corsi in parallelo (tutti filtrati per consulente e periodo)
     Promise.all([
-      GET('/api/appointments'),
-      GET('/api/gi')
+      GET('/api/appointments?from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO)+'&user='+encodeURIComponent(userId)),
+      GET('/api/gi?from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO)+'&userId='+encodeURIComponent(userId)),
+      GET('/api/corsi-iscrizioni?from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO)+'&consulente_id='+encodeURIComponent(userId))
     ])
     .catch(function(error){
       // ERRORE 401: token scaduto, logout e stop
@@ -3998,24 +4014,31 @@ function viewPeriods(){
       return;
     })
     .then(function(results){
-      if (!results || results.length < 2) {
+      if (!results || results.length < 3) {
         console.error('[Import Agenda] API calls failed or incomplete');
         return;
       }
       var appointmentsResponse = results[0];
       var giResponse = results[1];
+      var iscrizioniResponse = results[2];
       
-      var list=appointmentsResponse.appointments||[], sD=new Date(s), eD=new Date(e);
+      // Gli appuntamenti e GI sono già filtrati dal backend per periodo e consulente
+      var list=appointmentsResponse.appointments||[];
       var giList=giResponse.sales||[];
+      var iscrizioniList=(iscrizioniResponse && iscrizioniResponse.iscrizioni)||[];
+      
+      console.log('[Import Agenda] Ricevuti:', list.length, 'appuntamenti,', giList.length, 'GI,', iscrizioniList.length, 'iscrizioni');
       
       var agg={VSS:0,VSDPersonale:0,VSDIndiretto:0,GI:0,Telefonate:0,AppFissati:0,AppFatti:0,CorsiLeadership:0,iProfile:0,MBS:0,NNCF:0};
       
-      // Aggrega appuntamenti
+      // Aggrega appuntamenti (già filtrati per periodo e consulente dal backend)
       for(var i=0;i<list.length;i++){ 
         var a=list[i], d=BPTimezone.parseUTCString(a.start);
+        // Doppio controllo periodo (anche se backend dovrebbe aver già filtrato)
         if(d>=sD && d<=eD){
           agg.VSS+=Number(a.vss||0);
           agg.VSDPersonale+=Number(a.vsdPersonal||0);
+          // VSD Indiretto da appuntamenti (es. corsi singoli nel calendario)
           agg.VSDIndiretto+=Number(a.vsdIndiretto||0);
           agg.Telefonate+=Number(a.telefonate||0);
           agg.AppFissati+=Number(a.appFissati||0);
@@ -4030,20 +4053,37 @@ function viewPeriods(){
         }
       }
       
-      // Aggrega GI
+      // Aggrega GI (già filtrati per periodo e consulente dal backend)
       for(var j=0;j<giList.length;j++){
-        var gi=giList[j], giDate=new Date(gi.date);
+        var gi=giList[j];
+        // Doppio controllo periodo (anche se backend dovrebbe aver già filtrato)
+        var giDate = new Date(gi.date);
         if(giDate>=sD && giDate<=eD){
           agg.GI+=Number(gi.vssTotal||0);
         }
       }
+      
+      // Aggrega VSD Indiretto da Corsi Interaziendali (iscrizioni corsi)
+      // Le iscrizioni sono già filtrate per consulente e periodo dal backend
+      for(var k=0;k<iscrizioniList.length;k++){
+        var iscrizione = iscrizioniList[k];
+        // Somma il VSD totale dell'iscrizione (costo personalizzato)
+        var vsdIscrizione = Number(iscrizione.vsd_totale || 0);
+        agg.VSDIndiretto += vsdIscrizione;
+        console.log('[Import Agenda] Aggiunto VSD Indiretto da corso:', iscrizione.nome_corso, '=', vsdIscrizione);
+      }
+      
+      console.log('[Import Agenda] Aggregati finali:', agg);
       
       if(CONS_MODE){
         fillCons(agg); toast('Consuntivo compilato dalla tua agenda');
       }else{
         fillPrev(agg); toast('Previsionale compilato dalla tua agenda'); celebrate(); window.addXP(10);
       }
-    }).catch(function(){ toast('Errore import agenda'); });
+    }).catch(function(error){ 
+      console.error('[Import Agenda] Errore:', error);
+      toast('Errore import agenda: ' + (error.message || 'Errore sconosciuto')); 
+    });
   }
 
   // === Provvigioni (derivate, NON nel form) ===

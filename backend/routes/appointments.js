@@ -85,6 +85,8 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   async function handleGetList(req, res, db, clientsDb, isAdmin){
     const global = req.query.global === '1';
     const userId = req.query.user;
+    const fromDate = req.query.from;
+    const toDate = req.query.to;
     
     try {
       // Prova prima Supabase per dati aggiornati
@@ -103,6 +105,15 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         } else {
           // Utente normale - solo i propri appuntamenti
           query = query.eq('userid', req.user.id);
+        }
+        
+        // Filtro periodo (from/to) se specificato
+        if (fromDate) {
+          query = query.gte('start_time', fromDate + 'T00:00:00.000Z');
+        }
+        if (toDate) {
+          // Aggiungi 23:59:59.999 alla data di fine per includere tutto il giorno
+          query = query.lte('start_time', toDate + 'T23:59:59.999Z');
         }
         
         const { data, error } = await query;
@@ -167,6 +178,16 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     if(global && isAdmin) list = all;
     else if(isAdmin && userId) list = all.filter(a => a.userId === userId);
     else list = all.filter(a => a.userId === req.user.id);
+    
+    // Filtro periodo (from/to) se specificato
+    if (fromDate || toDate) {
+      const fs = fromDate ? new Date(fromDate).getTime() : -Infinity;
+      const te = toDate ? new Date(toDate + 'T23:59:59.999Z').getTime() : +Infinity;
+      list = list.filter(a => {
+        const appDate = a.start ? new Date(a.start).getTime() : 0;
+        return appDate >= fs && appDate <= te;
+      });
+    }
     
     // Arricchisci anche il fallback JSON con il nome del consulente
     const usersDb = await readJSON("users.json");
