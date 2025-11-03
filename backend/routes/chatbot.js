@@ -440,18 +440,31 @@ module.exports = function(app) {
       }
 
       // Carica periodi - analizza TUTTA la conversazione
+      // Se la domanda riguarda "chi ha/non ha compilato", serve SEMPRE la lista completa degli utenti
       const needsAllPeriods = wantsAll || 
                                fullContext.toLowerCase().includes('chi non ha') ||
                                fullContext.toLowerCase().includes('chi ha fatto') ||
                                fullContext.toLowerCase().includes('chi ha compilato') ||
                                fullContext.toLowerCase().includes('chi compilato') ||
-                               fullContext.toLowerCase().includes('manca');
+                               fullContext.toLowerCase().includes('manca') ||
+                               fullContext.toLowerCase().includes('bp previsionale') ||
+                               fullContext.toLowerCase().includes('bp consuntivo');
       
       data.periods = await loadPeriods(lowerMessage, user, isAdmin, wantsAll, conversationContext);
       
       // Carica utenti per periodi se necessario
+      // IMPORTANTE: Se needsAllPeriods è true, carica TUTTI i consulenti (non solo quelli nei periodi)
       if (data.periods) {
         data.users = await loadUsersForPeriods(data.periods, needsAllPeriods, isAdmin, data.users);
+      } else if (needsAllPeriods && isAdmin) {
+        // Se non ci sono periodi ma serve la lista completa (per domande tipo "chi manca"), carica tutti gli utenti
+        const { data: users } = await supabase
+          .from('app_users')
+          .select('id, name, role')
+          .eq('role', 'consultant')
+          .order('name', { ascending: true });
+        
+        data.users = users || [];
       }
 
       // Query per leads - analizza tutto il contesto
@@ -960,6 +973,13 @@ RISPOSTE IN ITALIANO.`;
         
         const monthName = periodMonth ? new Date(2000, periodMonth - 1).toLocaleString('it-IT', { month: 'long' }) : '';
         const userName = getUserName(period.userid);
+        
+        // Se il nome non è disponibile, salta questo periodo nella visualizzazione
+        // (non vogliamo mostrare UserID nella lista)
+        if (!userName) {
+          // Salta questo periodo - non ha un nome valido
+          return;
+        }
         
         // Evidenzia se corrisponde al mese richiesto
         // IMPORTANTE: Un periodo è rilevante se il mese corrisponde E (year corrisponde OPPURE year è NULL ma startDate indica l'anno corretto)
