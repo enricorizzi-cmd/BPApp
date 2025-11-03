@@ -667,13 +667,19 @@ module.exports = function(app) {
       }
 
       // Query per Cicli Aperti - analizza tutto il contesto
-      // Riconosce: ciclo aperto, cicli aperti, attività aperta, task aperto
+      // Riconosce: ciclo aperto, cicli aperti, attività aperta, task aperto, cicli aperti ho
       // IMPORTANTE: Non confondere con "ciclo" generico che potrebbe riferirsi ad altro
-      const wantsOpenCycles = (lowerFullContext.includes('ciclo aperto') || 
+      // Controlla anche varianti come "quanti cicli aperti ho", "i miei cicli aperti"
+      const wantsOpenCycles = (
+          lowerFullContext.includes('ciclo aperto') || 
           lowerFullContext.includes('cicli aperti') ||
           lowerFullContext.includes('attività aperta') ||
           lowerFullContext.includes('task aperto') ||
-          (lowerFullContext.includes('cicli') && (lowerFullContext.includes('aperto') || lowerFullContext.includes('aperti'))));
+          (lowerFullContext.includes('cicli') && lowerFullContext.includes('aperto')) ||
+          (lowerFullContext.includes('cicli') && lowerFullContext.includes('aperti')) ||
+          (lowerFullContext.match(/cicli\s+aperti/)) ||
+          (lowerFullContext.includes('cicli') && (lowerFullContext.includes('aperto') || lowerFullContext.includes('aperti')))
+      );
       
       if (wantsOpenCycles) {
         
