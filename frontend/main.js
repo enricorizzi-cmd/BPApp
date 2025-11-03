@@ -11324,42 +11324,334 @@ function viewCorsiInteraziendali(){
       }
       
       .iscrizione-modal {
-        background: white;
-        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+        border: 1px solid var(--hair2);
+        box-shadow: 0 20px 60px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.1);
+        border-radius: 20px;
         max-width: 800px;
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
+        padding: 32px;
+      }
+      
+      .iscrizione-modal::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      .iscrizione-modal::-webkit-scrollbar-track {
+        background: rgba(255,255,255,.05);
+        border-radius: 4px;
+      }
+      
+      .iscrizione-modal::-webkit-scrollbar-thumb {
+        background: var(--accent);
+        border-radius: 4px;
+      }
+      
+      .iscrizione-modal::-webkit-scrollbar-thumb:hover {
+        background: var(--accent2);
       }
       
       .cliente-group {
-        border: 1px solid #e0e0e0;
-        border-radius: 4px;
-        padding: 16px;
-        margin-bottom: 16px;
-        background: #f9f9f9;
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: rgba(255,255,255,.03);
       }
       
       .cliente-group-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
       }
       
       .cliente-group-title {
         font-weight: 600;
-        color: #333;
+        color: var(--accent);
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
       
       .remove-cliente-btn {
-        background: #d32f2f;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
+        background: rgba(211, 47, 47, 0.1);
+        color: #ff5252;
+        border: 1px solid rgba(211, 47, 47, 0.3);
+        padding: 6px 12px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 12px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+      
+      .remove-cliente-btn:hover {
+        background: rgba(211, 47, 47, 0.2);
+        border-color: #ff5252;
+        transform: translateY(-1px);
+      }
+      
+      /* Client Dropdown Styles per Iscrizioni */
+      .iscrizione-modal .client-dropdown {
+        position: relative;
+        width: 100%;
+      }
+      
+      .iscrizione-modal .client-dropdown-input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text);
+        font-size: 15px;
+        min-height: 47px;
+        box-sizing: border-box;
+      }
+      
+      .iscrizione-modal .client-dropdown-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+      }
+      
+      .iscrizione-modal .client-dropdown-arrow {
+        transition: transform 0.2s ease;
+        color: var(--muted);
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      
+      .iscrizione-modal .client-dropdown-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255,255,255,.08);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 4px;
+        box-shadow: 0 20px 60px rgba(0,0,0,.3);
+        backdrop-filter: blur(10px);
+      }
+      
+      .iscrizione-modal .client-dropdown-search {
+        padding: 12px;
+        border-bottom: 1px solid var(--hair2);
+        background: rgba(255,255,255,.03);
+      }
+      
+      .iscrizione-modal .client-dropdown-search input {
+        width: 100%;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: var(--text);
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      
+      .iscrizione-modal .client-dropdown-search input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .iscrizione-modal .client-dropdown-options {
+        max-height: 250px;
+        overflow-y: auto;
+      }
+      
+      .iscrizione-modal .client-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid var(--hair);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text);
+      }
+      
+      .iscrizione-modal .client-option:hover {
+        background: rgba(93,211,255,.1);
+        color: var(--accent);
+      }
+      
+      .iscrizione-modal .client-option:last-child {
+        border-bottom: none;
+      }
+      
+      .iscrizione-modal .client-option-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+      
+      .iscrizione-modal .client-option-text {
+        flex: 1;
+        font-size: 14px;
+      }
+      
+      .iscrizione-modal .client-option-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+        color: var(--text);
+      }
+      
+      .iscrizione-modal .client-option-consultant {
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 2px;
+        font-weight: 500;
+        opacity: 0.8;
+      }
+      
+      .iscrizione-modal .client-option-status {
+        font-size: 12px;
+        color: var(--muted);
+        opacity: 0.7;
+      }
+      
+      .iscrizione-modal .form-group {
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .iscrizione-modal .form-group label {
+        font-weight: 600;
+        color: var(--accent);
+        margin: 0;
+        display: block;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+      }
+      
+      .iscrizione-modal .form-group input,
+      .iscrizione-modal .form-group select,
+      .iscrizione-modal .form-group textarea {
+        width: 100%;
+        min-width: 0;
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition: all 0.2s ease;
+        color: var(--text);
+        font-size: 15px;
+        box-sizing: border-box;
+        line-height: 1.5;
+      }
+      
+      .iscrizione-modal .form-group input:focus,
+      .iscrizione-modal .form-group select:focus,
+      .iscrizione-modal .form-group textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(93,211,255,.1);
+        background: rgba(255,255,255,.08);
+        outline: none;
+      }
+      
+      .iscrizione-modal .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--hair2);
+      }
+      
+      .iscrizione-modal .modal-header h3 {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text);
+        margin: 0;
+      }
+      
+      .iscrizione-modal .modal-header .close-btn {
+        background: rgba(255,255,255,.05);
+        border: 1px solid var(--hair2);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.2s ease;
+        color: var(--text);
+        font-weight: 500;
+        cursor: pointer;
+      }
+      
+      .iscrizione-modal .modal-header .close-btn:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.05);
+        transform: translateY(-1px);
+      }
+      
+      .iscrizione-modal .modal-body {
+        margin-bottom: 32px;
+      }
+      
+      .iscrizione-modal .modal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding-top: 24px;
+        border-top: 1px solid var(--hair2);
+      }
+      
+      .iscrizione-modal .modal-footer button {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        border: none;
+        color: #fff;
+        border-radius: 12px;
+        padding: 14px 28px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(93,211,255,.3);
+        font-size: 15px;
+      }
+      
+      .iscrizione-modal .modal-footer button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(93,211,255,.4);
+      }
+      
+      .iscrizione-modal .modal-footer button[type="button"] {
+        background: transparent;
+        border: 1px solid var(--hair2);
+        color: var(--text);
+        box-shadow: none;
+      }
+      
+      .iscrizione-modal .modal-footer button[type="button"]:hover {
+        border-color: var(--accent);
+        background: rgba(93,211,255,.05);
+        transform: translateY(-2px);
       }
       
       @media (max-width: 768px) {
