@@ -763,12 +763,19 @@ RISPOSTE IN ITALIANO.`;
         : data.periods.slice(0, 50);
       
       periodsToShow.forEach(period => {
+        // I tipi nel database sono in italiano, non in inglese!
+        // Mappa sia da italiano a italiano (per chiarezza) sia da inglese (se presente)
         const typeLabels = {
-          weekly: 'settimanale',
-          monthly: 'mensile',
-          quarterly: 'trimestrale',
-          semiannual: 'semestrale',
-          annual: 'annuale'
+          'settimanale': 'settimanale',
+          'weekly': 'settimanale',
+          'mensile': 'mensile',
+          'monthly': 'mensile',
+          'trimestrale': 'trimestrale',
+          'quarterly': 'trimestrale',
+          'semestrale': 'semestrale',
+          'semiannual': 'semestrale',
+          'annuale': 'annuale',
+          'annual': 'annuale'
         };
         const type = typeLabels[period.type] || period.type;
         
