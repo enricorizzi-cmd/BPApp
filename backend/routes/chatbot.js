@@ -340,59 +340,52 @@ module.exports = function(app) {
 
   /**
    * Helper: Carica utenti per periodi
-   * IMPORTANTE: Carica TUTTI gli utenti che hanno periodi, indipendentemente dal ruolo (admin o consultant)
+   * IMPORTANTE: Il chatbot vede TUTTI gli utenti come consulenti, indipendentemente dal ruolo nel database
+   * Non fa differenza tra admin e consultant - tutti sono trattati come consulenti
    */
   async function loadUsersForPeriods(periods, needsAllPeriods, isAdmin, existingUsers = []) {
     if (!periods || periods.length === 0) return existingUsers;
     
     if (needsAllPeriods && isAdmin) {
       // Se serve la lista completa, carica TUTTI gli utenti (admin e consultant)
-      // che hanno almeno un periodo nel database
+      // Il chatbot li tratta tutti come consulenti
       const uniqueUserIds = [...new Set(periods.map(p => p.userid).filter(Boolean))];
       
       if (uniqueUserIds.length > 0) {
         // Carica tutti gli utenti che hanno periodi, indipendentemente dal ruolo
-        const { data: users } = await supabase
+        const { data: usersWithPeriods } = await supabase
           .from('app_users')
           .select('id, name, role')
           .in('id', uniqueUserIds)
           .order('name', { ascending: true });
         
-        // Se non abbiamo tutti gli utenti, carica anche gli altri consultant per avere la lista completa
-        const { data: allConsultants } = await supabase
+        // Carica TUTTI gli utenti (admin e consultant) per avere la lista completa
+        // Il chatbot li vede tutti come consulenti
+        const { data: allUsers } = await supabase
           .from('app_users')
           .select('id, name, role')
-          .eq('role', 'consultant')
           .order('name', { ascending: true });
         
-        // Combina: utenti con periodi (qualsiasi ruolo) + tutti i consultant
-        const periodUserIds = new Set(uniqueUserIds);
+        // Combina: utenti con periodi + tutti gli altri utenti
         const allUserMap = new Map();
         
-        // Aggiungi utenti con periodi
-        (users || []).forEach(u => allUserMap.set(u.id, u));
-        // Aggiungi consultant (se non già presenti)
-        (allConsultants || []).forEach(u => {
-          if (!allUserMap.has(u.id)) {
-            allUserMap.set(u.id, u);
-          }
-        });
+        // Aggiungi tutti gli utenti (admin e consultant sono trattati allo stesso modo)
+        (allUsers || []).forEach(u => allUserMap.set(u.id, u));
         
         return Array.from(allUserMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       }
       
-      // Fallback: se non ci sono periodi ma serve la lista completa
-      const { data: allConsultants } = await supabase
+      // Fallback: se non ci sono periodi ma serve la lista completa, carica TUTTI gli utenti
+      const { data: allUsers } = await supabase
         .from('app_users')
         .select('id, name, role')
-        .eq('role', 'consultant')
         .order('name', { ascending: true });
       
-      return allConsultants || [];
+      return allUsers || [];
     }
     
     // Per casi non-admin o quando non serve la lista completa: carica solo gli utenti che hanno periodi
-    // IMPORTANTE: senza filtrare per ruolo - se un admin ha periodi, lo includiamo
+    // IMPORTANTE: senza filtrare per ruolo - tutti gli utenti sono trattati come consulenti
     const uniqueUserIds = [...new Set(periods.map(p => p.userid).filter(Boolean))];
     if (uniqueUserIds.length > 0) {
       const { data: users } = await supabase
@@ -444,12 +437,11 @@ module.exports = function(app) {
        data.appointments = await loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear);
        
        // Se chiede disponibilità/slot, serve anche lista utenti
-       // NOTA: Per disponibilità carichiamo solo consultant (non admin), ma per BP includiamo tutti
+       // IMPORTANTE: Il chatbot vede TUTTI gli utenti come consulenti, quindi carichiamo tutti
        if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
         const { data: users } = await supabase
           .from('app_users')
           .select('id, name, role')
-          .eq('role', 'consultant')
           .order('name', { ascending: true });
         
         data.users = users || [];
@@ -602,6 +594,12 @@ RUOLO: Sei un ANALISTA ESPERTO DEI DATI di questa applicazione commerciale. Il t
 - USARE TUTTI i dati disponibili per fornire risposte accurate e dettagliate
 - NON "tirare a caso": ogni risposta deve essere basata sui dati reali forniti
 - MANTENERE IL CONTESTO tra tutte le domande nella conversazione
+
+IMPORTANTE - TRATTAMENTO UTENTI:
+- Il chatbot vede TUTTI gli utenti come CONSULENTI, indipendentemente dal loro ruolo nel database (admin o consultant)
+- Quando analizzi "chi ha compilato", "chi manca", "tutti i consulenti", includi TUTTI gli utenti nella lista UTENTI/CONSULENTI
+- Non fare distinzione tra admin e consultant - tutti sono consulenti ai fini dell'analisi BP, KPI, periodi, ecc.
+- La lista UTENTI/CONSULENTI include sia admin che consultant, tutti trattati allo stesso modo
 
 CONTESTO DELLA CONVERSAZIONE:
 - Hai accesso a TUTTA la storia della conversazione precedente
