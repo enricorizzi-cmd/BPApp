@@ -633,6 +633,8 @@ function esc(s){
   }
 
   // Evidenzia la cella "oggi" leggendo data-date o data-day
+  // IMPORTANTE: controlla solo elementi che hanno data completa YYYY-MM-DD per evitare falsi positivi
+  // Rimuove anche "today" da elementi che non corrispondono a oggi per pulizia
   function highlightToday(root){
     // Usa data locale per evidenziare "oggi" nel calendario
     var today = ymdLocal(new Date());
@@ -641,9 +643,20 @@ function esc(s){
       var el = box[i];
       var val = el.getAttribute('data-date') || el.getAttribute('data-day') || '';
       if (!val) continue;
-      // normalizza a yyyy-mm-dd (togli orari)
+      // normalizza a yyyy-mm-dd (togli orari) - IMPORTANTE: deve essere formato completo YYYY-MM-DD
       var day = String(val).slice(0,10);
-      if (day === today) el.classList.add('today');
+      // Controlla che sia formato YYYY-MM-DD completo (10 caratteri con trattini)
+      if (day.length === 10 && day.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        if (day === today) {
+          el.classList.add('today');
+        } else {
+          // Rimuovi "today" se l'elemento non corrisponde a oggi (evita residui da render precedenti)
+          el.classList.remove('today');
+        }
+      } else {
+        // Se non è formato completo, rimuovi "today" per sicurezza (evita falsi positivi)
+        el.classList.remove('today');
+      }
     }
   }
 
