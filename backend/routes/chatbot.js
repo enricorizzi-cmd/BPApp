@@ -515,7 +515,9 @@ module.exports = function(app) {
        leads: null,
        corsi: null,
        vendite: null,
-       users: null
+       users: null,
+       cicli: null,
+       gi: null
      };
 
      // COMBINA il messaggio corrente con TUTTO il contesto della conversazione
@@ -664,13 +666,92 @@ module.exports = function(app) {
         }
       }
 
+      // Query per Cicli Aperti - analizza tutto il contesto
+      // Riconosce: ciclo aperto, cicli aperti, attività aperta, task aperto
+      // IMPORTANTE: Non confondere con "ciclo" generico che potrebbe riferirsi ad altro
+      const wantsOpenCycles = (lowerFullContext.includes('ciclo aperto') || 
+          lowerFullContext.includes('cicli aperti') ||
+          lowerFullContext.includes('attività aperta') ||
+          lowerFullContext.includes('task aperto') ||
+          (lowerFullContext.includes('cicli') && (lowerFullContext.includes('aperto') || lowerFullContext.includes('aperti'))));
+      
+      if (wantsOpenCycles) {
+        
+        let cicliQuery = supabase
+          .from('open_cycles')
+          .select('*')
+          .eq('status', 'open')
+          .limit(100);
+        
+        // Filtro per consulente
+        if (!isAdmin || !wantsAll) {
+          cicliQuery = cicliQuery.eq('consultantid', user.id);
+        }
+        
+        const { data: cicli } = await cicliQuery;
+        data.cicli = cicli || [];
+      }
+
+      // Query per GI & Scadenzario - analizza tutto il contesto
+      // Riconosce: gi, gross income, scadenzario, scadenza, incasso, incassi, rata, rate
+      const wantsGI = lowerFullContext.includes('gi') ||
+          lowerFullContext.includes('gross income') ||
+          lowerFullContext.includes('scadenzario') ||
+          lowerFullContext.includes('scadenza') ||
+          lowerFullContext.includes('incasso') ||
+          lowerFullContext.includes('rata') ||
+          lowerFullContext.includes('rate');
+      
+      if (wantsGI && !lowerFullContext.includes('vendita') && !lowerFullContext.includes('vendite')) {
+        // Carica GI solo se NON è già incluso nelle vendite
+        let giQuery = supabase
+          .from('gi')
+          .select('*')
+          .limit(200);
+        
+        // Filtro per consulente
+        if (!isAdmin || !wantsAll) {
+          giQuery = giQuery.eq('consultantid', user.id);
+        }
+        
+        const { data: gi } = await giQuery;
+        
+        // Filtra in memoria per mese/anno se specificato
+        if (targetMonth !== null && gi && gi.length > 0) {
+          const startMonth = new Date(targetYear, targetMonth - 1, 1);
+          const endMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+          
+          const filtered = gi.filter(g => {
+            // Controlla date (campo data o date) o schedule per scadenze
+            const checkDate = (dateStr) => {
+              if (!dateStr) return false;
+              const dateObj = new Date(dateStr);
+              if (isNaN(dateObj.getTime())) return false;
+              return dateObj >= startMonth && dateObj <= endMonth;
+            };
+            
+            // Controlla data principale
+            if (checkDate(g.date || g.data)) return true;
+            
+            // Controlla scadenze nello schedule (JSONB)
+            if (g.schedule && Array.isArray(g.schedule)) {
+              return g.schedule.some(s => checkDate(s.dueDate || s.due_date));
+            }
+            
+            return false;
+          });
+          data.gi = filtered;
+        } else {
+          data.gi = gi || [];
+        }
+      }
+
       // Query per vendite/riordini - analizza tutto il contesto
-      // Riconosce: vendita, vendite, riordino, riordini, gi, fatturato
+      // Riconosce: vendita, vendite, riordino, riordini, fatturato
       if (lowerFullContext.includes('vendita') || 
           lowerFullContext.includes('vendite') ||
           lowerFullContext.includes('riordino') ||
           lowerFullContext.includes('riordini') ||
-          lowerFullContext.includes('gi') ||
           lowerFullContext.includes('fatturato')) {
         
         let venditeQuery = supabase
@@ -705,40 +786,6 @@ module.exports = function(app) {
           data.vendite = filtered;
         } else {
           data.vendite = vendite || [];
-        }
-
-        // Query anche per GI
-        let giQuery = supabase
-          .from('gi')
-          .select('*')
-          .limit(200);
-        
-        // Filtro per consulente
-        if (!isAdmin || !wantsAll) {
-          giQuery = giQuery.eq('consultantid', user.id);
-        }
-        
-        const { data: gi } = await giQuery;
-        
-        // Filtra in memoria per mese/anno se specificato
-        if (targetMonth !== null && gi && gi.length > 0) {
-          const startMonth = new Date(targetYear, targetMonth - 1, 1);
-          const endMonth = new Date(targetYear, targetMonth, 0, 23, 59, 59);
-          
-          const filtered = gi.filter(g => {
-            // Controlla data_gi o created_at
-            const checkDate = (dateStr) => {
-              if (!dateStr) return false;
-              const dateObj = new Date(dateStr);
-              if (isNaN(dateObj.getTime())) return false;
-              return dateObj >= startMonth && dateObj <= endMonth;
-            };
-            
-            return checkDate(g.data_gi) || checkDate(g.created_at);
-          });
-          data.gi = filtered;
-        } else {
-          data.gi = gi || [];
         }
       }
 
@@ -784,10 +831,12 @@ CONTESTO DELLA CONVERSAZIONE:
 
 ACCESSO AI DATI:
 - Hai PIENO ACCESSO al database attraverso i dati forniti nella conversazione
-- I dati includono: appointments, clients, periods (con indicatorsprev/indicatorscons), leads, corsi, vendite, users
+- I dati includono: appointments, clients, periods (con indicatorsprev/indicatorscons), leads, corsi, vendite, cicli aperti, gi/scadenzario, users
 - Per ogni domanda, vengono caricati i dati rilevanti dal database
 - USA SEMPRE questi dati invece di inventare o supporre
 - Se i dati non sono sufficienti, dillo esplicitamente e suggerisci cosa serve
+- CICLI APERTI: attività/task aperti con priorità e scadenze
+- GI & SCADENZARIO: Gross Income con scadenze e rate di pagamento
 
 === IMPORTANTE: SEI UN CHATBOT INTELLIGENTE ===
 
@@ -1498,6 +1547,61 @@ RISPOSTE IN ITALIANO.`;
     } else if (lowerMessage.includes('vendita') || lowerMessage.includes('vendite')) {
       // Se la domanda riguarda vendite ma non ci sono risultati
       context += `VENDITE/RIORDINI: Nessuna vendita trovata${targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : ''}.\n\n`;
+    }
+
+    if (data.cicli && data.cicli.length > 0) {
+      context += `CICLI APERTI (${data.cicli.length}):\n`;
+      data.cicli.slice(0, 20).forEach(ciclo => {
+        const priorityLabel = ciclo.priority === 'high' ? 'Alta' : ciclo.priority === 'medium' ? 'Media' : 'Bassa';
+        const deadlineInfo = ciclo.deadlinetype ? `, scadenza: ${ciclo.deadlinetype}` : '';
+        context += `- ${ciclo.description || 'Nessuna descrizione'}: Priorità ${priorityLabel}${deadlineInfo}, Consulente: ${getUserName(ciclo.consultantid || ciclo.consultantId)}\n`;
+      });
+      if (data.cicli.length > 20) {
+        context += `... e altri ${data.cicli.length - 20} cicli\n`;
+      }
+      context += '\n';
+    }
+
+    if (data.gi && data.gi.length > 0) {
+      const monthLabel = targetMonth ? ` per ${Object.keys(monthNames).find(k => monthNames[k] === targetMonth)} ${targetYear}` : '';
+      context += `GI & SCADENZARIO (${data.gi.length}${monthLabel}):\n`;
+      data.gi.slice(0, 20).forEach(gi => {
+        const clientName = gi.clientname || gi.clientName || 'Cliente sconosciuto';
+        const consultantName = getUserName(gi.consultantid || gi.consultantId);
+        const dateStr = gi.date || gi.data ? new Date(gi.date || gi.data).toLocaleDateString('it-IT') : 'data non disponibile';
+        const vssTotal = gi.vsstotal || gi.vssTotal || 0;
+        context += `- ${clientName} (${consultantName}): €${vssTotal.toLocaleString('it-IT')}, data: ${dateStr}\n`;
+        
+        // Mostra scadenze se presenti nello schedule
+        if (gi.schedule && Array.isArray(gi.schedule) && gi.schedule.length > 0) {
+          const prossimeScadenze = gi.schedule
+            .filter(s => {
+              const dueDate = s.dueDate || s.due_date;
+              if (!dueDate) return false;
+              const dateObj = new Date(dueDate);
+              const now = new Date();
+              // Mostra scadenze future o prossime (ultimi 30 giorni)
+              const daysDiff = (dateObj - now) / (1000 * 60 * 60 * 24);
+              return daysDiff >= -30 && daysDiff <= 90;
+            })
+            .slice(0, 3)
+            .map(s => {
+              const dueDate = s.dueDate || s.due_date;
+              const dateStr = new Date(dueDate).toLocaleDateString('it-IT');
+              const amount = s.amount || 0;
+              const note = s.note || '';
+              return `  • Scadenza ${dateStr}: €${amount.toLocaleString('it-IT')}${note ? ` (${note})` : ''}\n`;
+            })
+            .join('');
+          if (prossimeScadenze) {
+            context += prossimeScadenze;
+          }
+        }
+      });
+      if (data.gi.length > 20) {
+        context += `... e altri ${data.gi.length - 20} record GI\n`;
+      }
+      context += '\n';
     }
 
     if (data.corsi && data.corsi.length > 0) {
