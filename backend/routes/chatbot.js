@@ -335,7 +335,8 @@ module.exports = function(app) {
         const { data: periods } = await query;
         data.periods = periods || [];
         
-        // Se la domanda riguarda "chi non ha fatto", servono anche gli utenti per confronto
+        // SEMPRE carica gli utenti quando si analizzano periodi per avere i nomi
+        // Questo è necessario per convertire userid in nomi nelle risposte
         if (needsAllPeriods && isAdmin) {
           const { data: users } = await supabase
             .from('app_users')
@@ -344,6 +345,26 @@ module.exports = function(app) {
             .order('name', { ascending: true });
           
           data.users = users || [];
+        } else if (data.periods && data.periods.length > 0) {
+          // Anche per utenti non-admin, carica gli utenti se ci sono periodi
+          // per assicurarsi che tutti gli userid nei periodi abbiano un nome
+          const uniqueUserIds = [...new Set(data.periods.map(p => p.userid).filter(Boolean))];
+          if (uniqueUserIds.length > 0) {
+            const { data: users } = await supabase
+              .from('app_users')
+              .select('id, name, role')
+              .in('id', uniqueUserIds);
+            
+            // Se già ci sono utenti, uniscili, altrimenti usa quelli nuovi
+            if (data.users && data.users.length > 0) {
+              // Unisci evitando duplicati
+              const existingIds = new Set(data.users.map(u => u.id));
+              const newUsers = (users || []).filter(u => !existingIds.has(u.id));
+              data.users = [...data.users, ...newUsers];
+            } else {
+              data.users = users || [];
+            }
+          }
         }
       }
 
@@ -545,7 +566,7 @@ ANALISI COMPARATIVE:
   * Confronta i conteggi e identifica chi ha più disponibilità
   * Se il mese è specificato (es. "novembre"), filtra solo gli appuntamenti di quel mese
 
-${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato il BP" (senza specificare previsionale/consuntivo) si intende SOLO il PREVISIONALE (indicatorsprev non vuoto). IMPORTANTE: USA SEMPRE I NOMI DEGLI UTENTI, MAI GLI ID. DISTINGUI SEMPRE tra previsionale (indicatorsprev) e consuntivo (indicatorscons).' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti. Quando rispondi sui tuoi BP, distingui chiaramente tra previsionale (indicatorsprev) e consuntivo (indicatorscons).'}
+${isAdmin ? '- Se l\'utente è admin e chiede "chi non ha fatto", "chi ha fatto", "chi ha compilato", "chi manca", "chi ha più slot liberi", "disponibilità", "tutti", "squadra", "team" o "global", usa i dati aggregati forniti e fai analisi comparative. Per "chi ha compilato il BP" (senza specificare previsionale/consuntivo) si intende SOLO il PREVISIONALE (indicatorsprev non vuoto). CRITICO: USA SEMPRE E SOLO I NOMI DEGLI UTENTI, MAI GLI ID o "UserID: xxx". Se un nome non è disponibile, NON includere quell\'utente nella risposta. NON duplicare mai lo stesso nome nella lista. DISTINGUI SEMPRE tra previsionale (indicatorsprev) e consuntivo (indicatorscons).' : '- Mostra SOLO i dati del consulente corrente, non hai accesso ad altri consulenti. Quando rispondi sui tuoi BP, distingui chiaramente tra previsionale (indicatorsprev) e consuntivo (indicatorscons).'}
 
 RISPOSTE IN ITALIANO.`;
   }
@@ -569,6 +590,7 @@ RISPOSTE IN ITALIANO.`;
     }
     
     // Crea mappa userid -> nome per sostituire ID con nomi
+    // IMPORTANTE: Carica anche gli userid dai periodi se non ci sono già gli utenti
     const userIdToName = {};
     if (data.users && data.users.length > 0) {
       data.users.forEach(u => {
@@ -576,8 +598,24 @@ RISPOSTE IN ITALIANO.`;
       });
     }
     
+    // Se ci sono periodi ma mancano alcuni userid nella mappa, carica quei nomi
+    if (data.periods && data.periods.length > 0) {
+      const missingUserIds = data.periods
+        .map(p => p.userid)
+        .filter(uid => uid && !userIdToName[uid]);
+      
+      if (missingUserIds.length > 0 && supabase) {
+        // Non possiamo fare query async qui, ma possiamo aggiungere un warning
+        // In alternativa, carichiamo gli utenti nella gatherRelevantData
+        missingUserIds.forEach(uid => {
+          userIdToName[uid] = `UserID: ${uid} (nome non trovato)`;
+        });
+      }
+    }
+    
     // Helper per ottenere nome utente
     function getUserName(userId) {
+      if (!userId) return 'Sconosciuto';
       return userIdToName[userId] || `UserID: ${userId}`;
     }
 
