@@ -1171,6 +1171,21 @@ RISPOSTE IN ITALIANO.`;
       context += `- NON dire "altri" o "altri 2" - elenca SEMPRE i nomi completi\n`;
       context += `- Se hai 4 periodi mensili con previsionale compilato, devi elencare 4 NOMI\n`;
       context += `- NON inventare o supporre - usa SOLO i dati forniti nella lista PERIODI\n\n`;
+      context += `CALCOLO SCOSTAMENTI PREVISIONALE vs CONSUNTIVO:\n`;
+      context += `- Quando l'utente chiede "scostamento", "differenza", "confronto", "divergenza", "gap" tra previsionale e consuntivo:\n`;
+      context += `  * Per ogni periodo rilevante, verifica se ha ENTRAMBI "PREVISIONALE: COMPILATO" E "CONSUNTIVO: COMPILATO"\n`;
+      context += `  * Se entrambi sono compilati, calcola la differenza per ogni indicatore:\n`;
+      context += `    - Scostamento GI = GI_consuntivo - GI_previsionale\n`;
+      context += `    - Scostamento VSS = VSS_consuntivo - VSS_previsionale\n`;
+      context += `    - Scostamento VSDPersonale = VSDPersonale_consuntivo - VSDPersonale_previsionale\n`;
+      context += `    - Scostamento NNCF = NNCF_consuntivo - NNCF_previsionale\n`;
+      context += `  * Mostra per ogni consulente:\n`;
+      context += `    - Valori PREVISIONALI (da "Indicatori PREVISIONALE")\n`;
+      context += `    - Valori CONSUNTIVI (da "Indicatori CONSUNTIVO")\n`;
+      context += `    - Scostamenti (valore positivo = obiettivo SUPERATO, negativo = obiettivo MANCATO)\n`;
+      context += `  * Se un periodo ha solo previsionale o solo consuntivo, dillo esplicitamente\n`;
+      context += `  * Se non ci sono consuntivi per il periodo richiesto, spiega che il consuntivo viene compilato alla fine del periodo\n`;
+      context += `  * Esempio di risposta: "Per Enrico Rizzi a novembre 2025: GI previsto €30.000, consuntivo €32.000, scostamento +€2.000 (superato)"\n\n`;
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
