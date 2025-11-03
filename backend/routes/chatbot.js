@@ -70,36 +70,48 @@ module.exports = function(app) {
       // Determina quali dati del database potrebbero essere rilevanti
       const relevantData = await gatherRelevantData(contextForData, req.user, conversationContext);
 
-      // Estrai mese/anno dalla domanda per passarlo a formatDataContext
-      const monthNames = {
-        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
-        'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
-      };
-      const { targetMonth, targetYear } = extractMonthYear(message);
+      // Estrai mese/anno da TUTTA la conversazione (non solo dall'ultimo messaggio)
+      // Questo è fondamentale per mantenere il contesto tra le domande
+      const fullConversationText = `${message} ${conversationContext}`;
+      const { targetMonth, targetYear } = extractMonthYear(fullConversationText);
 
       // Costruisci il contesto per il sistema
       const systemPrompt = buildSystemPrompt(req.user);
       const dataContext = formatDataContext(relevantData, message, targetMonth, targetYear, monthNames);
 
-      // Prepara i messaggi per OpenAI
+      // Prepara i messaggi per OpenAI con struttura corretta
+      // IMPORTANTE: Includiamo TUTTA la conversazione per mantenere il contesto
       const messages = [
         {
           role: 'system',
           content: systemPrompt
         },
+        // Aggiungi la storia della conversazione (ultimi 15 scambi per mantenere più contesto)
+        ...conversationHistory.slice(-30).map(msg => {
+          // Normalizza formato messaggi (supporta sia oggetti che stringhe)
+          if (typeof msg === 'string') {
+            // Se è una stringa, cerca di capire se è user o assistant dal contesto
+            return { role: 'user', content: msg };
+          }
+          if (msg.role && msg.content) {
+            return { role: msg.role, content: msg.content };
+          }
+          return null;
+        }).filter(Boolean),
+        // Aggiungi il messaggio corrente con i dati del database
         {
           role: 'user',
           content: `${dataContext}\n\nDomanda dell'utente: ${message}`
-        },
-        ...conversationHistory.slice(-10) // Limita a ultimi 10 messaggi
+        }
       ];
 
-      // Chiama OpenAI
+      // Chiama OpenAI con parametri ottimizzati per analisi approfondite
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: messages,
-        temperature: 0.7,
-        max_tokens: 1500
+        temperature: 0.3, // Più deterministico per analisi dati accurate
+        max_tokens: 2500, // Più spazio per risposte dettagliate e analisi approfondite
+        top_p: 0.95
       });
 
       const response = completion.choices[0]?.message?.content || 'Mi dispiace, non sono riuscito a generare una risposta.';
@@ -121,10 +133,28 @@ module.exports = function(app) {
   });
 
   /**
-   * Helper: Estrae mese e anno dalla query
+   * Helper: Estrae mese e anno dalla query (può includere conversazione completa)
+   * Questo è fondamentale per mantenere il contesto tra domande successive
    */
   function extractMonthYear(message) {
-    const lowerMessage = message.toLowerCase();
+    // Se message è un array o oggetto, estrai il testo
+    let textToAnalyze = message;
+    if (typeof message === 'object' && message !== null) {
+      if (Array.isArray(message)) {
+        textToAnalyze = message.map(m => {
+          if (typeof m === 'string') return m;
+          if (m.content) return m.content;
+          if (m.role === 'user' || m.role === 'assistant') return m.content || '';
+          return '';
+        }).join(' ');
+      } else if (message.content) {
+        textToAnalyze = message.content;
+      } else {
+        textToAnalyze = JSON.stringify(message);
+      }
+    }
+    
+    const lowerMessage = typeof textToAnalyze === 'string' ? textToAnalyze.toLowerCase() : String(textToAnalyze).toLowerCase();
     const monthNames = {
       'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
       'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
@@ -336,32 +366,40 @@ module.exports = function(app) {
     return existingUsers || [];
   }
 
-  /**
-   * Raccoglie dati rilevanti dal database in base alla query
-   */
-  async function gatherRelevantData(message, user, conversationContext = '') {
-    const data = {
-      appointments: null,
-      clients: null,
-      periods: null,
-      leads: null,
-      corsi: null,
-      vendite: null,
-      users: null
-    };
+   /**
+    * Raccoglie dati rilevanti dal database in base alla query E al contesto completo
+    * ANALISI COMPLETA: Considera TUTTA la conversazione, non solo l'ultima domanda
+    */
+   async function gatherRelevantData(message, user, conversationContext = '') {
+     const data = {
+       appointments: null,
+       clients: null,
+       periods: null,
+       leads: null,
+       corsi: null,
+       vendite: null,
+       users: null
+     };
 
-    const lowerMessage = message.toLowerCase();
-    const isAdmin = user.role === 'admin';
-    const wantsAll = wantsAllConsultants(lowerMessage, isAdmin);
-    const { targetMonth, targetYear } = extractMonthYear(lowerMessage);
+     // COMBINA il messaggio corrente con TUTTO il contesto della conversazione
+     // Questo permette di capire il tema anche per domande di follow-up senza keyword esplicite
+     const fullContext = `${message} ${conversationContext}`;
+     const lowerMessage = fullContext.toLowerCase();
+     const isAdmin = user.role === 'admin';
+     
+     // Analizza TUTTA la conversazione per determinare se vuole dati di tutti i consulenti
+     const wantsAll = wantsAllConsultants(fullContext, isAdmin);
+     
+     // Estrai mese/anno da TUTTA la conversazione (non solo dall'ultimo messaggio)
+     const { targetMonth, targetYear } = extractMonthYear(fullContext);
 
-    try {
-      
-      // Carica appuntamenti
-      data.appointments = await loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear);
-      
-      // Se chiede disponibilità/slot, serve anche lista utenti
-      if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
+     try {
+       
+       // Carica appuntamenti
+       data.appointments = await loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear);
+       
+       // Se chiede disponibilità/slot, serve anche lista utenti
+       if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
         const { data: users } = await supabase
           .from('app_users')
           .select('id, name, role')
@@ -372,11 +410,12 @@ module.exports = function(app) {
       }
 
       // CHATBOT INTELLIGENTE: Carica clienti per qualsiasi domanda che potrebbe riguardarli
-      const mightBeAboutClients = lowerMessage.includes('cliente') || 
-          lowerMessage.includes('client') ||
-          lowerMessage.includes('azienda') ||
-          lowerMessage.includes('contatto') ||
-          lowerMessage.includes('lead');
+      // Analizza TUTTO il contesto, non solo l'ultimo messaggio
+      const mightBeAboutClients = fullContext.includes('cliente') || 
+          fullContext.includes('client') ||
+          fullContext.includes('azienda') ||
+          fullContext.includes('contatto') ||
+          fullContext.includes('lead');
       
       if (mightBeAboutClients) {
         
@@ -394,13 +433,13 @@ module.exports = function(app) {
         data.clients = clients || [];
       }
 
-      // Carica periodi
+      // Carica periodi - analizza TUTTA la conversazione
       const needsAllPeriods = wantsAll || 
-                               lowerMessage.includes('chi non ha') ||
-                               lowerMessage.includes('chi ha fatto') ||
-                               lowerMessage.includes('chi ha compilato') ||
-                               lowerMessage.includes('chi compilato') ||
-                               lowerMessage.includes('manca');
+                               fullContext.toLowerCase().includes('chi non ha') ||
+                               fullContext.toLowerCase().includes('chi ha fatto') ||
+                               fullContext.toLowerCase().includes('chi ha compilato') ||
+                               fullContext.toLowerCase().includes('chi compilato') ||
+                               fullContext.toLowerCase().includes('manca');
       
       data.periods = await loadPeriods(lowerMessage, user, isAdmin, wantsAll, conversationContext);
       
@@ -409,9 +448,9 @@ module.exports = function(app) {
         data.users = await loadUsersForPeriods(data.periods, needsAllPeriods, isAdmin, data.users);
       }
 
-      // Query per leads
-      if (lowerMessage.includes('lead') || 
-          lowerMessage.includes('prospect')) {
+      // Query per leads - analizza tutto il contesto
+      if (fullContext.toLowerCase().includes('lead') || 
+          fullContext.toLowerCase().includes('prospect')) {
         
         let query = supabase
           .from('leads')
@@ -427,9 +466,9 @@ module.exports = function(app) {
         data.leads = leads || [];
       }
 
-      // Query per corsi
-      if (lowerMessage.includes('corso') || 
-          lowerMessage.includes('iscrizion')) {
+      // Query per corsi - analizza tutto il contesto
+      if (fullContext.toLowerCase().includes('corso') || 
+          fullContext.toLowerCase().includes('iscrizion')) {
         
         const { data: corsi } = await supabase
           .from('corsi_catalogo')
@@ -443,11 +482,11 @@ module.exports = function(app) {
         data.corsi = corsi || [];
       }
 
-      // Query per vendite/riordini
-      if (lowerMessage.includes('vendita') || 
-          lowerMessage.includes('riordino') ||
-          lowerMessage.includes('gi') ||
-          lowerMessage.includes('fatturato')) {
+      // Query per vendite/riordini - analizza tutto il contesto
+      if (fullContext.toLowerCase().includes('vendita') || 
+          fullContext.toLowerCase().includes('riordino') ||
+          fullContext.toLowerCase().includes('gi') ||
+          fullContext.toLowerCase().includes('fatturato')) {
         
         let query = supabase
           .from('vendite_riordini')
@@ -486,14 +525,37 @@ module.exports = function(app) {
 
   /**
    * Costruisce il prompt di sistema per il chatbot
+   * RENDE IL CHATBOT UN ANALISTA ESPERTO CON ACCESSO COMPLETO AI DATI
    */
   function buildSystemPrompt(user) {
     const isAdmin = user.role === 'admin';
     const roleContext = isAdmin 
-      ? 'Sei un assistente AI intelligente per un sistema di gestione commerciale. L\'utente è un amministratore. Di default, quando non specificato diversamente, mostra solo i dati dell\'utente corrente. Se l\'utente chiede esplicitamente dati di "tutti", "squadra", "team" o "global", puoi mostrare dati aggregati o di tutti i consulenti.'
-      : `Sei un assistente AI intelligente per un consulente commerciale. L'utente è ${user.name || user.email}. Puoi accedere SOLO ai dati di questo consulente, non hai accesso ai dati di altri consulenti.`;
+      ? 'Sei un ANALISTA ESPERTO DI DATI commerciali per un sistema di gestione commerciale. L\'utente è un amministratore. HAI ACCESSO COMPLETO a tutti i dati del database (appuntamenti, clienti, periodi, KPI, vendite, corsi, leads). Di default, quando non specificato diversamente, mostra solo i dati dell\'utente corrente. Se l\'utente chiede esplicitamente dati di "tutti", "squadra", "team" o "global", puoi mostrare dati aggregati o di tutti i consulenti.'
+      : `Sei un ANALISTA ESPERTO DI DATI commerciali per un consulente commerciale. L'utente è ${user.name || user.email}. HAI ACCESSO COMPLETO ai dati di questo consulente nel database (appuntamenti, clienti, periodi, KPI, vendite, corsi).`;
 
     return `${roleContext}
+
+=== SEI UN ANALISTA ESPERTO, NON UN CHATBOT GENERICO ===
+
+RUOLO: Sei un ANALISTA ESPERTO DEI DATI di questa applicazione commerciale. Il tuo compito è:
+- ANALIZZARE i dati in profondità, non rispondere superficialmente
+- INTERPRETARE le domande in modo intelligente basandoti sul CONTESTO COMPLETO della conversazione
+- USARE TUTTI i dati disponibili per fornire risposte accurate e dettagliate
+- NON "tirare a caso": ogni risposta deve essere basata sui dati reali forniti
+- MANTENERE IL CONTESTO tra tutte le domande nella conversazione
+
+CONTESTO DELLA CONVERSAZIONE:
+- Hai accesso a TUTTA la storia della conversazione precedente
+- Quando l'utente fa una domanda di follow-up (es. "E quello?", "E gli altri?", "SICURO?"), usa il CONTESTO precedente per capire a cosa si riferisce
+- Se nella conversazione precedente si parlava di "novembre 2025" e l'utente ora chiede "E dicembre?", capisci che si riferisce a "dicembre 2025"
+- Se si parlava di "BP previsionale" e ora chiede "E il consuntivo?", capisci il riferimento
+
+ACCESSO AI DATI:
+- Hai PIENO ACCESSO al database attraverso i dati forniti nella conversazione
+- I dati includono: appointments, clients, periods (con indicatorsprev/indicatorscons), leads, corsi, vendite, users
+- Per ogni domanda, vengono caricati i dati rilevanti dal database
+- USA SEMPRE questi dati invece di inventare o supporre
+- Se i dati non sono sufficienti, dillo esplicitamente e suggerisci cosa serve
 
 === IMPORTANTE: SEI UN CHATBOT INTELLIGENTE ===
 
