@@ -699,9 +699,19 @@ RISPOSTE IN ITALIANO.`;
       context += 'Quando qualcuno chiede "chi ha compilato il BP di [mese]" senza specificare, si riferisce SOLO al PREVISIONALE.\n\n';
       
       // Se specificato mese/anno, evidenzia i periodi corrispondenti
+      // IMPORTANTE: Se la domanda riguarda "BP di [mese]" o "BP mensile", filtra SOLO periodi MENSILI
+      const lowerMsg = (message || '').toLowerCase();
+      const isMonthlyBPQuestion = lowerMsg.includes('bp') || lowerMsg.includes('battle plan') || lowerMsg.includes('previsionale') || lowerMsg.includes('consuntivo');
+      const shouldFilterMonthlyOnly = isMonthlyBPQuestion && targetMonth;
+      
       let relevantPeriods = data.periods;
       if (targetMonth) {
         relevantPeriods = data.periods.filter(p => {
+          // Se è una domanda su BP mensili, considera SOLO periodi con type="mensile"
+          if (shouldFilterMonthlyOnly && p.type !== 'mensile') {
+            return false; // Escludi periodi settimanali, trimestrali, ecc.
+          }
+          
           // PRIORITÀ 1: Se year E month sono popolati, usa quelli (più preciso)
           if (p.year != null && p.month != null) {
             return p.year == targetYear && p.month == targetMonth;
@@ -835,12 +845,14 @@ RISPOSTE IN ITALIANO.`;
       const instructionMonth = targetMonth || currentDate.getMonth() + 1;
       const instructionMonthName = monthNames[Object.keys(monthNames).find(k => monthNames[k] === instructionMonth)] || 'mese indicato';
       
-      context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
-      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="mensile" - ATTENZIONE: nel database è in ITALIANO "mensile", NON "monthly") che corrisponde a ${instructionMonthName} ${instructionYear}. `;
+      context += `ISTRUZIONE CRITICA: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
+      context += `ATTENZIONE FONDAMENTALE: Quando una domanda chiede "BP di [mese]" o "chi ha compilato il BP", devi considerare SOLO periodi con type="mensile" (non "monthly", e NON periodi settimanali/trimestrali/ecc.). `;
+      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="mensile" - nel database è in ITALIANO) che corrisponde a ${instructionMonthName} ${instructionYear}. `;
       context += `Un periodo corrisponde se: (year=${instructionYear} E month=${instructionMonth}) OPPURE (startDate/endDate si sovrappone al mese ${instructionMonthName} ${instructionYear}). `;
-      context += `Poi controlla se quel periodo ha indicatorsprev non vuoto (questo indica PREVISIONALE compilato). `;
-      context += '- Gli utenti che HANNO un periodo con indicatorsprev non vuoto sono quelli che HANNO fatto il BP PREVISIONALE. ';
-      context += `- Gli utenti che NON hanno un periodo con indicatorsprev non vuoto sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
+      context += `Poi controlla se quel periodo MENSILE ha indicatorsprev non vuoto (questo indica PREVISIONALE compilato). `;
+      context += `IMPORTANTE: Ignora completamente i periodi SETTIMANALI, TRIMESTRALI, ecc. - guarda SOLO quelli con type="mensile". `;
+      context += '- Gli utenti che HANNO un periodo MENSILE con indicatorsprev non vuoto sono quelli che HANNO fatto il BP PREVISIONALE. ';
+      context += `- Gli utenti che NON hanno un periodo MENSILE con indicatorsprev non vuoto sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
       context += 'CRITICO - DISTINGUI SEMPRE PREVISIONALE E CONSUNTIVO: ';
       context += '- PREVISIONALE = indicatorsprev non vuoto (si compila all\'inizio del periodo) ';
       context += '- CONSUNTIVO = indicatorscons non vuoto (si compila alla fine del periodo) ';
