@@ -13262,9 +13262,12 @@ function viewCorsiInteraziendali(){
               <div class="cliente-group">
                 <div class="form-group">
                   <label for="cliente-1">Cliente *</label>
-                  <div style="position:relative">
+                  <div class="client-dropdown">
+                    <div class="client-dropdown-input" id="cliente-input-1">
+                      <span id="cliente-display-1">— seleziona cliente —</span>
+                      <span class="client-dropdown-arrow">▼</span>
+                    </div>
                     <input type="hidden" id="cliente-select-1" value="" required>
-                    <input type="text" id="cliente-display-1" placeholder="Seleziona cliente..." autocomplete="off" style="width:100%;padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--text);">
                     <div class="client-dropdown-list" id="cliente-list-1" style="display:none">
                       <div class="client-dropdown-search">
                         <input type="text" id="cliente-search-1" placeholder="Cerca cliente..." autocomplete="off">
@@ -13515,13 +13518,14 @@ function viewCorsiInteraziendali(){
 
   // Setup client dropdown per modal iscrizioni
   async function setupClienteDropdown(index) {
+    const input = document.getElementById(`cliente-input-${index}`);
     const display = document.getElementById(`cliente-display-${index}`);
     const hidden = document.getElementById(`cliente-select-${index}`);
     const list = document.getElementById(`cliente-list-${index}`);
     const options = document.getElementById(`cliente-options-${index}`);
     const search = document.getElementById(`cliente-search-${index}`);
     
-    if (!display || !hidden || !list || !options || !search) return;
+    if (!input || !display || !hidden || !list || !options || !search) return;
     
     // Carica clienti
     let clients = window._clients || [];
@@ -13567,68 +13571,66 @@ function viewCorsiInteraziendali(){
           </div>
         `;
       }).join('');
+      
+      // Aggiungi event listeners alle opzioni dopo il render
+      options.querySelectorAll('.client-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const clientId = option.getAttribute('data-client-id');
+          const clientName = option.getAttribute('data-client-name');
+          
+          hidden.value = clientId;
+          display.textContent = clientName;
+          list.style.display = 'none';
+          input.parentElement.classList.remove('open');
+          
+          // Rimuovi selezione precedente e seleziona corrente
+          options.querySelectorAll('.client-option').forEach(opt => opt.classList.remove('selected'));
+          option.classList.add('selected');
+          
+          // Carica info cliente (consulente, costo)
+          loadClienteInfo(index);
+        });
+      });
     }
     
-    // Renderizza le opzioni iniziali
-    renderOptions();
-    
-    // Event listeners
-    display.addEventListener('click', (e) => {
+    // Event listener per aprire/chiudere dropdown
+    input.addEventListener('click', (e) => {
       e.stopPropagation();
-      list.style.display = 'block';
-      search.focus();
+      const isOpen = list.style.display === 'block';
+      list.style.display = isOpen ? 'none' : 'block';
+      input.parentElement.classList.toggle('open', !isOpen);
+      
+      if (!isOpen) {
+        search.focus();
+        renderOptions();
+      }
     });
     
-    display.addEventListener('focus', () => {
-      list.style.display = 'block';
-    });
-    
-    display.addEventListener('blur', (e) => {
-      setTimeout(() => {
-        if (!list.contains(document.activeElement)) {
-          list.style.display = 'none';
-        }
-      }, 200);
-    });
-    
-    // Ricerca
+    // Event listener per ricerca
     search.addEventListener('input', (e) => {
-      const query = String(e.target.value || '').trim().toLowerCase();
+      const query = e.target.value.toLowerCase().trim();
       if (!query) {
         renderOptions();
         return;
       }
       
       const filtered = sortedClients.filter(client => 
-        String(client.name || '').toLowerCase().includes(query)
+        String(client.name || '').toLowerCase().includes(query) ||
+        String(client.consultantname || client.consultantName || '').toLowerCase().includes(query)
       );
       renderOptions(filtered);
     });
     
-    // Selezione opzione
-    options.addEventListener('click', (e) => {
-      const option = e.target.closest('.client-option');
-      if (!option) return;
-      
-      const clientId = option.dataset.clientId;
-      const clientName = option.dataset.clientName;
-      const consultantId = option.dataset.consultantId || '';
-      const consultantName = option.dataset.consultantName || '';
-      
-      hidden.value = clientId;
-      display.value = clientName;
-      list.style.display = 'none';
-      
-      // Carica info cliente (consulente, costo)
-      loadClienteInfo(index);
-    });
-    
-    // Click fuori per chiudere
+    // Chiudi dropdown cliccando fuori
     document.addEventListener('click', (e) => {
-      if (!list.contains(e.target) && e.target !== display && e.target !== search) {
+      if (!input.contains(e.target) && !list.contains(e.target)) {
         list.style.display = 'none';
+        input.parentElement.classList.remove('open');
       }
     });
+    
+    // Renderizza opzioni iniziali
+    renderOptions();
   }
 
   let clienteCount = 1;
@@ -13641,9 +13643,12 @@ function viewCorsiInteraziendali(){
       <div class="cliente-group">
         <div class="form-group">
           <label for="cliente-${clienteCount}">Cliente *</label>
-          <div style="position:relative">
+          <div class="client-dropdown">
+            <div class="client-dropdown-input" id="cliente-input-${clienteCount}">
+              <span id="cliente-display-${clienteCount}">— seleziona cliente —</span>
+              <span class="client-dropdown-arrow">▼</span>
+            </div>
             <input type="hidden" id="cliente-select-${clienteCount}" value="" required>
-            <input type="text" id="cliente-display-${clienteCount}" placeholder="Seleziona cliente..." autocomplete="off" style="width:100%;padding:8px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:var(--text);">
             <div class="client-dropdown-list" id="cliente-list-${clienteCount}" style="display:none">
               <div class="client-dropdown-search">
                 <input type="text" id="cliente-search-${clienteCount}" placeholder="Cerca cliente..." autocomplete="off">
@@ -13677,9 +13682,9 @@ function viewCorsiInteraziendali(){
   };
 
   window.removeCliente = function(index) {
-    const clienteDisplay = document.getElementById(`cliente-display-${index}`);
-    if (clienteDisplay) {
-      const clienteGroup = clienteDisplay.closest('.cliente-group');
+    const clienteInput = document.getElementById(`cliente-input-${index}`);
+    if (clienteInput) {
+      const clienteGroup = clienteInput.closest('.cliente-group');
       if (clienteGroup) {
         clienteGroup.remove();
       }
@@ -13989,7 +13994,7 @@ function viewCorsiInteraziendali(){
       
       for (const group of clienteGroups) {
         const clienteHidden = group.querySelector('input[id^="cliente-select-"]');
-        const clienteDisplay = group.querySelector('input[id^="cliente-display-"]');
+        const clienteDisplay = group.querySelector('span[id^="cliente-display-"]');
         const consulenteSelect = group.querySelector('select[id^="consulente-"]');
         const costoInput = group.querySelector('input[id^="costo-"]');
         
@@ -13997,7 +14002,7 @@ function viewCorsiInteraziendali(){
           const consulenteOption = consulenteSelect.selectedOptions[0];
           clienti.push({
             cliente_id: clienteHidden.value,
-            cliente_nome: clienteDisplay ? clienteDisplay.value : '',
+            cliente_nome: clienteDisplay ? clienteDisplay.textContent : '',
             consulente_id: consulenteSelect.value,
             consulente_nome: consulenteOption ? consulenteOption.textContent : '',
             costo_personalizzato: Number(costoInput.value)
