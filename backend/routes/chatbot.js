@@ -1049,6 +1049,45 @@ RISPOSTE IN ITALIANO.`;
         
         context += `- ${userName}, ${type}, anno: ${periodYear || '?'}, mese: ${periodMonth ? (monthName || `mese ${periodMonth}`) : (period.startdate ? 'da startDate' : '?')}${marker}\n`;
         context += `  → PREVISIONALE: ${prevStatus} | CONSUNTIVO: ${consStatus}\n`;
+        
+        // Se il previsionale è compilato, mostra gli indicatori principali per analisi comparative
+        if (hasPrev && period.indicatorsprev && typeof period.indicatorsprev === 'object') {
+          const indicators = period.indicatorsprev;
+          const gi = indicators.gi || indicators.GI || 0;
+          const vss = indicators.vss || indicators.VSS || 0;
+          const vsdPersonale = indicators.vsdpersonale || indicators.VSDPersonale || indicators.vsd_personale || 0;
+          const nncf = indicators.nncf || indicators.NNCF || 0;
+          
+          // Mostra solo se ci sono valori significativi (non zero)
+          const values = [];
+          if (gi > 0) values.push(`GI: €${gi.toLocaleString('it-IT')}`);
+          if (vss > 0) values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
+          if (vsdPersonale > 0) values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
+          if (nncf > 0) values.push(`NNCF: ${nncf}`);
+          
+          if (values.length > 0) {
+            context += `  → Indicatori PREVISIONALE: ${values.join(', ')}\n`;
+          }
+        }
+        
+        // Se il consuntivo è compilato, mostra gli indicatori principali
+        if (hasCons && period.indicatorscons && typeof period.indicatorscons === 'object') {
+          const indicators = period.indicatorscons;
+          const gi = indicators.gi || indicators.GI || 0;
+          const vss = indicators.vss || indicators.VSS || 0;
+          const vsdPersonale = indicators.vsdpersonale || indicators.VSDPersonale || indicators.vsd_personale || 0;
+          const nncf = indicators.nncf || indicators.NNCF || 0;
+          
+          const values = [];
+          if (gi > 0) values.push(`GI: €${gi.toLocaleString('it-IT')}`);
+          if (vss > 0) values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
+          if (vsdPersonale > 0) values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
+          if (nncf > 0) values.push(`NNCF: ${nncf}`);
+          
+          if (values.length > 0) {
+            context += `  → Indicatori CONSUNTIVO: ${values.join(', ')}\n`;
+          }
+        }
       });
       context += '\n';
     }
