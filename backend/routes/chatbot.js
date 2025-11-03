@@ -743,6 +743,14 @@ ANALISI COMPARATIVE:
   * Identifica quali utenti MANCANO confrontando la lista utenti con i periodi presenti
   * Analizza indicatori previsionali vs consuntivi
 
+- Quando l'utente chiede "chi ha previsto più GI", "chi ha più VSS", "chi ha fatto più GI", ecc.:
+  * Cerca nella lista PERIODI i periodi rilevanti (es. novembre 2025 se menzionato nella conversazione)
+  * Leggi gli indicatori mostrati nelle righe "Indicatori PREVISIONALE" o "Indicatori CONSUNTIVO"
+  * Estrai i valori numerici (es. "GI: €10.000" → valore 10000)
+  * Confronta i valori tra tutti i consulenti
+  * Elenca i consulenti dal valore più alto al più basso
+  * Se nella conversazione precedente si parlava di un mese/anno specifico, usa quello
+
 - Quando hai una lista di UTENTI e una lista di APPUNTAMENTI per determinare disponibilità/slot liberi:
   * Conta gli appuntamenti per ogni userid (consulente)
   * Chi ha MENO appuntamenti = ha PIÙ slot liberi/giornate libere
