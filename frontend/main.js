@@ -15312,11 +15312,12 @@ function viewGestioneLead(){
                 <th>Sorgente</th>
                 <th>Consulente</th>
                 <th>Note</th>
+                <th>Azioni</th>
               </tr>
             </thead>
             <tbody id="contact-leads-table-body">
               <tr>
-                <td colspan="12" style="text-align: center; padding: 40px; color: #666;">
+                <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
                   Caricamento lead da contattare...
                 </td>
               </tr>
@@ -15342,11 +15343,12 @@ function viewGestioneLead(){
                 <th>Consulente</th>
                 <th>Note</th>
                 <th>Contatto Avvenuto</th>
+                <th>Azioni</th>
               </tr>
             </thead>
             <tbody id="contacted-leads-table-body">
               <tr>
-                <td colspan="14" style="text-align: center; padding: 40px; color: #666;">
+                <td colspan="15" style="text-align: center; padding: 40px; color: #666;">
                   Caricamento lead contattati...
                 </td>
               </tr>
@@ -15608,6 +15610,9 @@ function viewGestioneLead(){
               <button class="btn-delete" onclick="deleteLead('${lead.id}')" title="Elimina" ${editingInfo ? 'disabled' : ''}>
                 🗑️
               </button>
+              <button class="btn-edit-notes" onclick="editLeadNotes('${lead.id}')" title="Modifica Note">
+                📝
+              </button>
             </div>
           </td>
         </tr>
@@ -15622,7 +15627,7 @@ function viewGestioneLead(){
     if (leads.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
+            <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
             Nessun lead da contattare
           </td>
         </tr>
@@ -15660,10 +15665,15 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.indirizzoMail || '')}</td>
         <td>${htmlEscape(lead.provincia || '')}</td>
         <td>${htmlEscape(lead.comune || '')}</td>
-            <td>${htmlEscape(lead.sorgente || '')}</td>
-            <td>${htmlEscape(lead.consulenteNome || '')}</td>
-            <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
-          </tr>
+        <td>${htmlEscape(lead.sorgente || '')}</td>
+        <td>${htmlEscape(lead.consulenteNome || '')}</td>
+        <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+        <td>
+          <button class="btn-edit-notes" onclick="editLeadNotes('${lead.id}')" title="Modifica Note">
+            📝
+          </button>
+        </td>
+      </tr>
     `).join('');
   }
 
@@ -15674,7 +15684,7 @@ function viewGestioneLead(){
     if (leads.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="13" style="text-align: center; padding: 40px; color: #666;">
+            <td colspan="15" style="text-align: center; padding: 40px; color: #666;">
             Nessun lead contattato
           </td>
         </tr>
@@ -15712,11 +15722,16 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.indirizzoMail || '')}</td>
         <td>${htmlEscape(lead.provincia || '')}</td>
         <td>${htmlEscape(lead.comune || '')}</td>
-            <td>${htmlEscape(lead.sorgente || '')}</td>
-            <td>${htmlEscape(lead.consulenteNome || '')}</td>
-            <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
-            <td>${formatDate(lead.contattoAvvenuto)}</td>
-          </tr>
+        <td>${htmlEscape(lead.sorgente || '')}</td>
+        <td>${htmlEscape(lead.consulenteNome || '')}</td>
+        <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+        <td>${formatDate(lead.contattoAvvenuto)}</td>
+        <td>
+          <button class="btn-edit-notes" onclick="editLeadNotes('${lead.id}')" title="Modifica Note">
+            📝
+          </button>
+        </td>
+      </tr>
     `).join('');
   }
 
@@ -15745,6 +15760,169 @@ function viewGestioneLead(){
     } catch (error) {
       console.error('Error loading lead for edit:', error);
       toast('Errore nel caricamento del lead');
+    }
+  }
+
+  async function editLeadNotes(leadId) {
+    try {
+      // Controllo autenticazione
+      const token = getToken();
+      if (!token) {
+        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+        setTimeout(() => {
+          logout();
+        }, 2000);
+        return;
+      }
+
+      // Recupera il lead
+      const response = await GET(`/api/leads?id=${leadId}`);
+      const lead = response.lead;
+      
+      if (!lead) {
+        toast('Lead non trovato');
+        return;
+      }
+
+      // Crea modal per modificare le note
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+      
+      const modal = document.createElement('div');
+      modal.className = 'lead-notes-modal';
+      modal.style.cssText = 'background: var(--card, #fff); border-radius: 14px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);';
+      
+      const hasContattoAvvenuto = !!lead.contattoAvvenuto;
+      
+      modal.innerHTML = `
+        <div style="margin-bottom: 20px;">
+          <h2 style="margin: 0 0 8px 0; font-size: 20px; color: var(--text, #111);">Modifica Note</h2>
+          <p style="margin: 0; color: var(--muted, #666); font-size: 14px;">Lead: ${htmlEscape(lead.nomeLead || 'Senza nome')}</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text, #111);">
+            <input type="checkbox" id="lead-contatto-avvenuto" ${hasContattoAvvenuto ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+            <span>Contatto avvenuto</span>
+          </label>
+          ${hasContattoAvvenuto ? `
+            <p style="margin: 4px 0 0 26px; font-size: 12px; color: var(--muted, #666);">
+              Data contatto: ${formatDate(lead.contattoAvvenuto)}
+            </p>
+          ` : ''}
+        </div>
+        <textarea id="lead-notes-textarea" rows="10" style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 150px;">${htmlEscape(lead.note || '')}</textarea>
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px;">
+          <button id="lead-notes-cancel" class="ghost" style="padding: 8px 16px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.12); font-size: 14px; font-weight: 500;">Annulla</button>
+          <button id="lead-notes-save" style="padding: 8px 16px; border-radius: 8px; cursor: pointer; background: var(--accent, #2196F3); color: white; border: none; font-size: 14px; font-weight: 500;">Salva</button>
+        </div>
+      `;
+      
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+      
+      // Focus sulla textarea
+      const textarea = modal.querySelector('#lead-notes-textarea');
+      setTimeout(() => textarea.focus(), 100);
+      
+      // Handler per chiudere
+      const closeModal = () => {
+        if (overlay && overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      };
+      
+      // Handler per Annulla
+      modal.querySelector('#lead-notes-cancel').onclick = closeModal;
+      
+      // Handler per Salva
+      modal.querySelector('#lead-notes-save').onclick = async () => {
+        const notes = textarea.value.trim();
+        const contattoCheckbox = modal.querySelector('#lead-contatto-avvenuto');
+        const contattoAvvenutoChecked = contattoCheckbox.checked;
+        
+        try {
+          const payload = {
+            id: leadId,
+            note: notes
+          };
+          
+          // Gestione contatto avvenuto
+          if (contattoAvvenutoChecked && !hasContattoAvvenuto) {
+            // Se flaggato e prima non c'era: aggiungi contatto avvenuto con note automatiche
+            payload.contattoAvvenuto = new Date().toISOString();
+            
+            // Aggiungi note automatiche come nel banner (stessa logica)
+            const timestamp = new Date().toLocaleString('it-IT');
+            let newNote;
+            
+            if (notes.trim()) {
+              // Se ci sono note inserite, aggiungi timestamp e poi le note
+              const existingNotes = lead.note || '';
+              if (existingNotes.trim()) {
+                newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}`;
+              } else {
+                newNote = `Contatto avvenuto il ${timestamp}`;
+              }
+              newNote += `:\n${notes.trim()}`;
+            } else {
+              // Se non ci sono note inserite, aggiungi solo timestamp
+              const existingNotes = lead.note || '';
+              if (existingNotes.trim()) {
+                newNote = `${existingNotes.trim()}\n\nContatto avvenuto il ${timestamp}`;
+              } else {
+                newNote = `Contatto avvenuto il ${timestamp}`;
+              }
+            }
+            
+            payload.note = newNote;
+          } else if (!contattoAvvenutoChecked && hasContattoAvvenuto) {
+            // Se non flaggato e prima c'era: rimuovi contatto avvenuto
+            payload.contattoAvvenuto = null;
+          } else if (contattoAvvenutoChecked && hasContattoAvvenuto) {
+            // Se flaggato e prima c'era già: mantieni contatto avvenuto (non modificare data)
+            // Non aggiungere payload.contattoAvvenuto per non sovrascrivere la data esistente
+            // Solo salva le note così come sono
+          }
+          
+          await POST('/api/leads', payload);
+          toast('✅ Note salvate');
+          closeModal();
+          // Ricarica i dati
+          if (typeof loadLeadsData === 'function') loadLeadsData();
+          if (typeof loadContactLeadsData === 'function') loadContactLeadsData();
+        } catch (error) {
+          console.error('Error saving lead notes:', error);
+          toast('❌ Errore nel salvataggio delle note');
+        }
+      };
+      
+      // Chiudi cliccando fuori
+      overlay.onclick = (e) => {
+        if (e.target === overlay) {
+          closeModal();
+        }
+      };
+      
+      // Chiudi con ESC
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+      
+      // Salva con Ctrl+Enter
+      textarea.onkeydown = (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+          modal.querySelector('#lead-notes-save').click();
+        }
+      };
+      
+    } catch (error) {
+      console.error('Error loading lead notes for edit:', error);
+      toast('Errore nel caricamento delle note');
     }
   }
 
@@ -16483,7 +16661,13 @@ function viewGestioneLead(){
         
         await POST('/api/leads', payload);
       } else {
-        // Aggiungi tentativo alle note (usa lead già recuperato)
+        // Aggiungi tentativo alle note - recupera prima il lead
+        const leadResponse = await GET(`/api/leads?id=${leadId}`);
+        const lead = leadResponse.lead;
+        if (!lead) {
+          throw new Error('Lead non trovato');
+        }
+        
         const timestamp = new Date().toLocaleString('it-IT');
         const existingNotes = lead.note || '';
         
@@ -16741,6 +16925,7 @@ Comune: ${lead.comune || 'N/A'}
   window.openEmail = openEmail;
   window.saveContactToPhone = saveContactToPhone;
   window.loadLeadsData = loadLeadsData;
+  window.editLeadNotes = editLeadNotes;
 
   // Caricamento iniziale
   loadLeadsData();
