@@ -92,9 +92,9 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
 
   // ---- Gestione GET lista lead ----
   async function handleGetList(req, res, isAdmin) {
-    try {
-      // Prova prima Supabase per dati aggiornati
-      if (typeof supabase !== 'undefined' && supabase) {
+    // Prova prima Supabase per dati aggiornati
+    if (typeof supabase !== 'undefined' && supabase) {
+      try {
         let query = supabase
           .from('leads')
           .select(`
@@ -194,11 +194,12 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           if (startDate && endDate) {
             if (contactStatus === 'contacted') {
               // Per lead contattati, filtra per data di contatto nel periodo
-              query = query.gte('contatto_avvenuto', startDate.toISOString()).lt('contatto_avvenuto', endDate.toISOString());
+              query = query.gte('contatto_avvenuto', startDate.toISOString()).lte('contatto_avvenuto', endDate.toISOString());
             } else {
               // Per 'all', filtra per data di inserimento nel periodo
-              query = query.gte('data_inserimento', startDate.toISOString()).lt('data_inserimento', endDate.toISOString());
+              query = query.gte('data_inserimento', startDate.toISOString()).lte('data_inserimento', endDate.toISOString());
             }
+          }
           }
         }
         // Se contactStatus è 'to_contact', non applichiamo il filtro periodo
@@ -211,31 +212,33 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         }
         
         // Mappa i dati da Supabase al formato frontend
-        const leads = (data || []).map(row => ({
-          id: row.id,
-          dataInserimento: row.data_inserimento,
-          nomeLead: row.nome_lead,
-          aziendaLead: row.azienda_lead,
-          settoreLead: row.settore_lead,
-          numeroTelefono: row.numero_telefono,
-          indirizzoMail: row.indirizzo_mail,
-          provincia: row.provincia,
-          comune: row.comune,
-          indirizzo: row.indirizzo,
-          sorgente: row.sorgente,
-          consulenteAssegnato: row.consulente_assegnato,
-          consulenteNome: row.app_users?.name || row.app_users?.email || '',
-          note: row.note,
-          contattoAvvenuto: row.contatto_avvenuto,
-          contactBannerAnswered: !!row.contact_banner_answered,
-          createdAt: row.createdat,
-          updatedAt: row.updatedat
-        }));
+        const leads = (data || []).map(row => {
+          return {
+            id: row.id,
+            dataInserimento: row.data_inserimento,
+            nomeLead: row.nome_lead,
+            aziendaLead: row.azienda_lead,
+            settoreLead: row.settore_lead,
+            numeroTelefono: row.numero_telefono,
+            indirizzoMail: row.indirizzo_mail,
+            provincia: row.provincia,
+            comune: row.comune,
+            indirizzo: row.indirizzo,
+            sorgente: row.sorgente,
+            consulenteAssegnato: row.consulente_assegnato,
+            consulenteNome: row.app_users?.name || row.app_users?.email || '',
+            note: row.note,
+            contattoAvvenuto: row.contatto_avvenuto,
+            contactBannerAnswered: !!row.contact_banner_answered,
+            createdAt: row.createdat,
+            updatedAt: row.updatedat
+          };
+        });
         
         return res.json({ leads });
+      } catch (err) {
+        console.error('Error fetching from Supabase, falling back to JSON:', err);
       }
-    } catch (error) {
-      console.error('Error fetching from Supabase, falling back to JSON:', error);
     }
     
     // Fallback al metodo tradizionale (se necessario)
