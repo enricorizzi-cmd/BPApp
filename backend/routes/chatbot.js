@@ -75,6 +75,12 @@ module.exports = function(app) {
       const fullConversationText = `${message} ${conversationContext}`;
       const { targetMonth, targetYear } = extractMonthYear(fullConversationText);
 
+      // Definisci monthNames per formattazione
+      const monthNames = {
+        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
+        'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+      };
+
       // Costruisci il contesto per il sistema
       const systemPrompt = buildSystemPrompt(req.user);
       const dataContext = formatDataContext(relevantData, message, targetMonth, targetYear, monthNames);
