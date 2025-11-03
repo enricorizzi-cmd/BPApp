@@ -924,26 +924,26 @@ RISPOSTE IN ITALIANO.`;
       const instructionMonth = targetMonth || currentDate.getMonth() + 1;
       const instructionMonthName = monthNames[Object.keys(monthNames).find(k => monthNames[k] === instructionMonth)] || 'mese indicato';
       
-      context += `ISTRUZIONE CRITICA: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
-      context += `ATTENZIONE FONDAMENTALE: Quando una domanda chiede "BP di [mese]" o "chi ha compilato il BP", devi considerare SOLO periodi con type="mensile" (non "monthly", e NON periodi settimanali/trimestrali/ecc.). `;
-      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="mensile" - nel database è in ITALIANO) che corrisponde a ${instructionMonthName} ${instructionYear}. `;
-      context += `Un periodo corrisponde se: (year=${instructionYear} E month=${instructionMonth}) OPPURE (startDate/endDate si sovrappone al mese ${instructionMonthName} ${instructionYear}). `;
-      context += `Poi controlla se quel periodo MENSILE ha indicatorsprev non vuoto (questo indica PREVISIONALE compilato). `;
-      context += `IMPORTANTE: Ignora completamente i periodi SETTIMANALI, TRIMESTRALI, ecc. - guarda SOLO quelli con type="mensile". `;
-      context += '- Gli utenti che HANNO un periodo MENSILE con indicatorsprev non vuoto sono quelli che HANNO fatto il BP PREVISIONALE. ';
-      context += `- Gli utenti che NON hanno un periodo MENSILE con indicatorsprev non vuoto sono quelli che NON hanno fatto il BP previsionale per ${instructionMonthName} ${instructionYear}. `;
-      context += 'CRITICO - DISTINGUI SEMPRE PREVISIONALE E CONSUNTIVO: ';
-      context += '- PREVISIONALE = indicatorsprev non vuoto (si compila all\'inizio del periodo) ';
-      context += '- CONSUNTIVO = indicatorscons non vuoto (si compila alla fine del periodo) ';
-      context += '- Se qualcuno chiede "chi ha compilato il BP" senza specificare, si intende SOLO il PREVISIONALE ';
-      context += '- NON dire mai che qualcuno ha compilato "sia previsionale che consuntivo" a meno che indicatorsprev E indicatorscons siano entrambi non vuoti ';
-      context += '- Quando rispondi su un utente specifico, indica chiaramente cosa ha compilato: solo previsionale, solo consuntivo, o entrambi ';
-      context += 'CRITICO - FORMATTAZIONE RISPOSTE: ';
-      context += '- USA SEMPRE E SOLO I NOMI degli utenti (MAI gli ID o "UserID: xxx"). Se non conosci un nome dalla lista UTENTI/CONSULENTI, NON includere quell\'utente nella risposta ma chiedi chiarimenti. ';
-      context += '- NON duplicare mai lo stesso nome nella lista. Se vedi lo stesso utente più volte nei periodi, conta solo UNA volta. ';
-      context += '- Elenca i nomi in ordine alfabetico, senza duplicati e senza ID. ';
-      context += '- Se qualcosa non è chiaro dai dati forniti, CHIEDI CHIARIMENTI invece di inventare o supporre. ';
-      context += 'ATTENZIONE: Guarda TUTTI i periodi forniti nella lista PERIODI, anche quelli che sembrano non corrispondere - controlla sia month/year che startDate/endDate. I periodi rilevanti sono marcati con ⭐.\n\n';
+      context += `ISTRUZIONE CRITICA E FONDAMENTALE - METODO STEP-BY-STEP:\n\n`;
+      context += `Per trovare chi ha compilato il BP previsionale di ${instructionMonthName} ${instructionYear}, segui QUESTI PASSAGGI OBBLIGATORI:\n\n`;
+      context += `PASSO 1: Dalla lista PERIODI qui sopra, filtra SOLO quelli con type="mensile" (ignora settimanali/trimestrali/ecc.)\n`;
+      context += `PASSO 2: Per ogni periodo mensile, verifica se corrisponde a ${instructionMonthName} ${instructionYear}:\n`;
+      context += `  - Se year=${instructionYear} E month=${instructionMonth} → CORRISPONDE\n`;
+      context += `  - Se year/month sono NULL ma startDate è "2025-11-01" o simile (inizio mese di novembre) → CORRISPONDE\n`;
+      context += `  - Se startDate cade nel mese ${instructionMonthName} ${instructionYear} → CORRISPONDE\n`;
+      context += `PASSO 3: Per ogni periodo mensile CORRISPONDENTE, controlla la riga "PREVISIONALE:"\n`;
+      context += `  - Se dice "PREVISIONALE: COMPILATO" → QUEL CONSULENTE HA COMPILATO\n`;
+      context += `  - Se dice "PREVISIONALE: NON COMPILATO" → QUEL CONSULENTE NON HA COMPILATO\n`;
+      context += `PASSO 4: Crea una lista FINALE con TUTTI i nomi dei consulenti che hanno "PREVISIONALE: COMPILATO"\n`;
+      context += `PASSO 5: Cerca ogni nome nella lista UTENTI/CONSULENTI per assicurarti che il nome esista\n`;
+      context += `PASSO 6: Elenca TUTTI i nomi trovati in ordine alfabetico, senza duplicati\n\n`;
+      context += `ATTENZIONI CRITICHE:\n`;
+      context += `- NON saltare nessun periodo mensile rilevante - controlla TUTTI quelli marcati con ⭐\n`;
+      context += `- Se vedi startDate "2025-11-01" o nel mese di novembre, è RILEVANTE anche se year/month sono NULL\n`;
+      context += `- USA SEMPRE I NOMI dalla lista UTENTI/CONSULENTI, MAI gli ID\n`;
+      context += `- NON dire "altri" o "altri 2" - elenca SEMPRE i nomi completi\n`;
+      context += `- Se hai 4 periodi mensili con previsionale compilato, devi elencare 4 NOMI\n`;
+      context += `- NON inventare o supporre - usa SOLO i dati forniti nella lista PERIODI\n\n`;
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
