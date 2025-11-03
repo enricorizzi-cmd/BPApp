@@ -225,6 +225,7 @@ module.exports = function(app) {
         lowerMessage.includes('prossim') ||
         lowerMessage.includes('oggi') ||
         lowerMessage.includes('domani') ||
+        lowerMessage.includes('settimana') ||
         lowerMessage.includes('slot') ||
         lowerMessage.includes('disponibil') ||
         lowerMessage.includes('giornate libere') ||
@@ -234,9 +235,13 @@ module.exports = function(app) {
     
     if (!needsAppointments) return null;
     
+    const wantsToday = lowerMessage.includes('oggi');
+    const wantsTomorrow = lowerMessage.includes('domani');
+    const wantsThisWeek = lowerMessage.includes('settimana') || lowerMessage.includes('questa settimana');
     const wantsFuture = lowerMessage.includes('prossim') || 
-                       lowerMessage.includes('domani') || 
-                       lowerMessage.includes('oggi') ||
+                       wantsTomorrow || 
+                       wantsToday ||
+                       wantsThisWeek ||
                        lowerMessage.includes('futur');
     
     let startDate = null;
@@ -245,7 +250,26 @@ module.exports = function(app) {
     if (targetMonth !== null) {
       startDate = new Date(targetYear, targetMonth - 1, 1);
       endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+    } else if (wantsToday) {
+      // Solo oggi
+      startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+    } else if (wantsThisWeek) {
+      // Questa settimana: da lunedì della settimana corrente a domenica
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // 0 = domenica, 1 = lunedì, ...
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Se è domenica, vai al lunedì precedente
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() + diffToMonday);
+      startDate.setHours(0, 0, 0, 0);
+      
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6); // Domenica della stessa settimana
+      endDate.setHours(23, 59, 59, 999);
     } else if (wantsFuture) {
+      // Prossimi appuntamenti (da oggi in poi, senza limite superiore)
       startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
     }
@@ -751,6 +775,20 @@ ANALISI COMPARATIVE:
   * Elenca i consulenti dal valore più alto al più basso
   * Se nella conversazione precedente si parlava di un mese/anno specifico, usa quello
 
+- Quando l'utente chiede "scostamento", "differenza", "confronto tra previsionale e consuntivo":
+  * Cerca i periodi rilevanti (es. novembre 2025 se menzionato)
+  * Per ogni periodo che ha ENTRAMBI previsionale E consuntivo compilati, calcola la differenza:
+    - Scostamento GI = GI_consuntivo - GI_previsionale
+    - Scostamento VSS = VSS_consuntivo - VSS_previsionale
+    - Scostamento VSDPersonale = VSDPersonale_consuntivo - VSDPersonale_previsionale
+    - Scostamento NNCF = NNCF_consuntivo - NNCF_previsionale
+  * Mostra per ogni consulente:
+    - Valori previsionali
+    - Valori consuntivi
+    - Scostamenti (positivo = superato, negativo = mancato)
+  * Se un periodo ha solo previsionale o solo consuntivo, dillo esplicitamente
+  * Se non ci sono consuntivi per il periodo richiesto, spiega che il consuntivo viene fatto alla fine del periodo
+
 - Quando hai una lista di UTENTI e una lista di APPUNTAMENTI per determinare disponibilità/slot liberi:
   * Conta gli appuntamenti per ogni userid (consulente)
   * Chi ha MENO appuntamenti = ha PIÙ slot liberi/giornate libere
@@ -1079,6 +1117,8 @@ RISPOSTE IN ITALIANO.`;
         }
         
         // Se il consuntivo è compilato, mostra gli indicatori principali
+        // IMPORTANTE: Mostra sempre gli indicatori consuntivi se disponibili, anche se il valore è 0
+        // Questo è cruciale per calcolare gli scostamenti
         if (hasCons && period.indicatorscons && typeof period.indicatorscons === 'object') {
           const indicators = period.indicatorscons;
           const gi = indicators.gi || indicators.GI || 0;
@@ -1087,14 +1127,13 @@ RISPOSTE IN ITALIANO.`;
           const nncf = indicators.nncf || indicators.NNCF || 0;
           
           const values = [];
-          if (gi > 0) values.push(`GI: €${gi.toLocaleString('it-IT')}`);
-          if (vss > 0) values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
-          if (vsdPersonale > 0) values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
-          if (nncf > 0) values.push(`NNCF: ${nncf}`);
+          // Mostra sempre tutti gli indicatori principali, anche se zero, per permettere calcoli di scostamento
+          values.push(`GI: €${gi.toLocaleString('it-IT')}`);
+          values.push(`VSS: €${vss.toLocaleString('it-IT')}`);
+          values.push(`VSDPersonale: €${vsdPersonale.toLocaleString('it-IT')}`);
+          values.push(`NNCF: ${nncf}`);
           
-          if (values.length > 0) {
-            context += `  → Indicatori CONSUNTIVO: ${values.join(', ')}\n`;
-          }
+          context += `  → Indicatori CONSUNTIVO: ${values.join(', ')}\n`;
         }
       });
       context += '\n';
