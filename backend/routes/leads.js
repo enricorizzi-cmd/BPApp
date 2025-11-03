@@ -108,26 +108,33 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         const withoutConsultant = req.query.withoutConsultant === 'true';
         const contactStatus = req.query.contactStatus || 'all';
         productionLogger.debug('🔍 DEBUG: contactStatus received =', contactStatus);
+        productionLogger.debug('🔍 DEBUG: consultantFilter =', consultantFilter);
+        productionLogger.debug('🔍 DEBUG: isAdmin =', isAdmin);
         
         if (consultantFilter && consultantFilter !== '') {
           query = query.eq('consulente_assegnato', consultantFilter);
+          productionLogger.debug('🔍 DEBUG: Applied consultant filter:', consultantFilter);
         } else if (!isAdmin) {
           // Utente normale - solo i propri lead assegnati
           query = query.eq('consulente_assegnato', req.user.id);
+          productionLogger.debug('🔍 DEBUG: Applied non-admin filter:', req.user.id);
         }
         
         // Filtro per lead senza consulente assegnato
         if (withoutConsultant) {
           query = query.is('consulente_assegnato', null);
+          productionLogger.debug('🔍 DEBUG: Applied withoutConsultant filter');
         }
         
         // Filtro per stato contatto
         if (contactStatus === 'to_contact') {
           // Solo lead da contattare (contatto_avvenuto null)
           query = query.is('contatto_avvenuto', null);
+          productionLogger.debug('🔍 DEBUG: Applied to_contact filter (contatto_avvenuto IS NULL)');
         } else if (contactStatus === 'contacted') {
           // Solo lead già contattati (contatto_avvenuto compilato)
           query = query.not('contatto_avvenuto', 'is', null);
+          productionLogger.debug('🔍 DEBUG: Applied contacted filter (contatto_avvenuto IS NOT NULL)');
         }
         // Se contactStatus === 'all', non applicare nessun filtro
         
@@ -209,6 +216,11 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         if (error) {
           console.error('Supabase error in handleGetList:', error);
           throw error;
+        }
+        
+        productionLogger.debug('🔍 DEBUG: Query returned', (data || []).length, 'leads');
+        if (contactStatus === 'to_contact') {
+          productionLogger.debug('🔍 DEBUG: Filtering for to_contact - found', (data || []).length, 'leads with contatto_avvenuto IS NULL');
         }
         
         // Mappa i dati da Supabase al formato frontend

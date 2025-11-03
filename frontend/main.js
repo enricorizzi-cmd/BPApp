@@ -15476,15 +15476,19 @@ function viewGestioneLead(){
       // Aggiorna granularità corrente
       currentGranularity = granularity;
       
-      // Calcola periodo corrente
+      // Calcola periodo corrente (NON usato per "da contattare")
       const { from, to } = calculatePeriod(granularity, currentPeriod);
       
       // Costruisci query parameters
       const params = new URLSearchParams();
       if (consultant) params.append('consultant', consultant);
-      if (granularity) params.append('period', granularity);
-      params.append('from', from);
-      params.append('to', to);
+      // NON aggiungere filtri periodo se contactStatus è 'to_contact'
+      // Il backend mostrerà tutti i lead da contattare indipendentemente dal periodo
+      if (contactStatus !== 'to_contact') {
+        if (granularity) params.append('period', granularity);
+        params.append('from', from);
+        params.append('to', to);
+      }
       if (showWithoutConsultant) params.append('withoutConsultant', 'true');
       params.append('contactStatus', contactStatus);
       
