@@ -1058,17 +1058,19 @@ app.get("/api/periods", auth, async (req,res)=>{
   const { global, type: typeQ, from: fromISO, to: toISO, userId: userQ } = req.query || {};
   const db = await readJSON("periods.json");
 
-  // Base set: admin+global=1 => tutti; altrimenti solo i propri
+  // Base set: admin+global=1 => tutti i periodi; altrimenti solo i propri
   const isAdmin = req.user.role === "admin";
   let rows = (db.periods || []);
   
-  // SICUREZZA: Ogni utente vede SOLO i propri BP, anche gli admin
-  // NON usare mai global=1 per i periodi per evitare che gli utenti vedano BP di altri
-  if (isAdmin && userQ) {
+  // Gestione filtro consulente per periodi
+  if (global === '1' && isAdmin && !userQ) {
+    // Admin con global=1 senza userId specifico => mostra tutti i periodi (aggregazione)
+    // rows rimane invariato (tutti i periodi)
+  } else if (isAdmin && userQ) {
     // Admin può specificare un utente specifico
     rows = rows.filter(p => String(p.userId) === String(userQ));
   } else {
-    // SEMPRE filtra per userId dell'utente loggato, anche admin
+    // SEMPRE filtra per userId dell'utente loggato, anche admin (se non global=1)
     rows = rows.filter(p => String(p.userId) === String(req.user.id));
   }
 

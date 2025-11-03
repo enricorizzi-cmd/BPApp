@@ -1250,7 +1250,11 @@ async function recomputeDashboardMini(){
 
   // Leggi il filtro utente come fanno recomputeKPI e recomputeMini
   const el = document.getElementById('dash_cons');
-  const cons = el ? el.value : null;
+  // Se "Tutti" è selezionato (valore vuoto), cons deve essere null per mostrare tutti i consulenti (solo admin)
+  // Se non-admin, usa sempre getUser().id
+  const isAdmin = window.getUser && window.getUser() && window.getUser().role === 'admin';
+  const consValue = el ? el.value : null;
+  const cons = (consValue && consValue !== '') ? consValue : (isAdmin ? null : (window.getUser() ? window.getUser().id : null));
 
   const buckets = (window.buildBuckets?window.buildBuckets(type, r.end):[]);
   const periods = await ensurePeriods('dash', cons ? { userId: cons } : {});
