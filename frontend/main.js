@@ -15383,6 +15383,28 @@ function viewGestioneLead(){
       
       // Aggiorna UI tab
       document.querySelectorAll('.leads-tab').forEach(t => t.classList.remove('active'));
+      
+      // Se passiamo alla tab "Lead da Contattare" e non siamo admin, imposta consulente corrente
+      if (activeTab === 'contattare' && !isAdmin) {
+        setTimeout(() => {
+          const consultantSelect = document.getElementById('contact-consultant');
+          if (consultantSelect) {
+            const currentUser = getUser();
+            if (currentUser?.id) {
+              // Attendi che il dropdown sia popolato se necessario
+              const checkAndSet = () => {
+                if (consultantSelect.options.length > 1) {
+                  consultantSelect.value = currentUser.id;
+                } else {
+                  // Se non è ancora popolato, riprova dopo 100ms
+                  setTimeout(checkAndSet, 100);
+                }
+              };
+              checkAndSet();
+            }
+          }
+        }, 100);
+      }
       tab.classList.add('active');
       
       // Aggiorna contenuto
@@ -15508,15 +15530,25 @@ function viewGestioneLead(){
         return;
       }
 
-      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione (solo se admin)
+      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione
+      const consultantSelect = document.getElementById('contact-consultant');
       let savedConsultantValue = '';
-      let consultantSelect = null;
-      if (isAdmin) {
-        consultantSelect = document.getElementById('contact-consultant');
-        savedConsultantValue = consultantSelect?.value || '';
+      
+      if (consultantSelect) {
+        savedConsultantValue = consultantSelect.value || '';
+        // Se il valore è vuoto e non siamo admin, imposta il consulente corrente come default
+        if (!savedConsultantValue && !isAdmin) {
+          const currentUser = getUser();
+          savedConsultantValue = currentUser?.id || '';
+          // Imposta il valore nel dropdown se è vuoto
+          if (savedConsultantValue && consultantSelect.options.length > 1) {
+            consultantSelect.value = savedConsultantValue;
+          }
+        }
       }
       
-      const consultant = savedConsultantValue; // Usa il valore salvato
+      // Per non-admin, usa sempre il proprio ID
+      const consultant = isAdmin ? savedConsultantValue : (getUser()?.id || '');
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
@@ -15536,21 +15568,29 @@ function viewGestioneLead(){
       // Aggiorna variabile globale
       currentLeadsData = allLeads;
       
-      // Popola dropdown consulenti solo se necessario (solo se admin)
-      if (isAdmin && consultantSelect) {
+      // Popola dropdown consulenti se necessario
+      if (consultantSelect) {
         // Popola dropdown consulenti solo se non ha opzioni
         if (consultantSelect.options.length <= 1) {
           await loadConsultantsDropdown('contact-consultant');
         }
         
-        // Ripristina SEMPRE il valore selezionato dopo il caricamento
-        if (savedConsultantValue !== undefined) {
-          // Usa setTimeout per assicurarsi che il DOM sia aggiornato
-          setTimeout(() => {
-            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
-              consultantSelect.value = savedConsultantValue;
-            }
-          }, 50);
+        // Se non siamo admin, imposta sempre il consulente corrente
+        if (!isAdmin) {
+          const currentUser = getUser();
+          if (currentUser?.id) {
+            consultantSelect.value = currentUser.id;
+          }
+        } else {
+          // Per admin, ripristina il valore selezionato
+          if (savedConsultantValue !== undefined && savedConsultantValue !== '') {
+            // Usa setTimeout per assicurarsi che il DOM sia aggiornato
+            setTimeout(() => {
+              if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
+                consultantSelect.value = savedConsultantValue;
+              }
+            }, 50);
+          }
         }
       }
       
@@ -16977,6 +17017,28 @@ Comune: ${lead.comune || 'N/A'}
   
   // Aggiorna display periodo iniziale
   window.updateLeadPeriodDisplay();
+  
+  // Imposta consulente di default per non-admin nella sezione "Lead da Contattare"
+  if (!isAdmin && activeTab === 'contattare') {
+    setTimeout(() => {
+      const consultantSelect = document.getElementById('contact-consultant');
+      if (consultantSelect) {
+        const currentUser = getUser();
+        if (currentUser?.id) {
+          // Attendi che il dropdown sia popolato
+          const checkAndSet = () => {
+            if (consultantSelect.options.length > 1) {
+              consultantSelect.value = currentUser.id;
+            } else {
+              // Se non è ancora popolato, riprova dopo 100ms
+              setTimeout(checkAndSet, 100);
+            }
+          };
+          checkAndSet();
+        }
+      }
+    }, 200);
+  }
 }
 
 // ===== VENDITE & RIORDINI =====

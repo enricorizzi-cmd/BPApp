@@ -132,14 +132,22 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
         // Se contactStatus === 'all', non applicare nessun filtro
         
         // Filtro per periodo se specificato
+        // NOTA: Se contactStatus è 'contacted', filtriamo per contatto_avvenuto nel periodo
+        // Altrimenti filtriamo per data_inserimento nel periodo
         const periodFilter = req.query.period;
         const fromDate = req.query.from;
         const toDate = req.query.to;
         
         if (fromDate && toDate) {
-          // Usa i parametri from/to se forniti
-          query = query.gte('data_inserimento', fromDate);
-          query = query.lte('data_inserimento', toDate);
+          if (contactStatus === 'contacted') {
+            // Per lead contattati, filtra per data di contatto nel periodo
+            query = query.gte('contatto_avvenuto', fromDate);
+            query = query.lte('contatto_avvenuto', toDate);
+          } else {
+            // Per tutti gli altri casi, filtra per data di inserimento nel periodo
+            query = query.gte('data_inserimento', fromDate);
+            query = query.lte('data_inserimento', toDate);
+          }
         } else if (periodFilter && periodFilter !== '') {
           // Fallback alla logica precedente se from/to non sono forniti
           const now = new Date();
@@ -180,7 +188,13 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           }
           
           if (startDate && endDate) {
-            query = query.gte('data_inserimento', startDate.toISOString()).lt('data_inserimento', endDate.toISOString());
+            if (contactStatus === 'contacted') {
+              // Per lead contattati, filtra per data di contatto nel periodo
+              query = query.gte('contatto_avvenuto', startDate.toISOString()).lt('contatto_avvenuto', endDate.toISOString());
+            } else {
+              // Per tutti gli altri casi, filtra per data di inserimento nel periodo
+              query = query.gte('data_inserimento', startDate.toISOString()).lt('data_inserimento', endDate.toISOString());
+            }
           }
         }
         
