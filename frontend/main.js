@@ -11633,13 +11633,11 @@ function viewCorsiInteraziendali(){
               <button onclick="changeIscrizioniPeriod(1)" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: var(--text); padding: 8px; border-radius: 8px; cursor: pointer;">›</button>
             </div>
           </div>
-          ${isAdmin ? `
-            <div style="margin-left: auto;">
-              <button class="ghost" onclick="showIscrizioneModal()" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
-                <span style="margin-right: 8px;">+</span>Inserisci iscrizione
-              </button>
-            </div>
-          ` : ''}
+          <div style="margin-left: auto;">
+            <button class="ghost" onclick="showIscrizioneModal()" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
+              <span style="margin-right: 8px;">+</span>Inserisci iscrizione
+            </button>
+          </div>
         </div>
         
         <div class="table" style="margin-top: 16px; overflow-x: auto;">
@@ -13257,7 +13255,24 @@ function viewCorsiInteraziendali(){
     showOverlay(modalHtml, 'iscrizione-modal-overlay');
     loadCorsiOptions();
     loadClientiOptions();
-    loadConsulentiOptions();
+    
+    // Carica consulenti e poi precompila con utente corrente per non admin
+    loadConsulentiOptions().then(() => {
+      const me = getUser();
+      if (me && me.role !== 'admin') {
+        // Per non admin, precompila automaticamente il consulente con l'utente corrente
+        const consulenteSelect = document.getElementById('consulente-1');
+        if (consulenteSelect) {
+          // Cerca l'opzione corrispondente all'utente corrente
+          const userOption = Array.from(consulenteSelect.options).find(
+            opt => opt.value === me.id
+          );
+          if (userOption) {
+            consulenteSelect.value = me.id;
+          }
+        }
+      }
+    });
   }
 
   async function loadCorsiOptions() {
@@ -13497,6 +13512,20 @@ function viewCorsiInteraziendali(){
     // Assicurati che i consulenti siano caricati prima per permettere il match automatico
     loadConsulentiOptions(`consulente-${clienteCount}`).then(() => {
       loadClientiOptions(`cliente-${clienteCount}`);
+      
+      // Per non admin, precompila automaticamente il consulente con l'utente corrente
+      const me = getUser();
+      if (me && me.role !== 'admin') {
+        const consulenteSelect = document.getElementById(`consulente-${clienteCount}`);
+        if (consulenteSelect) {
+          const userOption = Array.from(consulenteSelect.options).find(
+            opt => opt.value === me.id
+          );
+          if (userOption) {
+            consulenteSelect.value = me.id;
+          }
+        }
+      }
     });
   };
 
