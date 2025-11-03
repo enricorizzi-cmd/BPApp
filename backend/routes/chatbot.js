@@ -552,7 +552,7 @@ RISPOSTE:
 - Se la domanda è ambigua, chiedi chiarimenti
 - Non inventare dati che non sono stati forniti
 - Focalizzati su analisi e insights utili per il lavoro commerciale
-- Per Battle Plan: un periodo ha "type" (weekly/monthly/quarterly/semiannual/annual), "year", "month", "week", "quarter", "semester", "indicatorsprev" (previsionale), "indicatorscons" (consuntivo)
+- Per Battle Plan: un periodo ha "type" (settimanale/mensile/trimestrale/semestrale/annuale - ATTENZIONE: nel database sono in ITALIANO), "year", "month", "week", "quarter", "semester", "indicatorsprev" (previsionale), "indicatorscons" (consuntivo). Quando una domanda chiede "BP di novembre" o "BP mensile", devi cercare SOLO periodi con type="mensile" (non "monthly").
 
 ANALISI COMPARATIVE:
 - Quando hai una lista di UTENTI e una lista di PERIODI, confronta:
@@ -829,7 +829,7 @@ RISPOSTE IN ITALIANO.`;
       const instructionMonthName = monthNames[Object.keys(monthNames).find(k => monthNames[k] === instructionMonth)] || 'mese indicato';
       
       context += `ISTRUZIONE IMPORTANTE: Per trovare chi ha/non ha fatto il BP previsionale per ${instructionMonthName} ${instructionYear}, confronta la lista UTENTI con i PERIODI. `;
-      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="monthly" o "mensile") che corrisponde a ${instructionMonthName} ${instructionYear}. `;
+      context += `Per ogni utente nella lista, controlla se esiste un periodo MENSILE (type="mensile" - ATTENZIONE: nel database è in ITALIANO "mensile", NON "monthly") che corrisponde a ${instructionMonthName} ${instructionYear}. `;
       context += `Un periodo corrisponde se: (year=${instructionYear} E month=${instructionMonth}) OPPURE (startDate/endDate si sovrappone al mese ${instructionMonthName} ${instructionYear}). `;
       context += `Poi controlla se quel periodo ha indicatorsprev non vuoto (questo indica PREVISIONALE compilato). `;
       context += '- Gli utenti che HANNO un periodo con indicatorsprev non vuoto sono quelli che HANNO fatto il BP PREVISIONALE. ';
