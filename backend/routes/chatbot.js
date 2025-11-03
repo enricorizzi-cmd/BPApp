@@ -489,11 +489,11 @@ module.exports = function(app) {
       if (data.periods) {
         data.users = await loadUsersForPeriods(data.periods, needsAllPeriods, isAdmin, data.users);
       } else if (needsAllPeriods && isAdmin) {
-        // Se non ci sono periodi ma serve la lista completa (per domande tipo "chi manca"), carica tutti gli utenti
+        // Se non ci sono periodi ma serve la lista completa (per domande tipo "chi manca"), 
+        // carica TUTTI gli utenti - il chatbot li vede tutti come consulenti
         const { data: users } = await supabase
           .from('app_users')
           .select('id, name, role')
-          .eq('role', 'consultant')
           .order('name', { ascending: true });
         
         data.users = users || [];
