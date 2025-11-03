@@ -13532,16 +13532,30 @@ function viewCorsiInteraziendali(){
     }
     
     try {
-      const response = await fetch(`/api/corsi-iscrizioni/${iscrizioneId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const token = getToken();
+      let response;
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Errore nell\'eliminazione');
+      // Usa window.DELETE se disponibile, altrimenti fetch
+      if (typeof window.DELETE === 'function') {
+        response = await window.DELETE(`/api/corsi-iscrizioni/${iscrizioneId}`);
+      } else {
+        response = await fetch(`/api/corsi-iscrizioni/${iscrizioneId}`, {
+          method: 'DELETE',
+          headers: {
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Errore nell\'eliminazione');
+        }
+        response = await response.json();
+      }
+      
+      // Se response ha un campo error, lancia un'eccezione
+      if (response && response.error) {
+        throw new Error(response.error || 'Errore nell\'eliminazione');
       }
       
       // Rimuovi l'elemento dal DOM
@@ -13609,24 +13623,45 @@ function viewCorsiInteraziendali(){
         });
       }
 
-      // Esegui tutti gli aggiornamenti
-      const promises = updates.map(update => 
-        fetch(`/api/corsi-iscrizioni/${update.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(update)
-        })
-      );
+      // Esegui tutti gli aggiornamenti usando window.PUT se disponibile, altrimenti fetch con getToken()
+      const token = getToken();
+      const promises = updates.map(update => {
+        const url = `/api/corsi-iscrizioni/${update.id}`;
+        const body = {
+          cliente_id: update.cliente_id,
+          cliente_nome: update.cliente_nome,
+          consulente_id: update.consulente_id,
+          consulente_nome: update.consulente_nome,
+          costo_personalizzato: update.costo_personalizzato
+        };
+        
+        // Usa window.PUT se disponibile, altrimenti fetch
+        if (typeof window.PUT === 'function') {
+          return window.PUT(url, body);
+        } else {
+          return fetch(url, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify(body)
+          }).then(r => {
+            if (!r.ok) {
+              return r.json().then(err => Promise.reject(new Error(err.error || 'Errore nel salvataggio')));
+            }
+            return r.json();
+          });
+        }
+      });
 
       const results = await Promise.all(promises);
       
+      // Verifica eventuali errori nei risultati
       for (const result of results) {
-        if (!result.ok) {
-          const error = await result.json();
-          throw new Error(error.error || 'Errore nel salvataggio');
+        // window.PUT ritorna già un oggetto JSON, non una Response
+        if (result && result.error) {
+          throw new Error(result.error || 'Errore nel salvataggio');
         }
       }
 
