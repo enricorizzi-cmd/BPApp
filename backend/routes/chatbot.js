@@ -340,20 +340,59 @@ module.exports = function(app) {
 
   /**
    * Helper: Carica utenti per periodi
+   * IMPORTANTE: Carica TUTTI gli utenti che hanno periodi, indipendentemente dal ruolo (admin o consultant)
    */
   async function loadUsersForPeriods(periods, needsAllPeriods, isAdmin, existingUsers = []) {
     if (!periods || periods.length === 0) return existingUsers;
     
     if (needsAllPeriods && isAdmin) {
-      const { data: users } = await supabase
+      // Se serve la lista completa, carica TUTTI gli utenti (admin e consultant)
+      // che hanno almeno un periodo nel database
+      const uniqueUserIds = [...new Set(periods.map(p => p.userid).filter(Boolean))];
+      
+      if (uniqueUserIds.length > 0) {
+        // Carica tutti gli utenti che hanno periodi, indipendentemente dal ruolo
+        const { data: users } = await supabase
+          .from('app_users')
+          .select('id, name, role')
+          .in('id', uniqueUserIds)
+          .order('name', { ascending: true });
+        
+        // Se non abbiamo tutti gli utenti, carica anche gli altri consultant per avere la lista completa
+        const { data: allConsultants } = await supabase
+          .from('app_users')
+          .select('id, name, role')
+          .eq('role', 'consultant')
+          .order('name', { ascending: true });
+        
+        // Combina: utenti con periodi (qualsiasi ruolo) + tutti i consultant
+        const periodUserIds = new Set(uniqueUserIds);
+        const allUserMap = new Map();
+        
+        // Aggiungi utenti con periodi
+        (users || []).forEach(u => allUserMap.set(u.id, u));
+        // Aggiungi consultant (se non già presenti)
+        (allConsultants || []).forEach(u => {
+          if (!allUserMap.has(u.id)) {
+            allUserMap.set(u.id, u);
+          }
+        });
+        
+        return Array.from(allUserMap.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      
+      // Fallback: se non ci sono periodi ma serve la lista completa
+      const { data: allConsultants } = await supabase
         .from('app_users')
         .select('id, name, role')
         .eq('role', 'consultant')
         .order('name', { ascending: true });
       
-      return users || [];
+      return allConsultants || [];
     }
     
+    // Per casi non-admin o quando non serve la lista completa: carica solo gli utenti che hanno periodi
+    // IMPORTANTE: senza filtrare per ruolo - se un admin ha periodi, lo includiamo
     const uniqueUserIds = [...new Set(periods.map(p => p.userid).filter(Boolean))];
     if (uniqueUserIds.length > 0) {
       const { data: users } = await supabase
@@ -405,6 +444,7 @@ module.exports = function(app) {
        data.appointments = await loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear);
        
        // Se chiede disponibilità/slot, serve anche lista utenti
+       // NOTA: Per disponibilità carichiamo solo consultant (non admin), ma per BP includiamo tutti
        if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
         const { data: users } = await supabase
           .from('app_users')
