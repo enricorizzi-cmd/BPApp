@@ -12919,17 +12919,22 @@ function viewCorsiInteraziendali(){
       const select = document.getElementById('filtro-consulente');
       
       if (!select) {
-        console.warn('Select filtro-consulente non trovato');
+        console.warn('[loadConsulentiOptions] Select filtro-consulente non trovato');
         return;
       }
       
-      // Popola con se stesso di default (come calendario generale)
-      select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
+      console.log('[loadConsulentiOptions] Inizio caricamento, isAdmin:', isAdmin, 'me.id:', me.id);
+      
+      // Popola temporaneamente con loading
+      select.innerHTML = '<option value="">Caricamento...</option>';
       
       // Carica lista consulenti
-      GET('/api/usernames').then(function(r){
+      try {
+        const r = await GET('/api/usernames');
         var list = (r && r.users) || [];
         var h = '';
+        
+        console.log('[loadConsulentiOptions] Ricevuti', list.length, 'utenti dalla API');
         
         // Solo admin può vedere "Tutti" e altri utenti (come calendario generale)
         if(isAdmin) {
@@ -12938,23 +12943,29 @@ function viewCorsiInteraziendali(){
             var u = list[i];
             h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
           }
+          console.log('[loadConsulentiOptions] Generato HTML con "Tutti" +', list.length, 'consulenti');
+        } else {
+          // Non-admin: mostra solo se stesso
+          h += '<option value="'+htmlEscape(me.id)+'">'+htmlEscape(me.name||me.email||me.id)+'</option>';
+          console.log('[loadConsulentiOptions] Non-admin: mostra solo se stesso');
         }
         
         select.innerHTML = h;
         // Tutti vedono se stessi di default, admin può cambiare (come calendario generale)
         select.value = me.id;
-      }).catch(function(error){
-        console.error('Error loading usernames:', error);
+        console.log('[loadConsulentiOptions] Select popolato con', h.split('<option').length - 1, 'opzioni, valore selezionato:', me.id);
+      } catch (error) {
+        console.error('[loadConsulentiOptions] Error loading usernames:', error);
         // Fallback: mostra solo se stesso
         const me = getUser() || {};
-        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
-      });
+        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || 'Errore') + '</option>';
+      }
     } catch (error) {
-      console.error('Error loading consulenti options:', error);
+      console.error('[loadConsulentiOptions] Error in function:', error);
       const select = document.getElementById('filtro-consulente');
       const me = getUser() || {};
       if (select) {
-        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || '') + '</option>';
+        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || 'Errore') + '</option>';
       }
     }
   }
