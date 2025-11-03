@@ -172,7 +172,46 @@ module.exports = function(app) {
     let targetMonth = null;
     let targetYear = now.getFullYear();
     
-    // Gestisci date relative PRIMA di cercare mesi espliciti
+    // PRIORITÀ 1: Cerca prima mesi espliciti nel testo (hanno priorità su "questo mese")
+    // Verifica se c'è un mese esplicito menzionato
+    let explicitMonthFound = false;
+    for (const [name, num] of Object.entries(monthNames)) {
+      if (lowerMessage.includes(name)) {
+        targetMonth = num;
+        explicitMonthFound = true;
+        break;
+      }
+    }
+    
+    // Cerca anche anni espliciti
+    const yearMatch = lowerMessage.match(/\b(20\d{2})\b|\b(\d{2})\b/);
+    if (yearMatch) {
+      const fullYear = yearMatch[1];
+      const shortYear = yearMatch[2];
+      if (fullYear) {
+        targetYear = parseInt(fullYear);
+      } else if (shortYear) {
+        const yearNum = parseInt(shortYear);
+        targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
+      }
+    }
+    
+    // Se c'è un mese esplicito, usalo e termina
+    if (explicitMonthFound) {
+      return { targetMonth, targetYear };
+    }
+    
+    // PRIORITÀ 2: Cerca pattern numerici per mese (es. "mese 11", "novembre 25")
+    const monthMatch = lowerMessage.match(/(?:mese|month)\s+(\d+)|(\d+)\s+(?:novembre|ottobre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre)/i);
+    if (monthMatch) {
+      const monthNum = parseInt(monthMatch[1] || monthMatch[2]);
+      if (monthNum >= 1 && monthNum <= 12) {
+        targetMonth = monthNum;
+        return { targetMonth, targetYear };
+      }
+    }
+    
+    // PRIORITÀ 3: Gestisci date relative SOLO se non ci sono mesi espliciti
     // "questo mese", "mese corrente", "attuale"
     if (lowerMessage.includes('questo mese') || lowerMessage.includes('mese corrente') || 
         lowerMessage.includes('mese attuale') || lowerMessage.includes('current month')) {
@@ -188,31 +227,6 @@ module.exports = function(app) {
       targetMonth = lastMonth.getMonth() + 1;
       targetYear = lastMonth.getFullYear();
       return { targetMonth, targetYear };
-    }
-    
-    // Cerca mesi espliciti nel testo
-    for (const [name, num] of Object.entries(monthNames)) {
-      if (lowerMessage.includes(name)) {
-        targetMonth = num;
-        break;
-      }
-    }
-    
-    const yearMatch = lowerMessage.match(/\b(20\d{2})\b|\b(\d{2})\b/);
-    if (yearMatch) {
-      const fullYear = yearMatch[1];
-      const shortYear = yearMatch[2];
-      if (fullYear) {
-        targetYear = parseInt(fullYear);
-      } else if (shortYear) {
-        const yearNum = parseInt(shortYear);
-        targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
-      }
-    }
-    
-    const monthMatch = lowerMessage.match(/(?:mese|month)\s+(\d+)|(\d+)\s+(?:novembre|ottobre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre)/i);
-    if (!targetMonth && monthMatch) {
-      targetMonth = parseInt(monthMatch[1] || monthMatch[2]) || null;
     }
     
     return { targetMonth, targetYear };
@@ -808,7 +822,14 @@ Devi fungere da GUIDA per l'utilizzo dell'app e conoscere tutti i termini tecnic
 
 **KPI (Key Performance Indicator)**: Indicatori chiave di performance. Monetari: VSS, VSDPersonale, VSDIndiretto, GI. Conteggio: NNCF, AppFatti, Telefonate.
 
-**Provvigioni** (sinonimo di Commissioni, ma usiamo sempre "Provvigioni"): Calcolate su risultati. ProvvGI = 15% del GI (per tutti). ProvvVSD = 20% (junior) o 25% (senior) del VSDPersonale SOLO (non su VSDIndiretto).
+**Provvigioni** (sinonimo di Commissioni, ma usiamo sempre "Provvigioni"): Calcolate su risultati.
+- **ProvvGI**: 15% del GI (per tutti i consulenti, junior e senior)
+- **ProvvVSD**: 20% del VSDPersonale per consulenti JUNIOR, 25% del VSDPersonale per consulenti SENIOR
+- **IMPORTANTE**: Le provvigioni su VSD si calcolano SOLO su VSDPersonale, NON su VSDIndiretto
+- **Totale Provvigioni** = ProvvGI + ProvvVSD
+- Per calcolare le provvigioni previste: usa i valori dagli indicatori PREVISIONALI (indicatorsprev)
+- Per calcolare le provvigioni consuntive: usa i valori dagli indicatori CONSUNTIVI (indicatorscons)
+- Per determinare se un consulente è junior o senior: verifica il campo "grade" dell'utente (se non disponibile, assumi junior)
 
 **Grade (Avanzamento di Carriera)**: Sistema di avanzamento basato su risultati. Un consulente parte da Junior e passa a Senior dopo 3 mesi consecutivi con GI maggiore o uguale a €8.000 (promozione MANUALE, non automatica). Junior: target più bassi, 20% su VSD. Senior: target più alti, 25% su VSD.
 
@@ -877,8 +898,15 @@ RISPOSTE INTELLIGENTI:
 - Per importi, usa formato euro (€ 1.234,56)
 - Sii professionale ma amichevole
 - SE LA DOMANDA È AMBIGUA O NON HAI DATI CHIARI: CHIEDI CHIARIMENTI invece di inventare o supporre
+- SE I DATI SONO VUOTI/MANCANTI: Dì esplicitamente "Non ho trovato [tipo] per [periodo]" invece di dire "non ho accesso" o "non ho dati"
+  * Esempio corretto: "Non ho trovato appuntamenti per il 15 ottobre 2025"
+  * Esempio corretto: "Non ho trovato vendite per novembre 2025"
+  * Esempio corretto: "Non ho trovato corsi registrati per questo mese"
+  * Esempio SBAGLIATO: "Non ho accesso ai dati degli appuntamenti"
+  * Esempio SBAGLIATO: "Non posso vedere le vendite"
 - NON dire mai "non ho accesso" se hai caricato i dati - spiega cosa hai trovato e chiedi se serve altro
 - NON inventare dati che non sono stati forniti
+- Se una sezione dati è vuota (es. "APPUNTAMENTI: Nessun appuntamento trovato"), è normale e corretto dirlo chiaramente
 - Focalizzati su analisi e insights utili per il lavoro commerciale
 - Per Battle Plan: un periodo ha "type" (settimanale/mensile/trimestrale/semestrale/annuale - ATTENZIONE: nel database sono in ITALIANO), "year", "month", "week", "quarter", "semester", "indicatorsprev" (previsionale), "indicatorscons" (consuntivo). Quando una domanda chiede "BP di novembre" o "BP mensile", devi cercare SOLO periodi con type="mensile" (non "monthly").
 - SE NON SEI SICURO: Esempio: "Non sono sicuro se intendi il previsionale o il consuntivo. Vuoi che ti mostri entrambi?"
@@ -1369,6 +1397,20 @@ RISPOSTE IN ITALIANO.`;
       context += `  * Se un periodo ha solo previsionale o solo consuntivo, dillo esplicitamente\n`;
       context += `  * Se non ci sono consuntivi per il periodo richiesto, spiega che il consuntivo viene compilato alla fine del periodo\n`;
       context += `  * Esempio di risposta: "Per Enrico Rizzi a novembre 2025: GI previsto €30.000, consuntivo €32.000, scostamento +€2.000 (superato)"\n\n`;
+      
+      context += `CALCOLO PROVVIGIONI:\n`;
+      context += `- Quando l'utente chiede "provvigioni", "commissioni", "quanto guadagno", "stipendio", "paga", "compenso":\n`;
+      context += `  * Per ogni consulente, calcola:\n`;
+      context += `    - ProvvGI = GI × 0.15 (15% del GI, per tutti)\n`;
+      context += `    - Verifica il grade dell'utente (junior o senior)\n`;
+      context += `    - Se junior: ProvvVSD = VSDPersonale × 0.20 (20% del VSDPersonale)\n`;
+      context += `    - Se senior: ProvvVSD = VSDPersonale × 0.25 (25% del VSDPersonale)\n`;
+      context += `    - Totale Provvigioni = ProvvGI + ProvvVSD\n`;
+      context += `  * Per provvigioni PREVISTE: usa i valori dagli indicatori PREVISIONALI (indicatorsprev)\n`;
+      context += `  * Per provvigioni CONSUNTIVE: usa i valori dagli indicatori CONSUNTIVI (indicatorscons)\n`;
+      context += `  * IMPORTANTE: VSDPersonale è diverso da VSDIndiretto - le provvigioni si calcolano SOLO su VSDPersonale\n`;
+      context += `  * Se il grade non è disponibile, assumi junior (20%)\n`;
+      context += `  * Esempio: "Enrico Rizzi (junior) a novembre 2025: GI €30.000 → ProvvGI €4.500, VSDPersonale €14.000 → ProvvVSD €2.800, Totale €7.300"\n\n`;
       
       // Istruzione per disponibilità/slot liberi
       if (lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) {
