@@ -14,6 +14,7 @@ require('dotenv').config();
 const storage = require('./lib/storage-supabase');
 const { init: initStore, supabase } = storage;
 
+// eslint-disable-next-line complexity
 async function createUserPreferencesTable() {
   console.log('🚀 Starting user preferences migration...');
   

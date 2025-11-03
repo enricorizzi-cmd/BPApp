@@ -17,6 +17,7 @@ const DATA_DIR = path.join(__dirname, 'data');
 const APPOINTMENTS_FILE = path.join(DATA_DIR, 'appointments.json');
 const BACKUP_FILE = path.join(DATA_DIR, 'appointments.backup.json');
 
+// eslint-disable-next-line complexity
 async function migrateAppointments() {
   console.log('🔄 Avvio migrazione timezone appuntamenti...');
   

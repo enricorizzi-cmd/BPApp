@@ -68,35 +68,14 @@ module.exports = function(app) {
       const contextForData = `${message} ${conversationContext}`.toLowerCase();
       
       // Determina quali dati del database potrebbero essere rilevanti
-      const relevantData = await gatherRelevantData(contextForData, req.user);
+      const relevantData = await gatherRelevantData(contextForData, req.user, conversationContext);
 
       // Estrai mese/anno dalla domanda per passarlo a formatDataContext
       const monthNames = {
         'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
         'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
       };
-      let targetMonth = null;
-      let targetYear = new Date().getFullYear();
-      const lowerMsg = message.toLowerCase();
-      
-      for (const [name, num] of Object.entries(monthNames)) {
-        if (lowerMsg.includes(name)) {
-          targetMonth = num;
-          break;
-        }
-      }
-      
-      const yearMatch = lowerMsg.match(/\b(20\d{2})\b|\b(\d{2})\b/);
-      if (yearMatch) {
-        const fullYear = yearMatch[1];
-        const shortYear = yearMatch[2];
-        if (fullYear) {
-          targetYear = parseInt(fullYear);
-        } else if (shortYear) {
-          const yearNum = parseInt(shortYear);
-          targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
-        }
-      }
+      const { targetMonth, targetYear } = extractMonthYear(message);
 
       // Costruisci il contesto per il sistema
       const systemPrompt = buildSystemPrompt(req.user);
@@ -142,9 +121,225 @@ module.exports = function(app) {
   });
 
   /**
+   * Helper: Estrae mese e anno dalla query
+   */
+  function extractMonthYear(message) {
+    const lowerMessage = message.toLowerCase();
+    const monthNames = {
+      'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
+      'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
+    };
+    let targetMonth = null;
+    let targetYear = new Date().getFullYear();
+    
+    for (const [name, num] of Object.entries(monthNames)) {
+      if (lowerMessage.includes(name)) {
+        targetMonth = num;
+        break;
+      }
+    }
+    
+    const yearMatch = lowerMessage.match(/\b(20\d{2})\b|\b(\d{2})\b/);
+    if (yearMatch) {
+      const fullYear = yearMatch[1];
+      const shortYear = yearMatch[2];
+      if (fullYear) {
+        targetYear = parseInt(fullYear);
+      } else if (shortYear) {
+        const yearNum = parseInt(shortYear);
+        targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
+      }
+    }
+    
+    const monthMatch = lowerMessage.match(/(?:mese|month)\s+(\d+)|(\d+)\s+(?:novembre|ottobre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre)/i);
+    if (!targetMonth && monthMatch) {
+      targetMonth = parseInt(monthMatch[1] || monthMatch[2]) || null;
+    }
+    
+    return { targetMonth, targetYear };
+  }
+
+  /**
+   * Helper: Determina se la query richiede dati di tutti i consulenti
+   */
+  function wantsAllConsultants(message, isAdmin) {
+    if (!isAdmin) return false;
+    const lowerMessage = message.toLowerCase();
+    return lowerMessage.includes('tutti') || 
+           lowerMessage.includes('squadra') || 
+           lowerMessage.includes('global') ||
+           lowerMessage.includes('team') ||
+           lowerMessage.includes('chi non ha') ||
+           lowerMessage.includes('chi ha fatto') ||
+           lowerMessage.includes('chi ha compilato') ||
+           lowerMessage.includes('chi ha') ||
+           lowerMessage.includes('chi manca') ||
+           lowerMessage.includes('manca il bp') ||
+           lowerMessage.includes('non hanno fatto') ||
+           lowerMessage.includes('chi compilato');
+  }
+
+  /**
+   * Helper: Carica appuntamenti rilevanti
+   */
+  async function loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear) {
+    const needsAppointments = lowerMessage.includes('appuntamento') || 
+        lowerMessage.includes('incontro') || 
+        lowerMessage.includes('riunione') ||
+        lowerMessage.includes('prossim') ||
+        lowerMessage.includes('oggi') ||
+        lowerMessage.includes('domani') ||
+        lowerMessage.includes('slot') ||
+        lowerMessage.includes('disponibil') ||
+        lowerMessage.includes('giornate libere') ||
+        lowerMessage.includes('giorni liberi') ||
+        lowerMessage.includes('liber') ||
+        targetMonth !== null;
+    
+    if (!needsAppointments) return null;
+    
+    const wantsFuture = lowerMessage.includes('prossim') || 
+                       lowerMessage.includes('domani') || 
+                       lowerMessage.includes('oggi') ||
+                       lowerMessage.includes('futur');
+    
+    let startDate = null;
+    let endDate = null;
+    
+    if (targetMonth !== null) {
+      startDate = new Date(targetYear, targetMonth - 1, 1);
+      endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
+    } else if (wantsFuture) {
+      startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+    }
+    
+    let query = supabase
+      .from('appointments')
+      .select('id, client, start_time, type, vss, nncf, userid')
+      .limit(500);
+    
+    if (!isAdmin || !wantsAll) {
+      if (!lowerMessage.includes('slot') && !lowerMessage.includes('disponibil') && !lowerMessage.includes('liber')) {
+        query = query.eq('userid', user.id);
+      }
+    }
+    
+    if (startDate) {
+      query = query.gte('start_time', startDate.toISOString());
+    }
+    if (endDate) {
+      query = query.lte('start_time', endDate.toISOString());
+    } else if (wantsFuture && !targetMonth) {
+      query = query.gte('start_time', startDate.toISOString());
+    }
+    
+    query = query.order('start_time', { ascending: wantsFuture || targetMonth !== null });
+    
+    const { data: appointments } = await query;
+    return appointments || [];
+  }
+
+  /**
+   * Helper: Carica periodi rilevanti
+   */
+  async function loadPeriods(lowerMessage, user, isAdmin, wantsAll, conversationContext) {
+    const isBPFollowUp = lowerMessage.includes('sicuro') || 
+                         lowerMessage.includes('conferma') ||
+                         lowerMessage.includes('verifica') ||
+                         lowerMessage.includes('hai accesso') ||
+                         lowerMessage.includes('cosa ti serve') ||
+                         lowerMessage.includes('cosa ti blocca') ||
+                         lowerMessage.includes('dati') ||
+                         lowerMessage.includes('informazioni') ||
+                         lowerMessage.includes('risultato') ||
+                         lowerMessage.includes('performance');
+    
+    const mightBeAboutPeriods = lowerMessage.includes('periodo') || 
+        lowerMessage.includes('kpi') ||
+        lowerMessage.includes('indicatore') ||
+        lowerMessage.includes('vendita') ||
+        lowerMessage.includes('obiettivo') ||
+        lowerMessage.includes('target') ||
+        lowerMessage.includes('bp') ||
+        lowerMessage.includes('battle plan') ||
+        lowerMessage.includes('previsionale') ||
+        lowerMessage.includes('consuntivo') ||
+        lowerMessage.includes('chi non ha') ||
+        lowerMessage.includes('chi ha fatto') ||
+        lowerMessage.includes('chi ha compilato') ||
+        lowerMessage.includes('chi compilato') ||
+        lowerMessage.includes('manca') ||
+        lowerMessage.includes('mese') ||
+        lowerMessage.includes('mensil') ||
+        lowerMessage.includes('settiman') ||
+        lowerMessage.includes('trimestr') ||
+        lowerMessage.includes('anno') ||
+        lowerMessage.includes('annual') ||
+        (isBPFollowUp && conversationContext && (conversationContext.includes('bp') || conversationContext.includes('previsionale') || conversationContext.includes('novembre') || conversationContext.includes('compilato') || conversationContext.includes('periodo'))) ||
+        (isAdmin && !lowerMessage.includes('cliente') && !lowerMessage.includes('appuntamento') && lowerMessage.trim().length > 5);
+    
+    if (!mightBeAboutPeriods) return null;
+    
+    const needsAllPeriods = wantsAll || 
+                            lowerMessage.includes('chi non ha') ||
+                            lowerMessage.includes('chi ha fatto') ||
+                            lowerMessage.includes('chi ha compilato') ||
+                            lowerMessage.includes('chi compilato') ||
+                            lowerMessage.includes('manca');
+    
+    let query = supabase
+      .from('periods')
+      .select('*')
+      .order('createdat', { ascending: false })
+      .limit(200);
+    
+    if (!isAdmin || !needsAllPeriods) {
+      query = query.eq('userid', user.id);
+    }
+    
+    const { data: periods } = await query;
+    return periods || [];
+  }
+
+  /**
+   * Helper: Carica utenti per periodi
+   */
+  async function loadUsersForPeriods(periods, needsAllPeriods, isAdmin, existingUsers = []) {
+    if (!periods || periods.length === 0) return existingUsers;
+    
+    if (needsAllPeriods && isAdmin) {
+      const { data: users } = await supabase
+        .from('app_users')
+        .select('id, name, role')
+        .eq('role', 'consultant')
+        .order('name', { ascending: true });
+      
+      return users || [];
+    }
+    
+    const uniqueUserIds = [...new Set(periods.map(p => p.userid).filter(Boolean))];
+    if (uniqueUserIds.length > 0) {
+      const { data: users } = await supabase
+        .from('app_users')
+        .select('id, name, role')
+        .in('id', uniqueUserIds);
+      
+      if (existingUsers && existingUsers.length > 0) {
+        const existingIds = new Set(existingUsers.map(u => u.id));
+        const newUsers = (users || []).filter(u => !existingIds.has(u.id));
+        return [...existingUsers, ...newUsers];
+      }
+      return users || [];
+    }
+    
+    return existingUsers || [];
+  }
+
+  /**
    * Raccoglie dati rilevanti dal database in base alla query
    */
-  async function gatherRelevantData(message, user) {
+  async function gatherRelevantData(message, user, conversationContext = '') {
     const data = {
       appointments: null,
       clients: null,
@@ -157,142 +352,23 @@ module.exports = function(app) {
 
     const lowerMessage = message.toLowerCase();
     const isAdmin = user.role === 'admin';
-    
-    // Determina se la query richiede dati di tutti i consulenti o uno specifico
-    const wantsAllConsultants = isAdmin && (
-      lowerMessage.includes('tutti') || 
-      lowerMessage.includes('squadra') || 
-      lowerMessage.includes('global') ||
-      lowerMessage.includes('team') ||
-      lowerMessage.includes('chi non ha') ||
-      lowerMessage.includes('chi ha fatto') ||
-      lowerMessage.includes('chi ha compilato') ||
-      lowerMessage.includes('chi ha') ||
-      lowerMessage.includes('chi manca') ||
-      lowerMessage.includes('manca il bp') ||
-      lowerMessage.includes('non hanno fatto') ||
-      lowerMessage.includes('chi compilato')
-    );
-    
-    // Estrae nome consulente se specificato (solo per admin)
-    let specificConsultantId = null;
-    if (isAdmin && !wantsAllConsultants) {
-      // Cerca nomi di consulenti nel messaggio
-      // TODO: potrebbe essere migliorato con una query alla tabella users
-      // Per ora assumiamo che se non dice "tutti" allora vuole i suoi dati
-    }
+    const wantsAll = wantsAllConsultants(lowerMessage, isAdmin);
+    const { targetMonth, targetYear } = extractMonthYear(lowerMessage);
 
     try {
-      // Estrai mese/anno dalla domanda se menzionati
-      const monthNames = {
-        'gennaio': 1, 'febbraio': 2, 'marzo': 3, 'aprile': 4, 'maggio': 5, 'giugno': 6,
-        'luglio': 7, 'agosto': 8, 'settembre': 9, 'ottobre': 10, 'novembre': 11, 'dicembre': 12
-      };
-      let targetMonth = null;
-      let targetYear = new Date().getFullYear(); // Default all'anno corrente
       
-      for (const [name, num] of Object.entries(monthNames)) {
-        if (lowerMessage.includes(name)) {
-          targetMonth = num;
-          break;
-        }
-      }
+      // Carica appuntamenti
+      data.appointments = await loadAppointments(lowerMessage, user, isAdmin, wantsAll, targetMonth, targetYear);
       
-      // Cerca anno nella domanda (formati: "2025", "25", "novembre 25", "novembre 2025")
-      const yearMatch = lowerMessage.match(/\b(20\d{2})\b|\b(\d{2})\b/);
-      if (yearMatch) {
-        const fullYear = yearMatch[1]; // 2025, 2024, ecc.
-        const shortYear = yearMatch[2]; // 25, 24, ecc.
-        if (fullYear) {
-          targetYear = parseInt(fullYear);
-        } else if (shortYear) {
-          const yearNum = parseInt(shortYear);
-          // Se è <= 50, assume 20xx, altrimenti 19xx
-          targetYear = yearNum <= 50 ? 2000 + yearNum : 1900 + yearNum;
-        }
-      }
-      
-      // Cerca anche numeri di mese
-      const monthMatch = lowerMessage.match(/(?:mese|month)\s+(\d+)|(\d+)\s+(?:novembre|ottobre|dicembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre)/i);
-      if (!targetMonth && monthMatch) {
-        targetMonth = parseInt(monthMatch[1] || monthMatch[2]) || null;
-      }
-      
-      // Query per appuntamenti (se menzionati)
-      const needsAppointments = lowerMessage.includes('appuntamento') || 
-          lowerMessage.includes('incontro') || 
-          lowerMessage.includes('riunione') ||
-          lowerMessage.includes('prossim') ||
-          lowerMessage.includes('oggi') ||
-          lowerMessage.includes('domani') ||
-          lowerMessage.includes('slot') ||
-          lowerMessage.includes('disponibil') ||
-          lowerMessage.includes('giornate libere') ||
-          lowerMessage.includes('giorni liberi') ||
-          lowerMessage.includes('liber') ||
-          targetMonth !== null;
-      
-      if (needsAppointments) {
-        // Determina filtro data: se dice "prossimi", "domani", "oggi" -> solo futuri
-        const wantsFuture = lowerMessage.includes('prossim') || 
-                           lowerMessage.includes('domani') || 
-                           lowerMessage.includes('oggi') ||
-                           lowerMessage.includes('futur');
+      // Se chiede disponibilità/slot, serve anche lista utenti
+      if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
+        const { data: users } = await supabase
+          .from('app_users')
+          .select('id, name, role')
+          .eq('role', 'consultant')
+          .order('name', { ascending: true });
         
-        // Calcola range date
-        let startDate = null;
-        let endDate = null;
-        
-        if (targetMonth !== null) {
-          // Filtra per mese specifico
-          startDate = new Date(targetYear, targetMonth - 1, 1);
-          endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
-        } else if (wantsFuture) {
-          // Solo futuri
-          startDate = new Date();
-          startDate.setHours(0, 0, 0, 0);
-        }
-        
-        let query = supabase
-          .from('appointments')
-          .select('id, client, start_time, type, vss, nncf, userid')
-          .limit(500); // Aumentato per analisi disponibilità
-        
-        // Filtro per consulente - per disponibilità serve vedere tutti
-        if (!isAdmin || !wantsAllConsultants) {
-          // Solo se non chiede disponibilità/slot di tutti
-          if (!lowerMessage.includes('slot') && !lowerMessage.includes('disponibil') && !lowerMessage.includes('liber')) {
-            query = query.eq('userid', user.id);
-          }
-        }
-        
-        // Filtro per data
-        if (startDate) {
-          query = query.gte('start_time', startDate.toISOString());
-        }
-        if (endDate) {
-          query = query.lte('start_time', endDate.toISOString());
-        } else if (wantsFuture && !targetMonth) {
-          // Solo futuri se non specificato mese
-          query = query.gte('start_time', startDate.toISOString());
-        }
-        
-        // Ordina per data: ascending per prossimi/futuri, descending per storici
-        query = query.order('start_time', { ascending: wantsFuture || targetMonth !== null });
-        
-        const { data: appointments } = await query;
-        data.appointments = appointments || [];
-        
-        // Se chiede disponibilità/slot, serve anche lista utenti
-        if ((lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber')) && isAdmin) {
-          const { data: users } = await supabase
-            .from('app_users')
-            .select('id, name, role')
-            .eq('role', 'consultant')
-            .order('name', { ascending: true });
-          
-          data.users = users || [];
-        }
+        data.users = users || [];
       }
 
       // CHATBOT INTELLIGENTE: Carica clienti per qualsiasi domanda che potrebbe riguardarli
@@ -318,100 +394,19 @@ module.exports = function(app) {
         data.clients = clients || [];
       }
 
-      // CHATBOT INTELLIGENTE: Carica SEMPRE periodi/KPI/BP per admin, per qualsiasi domanda
-      // L'AI interpreterà se sono rilevanti. Per non-admin, carica solo se sembra rilevante
-      // Include anche follow-up e domande generiche che potrebbero riguardare i dati
-      const isBPFollowUp = lowerMessage.includes('sicuro') || 
-                           lowerMessage.includes('conferma') ||
-                           lowerMessage.includes('verifica') ||
-                           lowerMessage.includes('hai accesso') ||
-                           lowerMessage.includes('cosa ti serve') ||
-                           lowerMessage.includes('cosa ti blocca') ||
-                           lowerMessage.includes('dati') ||
-                           lowerMessage.includes('informazioni') ||
-                           lowerMessage.includes('risultato') ||
-                           lowerMessage.includes('performance');
+      // Carica periodi
+      const needsAllPeriods = wantsAll || 
+                               lowerMessage.includes('chi non ha') ||
+                               lowerMessage.includes('chi ha fatto') ||
+                               lowerMessage.includes('chi ha compilato') ||
+                               lowerMessage.includes('chi compilato') ||
+                               lowerMessage.includes('manca');
       
-      const mightBeAboutPeriods = lowerMessage.includes('periodo') || 
-          lowerMessage.includes('kpi') ||
-          lowerMessage.includes('indicatore') ||
-          lowerMessage.includes('vendita') ||
-          lowerMessage.includes('obiettivo') ||
-          lowerMessage.includes('target') ||
-          lowerMessage.includes('bp') ||
-          lowerMessage.includes('battle plan') ||
-          lowerMessage.includes('previsionale') ||
-          lowerMessage.includes('consuntivo') ||
-          lowerMessage.includes('chi non ha') ||
-          lowerMessage.includes('chi ha fatto') ||
-          lowerMessage.includes('chi ha compilato') ||
-          lowerMessage.includes('chi compilato') ||
-          lowerMessage.includes('manca') ||
-          lowerMessage.includes('mese') ||
-          lowerMessage.includes('mensil') ||
-          lowerMessage.includes('settiman') ||
-          lowerMessage.includes('trimestr') ||
-          lowerMessage.includes('anno') ||
-          lowerMessage.includes('annual') ||
-          (isBPFollowUp && (conversationContext.includes('bp') || conversationContext.includes('previsionale') || conversationContext.includes('novembre') || conversationContext.includes('compilato') || conversationContext.includes('periodo'))) ||
-          // Per admin: carica sempre se non è chiaramente su altro argomento
-          (isAdmin && !lowerMessage.includes('cliente') && !lowerMessage.includes('appuntamento') && message.trim().length > 5);
+      data.periods = await loadPeriods(lowerMessage, user, isAdmin, wantsAll, conversationContext);
       
-      if (mightBeAboutPeriods) {
-        
-        // Per domande su "chi non ha fatto" o "chi ha compilato" servono tutti i periodi
-        const needsAllPeriods = wantsAllConsultants || 
-                                lowerMessage.includes('chi non ha') ||
-                                lowerMessage.includes('chi ha fatto') ||
-                                lowerMessage.includes('chi ha compilato') ||
-                                lowerMessage.includes('chi compilato') ||
-                                lowerMessage.includes('manca');
-        
-        let query = supabase
-          .from('periods')
-          .select('*')
-          .order('createdat', { ascending: false })
-          .limit(200); // Aumentato per analisi complete
-        
-        // Filtro per consulente
-        if (!isAdmin || !needsAllPeriods) {
-          query = query.eq('userid', user.id);
-        }
-        
-        const { data: periods } = await query;
-        data.periods = periods || [];
-        
-        // SEMPRE carica gli utenti quando si analizzano periodi per avere i nomi
-        // Questo è necessario per convertire userid in nomi nelle risposte
-        if (needsAllPeriods && isAdmin) {
-          const { data: users } = await supabase
-            .from('app_users')
-            .select('id, name, role')
-            .eq('role', 'consultant')
-            .order('name', { ascending: true });
-          
-          data.users = users || [];
-        } else if (data.periods && data.periods.length > 0) {
-          // Anche per utenti non-admin, carica gli utenti se ci sono periodi
-          // per assicurarsi che tutti gli userid nei periodi abbiano un nome
-          const uniqueUserIds = [...new Set(data.periods.map(p => p.userid).filter(Boolean))];
-          if (uniqueUserIds.length > 0) {
-            const { data: users } = await supabase
-              .from('app_users')
-              .select('id, name, role')
-              .in('id', uniqueUserIds);
-            
-            // Se già ci sono utenti, uniscili, altrimenti usa quelli nuovi
-            if (data.users && data.users.length > 0) {
-              // Unisci evitando duplicati
-              const existingIds = new Set(data.users.map(u => u.id));
-              const newUsers = (users || []).filter(u => !existingIds.has(u.id));
-              data.users = [...data.users, ...newUsers];
-            } else {
-              data.users = users || [];
-            }
-          }
-        }
+      // Carica utenti per periodi se necessario
+      if (data.periods) {
+        data.users = await loadUsersForPeriods(data.periods, needsAllPeriods, isAdmin, data.users);
       }
 
       // Query per leads

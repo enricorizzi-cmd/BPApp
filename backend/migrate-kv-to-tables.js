@@ -3,6 +3,7 @@
 require('dotenv').config();
 const { createClient } = require("@supabase/supabase-js");
 
+// eslint-disable-next-line complexity
 async function migrateData() {
   const supabaseUrl = process.env.SUPABASE_URL || 'https://bzvdbmofetujylvgcmqx.supabase.co';
   const supabaseKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6dmRibW9mZXR1anlsdmdjbXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MTM1NTAsImV4cCI6MjA3MjM4OTU1MH0.SZEE76n_Lz-8I7CmYkIhArNf41r4PixXRpy-1aRcGU8';

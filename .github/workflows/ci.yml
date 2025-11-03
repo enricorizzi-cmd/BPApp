@@ -13,10 +13,16 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
@@ -24,8 +30,11 @@ jobs:
           else
             npm install
           fi
-      - run: npm run lint
-      # - run: npm test  # Tests not configured yet
+      
+      - name: Run linter
+        run: npm run lint
+      # - name: Run tests
+      #   run: npm test  # Tests not configured yet
 
   frontend:
     runs-on: ubuntu-latest
@@ -33,12 +42,29 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
-      - run: npm run lint
-      # - run: npm test  # Tests not configured yet
-      - run: npm run build
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci || npm install
+          else
+            npm install
+          fi
+      
+      - name: Run linter
+        run: npm run lint
+      # - name: Run tests
+      #   run: npm test  # Tests not configured yet
+      
+      - name: Build application
+        run: npm run build
 

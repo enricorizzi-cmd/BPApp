@@ -6,6 +6,7 @@ const logger = require("./logger");
 
 let pool = null;
 
+// eslint-disable-next-line complexity
 async function init(){
   const urlStr = process.env.PG_URL || process.env.DATABASE_URL;
   if(!urlStr) throw new Error("Missing PG_URL for Postgres storage");

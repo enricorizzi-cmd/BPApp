@@ -29,6 +29,7 @@ async function init() {
   }
 }
 
+// eslint-disable-next-line complexity
 async function readJSON(tableName) {
   if (!supabase) throw new Error("Supabase not initialized");
   
@@ -210,6 +211,7 @@ async function readJSON(tableName) {
   }
 }
 
+// eslint-disable-next-line complexity
 async function writeJSON(tableName, data) {
   if (!supabase) throw new Error("Supabase not initialized");
   

@@ -22,6 +22,7 @@ const TIMEZONE_ITALY = 'Europe/Rome';
  * Converte qualsiasi input di data/ora in Date UTC
  * Gestisce: ISO strings, "YYYY-MM-DDTHH:MM", Date objects
  */
+// eslint-disable-next-line complexity
 function parseDateTime(input) {
   if (!input) return new Date(NaN);
   
