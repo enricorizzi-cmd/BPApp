@@ -15441,8 +15441,12 @@ function viewGestioneLead(){
         return;
       }
 
+      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione
+      const consultantSelect = document.getElementById('lead-consultant');
+      const savedConsultantValue = consultantSelect?.value || '';
+      
       const granularity = document.getElementById('lead-granularity')?.value || currentGranularity;
-      const consultant = document.getElementById('lead-consultant')?.value || '';
+      const consultant = savedConsultantValue; // Usa il valore salvato
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       console.log('🔍 DEBUG: contactStatus =', contactStatus);
@@ -15468,8 +15472,20 @@ function viewGestioneLead(){
       // Aggiorna variabile globale
       currentLeadsData = leads;
       
-      // Popola dropdown consulenti se non già fatto
-      await loadConsultantsDropdown('lead-consultant');
+      // Popola dropdown consulenti se non già fatto (solo se non ha opzioni)
+      if (!consultantSelect || consultantSelect.options.length <= 1) {
+        await loadConsultantsDropdown('lead-consultant');
+      }
+      
+      // Ripristina SEMPRE il valore selezionato dopo il caricamento
+      if (consultantSelect && savedConsultantValue !== undefined) {
+        // Usa setTimeout per assicurarsi che il DOM sia aggiornato
+        setTimeout(() => {
+          if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
+            consultantSelect.value = savedConsultantValue;
+          }
+        }, 50);
+      }
       
       // Renderizza tabella
       renderLeadsTable(leads);
@@ -15492,7 +15508,15 @@ function viewGestioneLead(){
         return;
       }
 
-      const consultant = document.getElementById('contact-consultant')?.value || '';
+      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione (solo se admin)
+      let savedConsultantValue = '';
+      let consultantSelect = null;
+      if (isAdmin) {
+        consultantSelect = document.getElementById('contact-consultant');
+        savedConsultantValue = consultantSelect?.value || '';
+      }
+      
+      const consultant = savedConsultantValue; // Usa il valore salvato
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
@@ -15512,9 +15536,22 @@ function viewGestioneLead(){
       // Aggiorna variabile globale
       currentLeadsData = allLeads;
       
-      // Popola dropdown consulenti se admin
-      if (isAdmin) {
-        await loadConsultantsDropdown('contact-consultant');
+      // Popola dropdown consulenti solo se necessario (solo se admin)
+      if (isAdmin && consultantSelect) {
+        // Popola dropdown consulenti solo se non ha opzioni
+        if (consultantSelect.options.length <= 1) {
+          await loadConsultantsDropdown('contact-consultant');
+        }
+        
+        // Ripristina SEMPRE il valore selezionato dopo il caricamento
+        if (savedConsultantValue !== undefined) {
+          // Usa setTimeout per assicurarsi che il DOM sia aggiornato
+          setTimeout(() => {
+            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
+              consultantSelect.value = savedConsultantValue;
+            }
+          }, 50);
+        }
       }
       
       // Separa lead da contattare e contattati
@@ -15539,6 +15576,9 @@ function viewGestioneLead(){
       const select = document.getElementById(selectId);
       if (!select) return;
       
+      // Salva il valore corrente prima di ricaricare
+      const currentValue = select.value || '';
+      
       const currentUser = getUser();
       let html = '<option value="">Tutti</option>';
       
@@ -15552,11 +15592,16 @@ function viewGestioneLead(){
       
       select.innerHTML = html;
       
-      // Imposta valore di default
-      if (currentUser.role === 'admin') {
-        select.value = ''; // Admin vede tutti di default
+      // Ripristina il valore precedente se esiste ancora nelle opzioni
+      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+        select.value = currentValue;
       } else {
-        select.value = currentUser.id; // Consultant vede solo i propri
+        // Altrimenti imposta valore di default
+        if (currentUser.role === 'admin') {
+          select.value = ''; // Admin vede tutti di default
+        } else {
+          select.value = currentUser.id; // Consultant vede solo i propri
+        }
       }
       
     } catch (error) {

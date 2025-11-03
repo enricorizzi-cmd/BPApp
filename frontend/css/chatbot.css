@@ -22,6 +22,16 @@
   margin: 0;
 }
 
+/* Desktop: posiziona FAB a destra della sidebar, a sinistra dei riquadri */
+@media (min-width: 981px) {
+  .chatbot-fab {
+    left: calc(280px + 20px); /* 280px sidebar + 20px padding */
+    top: calc(56px + env(safe-area-inset-top, 0px) + 20px); /* Sotto la topbar */
+    bottom: auto;
+    right: auto;
+  }
+}
+
 .chatbot-fab:hover {
   transform: scale(1.1) translateY(-2px);
   box-shadow: 0 12px 32px rgba(93, 211, 255, 0.5), 0 6px 16px rgba(141, 123, 255, 0.4);
@@ -482,9 +492,11 @@
 
 /* Safe area per dispositivi con notch */
 @supports (padding: env(safe-area-inset-bottom)) {
-  .chatbot-fab {
-    bottom: calc(24px + env(safe-area-inset-bottom));
-    left: calc(24px + env(safe-area-inset-left));
+  @media (max-width: 980px) {
+    .chatbot-fab {
+      bottom: calc(24px + env(safe-area-inset-bottom));
+      left: calc(24px + env(safe-area-inset-left));
+    }
   }
 
   .chatbot-modal-overlay {
