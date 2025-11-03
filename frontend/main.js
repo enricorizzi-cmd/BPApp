@@ -2707,7 +2707,7 @@ function viewCalendar(){
         var codiceCorso = '';
         
         if (!corsiDateArr || corsiDateArr.length === 0) {
-          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '' };
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '' };
         }
         
         // Cerca corsi che includono questo giorno
@@ -2750,7 +2750,7 @@ function viewCalendar(){
         }
         
         if (!hasCourse) {
-          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '' };
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '' };
         }
         
         // Per ogni corso del giorno, calcola VSD e iscritti filtrati per consulente
@@ -2793,11 +2793,22 @@ function viewCalendar(){
           nIscritti += nIscrittiCorso;
         }
         
+        // Prendi nome corso e data corso dal primo corso trovato (per il bottone nel calendario)
+        var nomeCorso = '';
+        var dataCorso = '';
+        if (coursesOnDay.length > 0) {
+          var firstCourse = coursesOnDay[0];
+          nomeCorso = firstCourse.corsi_catalogo?.nome_corso || '';
+          dataCorso = firstCourse.data_inizio || '';
+        }
+        
         return {
           vsdIndiretto: Math.round(vsdIndiretto),
           nIscritti: nIscritti,
           hasCourse: hasCourse,
-          codiceCorso: codiceCorso
+          codiceCorso: codiceCorso,
+          nomeCorso: nomeCorso,
+          dataCorso: dataCorso
         };
       }
       
@@ -3127,6 +3138,17 @@ function viewCalendar(){
           items.sort(function(a,b){ return BPTimezone.parseUTCString(a.start)-BPTimezone.parseUTCString(b.start); });
           var box = document.getElementById('cal_day_box');
           var h='<b>Appuntamenti del '+dateStr.split('-').reverse().join('/')+'</b>';
+          
+          // Controlla se questo giorno ha un corso (per mostrare bottone iscrizione)
+          var corsiDay = calculateCorsiDataForDay(dateStr, consultant, corsiDate, iscrizioniData);
+          if (corsiDay.hasCourse && corsiDay.nomeCorso) {
+            h += '<div style="margin-top:8px;margin-bottom:8px">'+
+                 '<button id="cal_add_iscrizione_btn" class="button" data-nome-corso="'+htmlEscape(corsiDay.nomeCorso)+'" style="background: var(--accent); color: white; font-weight: 600;">'+
+                 '📝 Aggiungi iscrizione a "'+htmlEscape(corsiDay.nomeCorso)+'"'+
+                 '</button>'+
+                 '</div>';
+          }
+          
           // Bottone aggiungi appuntamento inline
           h += '<div style="margin-top:8px;margin-bottom:8px">'+
                '<button id="cal_add_appt_btn" class="button" data-date="'+dateStr+'">➕ Aggiungi appuntamento</button>'+
@@ -3206,6 +3228,17 @@ function viewCalendar(){
               viewAppointments(); toast('Slot precompilato negli appuntamenti');
             });
           });
+          
+          // Handler bottone aggiungi iscrizione corso
+          var addIscrizioneBtn = box.querySelector('#cal_add_iscrizione_btn');
+          if(addIscrizioneBtn){
+            addIscrizioneBtn.addEventListener('click', function(ev){
+              ev.stopPropagation();
+              // Reindirizza alla pagina Corsi Interaziendali con tab Iscrizioni
+              corsiActiveTab = 'iscrizioni';
+              viewCorsiInteraziendali();
+            });
+          }
           
           // Handler bottone aggiungi appuntamento inline
           var addBtn = box.querySelector('#cal_add_appt_btn');
