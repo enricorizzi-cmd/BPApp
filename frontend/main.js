@@ -11435,7 +11435,7 @@ function viewCorsiInteraziendali(){
         top: 100%;
         left: 0;
         right: 0;
-        background: rgba(255,255,255,.08);
+        background: var(--bg);
         border: 1px solid var(--hair2);
         border-radius: 12px;
         max-height: 300px;
@@ -11449,7 +11449,7 @@ function viewCorsiInteraziendali(){
       .iscrizione-modal .client-dropdown-search {
         padding: 12px;
         border-bottom: 1px solid var(--hair2);
-        background: rgba(255,255,255,.03);
+        background: var(--bg);
       }
       
       .iscrizione-modal .client-dropdown-search input {
@@ -11473,6 +11473,7 @@ function viewCorsiInteraziendali(){
       .iscrizione-modal .client-dropdown-options {
         max-height: 250px;
         overflow-y: auto;
+        background: var(--bg);
       }
       
       .iscrizione-modal .client-option {
@@ -11484,10 +11485,11 @@ function viewCorsiInteraziendali(){
         align-items: center;
         gap: 12px;
         color: var(--text);
+        background: var(--bg);
       }
       
       .iscrizione-modal .client-option:hover {
-        background: rgba(93,211,255,.1);
+        background: rgba(93,211,255,.15);
         color: var(--accent);
       }
       
