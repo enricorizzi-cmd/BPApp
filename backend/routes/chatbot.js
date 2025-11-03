@@ -234,10 +234,22 @@ module.exports = function(app) {
 
   /**
    * Helper: Determina se la query richiede dati di tutti i consulenti
+   * IMPORTANTE: Non deve triggerare su domande personali (es. "quanti appuntamenti HO")
    */
   function wantsAllConsultants(message, isAdmin) {
     if (!isAdmin) return false;
     const lowerMessage = message.toLowerCase();
+    
+    // Controlla prima se è una domanda personale (es. "ho", "mio", "miei")
+    const isPersonalQuestion = /\b(ho|hai|hanno|mio|mia|miei|mie|mio)\b/.test(lowerMessage) &&
+                               (lowerMessage.includes('appuntamento') || lowerMessage.includes('cliente') || lowerMessage.includes('vendit'));
+    
+    // Se è una domanda personale, NON vuole vedere tutti (tranne se esplicitamente richiesto)
+    if (isPersonalQuestion && !lowerMessage.includes('tutti') && !lowerMessage.includes('squadra')) {
+      return false;
+    }
+    
+    // Keyword esplicite per vedere tutti
     return lowerMessage.includes('tutti') || 
            lowerMessage.includes('squadra') || 
            lowerMessage.includes('global') ||
@@ -245,11 +257,12 @@ module.exports = function(app) {
            lowerMessage.includes('chi non ha') ||
            lowerMessage.includes('chi ha fatto') ||
            lowerMessage.includes('chi ha compilato') ||
-           lowerMessage.includes('chi ha') ||
+           lowerMessage.includes('chi compilato') ||
            lowerMessage.includes('chi manca') ||
            lowerMessage.includes('manca il bp') ||
            lowerMessage.includes('non hanno fatto') ||
-           lowerMessage.includes('chi compilato');
+           // "chi ha" solo se NON è seguito da "ho" (domanda personale)
+           (lowerMessage.includes('chi ha') && !lowerMessage.includes('chi ha ho') && !isPersonalQuestion);
   }
 
   /**
@@ -337,10 +350,14 @@ module.exports = function(app) {
       .select('id, client, start_time, type, vss, nncf, userid')
       .limit(500);
     
-    if (!isAdmin || !wantsAll) {
-      if (!lowerMessage.includes('slot') && !lowerMessage.includes('disponibil') && !lowerMessage.includes('liber')) {
-        query = query.eq('userid', user.id);
-      }
+    // Filtra per utente corrente A MENO CHE:
+    // 1. L'utente è admin E vuole vedere tutti (wantsAll è true)
+    // 2. Si sta chiedendo disponibilità/slot liberi (che richiedono vedere tutti gli utenti)
+    const isAskingAvailability = lowerMessage.includes('slot') || lowerMessage.includes('disponibil') || lowerMessage.includes('liber');
+    const shouldFilterByUser = !(isAdmin && wantsAll) && !isAskingAvailability;
+    
+    if (shouldFilterByUser) {
+      query = query.eq('userid', user.id);
     }
     
     if (startDate) {
