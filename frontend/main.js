@@ -11702,7 +11702,10 @@ function viewCorsiInteraziendali(){
         break;
       case 'iscrizioni':
         loadIscrizioniData();
-        loadConsulentiOptions();
+        // Chiama loadConsulentiOptions dopo che il DOM è pronto
+        setTimeout(() => {
+          loadConsulentiOptions();
+        }, 100);
         loadCorsiFilterOptions();
         updateIscrizioniPeriodDisplay(); // Aggiorna il display del periodo iniziale
         break;
@@ -12953,11 +12956,17 @@ function viewCorsiInteraziendali(){
   async function loadConsulentiOptions() {
     try {
       const me = getUser() || {};
+      if (!me || !me.id) {
+        console.warn('[loadConsulentiOptions] Utente non loggato');
+        return;
+      }
+      
       const isAdmin = me.role === 'admin';
       const select = document.getElementById('filtro-consulente');
       
       if (!select) {
-        console.warn('[loadConsulentiOptions] Select filtro-consulente non trovato');
+        console.warn('[loadConsulentiOptions] Select filtro-consulente non trovato, riprovo tra 200ms');
+        setTimeout(loadConsulentiOptions, 200);
         return;
       }
       
@@ -12966,10 +12975,17 @@ function viewCorsiInteraziendali(){
       // Popola temporaneamente con loading
       select.innerHTML = '<option value="">Caricamento...</option>';
       
-      // Carica lista consulenti
+      // Carica lista consulenti da /api/usernames (non /api/users!)
       try {
+        console.log('[loadConsulentiOptions] Chiamata a /api/usernames');
         const r = await GET('/api/usernames');
-        var list = (r && r.users) || [];
+        console.log('[loadConsulentiOptions] Risposta ricevuta:', r);
+        
+        if (!r || !r.users) {
+          throw new Error('Risposta API non valida: ' + JSON.stringify(r));
+        }
+        
+        var list = r.users || [];
         var h = '';
         
         console.log('[loadConsulentiOptions] Ricevuti', list.length, 'utenti dalla API');
@@ -12993,17 +13009,21 @@ function viewCorsiInteraziendali(){
         select.value = me.id;
         console.log('[loadConsulentiOptions] Select popolato con', h.split('<option').length - 1, 'opzioni, valore selezionato:', me.id);
       } catch (error) {
-        console.error('[loadConsulentiOptions] Error loading usernames:', error);
+        console.error('[loadConsulentiOptions] Error loading usernames:', error, error.message);
         // Fallback: mostra solo se stesso
-        const me = getUser() || {};
-        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || 'Errore') + '</option>';
+        const meFallback = getUser() || {};
+        if (select) {
+          select.innerHTML = '<option value="' + htmlEscape(meFallback.id || '') + '">' + htmlEscape(meFallback.name || meFallback.email || 'Errore') + '</option>';
+          select.value = meFallback.id || '';
+        }
       }
     } catch (error) {
-      console.error('[loadConsulentiOptions] Error in function:', error);
+      console.error('[loadConsulentiOptions] Error in function:', error, error.message);
       const select = document.getElementById('filtro-consulente');
       const me = getUser() || {};
       if (select) {
-        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || 'Errore') + '</option>';
+        select.innerHTML = '<option value="' + htmlEscape(me.id || '') + '">' + htmlEscape(me.name || me.email || 'Errore') + '</option>';
+        select.value = me.id || '';
       }
     }
   }
@@ -13279,7 +13299,7 @@ function viewCorsiInteraziendali(){
 
     showOverlay(modalHtml, 'iscrizione-modal-overlay');
     loadCorsiOptions();
-    loadConsulentiOptions();
+    loadConsulentiOptionsModal();
     // Inizializza dropdown clienti per il primo cliente
     setTimeout(() => setupClienteDropdown(1), 100);
   }
@@ -13345,13 +13365,13 @@ function viewCorsiInteraziendali(){
     }
   }
 
-  async function loadConsulentiOptions(targetSelectId = null) {
+  async function loadConsulentiOptionsModal(targetSelectId = null) {
     try {
-      const response = await GET('/api/users');
+      const response = await GET('/api/usernames');
       
       if (response.users) {
         const options = response.users.map(user => 
-          `<option value="${user.id}">${user.name}</option>`
+          `<option value="${user.id}">${user.name || user.email || user.id}</option>`
         ).join('');
         
         if (targetSelectId) {
@@ -13458,7 +13478,7 @@ function viewCorsiInteraziendali(){
     // Assicura che i consulenti siano caricati prima di cercare
     if (consulenteSelect.options.length <= 1) {
       // Le opzioni non sono ancora caricate, caricale prima
-      await loadConsulentiOptions(`consulente-${index}`);
+      await loadConsulentiOptionsModal(`consulente-${index}`);
     }
     
     // Trova e seleziona il consulente nel dropdown
@@ -13651,7 +13671,7 @@ function viewCorsiInteraziendali(){
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
     // Carica opzioni consulenti e inizializza dropdown clienti
-    loadConsulentiOptions(`consulente-${clienteCount}`).then(() => {
+    loadConsulentiOptionsModal(`consulente-${clienteCount}`).then(() => {
       setTimeout(() => setupClienteDropdown(clienteCount), 100);
     });
   };
@@ -13732,12 +13752,12 @@ function viewCorsiInteraziendali(){
       showOverlay(modalHtml, 'iscrizione-edit-modal-overlay');
       
       // Carica opzioni clienti e consulenti per ogni iscrizione
-      await loadConsulentiOptions();
+      await loadConsulentiOptionsModal();
       
       for (let i = 0; i < iscrizioni.length; i++) {
         const iscrizione = iscrizioni[i];
         await loadClientiOptions(`edit-cliente-${i}`);
-        await loadConsulentiOptions(`edit-consulente-${i}`);
+        await loadConsulentiOptionsModal(`edit-consulente-${i}`);
         
         // Imposta i valori esistenti
         const clienteSelect = document.getElementById(`edit-cliente-${i}`);
