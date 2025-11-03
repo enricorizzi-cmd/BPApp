@@ -899,7 +899,27 @@ RISPOSTE IN ITALIANO.`;
         const userName = getUserName(period.userid);
         
         // Evidenzia se corrisponde al mese richiesto
-        const isRelevant = targetMonth && periodMonth == targetMonth && (!targetYear || periodYear == targetYear);
+        // IMPORTANTE: Un periodo è rilevante se il mese corrisponde E (year corrisponde OPPURE year è NULL ma startDate indica l'anno corretto)
+        let isRelevant = false;
+        if (targetMonth && periodMonth == targetMonth) {
+          if (!targetYear) {
+            // Se non c'è targetYear, basta che il mese corrisponda
+            isRelevant = true;
+          } else {
+            // Se c'è targetYear, verifica: (year corrisponde) OPPURE (year è NULL ma startDate indica l'anno corretto)
+            if (periodYear == targetYear) {
+              isRelevant = true;
+            } else if (!periodYear && period.startdate) {
+              // Se year è NULL ma abbiamo startdate, verifica l'anno da startdate
+              try {
+                const start = new Date(period.startdate);
+                if (!isNaN(start.getTime()) && start.getFullYear() == targetYear) {
+                  isRelevant = true;
+                }
+              } catch (e) {}
+            }
+          }
+        }
         const marker = isRelevant ? ' ⭐' : '';
         
         // Formatta in modo esplicito per evitare confusioni
