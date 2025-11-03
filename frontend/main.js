@@ -1267,7 +1267,8 @@ function recomputeKPI(){
   var t = new Date(r.end).getTime();
 
   var el = document.getElementById('dash_cons');
-  var cons = el ? el.value : null;
+  // Se "Tutti" è selezionato (valore vuoto), cons deve essere null o stringa vuota per mostrare tutti i consulenti
+  var cons = (el && el.value && el.value !== '') ? el.value : null;
 
   // helper robusti
   function asNum(v){ v = Number((v==null?'':v)); return isFinite(v)?v:0; }
@@ -1361,7 +1362,10 @@ function recomputeKPI(){
       return;
     }
     
-    var cons = el ? el.value : getUser().id;
+    // Se "Tutti" è selezionato (valore vuoto), cons deve essere null per mostrare tutti i consulenti (solo admin)
+    // Se non-admin, usa sempre getUser().id
+    var isAdmin = getUser() && getUser().role === 'admin';
+    var cons = (el && el.value && el.value !== '') ? el.value : (isAdmin ? null : getUser().id);
     var range= readUnifiedRange('dash');
     var type = String(range.type||'mensile').toLowerCase();
 
@@ -1405,7 +1409,10 @@ function refreshLists(){
     return;
   }
   var el = document.getElementById('dash_cons');
-  var cons = el ? el.value : getUser().id;
+  // Se "Tutti" è selezionato (valore vuoto), cons deve essere null per mostrare tutti i consulenti (solo admin)
+  // Se non-admin, usa sempre getUser().id
+  var isAdmin = getUser() && getUser().role === 'admin';
+  var cons = (el && el.value && el.value !== '') ? el.value : (isAdmin ? null : getUser().id);
 
   // Range e tipo periodo selezionati (usati per query /api/periods)
   var rDash = (typeof readUnifiedRange==='function' ? readUnifiedRange('dash') : {}) || {};
