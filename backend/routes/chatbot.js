@@ -295,10 +295,14 @@ module.exports = function(app) {
         }
       }
 
-      // Query per clienti
-      if (lowerMessage.includes('cliente') || 
+      // CHATBOT INTELLIGENTE: Carica clienti per qualsiasi domanda che potrebbe riguardarli
+      const mightBeAboutClients = lowerMessage.includes('cliente') || 
           lowerMessage.includes('client') ||
-          lowerMessage.includes('azienda')) {
+          lowerMessage.includes('azienda') ||
+          lowerMessage.includes('contatto') ||
+          lowerMessage.includes('lead');
+      
+      if (mightBeAboutClients) {
         
         let query = supabase
           .from('clients')
@@ -314,8 +318,9 @@ module.exports = function(app) {
         data.clients = clients || [];
       }
 
-      // Query per periodi/KPI/BP
-      // Includi anche domande di follow-up comuni che potrebbero riferirsi a dati già discussi
+      // CHATBOT INTELLIGENTE: Carica SEMPRE periodi/KPI/BP per admin, per qualsiasi domanda
+      // L'AI interpreterà se sono rilevanti. Per non-admin, carica solo se sembra rilevante
+      // Include anche follow-up e domande generiche che potrebbero riguardare i dati
       const isBPFollowUp = lowerMessage.includes('sicuro') || 
                            lowerMessage.includes('conferma') ||
                            lowerMessage.includes('verifica') ||
@@ -323,9 +328,11 @@ module.exports = function(app) {
                            lowerMessage.includes('cosa ti serve') ||
                            lowerMessage.includes('cosa ti blocca') ||
                            lowerMessage.includes('dati') ||
-                           lowerMessage.includes('informazioni');
+                           lowerMessage.includes('informazioni') ||
+                           lowerMessage.includes('risultato') ||
+                           lowerMessage.includes('performance');
       
-      if (lowerMessage.includes('periodo') || 
+      const mightBeAboutPeriods = lowerMessage.includes('periodo') || 
           lowerMessage.includes('kpi') ||
           lowerMessage.includes('indicatore') ||
           lowerMessage.includes('vendita') ||
@@ -340,7 +347,17 @@ module.exports = function(app) {
           lowerMessage.includes('chi ha compilato') ||
           lowerMessage.includes('chi compilato') ||
           lowerMessage.includes('manca') ||
-          (isBPFollowUp && (conversationContext.includes('bp') || conversationContext.includes('previsionale') || conversationContext.includes('novembre') || conversationContext.includes('compilato')))) {
+          lowerMessage.includes('mese') ||
+          lowerMessage.includes('mensil') ||
+          lowerMessage.includes('settiman') ||
+          lowerMessage.includes('trimestr') ||
+          lowerMessage.includes('anno') ||
+          lowerMessage.includes('annual') ||
+          (isBPFollowUp && (conversationContext.includes('bp') || conversationContext.includes('previsionale') || conversationContext.includes('novembre') || conversationContext.includes('compilato') || conversationContext.includes('periodo'))) ||
+          // Per admin: carica sempre se non è chiaramente su altro argomento
+          (isAdmin && !lowerMessage.includes('cliente') && !lowerMessage.includes('appuntamento') && message.trim().length > 5);
+      
+      if (mightBeAboutPeriods) {
         
         // Per domande su "chi non ha fatto" o "chi ha compilato" servono tutti i periodi
         const needsAllPeriods = wantsAllConsultants || 
@@ -478,10 +495,30 @@ module.exports = function(app) {
   function buildSystemPrompt(user) {
     const isAdmin = user.role === 'admin';
     const roleContext = isAdmin 
-      ? 'Sei un assistente AI per un sistema di gestione commerciale. L\'utente è un amministratore. Di default, quando non specificato diversamente, mostra solo i dati dell\'utente corrente. Se l\'utente chiede esplicitamente dati di "tutti", "squadra", "team" o "global", puoi mostrare dati aggregati o di tutti i consulenti.'
-      : `Sei un assistente AI per un consulente commerciale. L'utente è ${user.name || user.email}. Puoi accedere SOLO ai dati di questo consulente, non hai accesso ai dati di altri consulenti.`;
+      ? 'Sei un assistente AI intelligente per un sistema di gestione commerciale. L\'utente è un amministratore. Di default, quando non specificato diversamente, mostra solo i dati dell\'utente corrente. Se l\'utente chiede esplicitamente dati di "tutti", "squadra", "team" o "global", puoi mostrare dati aggregati o di tutti i consulenti.'
+      : `Sei un assistente AI intelligente per un consulente commerciale. L'utente è ${user.name || user.email}. Puoi accedere SOLO ai dati di questo consulente, non hai accesso ai dati di altri consulenti.`;
 
     return `${roleContext}
+
+=== IMPORTANTE: SEI UN CHATBOT INTELLIGENTE ===
+
+PRIMA DI TUTTO: Studia attentamente il GLOSSARIO qui sotto. Conosci perfettamente tutti i termini e acronimi prima di rispondere a qualsiasi domanda.
+
+NON SEI STUPIDO: Non dipendere da keyword esatte. INTERPRETA le domande in modo intelligente, anche se l'utente usa parole diverse o formula male la domanda.
+
+SE NON SEI SICURO: CHIEDI CHIARIMENTI invece di inventare risposte. È meglio chiedere "Intendi il BP previsionale o consuntivo?" piuttosto che supporre.
+
+INTERPRETAZIONE INTELLIGENTE:
+- "Chi ha fatto il BP di novembre?" = "Chi ha compilato il BP previsionale di novembre?"
+- "I miei risultati" = potrebbe essere KPI, vendite, GI, o qualsiasi indicatore
+- "I prossimi impegni" = appuntamenti futuri
+- "Chi manca?" (nel contesto di BP) = "Chi non ha compilato il BP?"
+- "La mia squadra" (per admin) = tutti i consulenti
+
+ANALISI CONTESTUALE:
+- Se l'utente menziona un mese/nome senza altro contesto, chiedi chiarimenti se necessario
+- Se i dati non sono chiari o mancanti, dillo esplicitamente e chiedi se vuole informazioni diverse
+- Non dire mai "non ho accesso" se hai i dati - usa i dati che hai e spiega se sono incompleti
 
 Il sistema gestisce:
 - Appuntamenti: incontri con clienti, con tipo (vendita, mezza, full, ecc.), VSS, VSD, NNCF
