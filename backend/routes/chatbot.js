@@ -49,8 +49,26 @@ module.exports = function(app) {
     }
 
     try {
+      // Analizza anche il contesto della conversazione per capire il tema della domanda
+      // Utile per domande di follow-up che non contengono keyword esplicite
+      const conversationContext = conversationHistory
+        .slice(-10) // Ultimi 10 messaggi di contesto (più ampio)
+        .map(m => {
+          // Gestisci sia stringhe che oggetti con role/content
+          if (typeof m === 'string') return m;
+          if (m.role === 'user' && m.content) return m.content;
+          if (m.role === 'assistant' && m.content) return m.content;
+          return '';
+        })
+        .filter(m => m.trim().length > 0)
+        .join(' ');
+      
+      // Combina il messaggio corrente con il contesto per recuperare dati rilevanti
+      // Questo permette di ricaricare dati anche per domande di follow-up come "SICURO?", "IN CHE SENSO?", ecc.
+      const contextForData = `${message} ${conversationContext}`.toLowerCase();
+      
       // Determina quali dati del database potrebbero essere rilevanti
-      const relevantData = await gatherRelevantData(message, req.user);
+      const relevantData = await gatherRelevantData(contextForData, req.user);
 
       // Estrai mese/anno dalla domanda per passarlo a formatDataContext
       const monthNames = {
