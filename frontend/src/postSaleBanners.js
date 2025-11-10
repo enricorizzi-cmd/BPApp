@@ -794,12 +794,45 @@
     dbg('Document ready, starting initial scan');
     scan();
   }
-  // DISABILITATO: re-scan automatico - ora gestito dal backend
-  // re-scan when an appointment is saved or tab becomes visible
-  // try{ document.addEventListener('appt:saved', function(){ setTimeout(scan, 50); }); }catch(_){ }
-  // try{ document.addEventListener('visibilitychange', function(){ if(!document.hidden) setTimeout(scan, 50); }); }catch(_){ }
-  // periodic scan (in case the page stays open while an appointment's end time passes)
-  // try{ setInterval(function(){ scan(); }, 60*1000); }catch(_){ }
+  
+  // ✅ Riabilitato: re-scan quando appuntamento salvato (con cache)
+  try{ 
+    document.addEventListener('appt:saved', function(){ 
+      dbg('Appointment saved event detected, triggering scan with cache');
+      setTimeout(() => scanWithCache(), 50); 
+    }); 
+  }catch(_){ }
+  
+  // ✅ Riabilitato: re-scan quando tab diventa visibile (con cache)
+  try{ 
+    document.addEventListener('visibilitychange', function(){ 
+      if(!document.hidden && window.getUser && window.getUser()) {
+        dbg('Tab became visible, triggering scan with cache');
+        setTimeout(() => scanWithCache(), 50); 
+      }
+    }); 
+  }catch(_){ }
+  
+  // ✅ Riabilitato: scan periodico ogni 5 minuti (fallback, solo se tab visibile e utente loggato)
+  try{ 
+    scanInterval = setInterval(function(){ 
+      if (!document.hidden && window.getUser && window.getUser()) {
+        dbg('Periodic scan triggered (5 min interval)');
+        scanWithCache(); 
+      }
+    }, 5*60*1000); // 5 minuti
+  }catch(_){ }
+  
+  // ✅ Cleanup automatico interval su navigazione SPA
+  try {
+    window.addEventListener('beforeunload', function() {
+      if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+        dbg('Cleaned up scan interval on navigation');
+      }
+    });
+  } catch(_){ }
   }
   if (typeof global !== 'undefined') {
     global.initPostSaleBanners = initPostSaleBanners;
