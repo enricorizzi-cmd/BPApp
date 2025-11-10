@@ -202,31 +202,40 @@
 
   // --- Apertura affidabile del builder pagamenti GI ---
   function tryOpenGiBuilder(id){
-    if (!id) return;
+    if (!id) {
+      console.warn('[tryOpenGiBuilder] No ID provided');
+      return;
+    }
+    console.log('[tryOpenGiBuilder] Opening builder for sale ID:', id);
     try{
       // Se esiste un helper globale, usalo
       if (typeof window.openPaymentBuilderById === 'function') { 
+        console.log('[tryOpenGiBuilder] Using openPaymentBuilderById');
         window.openPaymentBuilderById(id); 
         return; 
       }
       if (typeof window.gotoGIAndOpenBuilder === 'function') { 
+        console.log('[tryOpenGiBuilder] Using gotoGIAndOpenBuilder');
         window.gotoGIAndOpenBuilder(id); 
         return; 
       }
 
       // Se siamo già nella vista GI, apri subito
       if (document.querySelector('#gi_rows')){
+        console.log('[tryOpenGiBuilder] Already in GI view, dispatching gi:edit event');
         document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
         return;
       }
 
       // Prova a navigare alla vista GI e poi apri
       if (typeof window.viewGI === 'function'){
+        console.log('[tryOpenGiBuilder] Navigating to GI view');
         try{ window.viewGI(); }catch(_){ }
         let tries = 0;
         (function waitAndOpen(){
           const ok = document.getElementById('gi_rows');
           if (ok || tries>40){
+            console.log('[tryOpenGiBuilder] GI view loaded, dispatching gi:edit event');
             try{ document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } })); }catch(_){ }
             return;
           }
@@ -235,13 +244,16 @@
         })();
       }
     }catch(e){ 
+      console.error('[tryOpenGiBuilder] Error:', e);
       logger.error(e); 
     }
 
     // Fallback assoluto: invia comunque l'evento
     try {
+      console.log('[tryOpenGiBuilder] Fallback: dispatching gi:edit event');
       document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
     } catch(e) { 
+      console.error('[tryOpenGiBuilder] Fallback error:', e);
       // Ignora errori fallback
     }
   }

@@ -182,16 +182,59 @@ async function createGIFromAppt(appt, vss){
 
 // —— mini builder pagamenti (fallback universale; usa overlay centrale)
 async function openPaymentBuilderById(id){
-  // Se siamo nella vista GI, uso l’evento nativo
-  if (typeof viewGI === 'function' && document.querySelector('#gi_rows')){
-    // già in GI: apro direttamente
-    document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
-    return;
+  console.log('[openPaymentBuilderById] Called with ID:', id);
+  
+  // ✅ FIX: Anche se siamo nella vista GI, verifichiamo sempre che la vendita esista
+  // perché potrebbe essere appena stata creata e non ancora caricata nella vista
+  const isInGIView = typeof viewGI === 'function' && document.querySelector('#gi_rows');
+  
+  if (isInGIView){
+    console.log('[openPaymentBuilderById] Already in GI view, but verifying sale exists first');
+    // Verifica che la vendita esista prima di inviare l'evento
+    try {
+      const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1');
+      const it = ((j&&j.sales)||[]).find(s=>String(s.id)===String(id));
+      if (it) {
+        console.log('[openPaymentBuilderById] Sale found in GI view, dispatching gi:edit event');
+        document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+        return;
+      } else {
+        console.warn('[openPaymentBuilderById] Sale not found in GI view, forcing refresh and retrying');
+        // ✅ FIX: Forza refresh della vista GI se la vendita non viene trovata
+        if (typeof viewGI === 'function') {
+          try {
+            viewGI(); // Refresh della vista GI
+            // Aspetta che la vista si aggiorni e riprova
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const j2 = await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1');
+            const it2 = ((j2&&j2.sales)||[]).find(s=>String(s.id)===String(id));
+            if (it2) {
+              console.log('[openPaymentBuilderById] Sale found after refresh, dispatching gi:edit event');
+              document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+              return;
+            }
+          } catch (refreshError) {
+            console.error('[openPaymentBuilderById] Error refreshing GI view:', refreshError);
+          }
+        }
+        console.warn('[openPaymentBuilderById] Sale still not found after refresh, will try fallback');
+        // Continua con il fallback se non trovata
+      }
+    } catch (e) {
+      console.error('[openPaymentBuilderById] Error verifying sale in GI view:', e);
+      // Continua con il fallback in caso di errore
+    }
   }
+  
   // Non siamo in GI: provo ad aprire la vista GI e poi il builder
   if (typeof viewGI === 'function'){
+    console.log('[openPaymentBuilderById] Not in GI view, navigating to GI view');
     try { viewGI(); } catch(_){}
-    setTimeout(()=> document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}})), 350);
+    // ✅ FIX: Aumentato delay per dare tempo alla vista GI di caricare i dati
+    setTimeout(()=> {
+      console.log('[openPaymentBuilderById] Dispatching gi:edit event after navigation');
+      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+    }, 800); // Aumentato da 350ms a 800ms
     return;
   }
 

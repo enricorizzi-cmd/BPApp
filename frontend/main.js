@@ -10785,10 +10785,19 @@ appEl.innerHTML = topbarHTML() + `
   };
 
   function openEdit(id){
-    GET('/api/gi?from=1900-01-01&to=2999-12-31').then(j=>{
+    // ✅ FIX: Aggiungi global=1 per evitare filtri per consultantId che potrebbero escludere vendite appena create
+    GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1').then(j=>{
       const it = ((j&&j.sales)||[]).find(s => String(s.id)===String(id));
-      if(!it){ toast('Vendita non trovata'); return; }
+      if(!it){ 
+        console.error('[openEdit] Vendita non trovata, ID:', id);
+        console.error('[openEdit] Query response:', j);
+        toast('Vendita non trovata'); 
+        return; 
+      }
       showGiModal({ title:'Modifica vendita', sale: it });
+    }).catch(e => {
+      console.error('[openEdit] Error loading sale:', e);
+      toast('Errore caricamento vendita');
     });
   }
 
