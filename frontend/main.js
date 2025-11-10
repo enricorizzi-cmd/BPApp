@@ -10784,21 +10784,44 @@ appEl.innerHTML = topbarHTML() + `
     showGiModal({ title:'Nuova vendita' });
   };
 
-  function openEdit(id){
-    // ✅ FIX: Aggiungi global=1 per evitare filtri per consultantId che potrebbero escludere vendite appena create
-    GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1').then(j=>{
-      const it = ((j&&j.sales)||[]).find(s => String(s.id)===String(id));
-      if(!it){ 
-        console.error('[openEdit] Vendita non trovata, ID:', id);
-        console.error('[openEdit] Query response:', j);
-        toast('Vendita non trovata'); 
-        return; 
+  async function openEdit(id){
+    console.log('[openEdit] Opening edit for sale ID:', id);
+    // ✅ FIX: Retry mechanism per gestire delay nella propagazione dei dati in Supabase
+    let it = null;
+    let retries = 5; // Aumentato a 5 tentativi per dare più tempo
+    while (!it && retries > 0) {
+      console.log(`[openEdit] Attempt ${6 - retries}/5, searching for sale:`, id);
+      try {
+        const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1');
+        console.log(`[openEdit] Query response, total sales:`, (j&&j.sales)?.length || 0);
+        it = ((j&&j.sales)||[]).find(s => String(s.id)===String(id));
+        if (it) {
+          console.log('[openEdit] Sale found!', it);
+          showGiModal({ title:'Modifica vendita', sale: it });
+          return;
+        }
+        if (!it && retries > 1) {
+          console.log('[openEdit] Sale not found, retrying in 500ms...');
+          // Aspetta 500ms prima di riprovare (solo se non è l'ultimo tentativo)
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (e) {
+        console.error('[openEdit] Error loading sale:', e);
+        if (retries === 1) {
+          toast('Errore caricamento vendita');
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-      showGiModal({ title:'Modifica vendita', sale: it });
-    }).catch(e => {
-      console.error('[openEdit] Error loading sale:', e);
-      toast('Errore caricamento vendita');
-    });
+      retries--;
+    }
+    
+    if(!it){ 
+      console.error('[openEdit] Vendita non trovata dopo retry, ID:', id);
+      console.error('[openEdit] Ultima query response:', await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1').catch(() => null));
+      toast('Vendita non trovata. Potrebbe essere ancora in fase di salvataggio. Riprova tra qualche secondo.'); 
+      return; 
+    }
   }
 
   const gSel = $('gi-forecast-granularity');
