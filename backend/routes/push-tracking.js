@@ -37,7 +37,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   
   async function markPushSent(userId, resourceId, notificationType) {
     try {
-      const trackingId = `push_${userId}_${resourceId}_${notificationType}`;
+      const trackingId = `${resourceId}_${notificationType}`;
       
       const { error } = await supabase
         .from('push_notifications_sent')
@@ -47,6 +47,7 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           appointmentid: resourceId, // Usa appointmentid per retrocompatibilità (useResourceId=false)
           resource_id: null,
           notification_type: notificationType,
+          delivery_status: 'sent', // ✅ AGGIUNTO: Marca come consegnata
           sent_at: new Date().toISOString(),
           createdat: new Date().toISOString()
         }, { 

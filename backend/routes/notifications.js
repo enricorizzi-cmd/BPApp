@@ -120,6 +120,44 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
           }
           
           productionLogger.info(`[Notifications] Sent via NotificationManager: sent=${sent}, failed=${failed}, cleaned=${cleaned}, total=${totalSubs}`);
+          
+          // ✅ OTTIMIZZAZIONE: Aggiorna delivery_status per notifiche automatiche frontend banner
+          if (type === 'automatic' && Array.isArray(recipients) && sent > 0 && notificationManager) {
+            try {
+              // Determina notification_type basato su payload tag
+              // Frontend banner push usa tag 'bp-sale' o 'bp-nncf'
+              const tag = payload.tag || '';
+              let notificationType = 'automatic';
+              if (tag === 'bp-nncf') {
+                notificationType = 'nncf';
+              } else if (tag === 'bp-sale') {
+                notificationType = 'sale';
+              }
+              
+              // Se abbiamo un resourceId (appointmentId) nel body, usalo per tracking
+              // Altrimenti usa il primo recipient come fallback
+              const resourceId = req.body.resourceId || req.body.appointmentId || (recipients.length > 0 ? recipients[0] : null);
+              
+              if (resourceId && notificationType !== 'automatic') {
+                // Marca come inviata per ogni recipient che ha ricevuto la notifica
+                for (const userId of recipients) {
+                  if (sent > 0) { // Solo se almeno una notifica è stata inviata
+                    await notificationManager.markNotificationSent(
+                      userId,
+                      resourceId,
+                      notificationType,
+                      null,
+                      false // usa appointmentid per retrocompatibilità
+                    );
+                    productionLogger.debug(`[Notifications] Marked notification as sent: userId=${userId}, resourceId=${resourceId}, type=${notificationType}`);
+                  }
+                }
+              }
+            } catch (trackingError) {
+              productionLogger.error('[Notifications] Error updating delivery_status:', trackingError);
+              // Non bloccare la risposta se il tracking fallisce
+            }
+          }
         } catch (error) {
           productionLogger.error('[Notifications] Error using NotificationManager, falling back to legacy:', error);
           // Fallback a file JSON legacy

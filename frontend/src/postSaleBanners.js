@@ -122,13 +122,21 @@
         return;
       }
       
-      await POST('/api/notifications/send', { 
+      const result = await POST('/api/notifications/send', { 
         text: body, 
         recipients: [consultantId], // ← SICURO: sempre array specifico
-        type: 'automatic'
+        type: 'automatic',
+        resourceId: appt.id, // ✅ AGGIUNTO: Passa appointmentId per tracking
+        appointmentId: appt.id // ✅ AGGIUNTO: Alias per retrocompatibilità
       });
-      await markPush(appt.id, kind);
-      dbg('Push notification sent and marked');
+      
+      // ✅ OTTIMIZZAZIONE: Marca come inviata solo se invio riuscito
+      if (result && result.ok && result.sent > 0) {
+        await markPush(appt.id, kind);
+        dbg('Push notification sent successfully, marked as sent');
+      } else {
+        dbg('Push notification failed or no subscriptions, not marking as sent');
+      }
     }catch(e){ 
       dbg('Error in triggerPush:', e);
     }
