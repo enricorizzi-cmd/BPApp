@@ -211,25 +211,27 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       
       // Controlla sia appointmentid che resource_id per retrocompatibilità
       // Cerca in entrambi i campi per supportare vecchi e nuovi record
+      // NOTA: Due .or() separati in Supabase vengono combinati con AND, quindi usiamo un singolo .or() con entrambe le condizioni
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('notification_type', notificationType)
         .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
-        .single();
+        .maybeSingle(); // Usa maybeSingle invece di single per gestire meglio "not found"
       
-      if (error && error.code !== 'PGRST116') {
-        // Se non trovato con notification_type esatto, prova con frontend/backend mapping
+      if (error) {
+        console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
+        // Se errore, prova fallback con mapping frontend/backend
         const { data: altData, error: altError } = await supabase
           .from('push_notifications_sent')
           .select('id')
           .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
           .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
-          .single();
+          .maybeSingle();
         
-        if (altError && altError.code !== 'PGRST116') {
-          console.error(`[DEBUG_TRACKING] Error checking notification status:`, altError);
-          throw altError;
+        if (altError) {
+          console.error(`[DEBUG_TRACKING] Error in fallback query:`, altError);
+          return true; // Fail-safe: assume già inviata
         }
         
         const alreadySent = !!altData;
@@ -604,11 +606,11 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         .select('id')
         .eq('notification_type', 'vendite-feedback')
         .or(`appointmentid.eq.${venditaId},resource_id.eq.${venditaId}`)
-        .single();
+        .maybeSingle(); // Usa maybeSingle per gestire meglio "not found"
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error(`[VenditeRiordini] Error checking notification status:`, error);
-        throw error;
+        return true; // Fail-safe: assume già inviata
       }
       
       return !!data;

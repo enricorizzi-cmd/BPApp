@@ -13,16 +13,19 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
       const backendType = notificationType;
       
       // Cerca sia in appointmentid che resource_id per retrocompatibilità
+      // NOTA: Due .or() separati in Supabase vengono combinati con AND
+      // Quindi la query cerca: (appointmentid=resourceId OR resource_id=resourceId) AND (notification_type=frontendType OR notification_type=backendType)
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('userid', userId)
         .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
         .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
-        .single();
+        .maybeSingle(); // Usa maybeSingle per gestire meglio "not found"
       
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        throw error;
+      if (error) {
+        console.error('[Push Tracking] Error checking sent status:', error);
+        return false; // Default to false on error
       }
       
       return !!data; // Return true if notification was sent
