@@ -200,10 +200,18 @@ async function openPaymentBuilderById(id){
     // ✅ FIX: Retry mechanism per gestire delay nella propagazione dei dati in Supabase
     let it = null;
     let retries = 3;
+    console.log('[openPaymentBuilderById] Searching for sale ID:', id);
     while (!it && retries > 0) {
-      const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31');
+      console.log(`[openPaymentBuilderById] Attempt ${4 - retries}/3, searching for sale:`, id);
+      const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1'); // ✅ FIX: Aggiungi global=1 per evitare filtri per consultantId
+      console.log('[openPaymentBuilderById] Query response, total sales:', (j&&j.sales)?.length || 0);
       it = ((j&&j.sales)||[]).find(s=>String(s.id)===String(id));
+      if (it) {
+        console.log('[openPaymentBuilderById] Sale found!', it);
+        break;
+      }
       if (!it && retries > 1) {
+        console.log('[openPaymentBuilderById] Sale not found, retrying in 500ms...');
         // Aspetta 500ms prima di riprovare (solo se non è l'ultimo tentativo)
         await new Promise(resolve => setTimeout(resolve, 500));
       }
@@ -212,6 +220,7 @@ async function openPaymentBuilderById(id){
     
     if(!it){ 
       console.error('[openPaymentBuilderById] Vendita non trovata dopo retry, ID:', id);
+      console.error('[openPaymentBuilderById] Ultima query response:', await GET('/api/gi?from=1900-01-01&to=2999-12-31&global=1'));
       toast('Vendita non trovata. Potrebbe essere ancora in fase di salvataggio. Riprova tra qualche secondo.'); 
       return; 
     }

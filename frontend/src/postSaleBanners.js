@@ -310,10 +310,12 @@
                 const id = sale.id || sale._id;
                 console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                // ✅ FIX: Aggiungi un piccolo delay per permettere a Supabase di propagare i dati
+                // ✅ FIX: Aggiungi un delay più lungo per permettere a Supabase di propagare i dati
+                // Aumentato a 800ms per dare più tempo alla propagazione
                 setTimeout(() => {
+                  console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
                   tryOpenGiBuilder(id);
-                }, 300);
+                }, 800);
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {
@@ -393,10 +395,12 @@
                 const id = sale.id || sale._id;
                 console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                // ✅ FIX: Aggiungi un piccolo delay per permettere a Supabase di propagare i dati
+                // ✅ FIX: Aggiungi un delay più lungo per permettere a Supabase di propagare i dati
+                // Aumentato a 800ms per dare più tempo alla propagazione
                 setTimeout(() => {
+                  console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
                   tryOpenGiBuilder(id);
-                }, 300);
+                }, 800);
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {

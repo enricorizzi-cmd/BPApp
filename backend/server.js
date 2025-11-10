@@ -1551,17 +1551,17 @@ app.get("/api/gi", auth, async (req,res)=>{
     try {
       let query = supabase
         .from('gi')
-        .select('id, date, data, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule, appointmentid')
-        .order('date', { ascending: false });
+        .select('id, date, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule, appointmentid, createdat')
+        .order('createdat', { ascending: false }); // ✅ FIX: Ordina per createdat (TEXT) invece di date per evitare problemi con date null
       
       const { data, error } = await query;
       
       if (!error && data) {
         rows = data.map(r => ({
           id: r.id,
-          // ✅ FIX: Supporta sia campo 'date' che 'data' per retrocompatibilità
-          date: r.date || r.data || '2025-10-01',
-          createdAt: r.date || r.data || r.createdat || '2025-10-01',
+          // ✅ FIX: Usa solo campo 'date' (verificato nel DB - 'data' è JSONB legacy)
+          date: r.date || r.createdat || '2025-10-01',
+          createdAt: r.createdat || r.date || '2025-10-01',
           appointmentId: r.appointmentid || null, // ✅ FIX: Include appointmentId dalla query
           clientId: r.clientid || '',
           clientName: r.clientname || '',
