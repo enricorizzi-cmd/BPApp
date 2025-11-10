@@ -1048,10 +1048,9 @@ async function findOrCreateClientByName(name, nncf, user){
 
 // Route che non dipendono da Supabase
 const pushRoutes = require("./routes/push")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, VAPID_PUBLIC_KEY });
-const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
+// notificationsRoutes viene inizializzato dentro _initStorePromise quando supabase è disponibile
 
 app.use('/api', pushRoutes);
-app.use('/api/notifications', notificationsRoutes);
 
 // ---------- Periods (BP) ----------
 app.get("/api/periods", auth, async (req,res)=>{
@@ -1990,6 +1989,9 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   const corsiRoutes = require("./routes/corsi")(app);
   const chatbotRoutes = require("./routes/chatbot")(app);
   
+  // ✅ Route notifications con Supabase (dopo inizializzazione)
+  const notificationsRoutes = require("./routes/notifications")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, supabase });
+  
   // Route che dipendono da Supabase (dopo inizializzazione)
   const appointmentRoutes = require("./routes/appointments")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, computeEndLocal, findOrCreateClientByName, genId, supabase });
   const leadsRoutes = require("./routes/leads")({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY });
@@ -2001,6 +2003,7 @@ _initStorePromise.then(()=> ensureFiles()).then(async ()=>{
   app.use('/api/push-tracking', pushTrackingRoutes);
   // app.use('/api/user-preferences', userPreferencesRoutes);
   app.use('/api/cycle-notifications', cycleNotificationsRoutes);
+  app.use('/api/notifications', notificationsRoutes);
   // Route chatbot già registrata nel modulo stesso (chatbotRoutes)
   
   // Le route corsi sono già registrate nel modulo stesso (corsiRoutes)
