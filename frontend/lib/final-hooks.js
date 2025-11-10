@@ -703,16 +703,19 @@ function esc(s){
   // IMPORTANTE: controlla solo elementi che hanno data completa YYYY-MM-DD per evitare falsi positivi
   // Rimuove anche "today" da elementi che non corrispondono a oggi per pulizia
   function highlightToday(root){
-    // Usa data locale per evidenziare "oggi" nel calendario
+    // ✅ FIX: Usa data locale per evidenziare "oggi" nel calendario
     var today = ymdLocal(new Date());
-    var box = root.querySelectorAll('[data-date], [data-day]');
+    // ✅ FIX: Limita ricerca solo a elementi con data-day (calendario principale)
+    // Il calendario mensile corsi e annuale non hanno data-day, quindi non vengono influenzati
+    var box = root.querySelectorAll('[data-day]');
     for (var i=0;i<box.length;i++){
       var el = box[i];
-      var val = el.getAttribute('data-date') || el.getAttribute('data-day') || '';
+      var val = el.getAttribute('data-day') || '';
       if (!val) continue;
       // normalizza a yyyy-mm-dd (togli orari) - IMPORTANTE: deve essere formato completo YYYY-MM-DD
       var day = String(val).slice(0,10);
-      // Controlla che sia formato YYYY-MM-DD completo (10 caratteri con trattini)
+      // ✅ FIX: Controllo rigoroso: deve essere formato YYYY-MM-DD completo (10 caratteri con trattini)
+      // E deve corrispondere ESATTAMENTE a oggi (non solo il giorno del mese)
       if (day.length === 10 && day.match(/^\d{4}-\d{2}-\d{2}$/)) {
         if (day === today) {
           el.classList.add('today');
@@ -782,9 +785,17 @@ function esc(s){
 
   // Hook principale
   function hookCalendar(){
-    var root = document.getElementById('calendar') || document.querySelector('.calendar') || document;
-    highlightToday(root);
-    attachICSInDays(root);
+    // ✅ FIX: Limita scope a container specifici per evitare evidenziazione errata
+    // Cerca prima nel calendario principale, poi nel calendario mensile corsi, ma NON usa document come fallback
+    var root = document.getElementById('cal_container') || 
+               document.getElementById('calendar') || 
+               document.querySelector('#cal_container .calendar') ||
+               document.querySelector('.calendar');
+    // Solo se trovato un container valido, procedi (evita ricerca su tutto il DOM)
+    if (root && root !== document) {
+      highlightToday(root);
+      attachICSInDays(root);
+    }
   }
 
   // Esportiamo la funzione (l’Observer la può richiamare)
@@ -797,7 +808,11 @@ function esc(s){
   }
   once(hookCalendar);
 
-  var cal = document.getElementById('calendar') || document.querySelector('.calendar');
+  // ✅ FIX: Usa stesso scope limitato per MutationObserver
+  var cal = document.getElementById('cal_container') || 
+            document.getElementById('calendar') || 
+            document.querySelector('#cal_container .calendar') ||
+            document.querySelector('.calendar');
   if (cal && !cal.__bpCalObs){
     cal.__bpCalObs = true;
     var mo = new MutationObserver(function(){ try{ hookCalendar(); }catch(e){} });
@@ -810,9 +825,12 @@ function esc(s){
   var injected = false;
   function injectTodayCSS(){
     if (injected) return; injected = true;
+    // ✅ FIX: Rimuovo ::after per evitare conflitto con badge HTML "OGGI"
+    // Il badge HTML è già presente nel rendering, non serve il pseudo-elemento CSS
     var css =
       '.today{outline:2px solid var(--accent, #5dd3ff); outline-offset:-2px; border-radius:8px; position:relative;}'+
-      '.today::after{content:"OGGI"; position:absolute; top:6px; right:8px; font-size:10px; font-weight:700; color:#fff; background:var(--accent, #5dd3ff); padding:2px 6px; border-radius:6px;}';
+      // Rimuovo .today::after per evitare doppia scritta "OGGI"
+      '.day.today::after, .mini-day.today::after{content:none !important;}';
     var st = document.createElement('style');
     st.setAttribute('data-bp-today','1');
     st.textContent = css;

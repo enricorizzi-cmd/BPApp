@@ -202,10 +202,9 @@
       box-shadow: inset 0 0 0 1px rgba(93,211,255,.25);
       position: relative;
     }
+    /* ✅ FIX: Rimuovo ::after per evitare conflitto con badge HTML "OGGI" */
     .day.today::after{
-      content: "Oggi";
-      position: absolute; top:6px; right:8px;
-      font-size:10px; opacity:.8; color: var(--accent);
+      content: none !important;
     }
 
     .tag{ display:inline-block; font-size:11px; padding:2px 6px; border-radius:10px; border:1px solid var(--hair2); }

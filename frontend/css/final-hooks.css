@@ -306,7 +306,8 @@
 }
 .chip-nncf input{ accent-color: var(--acc,#444); width:1rem; height:1rem; }
 .today{ outline: 2px solid var(--acc,#0aa); outline-offset: -2px; border-radius:.5rem; position:relative; }
-.today::after{ content:"Oggi"; position:absolute; top:2px; right:4px; font-size:.7em; color:var(--acc,#0aa); }
+/* ✅ FIX: Rimuovo ::after per evitare conflitto con badge HTML "OGGI" */
+.day.today::after, .mini-day.today::after{ content: none !important; }
 .btn-ghost{ background:transparent; border:1px solid #999; border-radius:.5rem; padding:.35rem .6rem; cursor:pointer; }
 .btn-ghost:hover{ background:rgba(0,0,0,.04); }
 .btn-ics{ padding:2px 4px; font-size:1.1rem; line-height:1; }
