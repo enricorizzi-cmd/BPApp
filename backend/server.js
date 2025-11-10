@@ -1673,7 +1673,7 @@ app.post("/api/gi", auth, async (req,res)=>{
   function buildRow(){
     return {
       id: genId(),
-      appointmentId: body.appointmentId || null,
+      appointmentId: body.appointmentId || body.apptId || null, // ✅ Supporta entrambi i nomi per retrocompatibilità
       clientId: String(body.clientId||""),
       clientName: String(body.clientName||"Cliente"),
       date: String(body.date || new Date().toISOString()),
@@ -1715,8 +1715,33 @@ app.post("/api/gi", auth, async (req,res)=>{
       console.log('[GI] Successfully inserted into Supabase:', row.id);
     } catch (error) {
       console.error('[GI] Error inserting into Supabase:', error);
+      // ✅ MIGLIORATO: Log errore dettagliato per debug
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
+      const errorDetails = error?.details || error?.hint || '';
+      console.error('[GI] Error details:', { message: errorMessage, details: errorDetails, code: error?.code });
+      
       // Fallback al metodo tradizionale se Supabase fallisce
-      await writeJSON("gi.json", db);
+      try {
+        await writeJSON("gi.json", db);
+        console.log('[GI] Fallback to JSON successful');
+      } catch (fallbackError) {
+        console.error('[GI] Fallback to JSON also failed:', fallbackError);
+        // ✅ MIGLIORATO: Restituisce errore al frontend invece di fallire silenziosamente
+        return res.status(500).json({ 
+          ok: false, 
+          error: 'Failed to save GI record', 
+          details: errorMessage,
+          fallbackFailed: true
+        });
+      }
+      
+      // ✅ MIGLIORATO: Restituisce warning al frontend che il salvataggio è andato in fallback
+      return res.json({ 
+        ok: true, 
+        id: row.id, 
+        warning: 'Saved to fallback storage due to Supabase error',
+        error: errorMessage
+      });
     }
   } else {
     // Se insertRecord non è disponibile, usa writeJSON

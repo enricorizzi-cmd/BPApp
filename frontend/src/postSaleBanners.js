@@ -85,18 +85,13 @@
         return;
       }
       
-      // SICUREZZA: Controlla se il banner è già stato risposto
-      if (isBannerAnswered(appt, kind)) {
-        dbg('Banner already answered, skipping push notification');
-        return;
-      }
+      // ✅ FIX: Rimossi controlli isBannerAnswered e isBannerSnoozed perché vengono già fatti
+      // PRIMA di chiamare triggerPush() nella funzione scan(). Questi controlli causavano
+      // il problema: se l'utente rispondeva velocemente al banner, triggerPush() poteva
+      // trovare il banner già risposto e saltare la push, anche se la push doveva essere
+      // inviata PRIMA che il banner apparisse.
       
-      // SICUREZZA: Controlla se il banner è in snooze
-      if (isBannerSnoozed(appt, kind)) {
-        dbg('Banner snoozed, skipping push notification');
-        return;
-      }
-      
+      // Controlla solo se push già inviata per evitare duplicati
       if(await pushSent(appt.id, kind)) {
         dbg('triggerPush early return - already sent');
         return;
@@ -314,13 +309,30 @@
                 const id = sale.id || sale._id;
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 tryOpenGiBuilder(id);
+                
+                // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
+                if (sale.warning) {
+                  console.warn('[BANNER_GI] Warning:', sale.warning);
+                  if (typeof toast === 'function') {
+                    toast(sale.warning + (sale.error ? `: ${sale.error}` : ''));
+                  }
+                }
               } else {
                 console.warn('[BANNER_GI] No sale ID found in response:', sale);
                 dbg('[BANNER_GI] Cannot open builder - missing sale ID');
+                // ✅ MIGLIORATO: Mostra errore all'utente se non c'è ID
+                if (typeof toast === 'function') {
+                  toast('Errore: impossibile creare la riga GI. Riprova più tardi.');
+                }
               }
             }catch(e){ 
               console.error('[BANNER_GI] Error creating GI from appointment:', e);
-              logger.error(e); 
+              logger.error(e);
+              // ✅ MIGLIORATO: Mostra errore all'utente
+              const errorMessage = e?.message || e?.error || 'Errore sconosciuto';
+              if (typeof toast === 'function') {
+                toast(`Errore creazione riga GI: ${errorMessage}`);
+              }
             }
           }
           if (opts && typeof opts.onSaved==='function') {
@@ -375,13 +387,30 @@
                 const id = sale.id || sale._id;
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 tryOpenGiBuilder(id);
+                
+                // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
+                if (sale.warning) {
+                  console.warn('[BANNER_GI] Warning:', sale.warning);
+                  if (typeof toast === 'function') {
+                    toast(sale.warning + (sale.error ? `: ${sale.error}` : ''));
+                  }
+                }
               } else {
                 console.warn('[BANNER_GI] No sale ID found in response:', sale);
                 dbg('[BANNER_GI] Cannot open builder - missing sale ID');
+                // ✅ MIGLIORATO: Mostra errore all'utente se non c'è ID
+                if (typeof toast === 'function') {
+                  toast('Errore: impossibile creare la riga GI. Riprova più tardi.');
+                }
               }
             }catch(e){ 
               console.error('[BANNER_GI] Error creating GI from appointment:', e);
-              logger.error(e); 
+              logger.error(e);
+              // ✅ MIGLIORATO: Mostra errore all'utente
+              const errorMessage = e?.message || e?.error || 'Errore sconosciuto';
+              if (typeof toast === 'function') {
+                toast(`Errore creazione riga GI: ${errorMessage}`);
+              }
             }
           }
           if (opts && typeof opts.onSaved==='function') {
@@ -408,11 +437,24 @@
     };
     const resp = await POST('/api/gi', payload);
     dbg('[GI] Response from /api/gi:', resp);
+    
+    // ✅ MIGLIORATO: Gestisce errori dal backend
+    if (resp && resp.ok === false) {
+      const errorMsg = resp.error || resp.details || 'Errore sconosciuto';
+      console.error('[GI] Backend returned error:', errorMsg);
+      throw new Error(errorMsg);
+    }
+    
     // ✅ FIX: Supporta sia formato vecchio che nuovo (ok:true, id) e formati legacy (sale, gi, data)
     const saleId = resp?.id || resp?.sale?.id || resp?.gi?.id || resp?.data?.id;
     if (saleId) {
       dbg('[GI] Extracted sale ID:', saleId);
-      return { id: saleId };
+      // ✅ MIGLIORATO: Restituisce anche warning/error se presenti
+      return { 
+        id: saleId,
+        warning: resp?.warning,
+        error: resp?.error
+      };
     }
     dbg('[GI] No sale ID found in response, returning full response');
     return resp;
