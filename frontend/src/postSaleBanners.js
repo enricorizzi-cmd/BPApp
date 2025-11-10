@@ -614,6 +614,11 @@
     try{
       dbg('=== SCAN STARTED ===');
       const r = await GET('/api/appointments');
+      
+      // ✅ Aggiorna cache
+      _lastScanData = r;
+      _lastScanTime = Date.now();
+      
       const now = Date.now();
       const fromTs = now - LOOKBACK_DAYS*24*60*60*1000;
       const list = (r && r.appointments) || [];
