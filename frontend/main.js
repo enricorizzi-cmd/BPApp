@@ -12357,6 +12357,14 @@ function viewCorsiInteraziendali(){
         <div class="modal-body">
           <form id="corso-form">
             <div class="form-group">
+              <label for="tipologia-corso">Tipologia *</label>
+              <select id="tipologia-corso" required>
+                <option value="Corso">Corso</option>
+                <option value="Evento">Evento</option>
+                <option value="Workshop">Workshop</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="codice-corso">Codice Corso *</label>
               <input type="text" id="codice-corso" required>
             </div>
@@ -12397,6 +12405,7 @@ function viewCorsiInteraziendali(){
       const response = await GET(`/api/corsi-catalogo/${corsoId}`);
       if (response.corso) {
         const corso = response.corso;
+        document.getElementById('tipologia-corso').value = corso.tipologia || 'Corso';
         document.getElementById('codice-corso').value = corso.codice_corso || '';
         document.getElementById('nome-corso').value = corso.nome_corso || '';
         document.getElementById('descrizione-corso').value = corso.descrizione || '';
@@ -12418,6 +12427,7 @@ function viewCorsiInteraziendali(){
       }
 
       const data = {
+        tipologia: document.getElementById('tipologia-corso').value,
         codice_corso: document.getElementById('codice-corso').value.trim(),
         nome_corso: document.getElementById('nome-corso').value.trim(),
         descrizione: document.getElementById('descrizione-corso').value.trim(),

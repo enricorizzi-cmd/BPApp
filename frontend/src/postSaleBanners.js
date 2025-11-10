@@ -201,17 +201,17 @@
   }
 
   // --- Apertura affidabile del builder pagamenti GI ---
-  function tryOpenGiBuilder(id){
+  function tryOpenGiBuilder(id, saleData){
     if (!id) {
       console.warn('[tryOpenGiBuilder] No ID provided');
       return;
     }
-    console.log('[tryOpenGiBuilder] Opening builder for sale ID:', id);
+    console.log('[tryOpenGiBuilder] Opening builder for sale ID:', id, 'with saleData:', saleData);
     try{
-      // Se esiste un helper globale, usalo
+      // Se esiste un helper globale, usalo (con i dati se disponibili)
       if (typeof window.openPaymentBuilderById === 'function') { 
         console.log('[tryOpenGiBuilder] Using openPaymentBuilderById');
-        window.openPaymentBuilderById(id); 
+        window.openPaymentBuilderById(id, saleData); 
         return; 
       }
       if (typeof window.gotoGIAndOpenBuilder === 'function') { 
@@ -223,7 +223,7 @@
       // Se siamo già nella vista GI, apri subito
       if (document.querySelector('#gi_rows')){
         console.log('[tryOpenGiBuilder] Already in GI view, dispatching gi:edit event');
-        document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+        document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id, sale: saleData } }));
         return;
       }
 
@@ -236,7 +236,7 @@
           const ok = document.getElementById('gi_rows');
           if (ok || tries>40){
             console.log('[tryOpenGiBuilder] GI view loaded, dispatching gi:edit event');
-            try{ document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } })); }catch(_){ }
+            try{ document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id, sale: saleData } })); }catch(_){ }
             return;
           }
           tries++; 
@@ -251,7 +251,7 @@
     // Fallback assoluto: invia comunque l'evento
     try {
       console.log('[tryOpenGiBuilder] Fallback: dispatching gi:edit event');
-      document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id } }));
+      document.dispatchEvent(new CustomEvent('gi:edit', { detail: { id, sale: saleData } }));
     } catch(e) { 
       console.error('[tryOpenGiBuilder] Fallback error:', e);
       // Ignora errori fallback
@@ -324,16 +324,17 @@
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 // ✅ FIX: Passa i dati completi della vendita invece di solo l'ID
                 // Questo evita il problema del delay nella propagazione dei dati
+                console.log('[BANNER_GI] Checking if openPaymentBuilderById is available:', typeof window.openPaymentBuilderById);
                 if (sale && typeof window.openPaymentBuilderById === 'function') {
                   console.log('[BANNER_GI] Using openPaymentBuilderById with sale data');
                   // Passa i dati completi della vendita
                   window.openPaymentBuilderById(id, sale);
                 } else {
-                  // Fallback: usa tryOpenGiBuilder
-                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback');
+                  // Fallback: usa tryOpenGiBuilder con i dati della vendita
+                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback with sale data (openPaymentBuilderById not available)');
                   setTimeout(() => {
                     console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
-                    tryOpenGiBuilder(id);
+                    tryOpenGiBuilder(id, sale); // ✅ FIX: Passa i dati della vendita
                   }, 300);
                 }
                 
@@ -417,16 +418,17 @@
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 // ✅ FIX: Passa i dati completi della vendita invece di solo l'ID
                 // Questo evita il problema del delay nella propagazione dei dati
+                console.log('[BANNER_GI] Checking if openPaymentBuilderById is available:', typeof window.openPaymentBuilderById);
                 if (sale && typeof window.openPaymentBuilderById === 'function') {
                   console.log('[BANNER_GI] Using openPaymentBuilderById with sale data');
                   // Passa i dati completi della vendita
                   window.openPaymentBuilderById(id, sale);
                 } else {
-                  // Fallback: usa tryOpenGiBuilder
-                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback');
+                  // Fallback: usa tryOpenGiBuilder con i dati della vendita
+                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback with sale data (openPaymentBuilderById not available)');
                   setTimeout(() => {
                     console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
-                    tryOpenGiBuilder(id);
+                    tryOpenGiBuilder(id, sale); // ✅ FIX: Passa i dati della vendita
                   }, 300);
                 }
                 

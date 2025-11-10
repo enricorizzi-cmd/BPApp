@@ -72,6 +72,7 @@ module.exports = function(app) {
       }
 
       const {
+        tipologia = 'Corso',
         codice_corso,
         nome_corso,
         descrizione,
@@ -91,9 +92,16 @@ module.exports = function(app) {
       // Genera ID univoco
       const id = 'corso_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
+      // Validazione tipologia
+      const tipologieValide = ['Corso', 'Evento', 'Workshop'];
+      if (tipologia && !tipologieValide.includes(tipologia)) {
+        return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento o Workshop' });
+      }
+
       // Prepara dati per inserimento
       const corsoRecord = {
         id,
+        tipologia: tipologia || 'Corso',
         codice_corso,
         nome_corso,
         descrizione: descrizione || '',
@@ -132,6 +140,7 @@ module.exports = function(app) {
 
       const { id } = req.params;
       const {
+        tipologia,
         codice_corso,
         nome_corso,
         descrizione,
@@ -158,11 +167,20 @@ module.exports = function(app) {
         });
       }
 
+      // Validazione tipologia se presente
+      if (tipologia !== undefined) {
+        const tipologieValide = ['Corso', 'Evento', 'Workshop'];
+        if (!tipologieValide.includes(tipologia)) {
+          return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento o Workshop' });
+        }
+      }
+
       // Prepara aggiornamenti
       const updates = {
         updated_at: new Date().toISOString()
       };
 
+      if (tipologia !== undefined) updates.tipologia = tipologia;
       if (codice_corso !== undefined) updates.codice_corso = codice_corso;
       if (nome_corso !== undefined) updates.nome_corso = nome_corso;
       if (descrizione !== undefined) updates.descrizione = descrizione;

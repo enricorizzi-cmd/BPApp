@@ -181,24 +181,35 @@ async function createGIFromAppt(appt, vss){
 }
 
 // —— mini builder pagamenti (fallback universale; usa overlay centrale)
-async function openPaymentBuilderById(id){
-  console.log('[openPaymentBuilderById] Called with ID:', id);
+async function openPaymentBuilderById(id, saleData){
+  console.log('[openPaymentBuilderById] Called with ID:', id, 'and saleData:', saleData);
+  
+  // ✅ FIX: Se abbiamo i dati della vendita passati come parametro, usali direttamente
+  // Questo evita il problema del delay nella propagazione dei dati
+  if (saleData && saleData.id === id) {
+    console.log('[openPaymentBuilderById] Using sale data passed directly');
+    // Se siamo già in GI view, dispatcha direttamente
+    const isInGIView = typeof viewGI === 'function' && document.querySelector('#gi_rows');
+    if (isInGIView) {
+      console.log('[openPaymentBuilderById] Already in GI view, dispatching gi:edit event with sale data');
+      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: saleData}}));
+      return;
+    }
+    // Se non siamo in GI view, naviga e poi dispatcha con i dati
+    if (typeof viewGI === 'function'){
+      console.log('[openPaymentBuilderById] Not in GI view, navigating to GI view with sale data');
+      try { viewGI(); } catch(_){}
+      setTimeout(()=> {
+        console.log('[openPaymentBuilderById] Dispatching gi:edit event after navigation with sale data');
+        document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: saleData}}));
+      }, 800);
+      return;
+    }
+  }
   
   // ✅ FIX: Anche se siamo nella vista GI, verifichiamo sempre che la vendita esista
   // perché potrebbe essere appena stata creata e non ancora caricata nella vista
   const isInGIView = typeof viewGI === 'function' && document.querySelector('#gi_rows');
-  
-  // ✅ FIX: Se abbiamo i dati della vendita passati come parametro, usali direttamente
-  // Questo evita il problema del delay nella propagazione dei dati
-  if (isInGIView && arguments.length > 1 && arguments[1]){
-    // Se viene passato un oggetto sale come secondo parametro, usalo direttamente
-    const saleData = arguments[1];
-    if (saleData && saleData.id === id) {
-      console.log('[openPaymentBuilderById] Using sale data passed directly, dispatching gi:edit event');
-      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: saleData}}));
-      return;
-    }
-  }
   
   if (isInGIView){
     console.log('[openPaymentBuilderById] Already in GI view, but verifying sale exists first');
@@ -243,9 +254,10 @@ async function openPaymentBuilderById(id){
     console.log('[openPaymentBuilderById] Not in GI view, navigating to GI view');
     try { viewGI(); } catch(_){}
     // ✅ FIX: Aumentato delay per dare tempo alla vista GI di caricare i dati
+    // ✅ FIX: Se abbiamo saleData, passalo nell'evento
     setTimeout(()=> {
       console.log('[openPaymentBuilderById] Dispatching gi:edit event after navigation');
-      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: saleData}}));
     }, 800); // Aumentato da 350ms a 800ms
     return;
   }
@@ -415,6 +427,7 @@ async function pipelineNo(appt){
 // Rendi disponibili globalmente (il banner già li usa)
 window.pipelineYes = pipelineYes;
 window.pipelineNo  = pipelineNo;
+window.openPaymentBuilderById = openPaymentBuilderById; // ✅ FIX: Espone openPaymentBuilderById come funzione globale
 /* ==== QUICK VSS MODAL + GI auto-create + open builder ==== */
 (function(){
   // CSS modale centrale (riusabile)
