@@ -785,16 +785,19 @@ function esc(s){
 
   // Hook principale
   function hookCalendar(){
-    // ✅ FIX: Limita scope a container specifici per evitare evidenziazione errata
-    // Cerca prima nel calendario principale, poi nel calendario mensile corsi, ma NON usa document come fallback
+    // ✅ FIX: Limita scope SOLO al calendario principale (quello con data-day)
+    // NON toccare calendario mensile corsi o annuale che non hanno data-day
     var root = document.getElementById('cal_container') || 
-               document.getElementById('calendar') || 
-               document.querySelector('#cal_container .calendar') ||
-               document.querySelector('.calendar');
-    // Solo se trovato un container valido, procedi (evita ricerca su tutto il DOM)
+               document.querySelector('#cal_container .calendar');
+    // ✅ FIX: Verifica che il container abbia elementi con data-day prima di procedere
+    // Questo evita di toccare calendari che non usano data-day (come calendario mensile corsi)
     if (root && root !== document) {
-      highlightToday(root);
-      attachICSInDays(root);
+      // Verifica che ci siano elementi con data-day (solo calendario principale li ha)
+      var hasDataDay = root.querySelectorAll('[data-day]').length > 0;
+      if (hasDataDay) {
+        highlightToday(root);
+        attachICSInDays(root);
+      }
     }
   }
 
@@ -808,15 +811,17 @@ function esc(s){
   }
   once(hookCalendar);
 
-  // ✅ FIX: Usa stesso scope limitato per MutationObserver
+  // ✅ FIX: Usa stesso scope limitato per MutationObserver - SOLO calendario principale
   var cal = document.getElementById('cal_container') || 
-            document.getElementById('calendar') || 
-            document.querySelector('#cal_container .calendar') ||
-            document.querySelector('.calendar');
+            document.querySelector('#cal_container .calendar');
+  // ✅ FIX: Verifica che il container abbia elementi con data-day prima di osservare
   if (cal && !cal.__bpCalObs){
-    cal.__bpCalObs = true;
-    var mo = new MutationObserver(function(){ try{ hookCalendar(); }catch(e){} });
-    mo.observe(cal, {childList:true, subtree:true});
+    var hasDataDay = cal.querySelectorAll('[data-day]').length > 0;
+    if (hasDataDay) {
+      cal.__bpCalObs = true;
+      var mo = new MutationObserver(function(){ try{ hookCalendar(); }catch(e){} });
+      mo.observe(cal, {childList:true, subtree:true});
+    }
   }
 })();
 

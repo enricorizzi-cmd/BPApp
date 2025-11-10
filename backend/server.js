@@ -1552,9 +1552,18 @@ app.get("/api/gi", auth, async (req,res)=>{
       let query = supabase
         .from('gi')
         .select('id, date, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule, appointmentid, createdat')
-        .order('createdat', { ascending: false }); // ✅ FIX: Ordina per createdat (TEXT) invece di date per evitare problemi con date null
+        .order('createdat', { ascending: false }) // ✅ FIX: Ordina per createdat (TEXT) invece di date per evitare problemi con date null
+        .limit(1000); // ✅ FIX: Limite esplicito per evitare problemi con limiti di default
       
       const { data, error } = await query;
+      
+      // ✅ FIX: Log dettagliato per debug
+      if (error) {
+        console.error('[GI] Supabase query error:', error);
+        console.error('[GI] Error details:', { message: error.message, details: error.details, hint: error.hint, code: error.code });
+      } else {
+        console.log(`[GI] Supabase query successful, found ${data?.length || 0} records`);
+      }
       
       if (!error && data) {
         rows = data.map(r => ({
@@ -1571,16 +1580,24 @@ app.get("/api/gi", auth, async (req,res)=>{
           vssTotal: Number(r.vsstotal || 0),
           schedule: r.schedule || []
         }));
+        console.log(`[GI] Mapped ${rows.length} rows from Supabase`);
+      } else if (error) {
+        console.warn('[GI] Supabase query failed, will use fallback');
       }
     } catch (error) {
-      console.error('[GI] Supabase query error:', error);
+      console.error('[GI] Supabase query exception:', error);
+      console.error('[GI] Exception details:', error.stack);
     }
   }
   
   // Fallback al metodo tradizionale
   if (rows.length === 0) {
+    console.log('[GI] No rows from Supabase, using fallback to gi.json');
     const db = await readJSON("gi.json");
     rows = db.sales || [];
+    console.log(`[GI] Fallback loaded ${rows.length} rows from gi.json`);
+  } else {
+    console.log(`[GI] Using ${rows.length} rows from Supabase (no fallback needed)`);
   }
 
   // visibilità - supporta sia userId che user per compatibilità
