@@ -304,11 +304,16 @@
           if (v>0){
             try{
               const sale = await upsertGIFromAppointment(appt, v);
+              console.log('[BANNER_GI] Sale response:', sale);
               dbg('[BANNER_GI] Sale response:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
+                console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                tryOpenGiBuilder(id);
+                // ✅ FIX: Aggiungi un piccolo delay per permettere a Supabase di propagare i dati
+                setTimeout(() => {
+                  tryOpenGiBuilder(id);
+                }, 300);
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {
@@ -382,11 +387,16 @@
           if (v>0){
             try{
               const sale = await upsertGIFromAppointment(appt, v);
+              console.log('[BANNER_GI] Sale response:', sale);
               dbg('[BANNER_GI] Sale response:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
+                console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                tryOpenGiBuilder(id);
+                // ✅ FIX: Aggiungi un piccolo delay per permettere a Supabase di propagare i dati
+                setTimeout(() => {
+                  tryOpenGiBuilder(id);
+                }, 300);
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {

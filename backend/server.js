@@ -1551,7 +1551,7 @@ app.get("/api/gi", auth, async (req,res)=>{
     try {
       let query = supabase
         .from('gi')
-        .select('id, data, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule')
+        .select('id, date, data, consultantid, consultantname, clientname, clientid, services, vsstotal, schedule, appointmentid')
         .order('date', { ascending: false });
       
       const { data, error } = await query;
@@ -1559,10 +1559,10 @@ app.get("/api/gi", auth, async (req,res)=>{
       if (!error && data) {
         rows = data.map(r => ({
           id: r.id,
-          // Fix temporaneo: se data è null/undefined, usa '2025-10-01' come fallback per record esistenti
-          date: r.data || '2025-10-01',
-          createdAt: r.data || '2025-10-01',
-          appointmentId: null,
+          // ✅ FIX: Supporta sia campo 'date' che 'data' per retrocompatibilità
+          date: r.date || r.data || '2025-10-01',
+          createdAt: r.date || r.data || r.createdat || '2025-10-01',
+          appointmentId: r.appointmentid || null, // ✅ FIX: Include appointmentId dalla query
           clientId: r.clientid || '',
           clientName: r.clientname || '',
           consultantId: r.consultantid || '',

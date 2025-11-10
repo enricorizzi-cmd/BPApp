@@ -197,9 +197,24 @@ async function openPaymentBuilderById(id){
 
   // Fallback assoluto: builder minimale stand-alone
   try{
-    const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31');
-    const it = ((j&&j.sales)||[]).find(s=>String(s.id)===String(id));
-    if(!it){ toast('Vendita non trovata'); return; }
+    // ✅ FIX: Retry mechanism per gestire delay nella propagazione dei dati in Supabase
+    let it = null;
+    let retries = 3;
+    while (!it && retries > 0) {
+      const j = await GET('/api/gi?from=1900-01-01&to=2999-12-31');
+      it = ((j&&j.sales)||[]).find(s=>String(s.id)===String(id));
+      if (!it && retries > 1) {
+        // Aspetta 500ms prima di riprovare (solo se non è l'ultimo tentativo)
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      retries--;
+    }
+    
+    if(!it){ 
+      console.error('[openPaymentBuilderById] Vendita non trovata dopo retry, ID:', id);
+      toast('Vendita non trovata. Potrebbe essere ancora in fase di salvataggio. Riprova tra qualche secondo.'); 
+      return; 
+    }
 
     const now = new Date().toISOString().slice(0,10);
     showCentered(
