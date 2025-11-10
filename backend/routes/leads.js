@@ -5,6 +5,21 @@ const productionLogger = require('../lib/production-logger');
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, genId, supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }){
   const router = express.Router();
 
+  // ---- Inizializza NotificationManager per lead notifications ----
+  let notificationManager = null;
+  try {
+    const NotificationManagerFactory = require('../lib/notification-manager');
+    notificationManager = NotificationManagerFactory({
+      supabase,
+      webpush,
+      VAPID_PUBLIC_KEY,
+      VAPID_PRIVATE_KEY
+    });
+    productionLogger.info('[Leads] NotificationManager initialized successfully');
+  } catch (error) {
+    productionLogger.error('[Leads] Error initializing NotificationManager:', error);
+  }
+
   // ---- helpers ----
   const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
   const toStr = (v) => String(v || '');
@@ -16,66 +31,97 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   }
 
   // ---- Funzione per inviare notifica push per assegnazione consulente ----
+  // ✅ Migrata a NotificationManager con validazioni e logging
   async function sendLeadAssignmentNotification(consultantId, leadData) {
     try {
-      // Recupera i dati del consulente
+      // ✅ VALIDAZIONE INPUT
+      if (!consultantId || typeof consultantId !== 'string') {
+        productionLogger.error('[LeadNotification] Invalid consultantId:', consultantId);
+        return;
+      }
+      
+      const leadId = leadData.id || leadData.id_lead || null;
+      if (!leadId) {
+        productionLogger.warn('[LeadNotification] Lead ID missing, notification will not be tracked:', leadData);
+      }
+      
+      // ✅ Recupera e VALIDA consulente
       const { data: consultant, error: consultantError } = await supabase
         .from('app_users')
-        .select('name, email')
+        .select('id, name, email')
         .eq('id', consultantId)
         .single();
 
       if (consultantError || !consultant) {
-        productionLogger.error('Error fetching consultant for notification:', consultantError);
+        productionLogger.error('[LeadNotification] Consultant not found:', consultantId, consultantError);
         return;
       }
+      
+      // ✅ LOGGING per audit
+      productionLogger.info(`[LeadNotification] Sending notification to consultant ${consultantId} (${consultant.name || consultant.email}) for lead ${leadId || 'unknown'}`);
 
       const consultantName = consultant.name || consultant.email || 'Consulente';
-      const leadName = leadData.nomeLead || '';
+      const leadName = leadData.nomeLead || leadData.nome_lead || '';
       
       const message = `Ehi ${consultantName}, ti abbiamo assegnato il lead "${leadName}" da contattare entro 24h!`;
       
-      // Invia notifica push direttamente usando webpush
-      if (!webpush || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-        productionLogger.debug('Push notifications not configured, skipping notification');
+      // ✅ Usa NotificationManager invece di webpush diretto
+      if (!notificationManager) {
+        productionLogger.warn('[LeadNotification] NotificationManager not available, skipping notification');
         return;
       }
       
-      // Recupera le subscription del consulente
-      try {
-        const db = await readJSON("push_subscriptions.json");
-        const subs = (db.subs || db.subscriptions || [])
-          .filter(s => String(s.userId || '') === String(consultantId))
-          .map(s => s.subscription || { endpoint: s.endpoint, keys: (s.keys || {}) })
-          .filter(x => x && x.endpoint);
-        
-        if (subs.length === 0) {
-          productionLogger.debug(`No push subscriptions found for consultant ${consultantId}`);
+      // Verifica se notifica già inviata (per evitare duplicati)
+      if (leadId) {
+        const alreadySent = await notificationManager.isNotificationSent(leadId, 'lead-assignment', true);
+        if (alreadySent) {
+          productionLogger.debug(`[LeadNotification] Notification already sent for lead ${leadId}, skipping`);
           return;
         }
-        
-        const payload = {
-          title: "Battle Plan - Nuovo Lead Assegnato",
-          body: message,
-          url: "/",
-          tag: "lead-assignment"
-        };
-        
-        // Invia notifica a tutte le subscription del consulente
-        await Promise.all(subs.map(async (sub) => {
-          try {
-            await webpush.sendNotification(sub, JSON.stringify(payload));
-            console.log(`Lead assignment notification sent to consultant ${consultantId}`);
-          } catch (error) {
-            console.error(`Failed to send notification to consultant ${consultantId}:`, error.message);
-          }
-        }));
-        
-      } catch (error) {
-        console.error('Error sending lead assignment notification:', error);
       }
+      
+      // Crea payload notifica
+      const payload = {
+        title: "Battle Plan - Nuovo Lead Assegnato",
+        body: message,
+        url: "/#leads",
+        tag: "lead-assignment",
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        data: {
+          leadId: leadId,
+          leadName: leadName,
+          type: 'lead-assignment',
+          url: "/#leads"
+        }
+      };
+      
+      // ✅ Usa sendPushNotification da NotificationManager (include cleanup automatico)
+      const result = await notificationManager.sendPushNotification(consultantId, payload);
+      productionLogger.info(`[LeadNotification] Send result for consultant ${consultantId}: sent=${result.sent}, failed=${result.failed}, cleaned=${result.cleaned}`);
+      
+      // ✅ Tracking con resource_id (useResourceId=true per lead)
+      if (result.sent > 0 && leadId) {
+        const marked = await notificationManager.markNotificationSent(
+          consultantId,
+          leadId,
+          'lead-assignment',
+          null, // device_id
+          true  // useResourceId = true per lead
+        );
+        if (marked) {
+          productionLogger.info(`[LeadNotification] Successfully tracked notification for lead ${leadId}`);
+        } else {
+          productionLogger.warn(`[LeadNotification] Failed to track notification for lead ${leadId}`);
+        }
+      }
+      
     } catch (error) {
-      console.error('Error in sendLeadAssignmentNotification:', error);
+      productionLogger.error('[LeadNotification] Error in sendLeadAssignmentNotification:', error);
+      console.error('[LeadNotification] Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
     }
   }
 

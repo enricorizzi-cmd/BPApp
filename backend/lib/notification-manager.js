@@ -8,8 +8,41 @@ const logger = require('./production-logger');
 module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }) {
   
   // Invia notifica push con cleanup automatico subscription invalide
+  // ✅ Aggiunte validazioni e logging per sicurezza
   async function sendPushNotification(userId, payload, options = {}) {
     try {
+      // ✅ VALIDAZIONE INPUT
+      if (!userId || typeof userId !== 'string') {
+        logger.error(`[NotificationManager] Invalid userId: ${userId}`);
+        return { sent: 0, failed: 0, cleaned: 0 };
+      }
+      
+      if (!payload || typeof payload !== 'object') {
+        logger.error(`[NotificationManager] Invalid payload:`, payload);
+        return { sent: 0, failed: 0, cleaned: 0 };
+      }
+      
+      // ✅ Verifica che utente esista (validazione sicurezza)
+      const { data: user, error: userError } = await supabase
+        .from('app_users')
+        .select('id, name, email')
+        .eq('id', userId)
+        .single();
+      
+      if (userError || !user) {
+        logger.error(`[NotificationManager] User not found: ${userId}`, userError);
+        return { sent: 0, failed: 0, cleaned: 0 };
+      }
+      
+      // ✅ LOGGING per audit trail
+      logger.info(`[NotificationManager] Sending push to user ${userId} (${user.name || user.email})`);
+      logger.debug(`[NotificationManager] Payload:`, {
+        title: payload.title,
+        body: payload.body,
+        tag: payload.tag,
+        url: payload.url
+      });
+      
       logger.debug(`Sending push to user ${userId}`);
       
       // Ottieni subscription valide per l'utente
@@ -18,6 +51,8 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         logger.debug(`No valid subscriptions for user ${userId}`);
         return { sent: 0, failed: 0, cleaned: 0 };
       }
+      
+      logger.debug(`[NotificationManager] Found ${subscriptions.length} subscriptions for user ${userId}`);
       
       let sent = 0;
       let failed = 0;
@@ -42,22 +77,47 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         }
       }
       
+      logger.info(`[NotificationManager] Notification sent: sent=${sent}, failed=${failed}, cleaned=${cleaned} for user ${userId}`);
+      
       return { sent, failed, cleaned };
     } catch (error) {
       console.error('[NotificationManager] Error sending push notification:', error);
+      logger.error('[NotificationManager] Error sending push notification:', {
+        userId,
+        error: error.message,
+        stack: error.stack
+      });
       return { sent: 0, failed: 1, cleaned: 0 };
     }
   }
   
   // Ottieni subscription valide per utente
+  // ✅ Aggiunte validazioni e logging
   async function getValidSubscriptions(userId) {
     try {
+      // ✅ Validazione input
+      if (!userId || typeof userId !== 'string') {
+        logger.error(`[NotificationManager] Invalid userId in getValidSubscriptions: ${userId}`);
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('push_subscriptions')
         .select('*')
         .eq('userid', userId);
       
-      if (error) throw error;
+      if (error) {
+        logger.error(`[NotificationManager] Error getting subscriptions for ${userId}:`, error);
+        throw error;
+      }
+      
+      // ✅ Validazione risultati
+      if (!data || data.length === 0) {
+        logger.debug(`[NotificationManager] No subscriptions found for user ${userId}`);
+        return [];
+      }
+      
+      logger.debug(`[NotificationManager] Found ${data.length} subscriptions for user ${userId}`);
       
       return (data || []).map(row => ({
         endpoint: row.endpoint,
@@ -68,6 +128,10 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
       }));
     } catch (error) {
       console.error('[NotificationManager] Error getting subscriptions:', error);
+      logger.error('[NotificationManager] Error getting subscriptions:', {
+        userId,
+        error: error.message
+      });
       return [];
     }
   }
