@@ -656,6 +656,14 @@
               return; 
             }
             
+            // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
+            // Evita duplicati tra backend e frontend
+            const pushAlreadySent = await pushSent(appt.id, KIND_NNCF);
+            if (pushAlreadySent) {
+              dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
+              return; // Non mostrare banner se push già inviata
+            }
+            
             dbg('Triggering NNCF push and banner for', appt.id);
             triggerPush(KIND_NNCF, appt);
             markPending(appt.id, KIND_NNCF); 
@@ -670,6 +678,14 @@
             if (isPending(appt.id, KIND_SALE)) { 
               dbg('skip pending SALE', appt && appt.id); 
               return; 
+            }
+            
+            // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
+            // Evita duplicati tra backend e frontend
+            const pushAlreadySent = await pushSent(appt.id, KIND_SALE);
+            if (pushAlreadySent) {
+              dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
+              return; // Non mostrare banner se push già inviata
             }
             
             dbg('Triggering SALE push and banner for', appt.id);
