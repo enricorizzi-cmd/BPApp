@@ -599,6 +599,123 @@
     };
   }
 
+  // ✅ Scan con cache per ridurre query API
+  async function scanWithCache(){
+    const now = Date.now();
+    
+    // Usa cache se disponibile e valida
+    if (_lastScanData && (now - _lastScanTime) < SCAN_CACHE_MS) {
+      dbg('Using cached scan data (age:', Math.round((now - _lastScanTime) / 1000), 'seconds)');
+      processScanData(_lastScanData);
+      return;
+    }
+    
+    // Esegui scan completo
+    await scan();
+  }
+  
+  // ✅ Processa dati scan (estratto per riuso con cache)
+  function processScanData(r) {
+    if (!r || !r.appointments) return;
+    
+    const now = Date.now();
+    const fromTs = now - LOOKBACK_DAYS*24*60*60*1000;
+    const list = (r.appointments) || [];
+    list.sort((a,b)=> (+new Date(b.end||b.start||0))-(+new Date(a.end||a.start||0)));
+    
+    dbg('Processing', list.length, 'appointments from scan data');
+    
+    list.forEach(appt=>{
+      try{
+        const end = +new Date(appt.end || appt.start || 0);
+        if (!end || end>now || end<fromTs) {
+          dbg('Skipping appointment - time filter', appt.id, appt.type, new Date(end).toLocaleString());
+          return;
+        }
+        
+        // Controlla se è passato il delay dalla fine dell'appuntamento
+        const bannerDelayMs = BANNER_DELAY_MINUTES * 60 * 1000;
+        if (end > (now - bannerDelayMs)) {
+          dbg('Skipping appointment - too recent', appt.id, appt.type, 'ended', new Date(end).toLocaleString(), 'delay:', BANNER_DELAY_MINUTES, 'minutes');
+          return;
+        }
+        
+        
+        const isVendita = String(appt.type||'').toLowerCase()==='vendita';
+        if (!isVendita) {
+          dbg('Skipping appointment - not vendita', appt.id, 'type:', appt.type, 'lowercase:', String(appt.type||'').toLowerCase());
+          return;
+        }
+        
+        dbg('Processing vendita appointment', appt.id, appt.type, 'nncf:', appt.nncf);
+        
+        if (appt.nncf){
+          // Controlla stato persistente del banner NNCF dal database
+          if (isBannerAnswered(appt, KIND_NNCF)) return;
+          if (isBannerSnoozed(appt, KIND_NNCF)) return;
+          
+          // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
+          if (isPending(appt.id, KIND_NNCF)) { 
+            dbg('skip pending NNCF', appt && appt.id); 
+            return; 
+          }
+          
+          // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
+          // Evita duplicati tra backend e frontend
+          // Usa async/await per evitare race conditions
+          (async () => {
+            try {
+              const pushAlreadySent = await pushSent(appt.id, KIND_NNCF);
+              if (pushAlreadySent) {
+                dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
+                return; // Non mostrare banner se push già inviata
+              }
+              
+              dbg('Triggering NNCF push and banner for', appt.id);
+              triggerPush(KIND_NNCF, appt);
+              markPending(appt.id, KIND_NNCF); 
+              dbg('mark pending NNCF', appt && appt.id);
+              enqueueBanner(bannerNNCF(appt));
+            } catch(err) {
+              dbg('Error checking push sent for NNCF:', err);
+            }
+          })();
+        } else {
+          // Controlla stato persistente del banner Sale dal database
+          if (isBannerAnswered(appt, KIND_SALE)) return;
+          if (isBannerSnoozed(appt, KIND_SALE)) return;
+          
+          // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
+          if (isPending(appt.id, KIND_SALE)) { 
+            dbg('skip pending SALE', appt && appt.id); 
+            return; 
+          }
+          
+          // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
+          // Evita duplicati tra backend e frontend
+          // Usa async/await per evitare race conditions
+          (async () => {
+            try {
+              const pushAlreadySent = await pushSent(appt.id, KIND_SALE);
+              if (pushAlreadySent) {
+                dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
+                return; // Non mostrare banner se push già inviata
+              }
+              
+              dbg('Triggering SALE push and banner for', appt.id);
+              triggerPush(KIND_SALE, appt);
+              markPending(appt.id, KIND_SALE); 
+              dbg('mark pending SALE', appt && appt.id);
+              enqueueBanner(bannerSale(appt));
+            } catch(err) {
+              dbg('Error checking push sent for SALE:', err);
+            }
+          })();
+        }
+      }catch(_){}
+    });
+  }
+
   async function scan(){
     // Non fare chiamate se l'utente non è loggato
     if (!window.getUser || !window.getUser()) {
@@ -619,88 +736,8 @@
       _lastScanData = r;
       _lastScanTime = Date.now();
       
-      const now = Date.now();
-      const fromTs = now - LOOKBACK_DAYS*24*60*60*1000;
-      const list = (r && r.appointments) || [];
-      list.sort((a,b)=> (+new Date(b.end||b.start||0))-(+new Date(a.end||a.start||0)));
-      
-      dbg('Scanning', list.length, 'appointments');
-      
-      list.forEach(appt=>{
-        try{
-          const end = +new Date(appt.end || appt.start || 0);
-          if (!end || end>now || end<fromTs) {
-            dbg('Skipping appointment - time filter', appt.id, appt.type, new Date(end).toLocaleString());
-            return;
-          }
-          
-          // Controlla se è passato il delay dalla fine dell'appuntamento
-          const bannerDelayMs = BANNER_DELAY_MINUTES * 60 * 1000;
-          if (end > (now - bannerDelayMs)) {
-            dbg('Skipping appointment - too recent', appt.id, appt.type, 'ended', new Date(end).toLocaleString(), 'delay:', BANNER_DELAY_MINUTES, 'minutes');
-            return;
-          }
-          
-          
-          const isVendita = String(appt.type||'').toLowerCase()==='vendita';
-          if (!isVendita) {
-            dbg('Skipping appointment - not vendita', appt.id, 'type:', appt.type, 'lowercase:', String(appt.type||'').toLowerCase());
-            return;
-          }
-          
-          dbg('Processing vendita appointment', appt.id, appt.type, 'nncf:', appt.nncf);
-          
-          if (appt.nncf){
-            // Controlla stato persistente del banner NNCF dal database
-            if (isBannerAnswered(appt, KIND_NNCF)) return;
-            if (isBannerSnoozed(appt, KIND_NNCF)) return;
-            
-            // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
-            if (isPending(appt.id, KIND_NNCF)) { 
-              dbg('skip pending NNCF', appt && appt.id); 
-              return; 
-            }
-            
-            // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
-            // Evita duplicati tra backend e frontend
-            const pushAlreadySent = await pushSent(appt.id, KIND_NNCF);
-            if (pushAlreadySent) {
-              dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
-              return; // Non mostrare banner se push già inviata
-            }
-            
-            dbg('Triggering NNCF push and banner for', appt.id);
-            triggerPush(KIND_NNCF, appt);
-            markPending(appt.id, KIND_NNCF); 
-            dbg('mark pending NNCF', appt && appt.id);
-            enqueueBanner(bannerNNCF(appt));
-          } else {
-            // Controlla stato persistente del banner Sale dal database
-            if (isBannerAnswered(appt, KIND_SALE)) return;
-            if (isBannerSnoozed(appt, KIND_SALE)) return;
-            
-            // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
-            if (isPending(appt.id, KIND_SALE)) { 
-              dbg('skip pending SALE', appt && appt.id); 
-              return; 
-            }
-            
-            // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
-            // Evita duplicati tra backend e frontend
-            const pushAlreadySent = await pushSent(appt.id, KIND_SALE);
-            if (pushAlreadySent) {
-              dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
-              return; // Non mostrare banner se push già inviata
-            }
-            
-            dbg('Triggering SALE push and banner for', appt.id);
-            triggerPush(KIND_SALE, appt);
-            markPending(appt.id, KIND_SALE); 
-            dbg('mark pending SALE', appt && appt.id);
-            enqueueBanner(bannerSale(appt));
-          }
-        }catch(_){}
-      });
+      // ✅ Processa dati
+      processScanData(r);
     }catch(_){}
   }
 
