@@ -301,11 +301,17 @@
           if (v>0){
             try{
               const sale = await upsertGIFromAppointment(appt, v);
+              dbg('[BANNER_GI] Sale response:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
+                dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 tryOpenGiBuilder(id);
+              } else {
+                console.warn('[BANNER_GI] No sale ID found in response:', sale);
+                dbg('[BANNER_GI] Cannot open builder - missing sale ID');
               }
             }catch(e){ 
+              console.error('[BANNER_GI] Error creating GI from appointment:', e);
               logger.error(e); 
             }
           }
@@ -356,11 +362,17 @@
           if (v>0){
             try{
               const sale = await upsertGIFromAppointment(appt, v);
+              dbg('[BANNER_GI] Sale response:', sale);
               if (sale && (sale.id || sale._id)){
                 const id = sale.id || sale._id;
+                dbg('[BANNER_GI] Opening builder for sale ID:', id);
                 tryOpenGiBuilder(id);
+              } else {
+                console.warn('[BANNER_GI] No sale ID found in response:', sale);
+                dbg('[BANNER_GI] Cannot open builder - missing sale ID');
               }
             }catch(e){ 
+              console.error('[BANNER_GI] Error creating GI from appointment:', e);
               logger.error(e); 
             }
           }
@@ -378,7 +390,7 @@
     let clientId = appt.clientId || null;
     if (!clientId) clientId = await findClientIdByName(appt.client);
     const payload = {
-      apptId: appt.id,
+      appointmentId: appt.id,  // ✅ FIX: Cambiato da apptId a appointmentId per match con backend
       date: new Date(appt.end || appt.start || Date.now()).toISOString(),
       clientId: clientId || undefined,
       clientName: appt.client || 'Cliente',
@@ -387,7 +399,15 @@
       consultantId: appt.userId || appt.ownerId || null
     };
     const resp = await POST('/api/gi', payload);
-    return (resp && (resp.sale || resp.gi || resp.data)) || resp;
+    dbg('[GI] Response from /api/gi:', resp);
+    // ✅ FIX: Supporta sia formato vecchio che nuovo (ok:true, id) e formati legacy (sale, gi, data)
+    const saleId = resp?.id || resp?.sale?.id || resp?.gi?.id || resp?.data?.id;
+    if (saleId) {
+      dbg('[GI] Extracted sale ID:', saleId);
+      return { id: saleId };
+    }
+    dbg('[GI] No sale ID found in response, returning full response');
+    return resp;
   }
 
   // --- Funzioni per gestire lo stato persistente dei banner ---
