@@ -7,6 +7,14 @@
   const KIND_NNCF = 'nncf';
   const KIND_SALE = 'sale';
   const BANNER_DELAY_MINUTES = 0; // Banner appare immediatamente dopo la fine dell'appuntamento (sincronizzato con notifiche push)
+  
+  // ✅ Cache per ridurre query API (5 minuti)
+  let _lastScanTime = 0;
+  let _lastScanData = null;
+  const SCAN_CACHE_MS = 5 * 60 * 1000; // 5 minuti
+  
+  // ✅ Interval per scan periodico (cleanup su navigazione)
+  let scanInterval = null;
 
   // --- Ephemeral pending markers to avoid duplicate queueing within short window ---
   const _pending = new Set();
@@ -662,24 +670,20 @@
           
           // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
           // Evita duplicati tra backend e frontend
-          // Usa async/await per evitare race conditions
-          (async () => {
-            try {
-              const pushAlreadySent = await pushSent(appt.id, KIND_NNCF);
-              if (pushAlreadySent) {
-                dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
-                return; // Non mostrare banner se push già inviata
-              }
-              
-              dbg('Triggering NNCF push and banner for', appt.id);
-              triggerPush(KIND_NNCF, appt);
-              markPending(appt.id, KIND_NNCF); 
-              dbg('mark pending NNCF', appt && appt.id);
-              enqueueBanner(bannerNNCF(appt));
-            } catch(err) {
-              dbg('Error checking push sent for NNCF:', err);
+          pushSent(appt.id, KIND_NNCF).then(pushAlreadySent => {
+            if (pushAlreadySent) {
+              dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
+              return; // Non mostrare banner se push già inviata
             }
-          })();
+            
+            dbg('Triggering NNCF push and banner for', appt.id);
+            triggerPush(KIND_NNCF, appt);
+            markPending(appt.id, KIND_NNCF); 
+            dbg('mark pending NNCF', appt && appt.id);
+            enqueueBanner(bannerNNCF(appt));
+          }).catch(err => {
+            dbg('Error checking push sent for NNCF:', err);
+          });
         } else {
           // Controlla stato persistente del banner Sale dal database
           if (isBannerAnswered(appt, KIND_SALE)) return;
@@ -693,24 +697,20 @@
           
           // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
           // Evita duplicati tra backend e frontend
-          // Usa async/await per evitare race conditions
-          (async () => {
-            try {
-              const pushAlreadySent = await pushSent(appt.id, KIND_SALE);
-              if (pushAlreadySent) {
-                dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
-                return; // Non mostrare banner se push già inviata
-              }
-              
-              dbg('Triggering SALE push and banner for', appt.id);
-              triggerPush(KIND_SALE, appt);
-              markPending(appt.id, KIND_SALE); 
-              dbg('mark pending SALE', appt && appt.id);
-              enqueueBanner(bannerSale(appt));
-            } catch(err) {
-              dbg('Error checking push sent for SALE:', err);
+          pushSent(appt.id, KIND_SALE).then(pushAlreadySent => {
+            if (pushAlreadySent) {
+              dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
+              return; // Non mostrare banner se push già inviata
             }
-          })();
+            
+            dbg('Triggering SALE push and banner for', appt.id);
+            triggerPush(KIND_SALE, appt);
+            markPending(appt.id, KIND_SALE); 
+            dbg('mark pending SALE', appt && appt.id);
+            enqueueBanner(bannerSale(appt));
+          }).catch(err => {
+            dbg('Error checking push sent for SALE:', err);
+          });
         }
       }catch(_){}
     });
