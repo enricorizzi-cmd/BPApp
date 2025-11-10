@@ -89,12 +89,17 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
   }
   
   // Marca notifica come inviata (tracking atomico)
-  async function markNotificationSent(userId, appointmentId, notificationType, deviceId = null) {
+  // Supporta sia appointmentid (retrocompatibilità) che resource_id (per lead)
+  async function markNotificationSent(userId, resourceId, notificationType, deviceId = null, useResourceId = false) {
     try {
+      // Genera ID univoco basato su resourceId e notificationType
+      const trackingId = `${resourceId}_${notificationType}`;
+      
       const trackingData = {
-        id: `${appointmentId}_${notificationType}`,
+        id: trackingId,
         userid: userId,
-        appointmentid: appointmentId,
+        resource_id: useResourceId ? resourceId : null,
+        appointmentid: useResourceId ? null : resourceId,
         notification_type: notificationType,
         device_id: deviceId,
         delivery_status: 'sent',
@@ -115,7 +120,7 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
         throw error;
       }
       
-      console.log(`[DEBUG_TRACKING] Successfully marked notification as sent: ${appointmentId}_${notificationType}`);
+      console.log(`[DEBUG_TRACKING] Successfully marked notification as sent: ${trackingId}`);
       return true;
     } catch (error) {
       console.error(`[DEBUG_TRACKING] Error marking notification as sent:`, error);
@@ -129,31 +134,47 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     }
   }
   
-  // Verifica se notifica è già stata inviata (controlla entrambi i sistemi)
-  async function isNotificationSent(appointmentId, notificationType) {
+  // Verifica se notifica è già stata inviata (controlla sia appointmentid che resource_id)
+  // Supporta sia appointmentid (retrocompatibilità) che resource_id (per lead)
+  async function isNotificationSent(resourceId, notificationType, useResourceId = false) {
     try {
-      console.log(`[DEBUG_TRACKING] Checking if notification already sent: ${appointmentId}_${notificationType}`);
+      console.log(`[DEBUG_TRACKING] Checking if notification already sent: ${resourceId}_${notificationType} (useResourceId: ${useResourceId})`);
       
-      // Mappa i tipi per controllare entrambi i sistemi
+      // Mappa i tipi per controllare entrambi i sistemi (frontend/backend)
       const frontendType = notificationType === 'post_sale' ? 'sale' : 
                           notificationType === 'post_nncf' ? 'nncf' : notificationType;
       const backendType = notificationType;
       
-      // Controlla entrambi i tipi per evitare duplicati
+      // Controlla sia appointmentid che resource_id per retrocompatibilità
+      // Cerca in entrambi i campi per supportare vecchi e nuovi record
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
-        .eq('appointmentid', appointmentId)
-        .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
+        .eq('notification_type', notificationType)
+        .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
         .single();
       
       if (error && error.code !== 'PGRST116') {
-        console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
-        throw error;
+        // Se non trovato con notification_type esatto, prova con frontend/backend mapping
+        const { data: altData, error: altError } = await supabase
+          .from('push_notifications_sent')
+          .select('id')
+          .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
+          .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
+          .single();
+        
+        if (altError && altError.code !== 'PGRST116') {
+          console.error(`[DEBUG_TRACKING] Error checking notification status:`, altError);
+          throw altError;
+        }
+        
+        const alreadySent = !!altData;
+        console.log(`[DEBUG_TRACKING] Notification ${resourceId} (${frontendType}/${backendType}) already sent: ${alreadySent}`);
+        return alreadySent;
       }
       
       const alreadySent = !!data;
-      console.log(`[DEBUG_TRACKING] Notification ${appointmentId} (${frontendType}/${backendType}) already sent: ${alreadySent}`);
+      console.log(`[DEBUG_TRACKING] Notification ${resourceId} (${notificationType}) already sent: ${alreadySent}`);
       return alreadySent;
     } catch (error) {
       console.error(`[DEBUG_TRACKING] Error checking notification status:`, error);
@@ -172,19 +193,21 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
     try {
       console.log('[NotificationManager] Processing post-appointment notifications...');
       
-      // Trova appuntamenti di vendita recenti (ultime 2 ore) non ancora notificati
-      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-      console.log(`[DEBUG_SCANSIONE] Scanning appointments from ${twoHoursAgo} to now`);
+      // Trova appuntamenti di vendita recenti (ultimi 7 giorni) non ancora notificati
+      // Allineato con frontend LOOKBACK_DAYS = 7
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
+      console.log(`[DEBUG_SCANSIONE] Scanning appointments from ${sevenDaysAgo} to ${now}`);
       
       const queryStartTime = Date.now();
+      // Query senza filtri su answered - li filtriamo dopo in base al tipo (NNCF vs vendita)
+      // Questo evita problemi con .or() multipli in Supabase
       const { data: appointments, error } = await supabase
         .from('appointments')
-        .select('id,userid,client,type,end_time,salepromptanswered,nncfpromptanswered,nncf') // AGGIUNTO: nncf per determinare tipo notifica
+        .select('id,userid,client,type,end_time,salepromptanswered,nncfpromptanswered,nncf')
         .eq('type', 'vendita')
-        .gte('end_time', twoHoursAgo)
-        .lte('end_time', new Date().toISOString())
-        .or('salepromptanswered.is.null,salepromptanswered.eq.false')
-        .or('nncfpromptanswered.is.null,nncfpromptanswered.eq.false')
+        .gte('end_time', sevenDaysAgo)
+        .lte('end_time', now)
         .limit(100) // Limite per evitare memory spike
         .order('end_time', { ascending: false }); // Ordine per processare i più recenti
       
@@ -511,11 +534,12 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
   // Verifica se notifica vendite riordini è già stata inviata
   async function isVenditeRiordiniNotificationSent(venditaId) {
     try {
+      // Cerca sia in appointmentid che resource_id per retrocompatibilità
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
-        .eq('appointmentid', venditaId)
         .eq('notification_type', 'vendite-feedback')
+        .or(`appointmentid.eq.${venditaId},resource_id.eq.${venditaId}`)
         .single();
       
       if (error && error.code !== 'PGRST116') {
@@ -533,21 +557,8 @@ module.exports = function({ supabase, webpush, VAPID_PUBLIC_KEY, VAPID_PRIVATE_K
   // Marca notifica vendite riordini come inviata
   async function markVenditeRiordiniNotificationSent(userId, venditaId) {
     try {
-      const { error } = await supabase
-        .from('push_notifications_sent')
-        .insert([{
-          userid: userId,
-          appointmentid: venditaId,
-          notification_type: 'vendite-feedback',
-          sent_at: new Date().toISOString()
-        }]);
-      
-      if (error) {
-        console.error(`[VenditeRiordini] Error marking notification as sent:`, error);
-        return false;
-      }
-      
-      return true;
+      // Usa markNotificationSent con useResourceId=false (usa appointmentid per retrocompatibilità)
+      return await markNotificationSent(userId, venditaId, 'vendite-feedback', null, false);
     } catch (error) {
       console.error(`[VenditeRiordini] Error marking notification as sent:`, error);
       return false;

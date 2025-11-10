@@ -4,18 +4,20 @@ const router = express.Router();
 module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecord, deleteRecord, todayISO, supabase }) {
   
   // Helper functions per Supabase
-  async function checkPushSent(userId, appointmentId, notificationType) {
+  // Supporta sia appointmentid (retrocompatibilità) che resource_id (per lead)
+  async function checkPushSent(userId, resourceId, notificationType) {
     try {
       // Mappa i tipi per controllare entrambi i sistemi
       const frontendType = notificationType === 'post_sale' ? 'sale' : 
                           notificationType === 'post_nncf' ? 'nncf' : notificationType;
       const backendType = notificationType;
       
+      // Cerca sia in appointmentid che resource_id per retrocompatibilità
       const { data, error } = await supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('userid', userId)
-        .eq('appointmentid', appointmentId)
+        .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
         .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
         .single();
       
@@ -30,14 +32,17 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
     }
   }
   
-  async function markPushSent(userId, appointmentId, notificationType) {
+  async function markPushSent(userId, resourceId, notificationType) {
     try {
+      const trackingId = `push_${userId}_${resourceId}_${notificationType}`;
+      
       const { error } = await supabase
         .from('push_notifications_sent')
         .upsert({
-          id: `push_${userId}_${appointmentId}_${notificationType}`,
+          id: trackingId,
           userid: userId,
-          appointmentid: appointmentId,
+          appointmentid: resourceId, // Usa appointmentid per retrocompatibilità (useResourceId=false)
+          resource_id: null,
           notification_type: notificationType,
           sent_at: new Date().toISOString(),
           createdat: new Date().toISOString()
