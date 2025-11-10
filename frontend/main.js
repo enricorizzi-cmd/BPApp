@@ -10777,15 +10777,24 @@ appEl.innerHTML = topbarHTML() + `
   // apertura da evento esterno (es. post quick-VSS)
   document.addEventListener('gi:edit', function(ev){
     const id = ev && ev.detail && ev.detail.id;
-    if(id) openEdit(id);
+    const saleData = ev && ev.detail && ev.detail.sale; // ✅ FIX: Usa i dati della vendita se disponibili
+    if(id) openEdit(id, saleData);
   });
 
   $('gi_add').onclick = ()=>{
     showGiModal({ title:'Nuova vendita' });
   };
 
-  async function openEdit(id){
-    console.log('[openEdit] Opening edit for sale ID:', id);
+  async function openEdit(id, saleData){
+    console.log('[openEdit] Opening edit for sale ID:', id, 'with saleData:', saleData);
+    
+    // ✅ FIX: Se i dati della vendita sono già disponibili (passati come parametro), usali direttamente
+    if (saleData && saleData.id === id) {
+      console.log('[openEdit] Using sale data passed directly');
+      showGiModal({ title:'Modifica vendita', sale: saleData });
+      return;
+    }
+    
     // ✅ FIX: Retry mechanism per gestire delay nella propagazione dei dati in Supabase
     let it = null;
     let retries = 5; // Aumentato a 5 tentativi per dare più tempo

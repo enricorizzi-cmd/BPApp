@@ -1712,6 +1712,10 @@ app.post("/api/gi", auth, async (req,res)=>{
   const row = buildRow();
   db.sales.push(row);
   
+  // ✅ FIX: Restituisce i dati completi della vendita invece di solo l'ID
+  // Questo evita il problema del delay nella propagazione dei dati in Supabase
+  let insertedData = null;
+  
   // Usa insertRecord per Supabase invece di writeJSON per evitare sovrascrittura
   if (typeof insertRecord === 'function') {
     try {
@@ -1728,8 +1732,26 @@ app.post("/api/gi", auth, async (req,res)=>{
         schedule: row.schedule,
         createdat: row.createdAt
       };
-      await insertRecord('gi', mappedSale);
+      insertedData = await insertRecord('gi', mappedSale);
       console.log('[GI] Successfully inserted into Supabase:', row.id);
+      
+      // ✅ FIX: Mappa i dati restituiti da Supabase al formato frontend
+      if (insertedData) {
+        const saleData = {
+          id: insertedData.id,
+          appointmentId: insertedData.appointmentid || null,
+          clientId: insertedData.clientid || '',
+          clientName: insertedData.clientname || '',
+          date: insertedData.date || insertedData.createdat || row.date,
+          createdAt: insertedData.createdat || row.createdAt,
+          consultantId: insertedData.consultantid || '',
+          consultantName: insertedData.consultantname || '',
+          services: insertedData.services || '',
+          vssTotal: Number(insertedData.vsstotal || 0),
+          schedule: insertedData.schedule || []
+        };
+        return res.json({ ok: true, id: row.id, sale: saleData });
+      }
     } catch (error) {
       console.error('[GI] Error inserting into Supabase:', error);
       // ✅ MIGLIORATO: Log errore dettagliato per debug
@@ -1753,9 +1775,23 @@ app.post("/api/gi", auth, async (req,res)=>{
       }
       
       // ✅ MIGLIORATO: Restituisce warning al frontend che il salvataggio è andato in fallback
+      // ✅ FIX: Restituisce comunque i dati della vendita anche in fallback
       return res.json({ 
         ok: true, 
-        id: row.id, 
+        id: row.id,
+        sale: {
+          id: row.id,
+          appointmentId: row.appointmentId,
+          clientId: row.clientId,
+          clientName: row.clientName,
+          date: row.date,
+          createdAt: row.createdAt,
+          consultantId: row.consultantId,
+          consultantName: row.consultantName,
+          services: row.services,
+          vssTotal: row.vssTotal,
+          schedule: row.schedule || []
+        },
         warning: 'Saved to fallback storage due to Supabase error',
         error: errorMessage
       });
@@ -1765,7 +1801,24 @@ app.post("/api/gi", auth, async (req,res)=>{
     await writeJSON("gi.json", db);
   }
   
-  return res.json({ ok:true, id: row.id });
+  // ✅ FIX: Restituisce sempre i dati completi della vendita
+  return res.json({ 
+    ok: true, 
+    id: row.id,
+    sale: {
+      id: row.id,
+      appointmentId: row.appointmentId,
+      clientId: row.clientId,
+      clientName: row.clientName,
+      date: row.date,
+      createdAt: row.createdAt,
+      consultantId: row.consultantId,
+      consultantName: row.consultantName,
+      services: row.services,
+      vssTotal: row.vssTotal,
+      schedule: row.schedule || []
+    }
+  });
 });
 
 app.delete("/api/gi", auth, async (req,res)=>{

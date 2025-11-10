@@ -322,12 +322,20 @@
                 const id = sale.id || sale._id;
                 console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                // ✅ FIX: Aggiungi un delay più lungo per permettere a Supabase di propagare i dati
-                // Aumentato a 800ms per dare più tempo alla propagazione
-                setTimeout(() => {
-                  console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
-                  tryOpenGiBuilder(id);
-                }, 800);
+                // ✅ FIX: Passa i dati completi della vendita invece di solo l'ID
+                // Questo evita il problema del delay nella propagazione dei dati
+                if (sale && typeof window.openPaymentBuilderById === 'function') {
+                  console.log('[BANNER_GI] Using openPaymentBuilderById with sale data');
+                  // Passa i dati completi della vendita
+                  window.openPaymentBuilderById(id, sale);
+                } else {
+                  // Fallback: usa tryOpenGiBuilder
+                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback');
+                  setTimeout(() => {
+                    console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
+                    tryOpenGiBuilder(id);
+                  }, 300);
+                }
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {
@@ -407,12 +415,20 @@
                 const id = sale.id || sale._id;
                 console.log('[BANNER_GI] Opening builder for sale ID:', id);
                 dbg('[BANNER_GI] Opening builder for sale ID:', id);
-                // ✅ FIX: Aggiungi un delay più lungo per permettere a Supabase di propagare i dati
-                // Aumentato a 800ms per dare più tempo alla propagazione
-                setTimeout(() => {
-                  console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
-                  tryOpenGiBuilder(id);
-                }, 800);
+                // ✅ FIX: Passa i dati completi della vendita invece di solo l'ID
+                // Questo evita il problema del delay nella propagazione dei dati
+                if (sale && typeof window.openPaymentBuilderById === 'function') {
+                  console.log('[BANNER_GI] Using openPaymentBuilderById with sale data');
+                  // Passa i dati completi della vendita
+                  window.openPaymentBuilderById(id, sale);
+                } else {
+                  // Fallback: usa tryOpenGiBuilder
+                  console.log('[BANNER_GI] Using tryOpenGiBuilder fallback');
+                  setTimeout(() => {
+                    console.log('[BANNER_GI] Calling tryOpenGiBuilder after delay');
+                    tryOpenGiBuilder(id);
+                  }, 300);
+                }
                 
                 // ✅ MIGLIORATO: Mostra warning se c'è stato un problema (ma salvato in fallback)
                 if (sale.warning) {
@@ -462,6 +478,7 @@
       consultantId: appt.userId || appt.ownerId || null
     };
     const resp = await POST('/api/gi', payload);
+    console.log('[GI] Response from /api/gi:', resp);
     dbg('[GI] Response from /api/gi:', resp);
     
     // ✅ MIGLIORATO: Gestisce errori dal backend
@@ -469,6 +486,17 @@
       const errorMsg = resp.error || resp.details || 'Errore sconosciuto';
       console.error('[GI] Backend returned error:', errorMsg);
       throw new Error(errorMsg);
+    }
+    
+    // ✅ FIX: Se il backend restituisce i dati completi della vendita, usali direttamente
+    if (resp && resp.sale) {
+      console.log('[GI] Using sale data from response:', resp.sale);
+      return {
+        id: resp.sale.id,
+        ...resp.sale, // Include tutti i dati della vendita
+        warning: resp?.warning,
+        error: resp?.error
+      };
     }
     
     // ✅ FIX: Supporta sia formato vecchio che nuovo (ok:true, id) e formati legacy (sale, gi, data)

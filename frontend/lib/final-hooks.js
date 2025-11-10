@@ -188,6 +188,18 @@ async function openPaymentBuilderById(id){
   // perché potrebbe essere appena stata creata e non ancora caricata nella vista
   const isInGIView = typeof viewGI === 'function' && document.querySelector('#gi_rows');
   
+  // ✅ FIX: Se abbiamo i dati della vendita passati come parametro, usali direttamente
+  // Questo evita il problema del delay nella propagazione dei dati
+  if (isInGIView && arguments.length > 1 && arguments[1]){
+    // Se viene passato un oggetto sale come secondo parametro, usalo direttamente
+    const saleData = arguments[1];
+    if (saleData && saleData.id === id) {
+      console.log('[openPaymentBuilderById] Using sale data passed directly, dispatching gi:edit event');
+      document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: saleData}}));
+      return;
+    }
+  }
+  
   if (isInGIView){
     console.log('[openPaymentBuilderById] Already in GI view, but verifying sale exists first');
     // Verifica che la vendita esista prima di inviare l'evento
@@ -196,7 +208,7 @@ async function openPaymentBuilderById(id){
       const it = ((j&&j.sales)||[]).find(s=>String(s.id)===String(id));
       if (it) {
         console.log('[openPaymentBuilderById] Sale found in GI view, dispatching gi:edit event');
-        document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+        document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: it}}));
         return;
       } else {
         console.warn('[openPaymentBuilderById] Sale not found in GI view, forcing refresh and retrying');
@@ -210,7 +222,7 @@ async function openPaymentBuilderById(id){
             const it2 = ((j2&&j2.sales)||[]).find(s=>String(s.id)===String(id));
             if (it2) {
               console.log('[openPaymentBuilderById] Sale found after refresh, dispatching gi:edit event');
-              document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id}}));
+              document.dispatchEvent(new CustomEvent('gi:edit',{detail:{id, sale: it2}}));
               return;
             }
           } catch (refreshError) {
