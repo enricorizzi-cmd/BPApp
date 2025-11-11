@@ -1066,8 +1066,11 @@ function viewHome(){
         // Tutti vedono se stessi di default, admin può cambiare
         sel.value = me.id;
         
-        // Ricarica i dati dopo che il selettore è stato popolato
-        if (window.recomputeKPI) window.recomputeKPI();
+        // ✅ FIX: Ricarica TUTTI i dati dopo che il selettore è stato popolato
+        // Questo assicura che i dati siano coerenti con i filtri all'apertura
+        recomputeKPI();
+        recomputeMini();
+        refreshLists();
         
         // Imposta il trigger per il cambio consulente DOPO che il selettore è popolato
         selCons.onchange = function(){
@@ -1082,9 +1085,12 @@ function viewHome(){
       });
     })();
   } else {
-    // Per non-admin, ricarica i dati immediatamente
+    // ✅ FIX: Per non-admin, ricarica TUTTI i dati immediatamente
+    // Questo assicura che i dati siano coerenti con i filtri all'apertura
     setTimeout(() => {
-      if (window.recomputeKPI) window.recomputeKPI();
+      recomputeKPI();
+      recomputeMini();
+      refreshLists();
     }, 100);
   }
 
