@@ -7,21 +7,38 @@ module.exports = function({ auth, readJSON, writeJSON, insertRecord, updateRecor
   // Supporta sia appointmentid (retrocompatibilità) che resource_id (per lead)
   async function checkPushSent(userId, resourceId, notificationType) {
     try {
-      // Mappa i tipi per controllare entrambi i sistemi
-      const frontendType = notificationType === 'post_sale' ? 'sale' : 
-                          notificationType === 'post_nncf' ? 'nncf' : notificationType;
-      const backendType = notificationType;
+      // ✅ FIX: Mappa i tipi per controllare entrambi i sistemi
+      // Il backend cron job salva come 'post_sale'/'post_nncf', ma il frontend cerca 'sale'/'nncf'
+      // Quindi quando il frontend passa 'sale', dobbiamo cercare sia 'sale' che 'post_sale'
+      const typesToCheck = [];
+      if (notificationType === 'sale') {
+        typesToCheck.push('sale', 'post_sale');
+      } else if (notificationType === 'nncf') {
+        typesToCheck.push('nncf', 'post_nncf');
+      } else if (notificationType === 'post_sale') {
+        typesToCheck.push('sale', 'post_sale');
+      } else if (notificationType === 'post_nncf') {
+        typesToCheck.push('nncf', 'post_nncf');
+      } else {
+        typesToCheck.push(notificationType);
+      }
       
       // Cerca sia in appointmentid che resource_id per retrocompatibilità
-      // NOTA: Due .or() separati in Supabase vengono combinati con AND
-      // Quindi la query cerca: (appointmentid=resourceId OR resource_id=resourceId) AND (notification_type=frontendType OR notification_type=backendType)
-      const { data, error } = await supabase
+      // Cerca con tutti i tipi possibili (sale/post_sale o nncf/post_nncf)
+      let query = supabase
         .from('push_notifications_sent')
         .select('id')
         .eq('userid', userId)
-        .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`)
-        .or(`notification_type.eq.${frontendType},notification_type.eq.${backendType}`)
-        .maybeSingle(); // Usa maybeSingle per gestire meglio "not found"
+        .or(`appointmentid.eq.${resourceId},resource_id.eq.${resourceId}`);
+      
+      // Aggiungi filtro per notification_type usando .in() per cercare tutti i tipi possibili
+      if (typesToCheck.length === 1) {
+        query = query.eq('notification_type', typesToCheck[0]);
+      } else {
+        query = query.in('notification_type', typesToCheck);
+      }
+      
+      const { data, error } = await query.maybeSingle(); // Usa maybeSingle per gestire meglio "not found"
       
       if (error) {
         console.error('[Push Tracking] Error checking sent status:', error);

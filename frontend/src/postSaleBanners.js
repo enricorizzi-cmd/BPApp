@@ -838,6 +838,18 @@
           return;
         }
         
+        // ✅ DEBUG: Log dettagliato per appuntamenti specifici
+        if (appt.id === 'j3jb8xugx4ghm6x7' || appt.id === '1hzcqqdjg7gnf6lo') {
+          console.log('[BANNER_DEBUG] Processing appointment:', appt.id, {
+            type: appt.type,
+            nncf: appt.nncf,
+            salepromptanswered: appt.salepromptanswered,
+            nncfpromptanswered: appt.nncfpromptanswered,
+            end: new Date(end).toLocaleString(),
+            now: new Date(now).toLocaleString()
+          });
+        }
+        
         dbg('Processing vendita appointment', appt.id, appt.type, 'nncf:', appt.nncf);
         
         if (appt.nncf){
@@ -856,21 +868,27 @@
           // ri-mostrarlo (anche se è stato chiuso senza risposta)
           // Non controlliamo isPending qui perché vogliamo ri-mostrare i banner chiusi senza risposta
           
-          // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
-          // Evita duplicati tra backend e frontend
+          // ✅ FIX: Il banner deve essere mostrato finché l'utente non risponde,
+          // indipendentemente dalla push. La push è solo una notifica, non impedisce il banner.
+          // Controlla se la push è già stata inviata solo per evitare di inviarla di nuovo
           pushSent(appt.id, KIND_NNCF).then(pushAlreadySent => {
-            if (pushAlreadySent) {
-              dbg('Push already sent, skipping banner for', appt.id, KIND_NNCF);
-              return; // Non mostrare banner se push già inviata
+            if (!pushAlreadySent) {
+              // Se la push non è stata inviata, inviala ora
+              dbg('Triggering NNCF push for', appt.id);
+              triggerPush(KIND_NNCF, appt);
+            } else {
+              dbg('Push already sent for', appt.id, KIND_NNCF, '- showing banner anyway');
             }
             
-            dbg('Triggering NNCF push and banner for', appt.id);
-            triggerPush(KIND_NNCF, appt);
+            // ✅ SEMPRE mostra il banner se l'utente non ha risposto, anche se la push è già stata inviata
             markPending(appt.id, KIND_NNCF); 
             dbg('mark pending NNCF', appt && appt.id);
             enqueueBanner(bannerNNCF(appt));
           }).catch(err => {
             dbg('Error checking push sent for NNCF:', err);
+            // In caso di errore, mostra comunque il banner
+            markPending(appt.id, KIND_NNCF);
+            enqueueBanner(bannerNNCF(appt));
           });
         } else {
           // Controlla stato persistente del banner Sale dal database
@@ -888,21 +906,27 @@
           // ri-mostrarlo (anche se è stato chiuso senza risposta)
           // Non controlliamo isPending qui perché vogliamo ri-mostrare i banner chiusi senza risposta
           
-          // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
-          // Evita duplicati tra backend e frontend
+          // ✅ FIX: Il banner deve essere mostrato finché l'utente non risponde,
+          // indipendentemente dalla push. La push è solo una notifica, non impedisce il banner.
+          // Controlla se la push è già stata inviata solo per evitare di inviarla di nuovo
           pushSent(appt.id, KIND_SALE).then(pushAlreadySent => {
-            if (pushAlreadySent) {
-              dbg('Push already sent, skipping banner for', appt.id, KIND_SALE);
-              return; // Non mostrare banner se push già inviata
+            if (!pushAlreadySent) {
+              // Se la push non è stata inviata, inviala ora
+              dbg('Triggering SALE push for', appt.id);
+              triggerPush(KIND_SALE, appt);
+            } else {
+              dbg('Push already sent for', appt.id, KIND_SALE, '- showing banner anyway');
             }
             
-            dbg('Triggering SALE push and banner for', appt.id);
-            triggerPush(KIND_SALE, appt);
+            // ✅ SEMPRE mostra il banner se l'utente non ha risposto, anche se la push è già stata inviata
             markPending(appt.id, KIND_SALE); 
             dbg('mark pending SALE', appt && appt.id);
             enqueueBanner(bannerSale(appt));
           }).catch(err => {
             dbg('Error checking push sent for SALE:', err);
+            // In caso di errore, mostra comunque il banner
+            markPending(appt.id, KIND_SALE);
+            enqueueBanner(bannerSale(appt));
           });
         }
       }catch(_){}

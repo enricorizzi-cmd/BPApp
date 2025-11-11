@@ -7706,6 +7706,8 @@ function populateConsultantFilters() {
       filterEl.innerHTML = '<option value="">Tutti</option>' + options;
       // Default su utente corrente per tutti (admin e non-admin)
       filterEl.value = currentUser.id;
+      // ✅ FIX: Applica automaticamente i filtri dopo aver impostato il default
+      applyCyclesFilters();
     }
     
     if (forecastEl) {
@@ -9584,6 +9586,38 @@ appEl.innerHTML = topbarHTML() + `
     });
     sel.innerHTML = '<option value="">Tutti</option>' + Array.from(map.entries()).map(([id,name])=>
       '<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
+    
+    // ✅ FIX: Imposta default sull'utente loggato e applica filtro automaticamente
+    const currentUser = getUser();
+    if (currentUser && currentUser.id) {
+      // Verifica che l'utente loggato sia presente nelle opzioni
+      const userOption = Array.from(sel.options).find(opt => opt.value === currentUser.id);
+      if (userOption) {
+        sel.value = currentUser.id;
+        // ✅ FIX: Applica automaticamente il filtro dopo aver impostato il default
+        // Usa setTimeout per assicurarsi che salesData sia disponibile
+        setTimeout(() => {
+          // Triggera l'evento change per applicare il filtro
+          if (sel.onchange) {
+            sel.onchange();
+          } else {
+            // Fallback: applica manualmente il filtro
+            const consId = sel.value;
+            if (salesData && salesData.length > 0) {
+              const filteredRows = consId ? salesData.filter(r => String(r.consultantId||'') === String(consId)) : salesData;
+              const rowsEl = $('gi_rows');
+              if (rowsEl) {
+                rowsEl.innerHTML = filteredRows.length ? filteredRows.map(rowHTML).join('') :
+                  '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
+                bindRowActions();
+                updateStats(filteredRows);
+                renderForecast();
+              }
+            }
+          }
+        }, 0);
+      }
+    }
   }
 
   function periodInfo(d, g){
@@ -9657,6 +9691,10 @@ appEl.innerHTML = topbarHTML() + `
       rows.sort((a,b)=> (+new Date(b.date||b.createdAt||0))-(+new Date(a.date||a.createdAt||0))); // più recenti in alto
       salesData = rows; // Mantieni sempre tutti i dati per il forecast
       
+      // ✅ FIX: Popola prima il dropdown consulente, poi filtra
+      // Questo permette di impostare il default e applicare il filtro automaticamente
+      populateForecastConsultants(rows);
+      
       // Filtra per consulente se selezionato (solo per la tabella e statistiche)
       const consSel = $('gi-global-consultant');
       const consId = consSel ? consSel.value : '';
@@ -9665,7 +9703,6 @@ appEl.innerHTML = topbarHTML() + `
       $('gi_rows').innerHTML = filteredRows.length ? filteredRows.map(rowHTML).join('') :
         '<tr><td colspan="8" class="muted" style="text-align: center; padding: 40px;">Nessuna vendita trovata</td></tr>';
       bindRowActions();
-      populateForecastConsultants(rows);
       renderForecast(); // renderForecast() userà salesData e filtrerà internamente
       updateStats(filteredRows); // Usa i dati filtrati per le statistiche
       
@@ -17020,7 +17057,9 @@ function viewVenditeRiordini(){
 
   // Stato per granularità e periodo
   let currentGranularity = 'mensile';
-  let currentConsultant = '';
+  // ✅ FIX: Imposta default sull'utente loggato (non admin)
+  const currentUser = getUser();
+  let currentConsultant = (currentUser && currentUser.role !== 'admin') ? currentUser.id : '';
 
   appEl.innerHTML = topbarHTML() + `
     <div class="wrap" style="overflow-y: auto; height: calc(100vh - 56px);">
@@ -17220,12 +17259,17 @@ function viewVenditeRiordini(){
 
       // Costruisci URL con parametri
       let url = `/api/vendite-riordini?from=${from}&to=${to}`;
-      if (consultant === 'all') {
-        // Aggiungi global=1 SOLO se l'utente è admin
-        if (getUser() && getUser().role === 'admin') {
+      const user = getUser();
+      if (consultant === '' || consultant === 'all') {
+        // Se consulente non selezionato o "Tutti", admin vede tutto, altri vedono solo i propri
+        if (user && user.role === 'admin') {
           url += '&global=1';
+        } else if (user && user.id) {
+          // ✅ FIX: Non admin vede solo i propri preventivi
+          url += `&user=${user.id}`;
         }
-      } else if (consultant && consultant !== getUser().id) {
+      } else if (consultant) {
+        // ✅ FIX: Filtra per consulente selezionato
         url += `&user=${consultant}`;
       }
 
@@ -17358,10 +17402,31 @@ function viewVenditeRiordini(){
     load();
   });
 
-  $('vr-global-consultant').addEventListener('change', (e) => {
-    currentConsultant = e.target.value;
-    load();
-  });
+  // ✅ FIX: Popola dropdown consulenti se admin e aggiungi event listener
+  if (isAdmin) {
+    const select = $('vr-global-consultant');
+    if (select) {
+      // Aggiungi event listener
+      select.addEventListener('change', (e) => {
+        currentConsultant = e.target.value || '';
+        load();
+      });
+      
+      // Popola dropdown
+      loadConsultantsDropdown('vr-global-consultant').then(() => {
+        // ✅ FIX: Imposta default sull'utente loggato anche per admin
+        if (select && currentUser && currentUser.id) {
+          // Se l'utente è admin, imposta default sull'utente loggato
+          select.value = currentUser.id;
+          currentConsultant = currentUser.id;
+          // Carica dati con filtro applicato
+          load();
+        }
+      }).catch(err => {
+        console.error('[VenditeRiordini] Error loading consultants dropdown:', err);
+      });
+    }
+  }
 
   $('vr_add').addEventListener('click', () => {
     showVenditaRiordiniModal();
