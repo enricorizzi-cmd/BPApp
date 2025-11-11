@@ -18,6 +18,9 @@
 
   // --- Ephemeral pending markers to avoid duplicate queueing within short window ---
   const _pending = new Set();
+  // ✅ Traccia i banner attualmente visibili sullo schermo (per evitare duplicati)
+  const _visibleBanners = new Map(); // Map<key, {apptId, kind, cardElement}>
+  
   const isPending   = (id,kind)=> {
     const k = `${kind}:${id}`;
     return _pending.has(k);
@@ -33,6 +36,29 @@
   const clearPending = (id,kind)=>{
     const k = `${kind}:${id}`; 
     _pending.delete(k);
+  };
+  
+  // ✅ Verifica se un banner è attualmente visibile sullo schermo
+  const isBannerVisible = (id, kind) => {
+    const k = `${kind}:${id}`;
+    const bannerInfo = _visibleBanners.get(k);
+    if (!bannerInfo) return false;
+    // Verifica che l'elemento sia ancora nel DOM
+    const host = document.getElementById('bp_banner_host');
+    if (!host) return false;
+    return host.contains(bannerInfo.cardElement);
+  };
+  
+  // ✅ Marca un banner come visibile
+  const markBannerVisible = (id, kind, cardElement) => {
+    const k = `${kind}:${id}`;
+    _visibleBanners.set(k, { apptId: id, kind, cardElement });
+  };
+  
+  // ✅ Rimuovi un banner dalla lista dei visibili
+  const clearBannerVisible = (id, kind) => {
+    const k = `${kind}:${id}`;
+    _visibleBanners.delete(k);
   };
 
   // --- Push markers (avoid duplicate push per appointment/kind) ---
@@ -164,6 +190,16 @@
     // Definisci close PRIMA di usarla per evitare problemi di scope
     function close(){ 
       try {
+        // ✅ Rimuovi il banner dalla lista dei visibili quando viene chiuso
+        // Estrai apptId e kind dal card attualmente visibile
+        const currentCard = host.querySelector('.bp-banner-card');
+        if (currentCard) {
+          const apptId = currentCard.getAttribute('data-banner-appt-id');
+          const kind = currentCard.getAttribute('data-banner-kind');
+          if (apptId && kind) {
+            clearBannerVisible(apptId, kind);
+          }
+        }
         host.innerHTML=''; 
         _showing=false; 
         setTimeout(pump,40); 
@@ -175,7 +211,16 @@
     
     const card = next(close); 
     host.appendChild(card); 
-    requestAnimationFrame(()=> card.classList.add('show'));
+    requestAnimationFrame(()=> {
+      card.classList.add('show');
+      // ✅ Marca il banner come visibile dopo che è stato aggiunto al DOM
+      const apptId = card.getAttribute('data-banner-appt-id');
+      const kind = card.getAttribute('data-banner-kind');
+      if (apptId && kind) {
+        markBannerVisible(apptId, kind, card);
+        dbg('Banner marked as visible:', apptId, kind);
+      }
+    });
   }
 
   // --- Client status helpers ---
@@ -584,6 +629,9 @@
       card.className = 'bp-banner-card';
       card.setAttribute('role','alertdialog');
       card.setAttribute('aria-live','assertive');
+      // ✅ Aggiungi data attributes per tracciare il banner
+      card.setAttribute('data-banner-appt-id', appt.id);
+      card.setAttribute('data-banner-kind', KIND_SALE);
       const dateStr = new Date(appt.end || appt.start || Date.now())
         .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
@@ -596,6 +644,7 @@
       card.querySelector('[data-act="yes"]').onclick = async function(){
         try {
           clearPending(appt.id, KIND_SALE);
+          clearBannerVisible(appt.id, KIND_SALE); // ✅ Rimuovi dalla lista dei visibili
           if (typeof close === 'function') {
             close();
           } else {
@@ -614,6 +663,7 @@
       card.querySelector('[data-act="no"]').onclick = async function(){
         try {
           clearPending(appt.id, KIND_SALE);
+          clearBannerVisible(appt.id, KIND_SALE); // ✅ Rimuovi dalla lista dei visibili
           if (typeof close === 'function') {
             close();
           } else {
@@ -636,7 +686,8 @@
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
         try {
-          clearPending(appt.id, KIND_SALE); 
+          clearPending(appt.id, KIND_SALE);
+          clearBannerVisible(appt.id, KIND_SALE); // ✅ Rimuovi dalla lista dei visibili
           await snoozeBanner(appt.id, KIND_SALE, 24);
           toast('Te lo ripropongo domani'); 
           if (typeof close === 'function') {
@@ -658,6 +709,9 @@
       card.className = 'bp-banner-card';
       card.setAttribute('role','alertdialog');
       card.setAttribute('aria-live','assertive');
+      // ✅ Aggiungi data attributes per tracciare il banner
+      card.setAttribute('data-banner-appt-id', appt.id);
+      card.setAttribute('data-banner-kind', KIND_NNCF);
       const dateStr = new Date(appt.end || appt.start || Date.now())
         .toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
       card.innerHTML =
@@ -670,6 +724,7 @@
       card.querySelector('[data-act="yes"]').onclick = async function(){
         try {
           clearPending(appt.id, KIND_NNCF);
+          clearBannerVisible(appt.id, KIND_NNCF); // ✅ Rimuovi dalla lista dei visibili
           if (typeof close === 'function') {
             close();
           } else {
@@ -691,6 +746,7 @@
       card.querySelector('[data-act="no"]').onclick = async function(){
         try {
           clearPending(appt.id, KIND_NNCF);
+          clearBannerVisible(appt.id, KIND_NNCF); // ✅ Rimuovi dalla lista dei visibili
           if (typeof close === 'function') {
             close();
           } else {
@@ -717,7 +773,8 @@
       };
       card.querySelector('[data-act="later"]').onclick = async function(){
         try {
-          clearPending(appt.id, KIND_NNCF); 
+          clearPending(appt.id, KIND_NNCF);
+          clearBannerVisible(appt.id, KIND_NNCF); // ✅ Rimuovi dalla lista dei visibili
           await snoozeBanner(appt.id, KIND_NNCF, 24);
           toast('Te lo ripropongo domani'); 
           if (typeof close === 'function') {
@@ -788,11 +845,16 @@
           if (isBannerAnswered(appt, KIND_NNCF)) return;
           if (isBannerSnoozed(appt, KIND_NNCF)) return;
           
-          // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
-          if (isPending(appt.id, KIND_NNCF)) { 
-            dbg('skip pending NNCF', appt && appt.id); 
-            return; 
+          // ✅ CONTROLLO CRITICO: Se il banner è già visibile, non fare nulla
+          // Il banner rimane visibile finché l'utente non risponde
+          if (isBannerVisible(appt.id, KIND_NNCF)) {
+            dbg('Banner NNCF already visible, skipping', appt.id);
+            return;
           }
+          
+          // ✅ Se il banner NON è visibile ma l'utente non ha ancora risposto,
+          // ri-mostrarlo (anche se è stato chiuso senza risposta)
+          // Non controlliamo isPending qui perché vogliamo ri-mostrare i banner chiusi senza risposta
           
           // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
           // Evita duplicati tra backend e frontend
@@ -815,11 +877,16 @@
           if (isBannerAnswered(appt, KIND_SALE)) return;
           if (isBannerSnoozed(appt, KIND_SALE)) return;
           
-          // Controlla solo pending in memoria per evitare duplicati nella stessa sessione
-          if (isPending(appt.id, KIND_SALE)) { 
-            dbg('skip pending SALE', appt && appt.id); 
-            return; 
+          // ✅ CONTROLLO CRITICO: Se il banner è già visibile, non fare nulla
+          // Il banner rimane visibile finché l'utente non risponde
+          if (isBannerVisible(appt.id, KIND_SALE)) {
+            dbg('Banner SALE already visible, skipping', appt.id);
+            return;
           }
+          
+          // ✅ Se il banner NON è visibile ma l'utente non ha ancora risposto,
+          // ri-mostrarlo (anche se è stato chiuso senza risposta)
+          // Non controlliamo isPending qui perché vogliamo ri-mostrare i banner chiusi senza risposta
           
           // ✅ CONTROLLO CRITICO: Verifica push già inviata PRIMA di mostrare banner
           // Evita duplicati tra backend e frontend
