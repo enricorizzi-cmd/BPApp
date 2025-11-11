@@ -1956,7 +1956,8 @@ window.wireICSInsideDayBox = window.wireICSInsideDayBox || wireICSInsideDayBox;
   function wireReportButtons(){
     var btnWeb = document.getElementById('rep_gmail_web');
     var btnApp = document.getElementById('rep_gmail_app');
-    if(!btnWeb && !btnApp) return;
+    // ✅ FIX: Gmail Web è nascosto, quindi controlliamo solo btnApp
+    if(!btnApp) return;
 
     resolveCC().then(function(ccList){
       var cc = (ccList||[]).join(',');

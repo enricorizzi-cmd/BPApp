@@ -18574,8 +18574,8 @@ function viewReport(){
         '</div>'+
         '<div class="report-actions" id="report-actions">'+
           '<button class="ghost" id="rep_copy">Copia report</button>'+
-          '<button class="ghost" id="rep_gmail_web">Gmail Web</button>'+
-          '<button class="ghost" id="rep_gmail_app">Gmail App</button>'+
+          '<button class="ghost" id="rep_gmail_web" style="display:none;">Gmail Web</button>'+
+          '<button class="ghost" id="rep_gmail_app">Gmail App (Mobile)</button>'+
         '</div>'+
       '</div>'+
 
@@ -18821,14 +18821,17 @@ function pickClosingAndNext(type, now){
       };
     }
 
-    if(!btnW || !btnA) return;
+    // ✅ FIX: Gmail Web è nascosto, quindi controlliamo solo btnA
+    if(!btnA) return;
 
     GET('/api/users_emails').then(function(r){
       var cc=((r&&r.emails)||((r&&r.users)||[]).map(function(u){return u.email;})).filter(Boolean).join(',');
       function subject(){ return $('report_subject').value || 'Report BP'; }
       function body(){ return bodyEl.value || ''; }
 
-      btnW.onclick=function(){
+      // ✅ FIX: Gmail Web è nascosto, ma manteniamo la logica per retrocompatibilità
+      if(btnW){
+        btnW.onclick=function(){
         try{ navigator.clipboard.writeText(body()); }catch(e){}
         // ✅ FIX: Usa l'URL corretto per aprire Gmail compose direttamente
         // Il formato view=cm&fs=1&tf=1 apre direttamente la compose window
@@ -18839,7 +18842,8 @@ function pickClosingAndNext(type, now){
           +'&body='+enc(body());
         window.open(url,'_blank');
         document.dispatchEvent(new Event('report:composed'));
-      };
+        };
+      }
       btnA.onclick=function(){
         try{ navigator.clipboard.writeText(body()); }catch(e){}
         var url='googlegmail:///co?subject='+enc(subject())+'&cc='+enc(cc)+'&body='+enc(body());
