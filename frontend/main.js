@@ -1015,10 +1015,7 @@ function viewHome(){
       var n = document.getElementById('cal_next'); if(n) n.textContent = '▶';
 
       // Fix second checkbox label to use ≥ symbol
-      var chk4h = root.querySelector('#only_4h');
-      if(chk4h && chk4h.parentElement){
-        chk4h.parentElement.innerHTML = '<input type="checkbox" id="only_4h"> Solo slot ≥ 4h';
-      }
+      // ✅ FIX: Filtri rimossi (only_free e only_4h)
 
       // Group action buttons on the right
       var addBtn = document.getElementById('cal_add');
@@ -1908,9 +1905,7 @@ function viewCalendar(){
           grid-template-areas:
             "consult consult consult"
             "prev month next"
-            "add add add"
-            "free free free"
-            "fourh refresh refresh";
+            "add refresh refresh";
           align-items:end;
         }
         #cal_controls .cal-row{ display:contents; }
@@ -1919,20 +1914,9 @@ function viewCalendar(){
         #cal_month_wrap{ grid-area:month; }
         #cal_next{ grid-area:next; }
         #cal_add{ grid-area:add; justify-self:start; }
-        #only_free{ grid-area:free; }
-        #only_4h{ grid-area:fourh; }
         #cal_refresh{ grid-area:refresh; justify-self:end; }
         .cal-filters{ align-items:center; }
 
-        /* Force chips to occupy full width to avoid overlap */
-        #only_free, #only_4h{
-          display:flex !important;
-          width:100% !important;
-          min-width:0 !important;
-          align-items:center;
-        }
-        /* Ensure chips span all columns when areas fallback */
-        #only_free, #only_4h{ grid-column: 1 / -1; }
         /* Allow buttons to shrink within grid cells */
         #cal_prev, #cal_next, #cal_add, #cal_refresh{ min-width:0; }
       }
@@ -2433,8 +2417,6 @@ function viewCalendar(){
           '</div>'+
           '<div class="cal-row cal-filters">'+
             '<button id="cal_add" class="ghost">Aggiungi appuntamento</button>'+
-            '<label id="only_free" class="chip small"><input type="checkbox" id="only_free_cb"> Solo giorni liberi</label> '+
-            '<label id="only_4h" class="chip small"><input type="checkbox" id="only_4h_cb"> Solo slot ≥ 4h</label>'+
             '<button id="cal_refresh" class="ghost">Aggiorna</button>'+
           '</div>'+
         '</div>'+
@@ -3036,11 +3018,7 @@ function viewCalendar(){
           // Il backend considera uno slot libero solo se ha ≥240 minuti (4 ore) liberi
           var hasSlot4h = !isWeekend && (slots.some(function(s){ return s.date===key; }));
 
-          // Filtri
-          if(inMonth && filters){
-            if(filters.only_free && v.count>0){ grid+='<div></div>'; d.setDate(d.getDate()+1); continue; }
-            if(filters.only_4h && !hasSlot4h){ grid+='<div></div>'; d.setDate(d.getDate()+1); continue; }
-          }
+          // ✅ FIX: Filtri rimossi (only_free e only_4h)
 
           if(!inMonth){ grid += '<div></div>'; }
           else{
@@ -3283,7 +3261,12 @@ function viewCalendar(){
         hAll += '</div>';
         box2.style.display='block'; box2.innerHTML = hAll;
       } else if(futureSlots.length){
-        var h2 = '<b>Slot liberi ≥ 4h (da oggi in poi)</b> · <span class="badge">Tot: '+futureSlots.length+'</span>';
+        // ✅ FIX: Header cliccabile con card compresse di default
+        var h2 = '<div class="slot-header" style="cursor:pointer;padding:8px;border-radius:8px;background:rgba(255,255,255,.05);margin-bottom:8px;" onclick="toggleSlots()">'+
+                 '<b>Slot liberi ≥ 4h (da oggi in poi)</b> · <span class="badge">Tot: '+futureSlots.length+'</span> '+
+                 '<span class="slot-toggle-icon" style="float:right;transition:transform 0.2s;">▼</span>'+
+                 '</div>';
+        h2 += '<div class="slot-cards-container" style="display:none;margin-top:8px">';
         h2 += '<div class="row" style="margin-top:8px">';
         for(var sidx=0; sidx<futureSlots.length && sidx<80; sidx++){
           var s = futureSlots[sidx];
@@ -3293,7 +3276,7 @@ function viewCalendar(){
                 '<div class="small">'+timeHMlocal(s.start)+'–'+timeHMlocal(s.end)+'</div>'+
                '</div>';
         }
-        h2 += '</div>';
+        h2 += '</div></div>';
         box2.style.display='block'; box2.innerHTML = h2;
         box2.querySelectorAll('.slotBtn').forEach(function(el){
           el.addEventListener('click', function(){
@@ -3320,7 +3303,8 @@ function viewCalendar(){
     var mval = document.getElementById('cal_month').value;
     var y = parseInt(mval.split('-')[0],10);
     var m = parseInt(mval.split('-')[1],10);
-    var filters = { only_free: document.getElementById('only_free_cb').checked, only_4h: document.getElementById('only_4h_cb').checked };
+    // ✅ FIX: Filtri rimossi (only_free e only_4h)
+    var filters = {};
     var el = document.getElementById('cal_consultant');
     var consultant = el ? el.value : getUser().id;
     renderMonth(y, m, filters, consultant);
@@ -3344,8 +3328,7 @@ function viewCalendar(){
   if(btnPrev) btnPrev.onclick = function(){ shiftMonth(-1); };
   if(btnNext) btnNext.onclick = function(){ shiftMonth(+1); };
 
-  document.getElementById('only_free_cb').onchange = doRender;
-  document.getElementById('only_4h_cb').onchange = doRender;
+  // ✅ FIX: Event listeners per filtri rimossi (only_free e only_4h)
   if(consSel) consSel.onchange = doRender;
 
   // FAB button - apri modal nuovo appuntamento
@@ -3358,6 +3341,24 @@ function viewCalendar(){
       showInlineApptForm(todayStr);
     });
   }
+
+  // ✅ FIX: Funzione per espandere/comprimere le card degli slot
+  window.toggleSlots = function(){
+    var container = document.querySelector('.slot-cards-container');
+    var icon = document.querySelector('.slot-toggle-icon');
+    var header = document.querySelector('.slot-header');
+    if(container && icon){
+      if(container.style.display === 'none' || !container.style.display){
+        container.style.display = 'block';
+        icon.textContent = '▲';
+        if(header) header.style.background = 'rgba(255,255,255,.08)';
+      } else {
+        container.style.display = 'none';
+        icon.textContent = '▼';
+        if(header) header.style.background = 'rgba(255,255,255,.05)';
+      }
+    }
+  };
 
   doRender();
 }
