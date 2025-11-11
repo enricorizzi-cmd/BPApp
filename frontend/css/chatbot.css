@@ -46,6 +46,11 @@
   height: 28px;
 }
 
+/* Nascondi FAB quando il drawer è aperto */
+body.drawer-open .chatbot-fab {
+  display: none;
+}
+
 /* Modal Overlay */
 .chatbot-modal-overlay {
   position: fixed;

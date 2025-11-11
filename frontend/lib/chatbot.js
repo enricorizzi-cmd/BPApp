@@ -79,8 +79,19 @@ function createFAB() {
   fab.className = 'chatbot-fab';
   fab.setAttribute('aria-label', 'Apri chatbot AI');
   fab.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 18H11V16H13V18ZM13 14H11C10.99 11.24 12.75 11.24 12.75 9C12.75 7.76 11.99 7 10.75 7C9.51 7 8.75 7.76 8.75 9H6.75C6.75 6.65 8.65 4.75 11 4.75C13.35 4.75 15.25 6.65 15.25 9C15.25 11.04 13.5 12.79 13 14Z" fill="currentColor"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Testa del robot -->
+      <rect x="6" y="4" width="12" height="12" rx="2" stroke="currentColor" fill="none"/>
+      <!-- Occhi -->
+      <circle cx="9.5" cy="8" r="1" fill="currentColor"/>
+      <circle cx="14.5" cy="8" r="1" fill="currentColor"/>
+      <!-- Bocca -->
+      <path d="M9 11h6" stroke="currentColor" stroke-width="1.5"/>
+      <!-- Corpo -->
+      <rect x="7" y="16" width="10" height="6" rx="1" stroke="currentColor" fill="none"/>
+      <!-- Antenne -->
+      <line x1="12" y1="4" x2="12" y2="2" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="12" cy="1.5" r="0.5" fill="currentColor"/>
     </svg>
   `;
   
