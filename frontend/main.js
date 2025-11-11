@@ -3031,11 +3031,6 @@ function viewCalendar(){
             // ✅ FIX: Verifica che entrambe le stringhe siano in formato YYYY-MM-DD completo prima del confronto
             var isToday = inMonth && dayStr.length === 10 && todayStr.length === 10 && dayStr === todayStr;
             
-            // ✅ FIX: Debug per verificare il confronto (solo per i primi giorni del mese)
-            if (day <= 3 && inMonth) {
-              console.log('[renderMonth] Day:', day, 'dayStr:', dayStr, 'todayStr:', todayStr, 'isToday:', isToday);
-            }
-            
             // colore stato
             var cls = '';
             if(!isWeekend){
@@ -12868,9 +12863,6 @@ function viewCorsiInteraziendali(){
           const isToday = dateStr.length === 10 && todayStr.length === 10 && dateStr === todayStr;
           
           // ✅ FIX: Debug per verificare il confronto (solo per i primi giorni del mese)
-          if (day <= 3) {
-            console.log('[renderCalendarioMensile] Day:', day, 'dateStr:', dateStr, 'todayStr:', todayStr, 'isToday:', isToday);
-          }
           
           // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
           const dayOfWeek = new Date(year, month, day).getDay();
@@ -14633,6 +14625,51 @@ function shiftLeadPeriod(direction) {
 window.updateLeadPeriodDisplay = updateLeadPeriodDisplay;
 window.shiftLeadPeriod = shiftLeadPeriod;
 
+// ✅ FIX: Funzione globale per popolare dropdown consulenti (usata da più view)
+async function loadConsultantsDropdown(selectId) {
+  try {
+    const response = await GET('/api/usernames');
+    const users = response.users || [];
+    
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Salva il valore corrente prima di ricaricare
+    const currentValue = select.value || '';
+    
+    const currentUser = getUser();
+    let html = '<option value="">Tutti</option>';
+    
+    // Ordina alfabeticamente per nome
+    const sortedUsers = users.sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
+    
+    sortedUsers.forEach(user => {
+      const displayName = user.name || user.email || `User ${user.id}`;
+      html += `<option value="${user.id}">${displayName}</option>`;
+    });
+    
+    select.innerHTML = html;
+    
+    // Ripristina il valore precedente se esiste ancora nelle opzioni
+    if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+      select.value = currentValue;
+    } else {
+      // Altrimenti imposta valore di default
+      if (currentUser.role === 'admin') {
+        select.value = ''; // Admin vede tutti di default
+      } else {
+        select.value = currentUser.id; // Consultant vede solo i propri
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error loading consultants:', error);
+  }
+}
+
+// Esponi globalmente
+window.loadConsultantsDropdown = loadConsultantsDropdown;
+
 // ===== GESTIONE LEAD =====
 function viewGestioneLead(){
   if(!getUser()) return viewLogin();
@@ -15767,47 +15804,6 @@ function viewGestioneLead(){
     } catch (error) {
       console.error('Error loading contact leads data:', error);
       toast('Errore nel caricamento dei lead da contattare');
-    }
-  }
-
-  async function loadConsultantsDropdown(selectId) {
-    try {
-      const response = await GET('/api/usernames');
-      const users = response.users || [];
-      
-      const select = document.getElementById(selectId);
-      if (!select) return;
-      
-      // Salva il valore corrente prima di ricaricare
-      const currentValue = select.value || '';
-      
-      const currentUser = getUser();
-      let html = '<option value="">Tutti</option>';
-      
-      // Ordina alfabeticamente per nome
-      const sortedUsers = users.sort((a, b) => (a.name || a.email || '').localeCompare(b.name || b.email || ''));
-      
-      sortedUsers.forEach(user => {
-        const displayName = user.name || user.email || `User ${user.id}`;
-        html += `<option value="${user.id}">${displayName}</option>`;
-      });
-      
-      select.innerHTML = html;
-      
-      // Ripristina il valore precedente se esiste ancora nelle opzioni
-      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
-        select.value = currentValue;
-      } else {
-        // Altrimenti imposta valore di default
-        if (currentUser.role === 'admin') {
-          select.value = ''; // Admin vede tutti di default
-        } else {
-          select.value = currentUser.id; // Consultant vede solo i propri
-        }
-      }
-      
-    } catch (error) {
-      console.error('Error loading consultants:', error);
     }
   }
 
