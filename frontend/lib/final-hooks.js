@@ -1963,7 +1963,10 @@ window.wireICSInsideDayBox = window.wireICSInsideDayBox || wireICSInsideDayBox;
     resolveCC().then(function(ccList){
       var cc = (ccList||[]).join(',');
       function makeWebURL(){
+        // ✅ FIX: Usa l'URL corretto per aprire Gmail compose direttamente
+        // Il formato view=cm&fs=1&tf=1 apre direttamente la compose window
         return 'https://mail.google.com/mail/?view=cm&fs=1&tf=1'
+          + '&to=' // Campo 'to' vuoto
           + '&su=' + enc(getSubject())
           + '&cc=' + enc(cc)
           + '&body=' + enc(getBody());

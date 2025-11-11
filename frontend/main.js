@@ -4425,7 +4425,8 @@ function viewPeriods(){
 
   // === wiring/init ===
   GET('/api/settings').then(function(s){
-    IND=(s && s.indicators) || ['VSS','VSDPersonale','VSDIndiretto','GI','Telefonate','AppFissati','AppFatti','CorsiLeadership','iProfile','MBS','NNCF'];
+    // ✅ FIX: Riordinato IND per mettere NNCF dopo GI e prima di Telefonate
+    IND=(s && s.indicators) || ['VSS','VSDPersonale','VSDIndiretto','GI','NNCF','Telefonate','AppFissati','AppFatti','CorsiLeadership','iProfile','MBS'];
     buildRows(IND);
   }).catch(function(){ IND=['VSS','VSDPersonale','GI','NNCF']; buildRows(IND); });
 
@@ -9297,7 +9298,11 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
 
   // ===== Bind
   function fillUsers(){
-    if(!isAdmin) return;
+    if(!isAdmin) {
+      // ✅ FIX: Per non-admin, chiama compute() direttamente
+      compute();
+      return;
+    }
     GET('/api/usernames').then(function(r){
       var sel = $('comm_user'); if(!sel) return;
       var h = '<option value="__all">Tutta la squadra</option>';
@@ -9310,6 +9315,14 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
       // Imposta default sull'utente loggato
       var me = getUser() || {};
       sel.value = me.id || '__all';
+      
+      // ✅ FIX: Chiama compute() dopo aver popolato il dropdown e impostato il default
+      // Questo assicura che i dati siano coerenti con i filtri all'apertura
+      compute();
+    }).catch(function(err){
+      // In caso di errore, chiama comunque compute() con i valori di default
+      console.log('[viewCommissions] Failed to load usernames (non-critical)');
+      compute();
     });
   }
 
@@ -9319,7 +9332,8 @@ renderProvvPie(TOT.provv_gi||0, TOT.provv_vsd||0, TOT.gi||0);
 
   // Init
   fillUsers();
-  compute();
+  // ✅ FIX: Non chiamare compute() qui perché viene chiamato dentro fillUsers()
+  // dopo che i filtri sono pronti
 }
 // ===== VENDITE E RIORDINI (LEGACY REDIRECT) =====
 function viewVendite(){
@@ -18873,10 +18887,15 @@ function pickClosingAndNext(type, now){
 
       btnW.onclick=function(){
         try{ navigator.clipboard.writeText(body()); }catch(e){}
+        // ✅ FIX: Usa l'URL corretto per aprire Gmail compose direttamente
+        // Il formato view=cm&fs=1&tf=1 apre direttamente la compose window
         var url='https://mail.google.com/mail/?view=cm&fs=1&tf=1'
-          +'&su='+enc(subject())+'&cc='+enc(cc)+'&body='+enc(body());
+          +'&to=' // Campo 'to' vuoto
+          +'&su='+enc(subject())
+          +'&cc='+enc(cc)
+          +'&body='+enc(body());
         window.open(url,'_blank');
-document.dispatchEvent(new Event('report:composed'));
+        document.dispatchEvent(new Event('report:composed'));
       };
       btnA.onclick=function(){
         try{ navigator.clipboard.writeText(body()); }catch(e){}
