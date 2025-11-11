@@ -1206,7 +1206,6 @@ function viewHome(){
       }
       // Se fallisce con global=1, prova senza global (per utenti non-admin)
       if (__qsDash.indexOf('global=1') !== -1) {
-        console.log('[Dashboard Chart] Retrying without global=1');
         return GET('/api/periods'+__qsDash.replace('?global=1','')).catch(function(e2){
           // Se è un 401, non fare altri retry
           if (e2.message && e2.message.includes('401')) {
@@ -1220,7 +1219,6 @@ function viewHome(){
       return { periods: [] };
   }).then(function(resp){
     var periods = (resp && resp.periods) || [];
-    console.log('[Dashboard Chart] Loaded periods:', periods.length);
 
       var filtered = periods.filter(function(p){
         if (p.type !== baseType) return false;
@@ -1311,7 +1309,6 @@ function recomputeKPI(){
     return { periods: [] };
   }).then(function(j){
     var periods = (j && j.periods) || [];
-    console.log('[Dashboard KPI] Loaded periods:', periods.length);
 
     var TOT = { VSS:0, VSDPersonale:0, VSDIndiretto:0, GI:0, NNCF:0, PROVV:0 };
 
@@ -1502,18 +1499,13 @@ function cardAppt(x){
     // Aggiungi global=1 SOLO SE l'utente è admin
     if (getUser() && getUser().role === 'admin') {
       s = '?global=1&type='+encodeURIComponent(typeDash)+'&from='+encodeURIComponent(fromISO)+'&to='+encodeURIComponent(toISO);
-      console.log('[Dashboard viewHome] Admin access, adding global=1');
-    } else {
-      console.log('[Dashboard viewHome] Non-admin access, NOT adding global=1');
     }
     if (cons) s += '&userId='+encodeURIComponent(cons);
-    console.log('[Dashboard viewHome] Query string:', s);
     return s;
   })();
   
   // Doppio controllo: non fare chiamate se è stato rilevato un 401 dopo la creazione di __qsDash
   if (window.__BP_401_DETECTED === true) {
-    console.log('[viewHome] 401 rilevato prima di Promise.all, skip API calls');
     return;
   }
   
@@ -1550,8 +1542,6 @@ function cardAppt(x){
     var apps = (arr[0] && arr[0].appointments) || [];
     var pers = (arr[1] && arr[1].periods)      || [];
     var allPers = (arr[2] && arr[2].periods)   || [];
-    
-    console.log('[Dashboard] Loaded data - apps:', apps.length, 'pers:', pers.length, 'allPers:', allPers.length);
     
     // Continua con il rendering anche se dati vuoti
 
@@ -12149,7 +12139,6 @@ function viewCorsiInteraziendali(){
   // Funzioni di caricamento dati
   async function loadCatalogoData() {
     try {
-      console.log('loadCatalogoData called, corsiCurrentPeriod:', corsiCurrentPeriod);
       
       const tbody = document.getElementById('catalogo-tbody');
       if (!tbody) return;
@@ -12159,12 +12148,8 @@ function viewCorsiInteraziendali(){
       const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
       const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
       
-      console.log('About to call calculatePeriod with:', { granularity, corsiCurrentPeriod });
-      
       // Calcola periodo basato su granularità
       const { from, to } = calculatePeriod(granularity, corsiCurrentPeriod);
-      
-      console.log('calculatePeriod returned:', { from, to });
       
       const params = new URLSearchParams();
       if (!tuttiCorsi) {
@@ -12182,8 +12167,6 @@ function viewCorsiInteraziendali(){
             GET('/api/corsi-date'),
             GET('/api/corsi-iscrizioni')
           ]);
-          console.log('Date response:', dateResponse);
-          console.log('Iscrizioni response:', iscrizioniResponse);
           const granularity = document.getElementById('granularita-catalogo')?.value || 'mensile';
           const tuttiCorsi = document.getElementById('tutti-corsi')?.checked || false;
           const periodo = tuttiCorsi ? null : calculatePeriod(granularity, corsiCurrentPeriod);
@@ -12729,7 +12712,6 @@ function viewCorsiInteraziendali(){
         try {
           const iscrizioniResponse = await GET('/api/corsi-iscrizioni');
           iscrizioniData = iscrizioniResponse.iscrizioni || [];
-          console.log('Loaded iscrizioni data:', iscrizioniData);
         } catch (iscrizioniError) {
           console.warn('Error loading iscrizioni data (continuing without):', iscrizioniError);
           // Continua senza iscrizioni - non è critico per il calendario
@@ -12759,12 +12741,6 @@ function viewCorsiInteraziendali(){
     const year = corsiCurrentPeriod?.year || new Date().getFullYear();
     const month = corsiCurrentPeriod?.month || new Date().getMonth();
     
-    console.log('Rendering monthly calendar for:', year, month, 'with data:', corsiDate);
-    console.log('corsiCurrentPeriod:', corsiCurrentPeriod);
-    console.log('corsiDate length:', corsiDate ? corsiDate.length : 'undefined');
-    if (corsiDate && corsiDate.length > 0) {
-      console.log('First course data:', corsiDate[0]);
-    }
     
     // Aggiorna titolo
     const title = document.getElementById('calendario-title');
@@ -12847,11 +12823,6 @@ function viewCorsiInteraziendali(){
         } else {
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           
-          // Debug per verificare la data
-          if (day <= 3) {
-            console.log(`Checking date: ${dateStr}`);
-            console.log('corsiDate for this check:', corsiDate);
-          }
           
           const hasCourse = corsiDate && corsiDate.some(cd => {
             if (!cd.giorni_dettaglio) return false;
@@ -12976,10 +12947,6 @@ function viewCorsiInteraziendali(){
             </div>
           `;
           
-          // Debug log per verificare le classi
-          if (day <= 3) { // Log solo per i primi 3 giorni per debug
-            console.log(`Day ${day}: hasCourse=${hasCourse}, isWeekend=${isWeekend}, dayClass="${dayClass}"`);
-          }
         }
       });
     });
@@ -13337,20 +13304,16 @@ function viewCorsiInteraziendali(){
 
   // Formatta le date programmate per la visualizzazione
   function formatDateProgrammate(corsoId, corsiDate, periodo = null, durataGiorni = null) {
-    console.log('formatDateProgrammate called with:', { corsoId, corsiDate, periodo, durataGiorni });
     
     // Controllo di sicurezza per evitare errori
     if (!corsiDate || !Array.isArray(corsiDate)) {
-      console.log('corsiDate is not valid array, returning "-"');
       return '-';
     }
     
     // Trova TUTTE le date per questo corso (non solo la prima)
     const allDateCorso = corsiDate.filter(cd => cd.corso_id === corsoId);
-    console.log('Found allDateCorso:', allDateCorso);
     
     if (allDateCorso.length === 0) {
-      console.log('No date data found, returning "-"');
       return '-';
     }
     
@@ -13471,16 +13434,12 @@ function viewCorsiInteraziendali(){
         return;
       }
       
-      console.log('[loadConsulentiOptions] Inizio caricamento, isAdmin:', isAdmin, 'me.id:', me.id);
-      
       // Popola temporaneamente con loading
       select.innerHTML = '<option value="">Caricamento...</option>';
       
       // Carica lista consulenti da /api/usernames (non /api/users!)
       try {
-        console.log('[loadConsulentiOptions] Chiamata a /api/usernames');
         const r = await GET('/api/usernames');
-        console.log('[loadConsulentiOptions] Risposta ricevuta:', r);
         
         if (!r || !r.users) {
           throw new Error('Risposta API non valida: ' + JSON.stringify(r));
@@ -13489,8 +13448,6 @@ function viewCorsiInteraziendali(){
         var list = r.users || [];
         var h = '';
         
-        console.log('[loadConsulentiOptions] Ricevuti', list.length, 'utenti dalla API');
-        
         // Solo admin può vedere "Tutti" e altri utenti (come calendario generale)
         if(isAdmin) {
           h += '<option value="all">Tutti</option>';
@@ -13498,17 +13455,14 @@ function viewCorsiInteraziendali(){
             var u = list[i];
             h += '<option value="'+htmlEscape(u.id)+'">'+htmlEscape(u.name||u.email||u.id)+'</option>';
           }
-          console.log('[loadConsulentiOptions] Generato HTML con "Tutti" +', list.length, 'consulenti');
         } else {
           // Non-admin: mostra solo se stesso
           h += '<option value="'+htmlEscape(me.id)+'">'+htmlEscape(me.name||me.email||me.id)+'</option>';
-          console.log('[loadConsulentiOptions] Non-admin: mostra solo se stesso');
         }
         
         select.innerHTML = h;
         // Tutti vedono se stessi di default, admin può cambiare (come calendario generale)
         select.value = me.id;
-        console.log('[loadConsulentiOptions] Select popolato con', h.split('<option').length - 1, 'opzioni, valore selezionato:', me.id);
         
         // ✅ FIX: Applica automaticamente il filtro dopo aver impostato il default
         // Triggera l'evento change per applicare il filtro
@@ -13567,12 +13521,10 @@ function viewCorsiInteraziendali(){
       const consulenteSelect = document.getElementById('filtro-consulente');
       const consulenteValue = consulenteSelect ? consulenteSelect.value : '';
       
-      console.log('[loadIscrizioniData] Filtro consulente selezionato:', consulenteValue);
       
       // Gestisci "all" come nel calendario generale: non passare consulente_id per mostrare tutti
       const consulenteId = (consulenteValue && consulenteValue !== 'all' && consulenteValue !== '') ? consulenteValue : '';
       
-      console.log('[loadIscrizioniData] Consulente ID da passare:', consulenteId || 'Nessuno (tutti)');
       
       const granularity = document.getElementById('granularita-iscrizioni')?.value || 'mensile';
       
@@ -13585,17 +13537,10 @@ function viewCorsiInteraziendali(){
       if (corsoNome) params.append('corso_nome', corsoNome);
       if (consulenteId) {
         params.append('consulente_id', consulenteId);
-        console.log('[loadIscrizioniData] Aggiunto consulente_id al parametro:', consulenteId);
-      } else {
-        console.log('[loadIscrizioniData] Nessun consulente_id passato (mostra tutti per admin)');
       }
 
       const url = `/api/corsi-iscrizioni?${params}`;
-      console.log('[loadIscrizioniData] Chiamata API:', url);
-      
       const response = await GET(url);
-      
-      console.log('[loadIscrizioniData] Risposta ricevuta:', response.iscrizioni?.length || 0, 'iscrizioni');
 
       if (response.iscrizioni) {
         renderIscrizioniTable(response.iscrizioni);
@@ -17429,8 +17374,6 @@ function viewVenditeRiordini(){
 
       const vendite = (venditeResponse && venditeResponse.vendite) ? venditeResponse.vendite : [];
       const stats = (statsResponse && statsResponse.stats) ? statsResponse.stats : {};
-
-      console.log('[VenditeRiordini] Loaded vendite:', vendite.length, 'items');
 
       // Aggiorna statistiche
       $('vr-n-proposte').textContent = stats.n_proposte || 0;

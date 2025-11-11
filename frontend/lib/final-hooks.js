@@ -1362,13 +1362,11 @@ function drawLineGeneric(canvasId, labels, data){
 async function recomputeDashboardMini(){
   // Non fare chiamate API se l'utente non è loggato
   if (!window.getUser || !window.getUser()) {
-    console.log('[recomputeDashboardMini] Utente non loggato, skip');
     return;
   }
   
   // Non fare chiamate API se è stato rilevato un 401 globale
   if (window.__BP_401_DETECTED === true) {
-    console.log('[recomputeDashboardMini] 401 già rilevato globalmente, skip');
     return;
   }
   
