@@ -3049,11 +3049,18 @@ function viewCalendar(){
             var hasCourseToday = corsiDay.hasCourse;
             var corsoBadge = hasCourseToday && corsiDay.codiceCorso ? '<span class="corso-badge-main">'+corsiDay.codiceCorso+'</span>' : '';
             
-            // Controlla se è oggi (solo se è nel mese corretto) - usa ymd() per confronto sicuro YYYY-MM-DD (solo logica interna)
+            // ✅ FIX: Controlla se è oggi (solo se è nel mese corretto) - usa ymd() per confronto sicuro YYYY-MM-DD
+            // IMPORTANTE: Crea un nuovo oggetto Date per "oggi" ad ogni iterazione per evitare problemi con fuso orario
             var today = new Date();
             var todayStr = ymd(today);
             var dayStr = ymd(d);
-            var isToday = inMonth && dayStr === todayStr;
+            // ✅ FIX: Verifica che entrambe le stringhe siano in formato YYYY-MM-DD completo prima del confronto
+            var isToday = inMonth && dayStr.length === 10 && todayStr.length === 10 && dayStr === todayStr;
+            
+            // ✅ FIX: Debug per verificare il confronto (solo per i primi giorni del mese)
+            if (day <= 3 && inMonth) {
+              console.log('[renderMonth] Day:', day, 'dayStr:', dayStr, 'todayStr:', todayStr, 'isToday:', isToday);
+            }
             
             // colore stato
             var cls = '';
@@ -12861,11 +12868,17 @@ function viewCorsiInteraziendali(){
             });
           }) : [];
 
-          // Controlla se è oggi - usa formato YYYY-MM-DD solo per confronto interno (visualizzazione rimane GG/MM/AAAA)
+          // ✅ FIX: Controlla se è oggi - usa formato YYYY-MM-DD solo per confronto interno (visualizzazione rimane GG/MM/AAAA)
           // dateStr è già in formato YYYY-MM-DD (costruito sopra con padStart)
           const today = new Date();
           const todayStr = ymd(today);
-          const isToday = dateStr === todayStr;
+          // ✅ FIX: Verifica che entrambe le stringhe siano in formato YYYY-MM-DD completo prima del confronto
+          const isToday = dateStr.length === 10 && todayStr.length === 10 && dateStr === todayStr;
+          
+          // ✅ FIX: Debug per verificare il confronto (solo per i primi giorni del mese)
+          if (day <= 3) {
+            console.log('[renderCalendarioMensile] Day:', day, 'dateStr:', dateStr, 'todayStr:', todayStr, 'isToday:', isToday);
+          }
           
           // Determina il giorno della settimana (0 = Domenica, 6 = Sabato)
           const dayOfWeek = new Date(year, month, day).getDay();

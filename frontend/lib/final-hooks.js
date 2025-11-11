@@ -729,10 +729,17 @@ function esc(s){
   // Rimuove anche "today" da elementi che non corrispondono a oggi per pulizia
   function highlightToday(root){
     // ✅ FIX: Usa data locale per evidenziare "oggi" nel calendario
-    var today = ymdLocal(new Date());
+    var now = new Date();
+    var today = ymdLocal(now);
+    
+    // ✅ FIX: Debug per verificare che la data di oggi sia corretta
+    console.log('[highlightToday] Today date:', today, 'Current date object:', now);
+    
     // ✅ FIX: Limita ricerca solo a elementi con data-day (calendario principale)
     // Il calendario mensile corsi e annuale non hanno data-day, quindi non vengono influenzati
     var box = root.querySelectorAll('[data-day]');
+    console.log('[highlightToday] Found', box.length, 'elements with data-day');
+    
     for (var i=0;i<box.length;i++){
       var el = box[i];
       var val = el.getAttribute('data-day') || '';
@@ -743,14 +750,21 @@ function esc(s){
       // E deve corrispondere ESATTAMENTE a oggi (non solo il giorno del mese)
       if (day.length === 10 && day.match(/^\d{4}-\d{2}-\d{2}$/)) {
         if (day === today) {
+          console.log('[highlightToday] Adding today class to:', day);
           el.classList.add('today');
         } else {
-          // Rimuovi "today" se l'elemento non corrisponde a oggi (evita residui da render precedenti)
-          el.classList.remove('today');
+          // ✅ FIX: Rimuovi SEMPRE "today" se l'elemento non corrisponde a oggi (evita residui da render precedenti)
+          if (el.classList.contains('today')) {
+            console.log('[highlightToday] Removing today class from:', day, '(not today:', today, ')');
+            el.classList.remove('today');
+          }
         }
       } else {
         // Se non è formato completo, rimuovi "today" per sicurezza (evita falsi positivi)
-        el.classList.remove('today');
+        if (el.classList.contains('today')) {
+          console.log('[highlightToday] Removing today class from invalid format:', val);
+          el.classList.remove('today');
+        }
       }
     }
   }
