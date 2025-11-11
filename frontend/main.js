@@ -11904,9 +11904,6 @@ function viewCorsiInteraziendali(){
               <button class="ghost" onclick="showAggiungiCorsoModal()" style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
                 <span style="margin-right: 8px;">+</span>Aggiungi corso
               </button>
-              <button class="ghost" onclick="showInserisciDataModal()" id="inserisci-data-btn" disabled style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);">
-                Inserisci data
-              </button>
             </div>
           ` : ''}
         </div>
@@ -12073,13 +12070,13 @@ function viewCorsiInteraziendali(){
         loadCalendarioData();
         break;
       case 'iscrizioni':
-        loadIscrizioniData();
-        // Chiama loadConsulentiOptions dopo che il DOM è pronto
+        // ✅ FIX: Carica prima i filtri, poi i dati (così il filtro viene applicato correttamente)
+        loadCorsiFilterOptions();
+        updateIscrizioniPeriodDisplay(); // Aggiorna il display del periodo iniziale
+        // Chiama loadConsulentiOptions - l'evento change triggererà automaticamente loadIscrizioniData()
         setTimeout(() => {
           loadConsulentiOptions();
         }, 100);
-        loadCorsiFilterOptions();
-        updateIscrizioniPeriodDisplay(); // Aggiorna il display del periodo iniziale
         break;
     }
   }
@@ -13478,6 +13475,12 @@ function viewCorsiInteraziendali(){
         // Tutti vedono se stessi di default, admin può cambiare (come calendario generale)
         select.value = me.id;
         console.log('[loadConsulentiOptions] Select popolato con', h.split('<option').length - 1, 'opzioni, valore selezionato:', me.id);
+        
+        // ✅ FIX: Applica automaticamente il filtro dopo aver impostato il default
+        // Triggera l'evento change per applicare il filtro
+        setTimeout(() => {
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        }, 50);
       } catch (error) {
         console.error('[loadConsulentiOptions] Error loading usernames:', error, error.message);
         // Fallback: mostra solo se stesso
