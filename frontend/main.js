@@ -12193,18 +12193,35 @@ function viewCorsiInteraziendali(){
 
     const isAdmin = getUser().role === 'admin';
     const rows = corsi.map(corso => {
-      // Calcola numero iscritti per questo corso
-      // Le iscrizioni sono aggregate per data_inizio e nome_corso
-      const dateCorso = corsiDate.find(cd => cd.corso_id === corso.id);
+      // ✅ FIX: Calcola numero iscritti per questo corso sommando tutte le iscrizioni
+      // di tutte le date del corso nel periodo selezionato
       let nIscritti = 0;
       
-      if (dateCorso && dateCorso.data_inizio) {
-        const iscrizioniCorso = iscrizioniData.filter(iscrizione => 
-          iscrizione.nome_corso === corso.nome_corso &&
-          iscrizione.data_corso === dateCorso.data_inizio
-        );
-        nIscritti = iscrizioniCorso.length;
+      // Trova TUTTE le date del corso (non solo la prima)
+      const dateCorsoList = corsiDate.filter(cd => cd.corso_id === corso.id);
+      
+      // Filtra le date per il periodo se necessario
+      let dateCorsoFiltered = dateCorsoList;
+      if (periodo && periodo.from && periodo.to) {
+        dateCorsoFiltered = dateCorsoList.filter(cd => {
+          if (!cd.data_inizio) return false;
+          return cd.data_inizio >= periodo.from && cd.data_inizio <= periodo.to;
+        });
       }
+      
+      // Per ogni data del corso nel periodo, somma le iscrizioni
+      dateCorsoFiltered.forEach(dateCorso => {
+        if (dateCorso && dateCorso.data_inizio) {
+          const iscrizioniCorso = iscrizioniData.filter(iscrizione => 
+            iscrizione.nome_corso === corso.nome_corso &&
+            iscrizione.data_corso === dateCorso.data_inizio
+          );
+          // ✅ FIX: Usa totale_iscritti se disponibile, altrimenti conta le righe
+          iscrizioniCorso.forEach(iscrizione => {
+            nIscritti += iscrizione.totale_iscritti || 1;
+          });
+        }
+      });
       
       return `
       <tr>
@@ -12213,7 +12230,7 @@ function viewCorsiInteraziendali(){
         <td>${corso.durata_giorni}</td>
         <td>${corso.descrizione || '-'}</td>
         <td>€${Number(corso.costo_corso).toLocaleString()}</td>
-        <td>${formatDateProgrammate(corso.id, corsiDate, periodo)}</td>
+        <td>${formatDateProgrammate(corso.id, corsiDate, periodo, corso.durata_giorni)}</td>
         <td>${nIscritti}</td>
         ${isAdmin ? `
           <td class="actions">
@@ -13288,8 +13305,8 @@ function viewCorsiInteraziendali(){
   };
 
   // Formatta le date programmate per la visualizzazione
-  function formatDateProgrammate(corsoId, corsiDate, periodo = null) {
-    console.log('formatDateProgrammate called with:', { corsoId, corsiDate, periodo });
+  function formatDateProgrammate(corsoId, corsiDate, periodo = null, durataGiorni = null) {
+    console.log('formatDateProgrammate called with:', { corsoId, corsiDate, periodo, durataGiorni });
     
     // Controllo di sicurezza per evitare errori
     if (!corsiDate || !Array.isArray(corsiDate)) {
@@ -13329,10 +13346,37 @@ function viewCorsiInteraziendali(){
     
     // Formatta ogni data
     const formattedDates = filteredDates.map(dateCorso => {
+      const startDate = new Date(dateCorso.data_inizio);
+      
+      // ✅ FIX: Se abbiamo durata_giorni e non ci sono giorni_dettaglio, calcola il range
+      if ((!dateCorso.giorni_dettaglio || !Array.isArray(dateCorso.giorni_dettaglio) || dateCorso.giorni_dettaglio.length === 0) && durataGiorni && durataGiorni > 1) {
+        // Calcola le date in base alla durata
+        const dates = [];
+        for (let i = 0; i < durataGiorni; i++) {
+          const date = new Date(startDate);
+          date.setDate(startDate.getDate() + i);
+          dates.push(date);
+        }
+        
+        // Se tutte le date sono nello stesso mese
+        const allSameMonth = dates.every(d => d.getMonth() === startDate.getMonth() && d.getFullYear() === startDate.getFullYear());
+        
+        if (allSameMonth) {
+          // Stesso mese: "11-12 novembre" o "11-12-13 novembre"
+          const dayNumbers = dates.map(d => d.getDate()).join('-');
+          const monthName = startDate.toLocaleDateString('it-IT', { month: 'long' });
+          return `${dayNumbers} ${monthName}`;
+        } else {
+          // Mesi diversi: "11 novembre - 12 dicembre"
+          const firstDateStr = dates[0].toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+          const lastDateStr = dates[dates.length - 1].toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+          return `${firstDateStr} - ${lastDateStr}`;
+        }
+      }
+      
+      // Se non ci sono giorni_dettaglio e durata è 1 o non specificata, usa solo data_inizio
       if (!dateCorso.giorni_dettaglio || !Array.isArray(dateCorso.giorni_dettaglio) || dateCorso.giorni_dettaglio.length === 0) {
-        // Se non ci sono giorni_dettaglio, usa solo data_inizio
-        const date = new Date(dateCorso.data_inizio);
-        return date.toLocaleDateString('it-IT', { 
+        return startDate.toLocaleDateString('it-IT', { 
           day: 'numeric', 
           month: 'long' 
         });
@@ -13346,8 +13390,7 @@ function viewCorsiInteraziendali(){
       });
       
       if (giorniOrdinati.length === 0) {
-        const date = new Date(dateCorso.data_inizio);
-        return date.toLocaleDateString('it-IT', { 
+        return startDate.toLocaleDateString('it-IT', { 
           day: 'numeric', 
           month: 'long' 
         });
@@ -14102,6 +14145,17 @@ function viewCorsiInteraziendali(){
     
     container.insertAdjacentHTML('beforeend', clienteGroupHtml);
     
+    // ✅ FIX: Precompila il costo corso per il nuovo cliente aggiunto
+    const corsoSelect = document.getElementById('corso-select');
+    if (corsoSelect && corsoSelect.value) {
+      const selectedOption = corsoSelect.selectedOptions[0];
+      const costoCorso = selectedOption?.dataset.costo || '0';
+      const nuovoCostoInput = document.getElementById(`costo-${clienteCount}`);
+      if (nuovoCostoInput) {
+        nuovoCostoInput.value = costoCorso;
+      }
+    }
+    
     // Carica opzioni consulenti e inizializza dropdown clienti
     loadConsulentiOptionsModal(`consulente-${clienteCount}`).then(() => {
       setTimeout(() => setupClienteDropdown(clienteCount), 100);
@@ -14690,7 +14744,7 @@ function viewGestioneLead(){
         background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
         border: 1px solid var(--hair2);
         border-radius: 16px;
-        padding: 24px;
+        padding: 12px;
         backdrop-filter: blur(10px);
         box-shadow: 0 4px 16px rgba(0,0,0,.08);
         min-height: 600px;
@@ -14775,11 +14829,12 @@ function viewGestioneLead(){
         width: 100%;
         border-collapse: collapse;
         min-width: 1200px;
+        margin: 0;
       }
       
       .leads-table th,
       .leads-table td {
-        padding: 12px;
+        padding: 8px 12px;
         text-align: left;
         border-bottom: 1px solid var(--hair2);
         white-space: normal;
@@ -14792,6 +14847,59 @@ function viewGestioneLead(){
         max-width: 300px;
         min-width: 200px;
         word-wrap: break-word;
+        max-height: 100px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: relative;
+        cursor: pointer;
+      }
+      
+      .leads-table td.notes-cell:hover {
+        background: rgba(255,255,255,.05);
+      }
+      
+      .leads-table td.notes-cell::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .leads-table td.notes-cell::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      .leads-table td.notes-cell::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,.3);
+        border-radius: 3px;
+      }
+      
+      .leads-table td.notes-cell::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,.5);
+      }
+      
+      /* Tooltip per note complete */
+      .leads-table td.notes-cell[data-full-note] {
+        position: relative;
+      }
+      
+      .leads-table td.notes-cell[data-full-note]:hover::after {
+        content: attr(data-full-note);
+        position: absolute;
+        left: 0;
+        top: 100%;
+        z-index: 1000;
+        background: rgba(0,0,0,.95);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        max-width: 400px;
+        max-height: 300px;
+        overflow-y: auto;
+        word-wrap: break-word;
+        box-shadow: 0 4px 12px rgba(0,0,0,.3);
+        font-size: 13px;
+        line-height: 1.5;
+        margin-top: 4px;
+        pointer-events: none;
       }
       
       .leads-table th {
@@ -15127,7 +15235,17 @@ function viewGestioneLead(){
         }
         
         .leads-table {
-          min-width: 800px;
+          min-width: 1000px;
+        }
+        
+        .leads-content {
+          padding: 8px;
+        }
+        
+        .leads-table th,
+        .leads-table td {
+          padding: 6px 8px;
+          font-size: 12px;
         }
         
         .leads-actions {
@@ -15619,34 +15737,46 @@ function viewGestioneLead(){
           await loadConsultantsDropdown('contact-consultant');
         }
         
-        // Imposta il valore: per non-admin SEMPRE il proprio ID, per admin il valore salvato
-        if (shouldSetToCurrentUser && userIdToSet) {
-          // Per non-admin: imposta SEMPRE il consulente corrente dopo che il dropdown è popolato
+        // ✅ FIX: Imposta sempre il default sull'utente loggato (sia admin che non-admin)
+        // Se non c'è un valore salvato, usa l'utente loggato
+        const valueToSet = (!shouldSetToCurrentUser && savedConsultantValue !== undefined && savedConsultantValue !== '') 
+          ? savedConsultantValue 
+          : (currentUser?.id || '');
+        
+        if (valueToSet) {
           setTimeout(() => {
-            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === userIdToSet)) {
-              consultantSelect.value = userIdToSet;
+            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
+              consultantSelect.value = valueToSet;
+              // ✅ FIX: Applica automaticamente il filtro dopo aver impostato il default
+              // Triggera l'evento change per applicare il filtro
+              consultantSelect.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (consultantSelect && consultantSelect.options.length > 1) {
               // Se ancora non c'è, riprova dopo un altro breve delay
               setTimeout(() => {
-                if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === userIdToSet)) {
-                  consultantSelect.value = userIdToSet;
+                if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
+                  consultantSelect.value = valueToSet;
+                  consultantSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 }
               }, 100);
             }
           }, 100);
-        } else if (!shouldSetToCurrentUser && savedConsultantValue !== undefined && savedConsultantValue !== '') {
-          // Per admin: ripristina il valore selezionato
-          setTimeout(() => {
-            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
-              consultantSelect.value = savedConsultantValue;
-            }
-          }, 50);
         }
       }
       
-      // Separa lead da contattare e contattati
-      const leadsToContact = allLeads.filter(lead => !lead.contattoAvvenuto);
-      const contactedLeads = allLeads.filter(lead => lead.contattoAvvenuto);
+      // ✅ FIX: Filtra i lead in base a contactStatus prima di separarli
+      let filteredLeads = allLeads;
+      if (contactStatus === 'to_contact') {
+        // Solo lead da contattare (contattoAvvenuto null o false)
+        filteredLeads = allLeads.filter(lead => !lead.contattoAvvenuto);
+      } else if (contactStatus === 'contacted') {
+        // Solo lead contattati (contattoAvvenuto compilato)
+        filteredLeads = allLeads.filter(lead => lead.contattoAvvenuto);
+      }
+      // Se contactStatus === 'all', usa tutti i lead (filteredLeads = allLeads)
+      
+      // Separa lead da contattare e contattati (per le due tabelle)
+      const leadsToContact = filteredLeads.filter(lead => !lead.contattoAvvenuto);
+      const contactedLeads = filteredLeads.filter(lead => lead.contattoAvvenuto);
       
       // Renderizza tabelle
       renderContactLeadsTable(leadsToContact);
@@ -15735,7 +15865,7 @@ function viewGestioneLead(){
           <td>${htmlEscape(lead.indirizzo || '')}</td>
           <td>${htmlEscape(lead.sorgente || '')}</td>
           <td>${htmlEscape(lead.consulenteNome || '')}</td>
-          <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+          <td class="notes-cell" ${lead.note ? `data-full-note="${htmlEscape(lead.note).replace(/"/g, '&quot;')}"` : ''}>${htmlEscape(lead.note || '')}</td>
           <td>${lead.contattoAvvenuto ? formatDate(lead.contattoAvvenuto) : ''}</td>
           <td>
             <div class="leads-actions">
@@ -15802,7 +15932,7 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.comune || '')}</td>
         <td>${htmlEscape(lead.sorgente || '')}</td>
         <td>${htmlEscape(lead.consulenteNome || '')}</td>
-        <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+        <td class="notes-cell" ${lead.note ? `data-full-note="${htmlEscape(lead.note).replace(/"/g, '&quot;')}"` : ''}>${htmlEscape(lead.note || '')}</td>
         <td>
           <button class="btn-edit-notes" onclick="editLeadNotes('${lead.id}')" title="Modifica Note">
             📝
@@ -15859,7 +15989,7 @@ function viewGestioneLead(){
         <td>${htmlEscape(lead.comune || '')}</td>
         <td>${htmlEscape(lead.sorgente || '')}</td>
         <td>${htmlEscape(lead.consulenteNome || '')}</td>
-        <td class="notes-cell">${htmlEscape(lead.note || '')}</td>
+        <td class="notes-cell" ${lead.note ? `data-full-note="${htmlEscape(lead.note).replace(/"/g, '&quot;')}"` : ''}>${htmlEscape(lead.note || '')}</td>
         <td>${formatDate(lead.contattoAvvenuto)}</td>
         <td>
           <button class="btn-edit-notes" onclick="editLeadNotes('${lead.id}')" title="Modifica Note">
@@ -17023,29 +17153,8 @@ Comune: ${lead.comune || 'N/A'}
   // Aggiorna display periodo iniziale
   window.updateLeadPeriodDisplay();
   
-  // Imposta consulente di default per non-admin nella sezione "Lead da Contattare"
-  if (!isAdmin && activeTab === 'contattare') {
-    setTimeout(() => {
-      const consultantSelect = document.getElementById('contact-consultant');
-      if (consultantSelect) {
-        const currentUser = getUser();
-        if (currentUser?.id) {
-          // Attendi che il dropdown sia popolato
-          const checkAndSet = (attempts = 0) => {
-            if (consultantSelect.options.length > 1) {
-              if (Array.from(consultantSelect.options).some(opt => opt.value === currentUser.id)) {
-                consultantSelect.value = currentUser.id;
-              }
-            } else if (attempts < 10) {
-              // Se non è ancora popolato, riprova dopo 100ms (max 10 tentativi)
-              setTimeout(() => checkAndSet(attempts + 1), 100);
-            }
-          };
-          checkAndSet();
-        }
-      }
-    }, 300);
-  }
+  // ✅ FIX: Il default sull'utente loggato viene già impostato in loadContactLeadsData()
+  // Non serve più questo codice duplicato
 }
 
 // ===== VENDITE & RIORDINI =====

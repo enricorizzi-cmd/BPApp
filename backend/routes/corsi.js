@@ -696,7 +696,12 @@ module.exports = function(app) {
         return res.status(400).json({ error: 'corso_id obbligatorio' });
       }
 
-      const oggi = new Date().toISOString().split('T')[0];
+      // ✅ FIX: Calcola data di inizio (mese precedente) e data fine (tutte le future)
+      const oggi = new Date();
+      const unMeseFa = new Date(oggi);
+      unMeseFa.setMonth(oggi.getMonth() - 1);
+      const dataInizio = unMeseFa.toISOString().split('T')[0]; // Dal mese precedente
+      // Non limitiamo la data fine, quindi mostriamo tutte le date future
 
       const { data, error } = await supabase
         .from('corsi_date')
@@ -707,7 +712,7 @@ module.exports = function(app) {
           corsi_catalogo!inner(nome_corso, durata_giorni)
         `)
         .eq('corso_id', corso_id)
-        .gte('data_inizio', oggi)
+        .gte('data_inizio', dataInizio) // ✅ FIX: Dal mese precedente in poi
         .order('data_inizio', { ascending: true });
 
       if (error) {
