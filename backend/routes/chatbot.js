@@ -1046,9 +1046,15 @@ RISPOSTE IN ITALIANO.`;
     // Crea mappa userid -> nome per sostituire ID con nomi
     // IMPORTANTE: Carica anche gli userid dai periodi se non ci sono già gli utenti
     const userIdToName = {};
+    
+    // ✅ FIX: Aggiungi sempre l'utente corrente alla mappa
+    if (user && user.id) {
+      userIdToName[user.id] = user.name || user.email || 'Sconosciuto';
+    }
+    
     if (data.users && data.users.length > 0) {
       data.users.forEach(u => {
-        userIdToName[u.id] = u.name || 'Sconosciuto';
+        userIdToName[u.id] = u.name || u.email || 'Sconosciuto';
       });
     }
     
