@@ -294,7 +294,7 @@ module.exports = function(app) {
         .from('corsi_date')
         .select(`
           *,
-          corsi_catalogo!inner(nome_corso, durata_giorni, codice_corso, costo_corso)
+          corsi_catalogo!inner(nome_corso, durata_giorni, codice_corso, costo_corso, tipologia)
         `)
         .order('data_inizio', { ascending: true });
 
