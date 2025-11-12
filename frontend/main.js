@@ -14744,6 +14744,9 @@ function viewGestioneLead(){
   setActiveSidebarItem('viewGestioneLead');
   const isAdmin = getUser().role==='admin';
 
+  // ✅ FIX: Flag per distinguere cambiamenti programmatici da quelli utente
+  let isSettingConsultantProgrammatically = false;
+
   // Variabili globali per i dati dei lead
   let currentLeadsData = [];
 
@@ -15667,38 +15670,59 @@ function viewGestioneLead(){
 
   // ---- Funzioni di navigazione periodo ----
 
+  // ✅ FIX: Flag per prevenire chiamate ricorsive
+  let isLoadingLeadsData = false;
+  let loadLeadsDataTimeout = null;
+
   // Funzioni per caricamento dati
   async function loadLeadsData() {
-    try {
-      // Controllo autenticazione prima di procedere
-      const token = getToken();
-      if (!token) {
-        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
-        setTimeout(() => {
-          logout();
-        }, 2000);
-        return;
-      }
-
-      if (activeTab === 'elenco' && isAdmin) {
-        await loadElencoLeadData();
-      } else {
-        await loadContactLeadsData();
-      }
-    } catch (error) {
-      console.error('Error loading leads data:', error);
-      
-      // Gestione specifica per errori 401
-      if (error.message && error.message.includes('401')) {
-        toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
-        setTimeout(() => {
-          logout();
-        }, 2000);
-        return;
-      }
-      
-      toast('Errore nel caricamento dei dati');
+    // ✅ FIX: Prevenire chiamate ricorsive
+    if (isLoadingLeadsData) {
+      return;
     }
+
+    // ✅ FIX: Debounce - cancella chiamata precedente se ancora in attesa
+    if (loadLeadsDataTimeout) {
+      clearTimeout(loadLeadsDataTimeout);
+    }
+
+    loadLeadsDataTimeout = setTimeout(async () => {
+      try {
+        isLoadingLeadsData = true;
+        
+        // Controllo autenticazione prima di procedere
+        const token = getToken();
+        if (!token) {
+          toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+          setTimeout(() => {
+            logout();
+          }, 2000);
+          return;
+        }
+
+        if (activeTab === 'elenco' && isAdmin) {
+          await loadElencoLeadData();
+        } else {
+          await loadContactLeadsData();
+        }
+      } catch (error) {
+        console.error('Error loading leads data:', error);
+        
+        // Gestione specifica per errori 401
+        if (error.message && error.message.includes('401')) {
+          toast('❌ Sessione scaduta. Effettua nuovamente il login.', 'error');
+          setTimeout(() => {
+            logout();
+          }, 2000);
+          return;
+        }
+        
+        toast('Errore nel caricamento dei dati');
+      } finally {
+        isLoadingLeadsData = false;
+        loadLeadsDataTimeout = null;
+      }
+    }, 300); // Debounce di 300ms
   }
 
   async function loadElencoLeadData() {
@@ -15830,20 +15854,29 @@ function viewGestioneLead(){
           : (currentUser?.id || '');
         
         if (valueToSet) {
+          // ✅ FIX: Imposta flag per prevenire trigger dell'event listener
+          isSettingConsultantProgrammatically = true;
+          
           setTimeout(() => {
             if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
+              // ✅ FIX: Imposta il valore senza triggerare change per evitare loop infinito
+              // Il filtro verrà applicato automaticamente dalla chiamata loadContactLeadsData
               consultantSelect.value = valueToSet;
-              // ✅ FIX: Applica automaticamente il filtro dopo aver impostato il default
-              // Triggera l'evento change per applicare il filtro
-              consultantSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              // ✅ FIX: Reset flag dopo aver impostato il valore
+              isSettingConsultantProgrammatically = false;
             } else if (consultantSelect && consultantSelect.options.length > 1) {
               // Se ancora non c'è, riprova dopo un altro breve delay
               setTimeout(() => {
                 if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
+                  // ✅ FIX: Imposta il valore senza triggerare change
                   consultantSelect.value = valueToSet;
-                  consultantSelect.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+                // ✅ FIX: Reset flag dopo aver impostato il valore
+                isSettingConsultantProgrammatically = false;
               }, 100);
+            } else {
+              // ✅ FIX: Reset flag anche se non viene impostato
+              isSettingConsultantProgrammatically = false;
             }
           }, 100);
         }
@@ -17169,6 +17202,11 @@ Comune: ${lead.comune || 'N/A'}
 
   // Event listeners per cambio filtri
   document.addEventListener('change', (e) => {
+    // ✅ FIX: Ignora eventi triggerati programmaticamente durante l'inizializzazione
+    if (isSettingConsultantProgrammatically) {
+      return;
+    }
+
     if (e.target.id === 'lead-consultant' ||
         e.target.id === 'contact-consultant' ||
         e.target.id === 'lead-without-consultant' || e.target.id === 'lead-contact-status') {
