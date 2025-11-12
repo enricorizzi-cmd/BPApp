@@ -93,9 +93,9 @@ module.exports = function(app) {
       const id = 'corso_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
       // Validazione tipologia
-      const tipologieValide = ['Corso', 'Evento', 'Workshop'];
+      const tipologieValide = ['Corso', 'Evento', 'Workshop', 'Academy Interna'];
       if (tipologia && !tipologieValide.includes(tipologia)) {
-        return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento o Workshop' });
+        return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento, Workshop o Academy Interna' });
       }
 
       // Prepara dati per inserimento
@@ -169,9 +169,9 @@ module.exports = function(app) {
 
       // Validazione tipologia se presente
       if (tipologia !== undefined) {
-        const tipologieValide = ['Corso', 'Evento', 'Workshop'];
+        const tipologieValide = ['Corso', 'Evento', 'Workshop', 'Academy Interna'];
         if (!tipologieValide.includes(tipologia)) {
-          return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento o Workshop' });
+          return res.status(400).json({ error: 'Tipologia non valida. Deve essere: Corso, Evento, Workshop o Academy Interna' });
         }
       }
 

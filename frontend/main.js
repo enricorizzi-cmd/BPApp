@@ -12419,6 +12419,7 @@ function viewCorsiInteraziendali(){
                 <option value="Corso">Corso</option>
                 <option value="Evento">Evento</option>
                 <option value="Workshop">Workshop</option>
+                <option value="Academy Interna">Academy Interna</option>
               </select>
             </div>
             <div class="form-group">
