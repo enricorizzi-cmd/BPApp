@@ -14746,6 +14746,8 @@ function viewGestioneLead(){
 
   // ✅ FIX: Flag per distinguere cambiamenti programmatici da quelli utente
   let isSettingConsultantProgrammatically = false;
+  // ✅ FIX: Flag per tracciare se è la prima apertura della pagina
+  let isFirstLoad = true;
 
   // Variabili globali per i dati dei lead
   let currentLeadsData = [];
@@ -15807,17 +15809,22 @@ function viewGestioneLead(){
         savedConsultantValue = consultantSelect.value || '';
       }
       
-      // ✅ FIX: Se non c'è un valore salvato, determina il default
+      // ✅ FIX: Se è la prima apertura e non c'è un valore salvato, usa SEMPRE l'utente loggato
+      // Se c'è un valore salvato, usa quello (per admin può essere anche "Tutti" = stringa vuota)
       let valueToSet = '';
-      if (isAdmin) {
-        // Admin: usa il valore salvato se presente, altrimenti stringa vuota (Tutti)
-        valueToSet = savedConsultantValue || '';
-      } else {
-        // Non-admin: usa sempre il proprio ID
+      if (savedConsultantValue) {
+        // Se c'è un valore salvato, usa quello (può essere vuoto se admin ha selezionato "Tutti")
+        valueToSet = savedConsultantValue;
+        isFirstLoad = false; // Non è più la prima apertura
+      } else if (isFirstLoad) {
+        // Prima apertura senza valore salvato: usa sempre l'utente loggato
         valueToSet = currentUser?.id || '';
+      } else {
+        // Non è la prima apertura e non c'è valore salvato: significa che l'utente ha selezionato "Tutti"
+        valueToSet = ''; // Rispetta la scelta dell'utente
       }
       
-      // ✅ FIX: Imposta il valore del dropdown se necessario (senza triggerare change)
+      // ✅ FIX: Imposta il valore del dropdown (senza triggerare change)
       if (consultantSelect && valueToSet) {
         isSettingConsultantProgrammatically = true;
         if (Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
@@ -15832,9 +15839,20 @@ function viewGestioneLead(){
         consultant = consultantSelect.value || '';
       }
       
-      // ✅ FIX: Per non-admin, forza sempre il proprio ID (anche se dropdown mostra "Tutti")
-      if (!isAdmin) {
-        consultant = currentUser?.id || '';
+      // ✅ FIX: Per non-admin, forza sempre il proprio ID
+      // Per admin: se il valore è vuoto e non è la prima apertura, significa che l'admin ha selezionato "Tutti"
+      // Se invece è la prima apertura e il valore è vuoto (non è stato possibile impostarlo), usa l'utente loggato
+      if (!isAdmin && currentUser?.id) {
+        consultant = currentUser.id;
+      } else if (!consultant && isFirstLoad && currentUser?.id) {
+        // Prima apertura e valore vuoto (non è stato possibile impostarlo nel dropdown): usa utente loggato per la chiamata API
+        consultant = currentUser.id;
+      }
+      // Se consultant è vuoto qui e non è la prima apertura, significa che l'admin ha selezionato "Tutti" -> mostra tutti i lead
+      
+      // ✅ FIX: Dopo la prima chiamata, non è più la prima apertura
+      if (isFirstLoad) {
+        isFirstLoad = false;
       }
       
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
