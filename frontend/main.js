@@ -15737,11 +15737,19 @@ function viewGestioneLead(){
         return;
       }
 
-      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione
       const consultantSelect = document.getElementById('lead-consultant');
-      const savedConsultantValue = consultantSelect?.value || '';
       
-      const consultant = savedConsultantValue; // Usa il valore salvato
+      // ✅ FIX: Popola dropdown PRIMA di leggere il valore
+      if (consultantSelect && consultantSelect.options.length <= 1) {
+        await loadConsultantsDropdown('lead-consultant');
+      }
+      
+      // ✅ FIX: Leggi il valore dal dropdown dopo averlo popolato
+      let consultant = '';
+      if (consultantSelect) {
+        consultant = consultantSelect.value || '';
+      }
+      
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
@@ -15764,21 +15772,6 @@ function viewGestioneLead(){
       // Aggiorna variabile globale
       currentLeadsData = leads;
       
-      // Popola dropdown consulenti se non già fatto (solo se non ha opzioni)
-      if (!consultantSelect || consultantSelect.options.length <= 1) {
-        await loadConsultantsDropdown('lead-consultant');
-      }
-      
-      // Ripristina SEMPRE il valore selezionato dopo il caricamento
-      if (consultantSelect && savedConsultantValue !== undefined) {
-        // Usa setTimeout per assicurarsi che il DOM sia aggiornato
-        setTimeout(() => {
-          if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === savedConsultantValue)) {
-            consultantSelect.value = savedConsultantValue;
-          }
-        }, 50);
-      }
-      
       // Renderizza tabella
       renderLeadsTable(leads);
       
@@ -15800,21 +15793,50 @@ function viewGestioneLead(){
         return;
       }
 
-      // Salva IMMEDIATAMENTE il valore del consulente prima di qualsiasi altra operazione
       const consultantSelect = document.getElementById('contact-consultant');
       const currentUser = getUser();
-      let savedConsultantValue = '';
       
-      if (consultantSelect) {
-        savedConsultantValue = consultantSelect.value || '';
-        // Se il valore è vuoto e non siamo admin, usa il consulente corrente
-        if (!savedConsultantValue && !isAdmin) {
-          savedConsultantValue = currentUser?.id || '';
-        }
+      // ✅ FIX: Popola dropdown PRIMA di leggere il valore
+      if (consultantSelect && consultantSelect.options.length <= 1) {
+        await loadConsultantsDropdown('contact-consultant');
       }
       
-      // Per non-admin, usa SEMPRE il proprio ID (anche se il dropdown mostra "Tutti")
-      const consultant = isAdmin ? savedConsultantValue : (currentUser?.id || '');
+      // ✅ FIX: Determina quale valore dovrebbe essere selezionato
+      let savedConsultantValue = '';
+      if (consultantSelect) {
+        savedConsultantValue = consultantSelect.value || '';
+      }
+      
+      // ✅ FIX: Se non c'è un valore salvato, determina il default
+      let valueToSet = '';
+      if (isAdmin) {
+        // Admin: usa il valore salvato se presente, altrimenti stringa vuota (Tutti)
+        valueToSet = savedConsultantValue || '';
+      } else {
+        // Non-admin: usa sempre il proprio ID
+        valueToSet = currentUser?.id || '';
+      }
+      
+      // ✅ FIX: Imposta il valore del dropdown se necessario (senza triggerare change)
+      if (consultantSelect && valueToSet) {
+        isSettingConsultantProgrammatically = true;
+        if (Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
+          consultantSelect.value = valueToSet;
+        }
+        isSettingConsultantProgrammatically = false;
+      }
+      
+      // ✅ FIX: Leggi il valore CORRETTO dal dropdown dopo averlo impostato
+      let consultant = '';
+      if (consultantSelect) {
+        consultant = consultantSelect.value || '';
+      }
+      
+      // ✅ FIX: Per non-admin, forza sempre il proprio ID (anche se dropdown mostra "Tutti")
+      if (!isAdmin) {
+        consultant = currentUser?.id || '';
+      }
+      
       const showWithoutConsultant = document.getElementById('lead-without-consultant')?.checked || false;
       const contactStatus = document.getElementById('lead-contact-status')?.value || 'all';
       
@@ -15836,51 +15858,6 @@ function viewGestioneLead(){
       
       // Aggiorna variabile globale
       currentLeadsData = allLeads;
-      
-      // Popola dropdown consulenti se necessario
-      if (consultantSelect) {
-        const shouldSetToCurrentUser = !isAdmin;
-        const userIdToSet = shouldSetToCurrentUser ? (currentUser?.id || '') : savedConsultantValue;
-        
-        // Popola dropdown consulenti solo se non ha opzioni
-        if (consultantSelect.options.length <= 1) {
-          await loadConsultantsDropdown('contact-consultant');
-        }
-        
-        // ✅ FIX: Imposta sempre il default sull'utente loggato (sia admin che non-admin)
-        // Se non c'è un valore salvato, usa l'utente loggato
-        const valueToSet = (!shouldSetToCurrentUser && savedConsultantValue !== undefined && savedConsultantValue !== '') 
-          ? savedConsultantValue 
-          : (currentUser?.id || '');
-        
-        if (valueToSet) {
-          // ✅ FIX: Imposta flag per prevenire trigger dell'event listener
-          isSettingConsultantProgrammatically = true;
-          
-          setTimeout(() => {
-            if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
-              // ✅ FIX: Imposta il valore senza triggerare change per evitare loop infinito
-              // Il filtro verrà applicato automaticamente dalla chiamata loadContactLeadsData
-              consultantSelect.value = valueToSet;
-              // ✅ FIX: Reset flag dopo aver impostato il valore
-              isSettingConsultantProgrammatically = false;
-            } else if (consultantSelect && consultantSelect.options.length > 1) {
-              // Se ancora non c'è, riprova dopo un altro breve delay
-              setTimeout(() => {
-                if (consultantSelect && Array.from(consultantSelect.options).some(opt => opt.value === valueToSet)) {
-                  // ✅ FIX: Imposta il valore senza triggerare change
-                  consultantSelect.value = valueToSet;
-                }
-                // ✅ FIX: Reset flag dopo aver impostato il valore
-                isSettingConsultantProgrammatically = false;
-              }, 100);
-            } else {
-              // ✅ FIX: Reset flag anche se non viene impostato
-              isSettingConsultantProgrammatically = false;
-            }
-          }, 100);
-        }
-      }
       
       // ✅ FIX: Filtra i lead in base a contactStatus prima di separarli
       let filteredLeads = allLeads;
