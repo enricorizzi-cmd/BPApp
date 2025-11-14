@@ -1823,7 +1823,7 @@ function viewCalendar(){
       .corso-badge-main {
         position: absolute;
         top: 4px;
-        right: 4px;
+        /* ✅ FIX: right viene impostato inline per posizionare badge affiancati */
         background: var(--accent);
         color: white;
         border-radius: 50%;
@@ -1858,9 +1858,10 @@ function viewCalendar(){
         white-space: nowrap;
       }
       
-      /* Se ci sono entrambi i badge (corso + oggi), posiziona oggi sopra e corso sotto */
+      /* ✅ FIX: Se ci sono badge corsi + "OGGI", posiziona "OGGI" sopra e badge corsi sotto */
+      /* Quando c'è "OGGI", tutti i badge corsi vengono spostati a top:30px per non sovrapporsi */
       .day.today .corso-badge-main {
-        top: 30px;
+        top: 30px !important;
       }
       
       /* Colori badge in base alla tipologia corso */
@@ -2698,11 +2699,12 @@ function viewCalendar(){
         var vsdIndiretto = 0;
         var nIscritti = 0;
         var hasCourse = false;
-        var codiceCorso = '';
-        var tipologia = '';
+        var codiceCorso = ''; // Mantenuto per retrocompatibilità
+        var tipologia = ''; // Mantenuto per retrocompatibilità
+        var corsiInfo = []; // ✅ FIX: Array con tutti i corsi del giorno (codice + tipologia)
         
         if (!corsiDateArr || corsiDateArr.length === 0) {
-          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '', tipologia: '' };
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '', tipologia: '', corsiInfo: [] };
         }
         
         // Cerca corsi che includono questo giorno
@@ -2743,11 +2745,17 @@ function viewCalendar(){
           if (dayIncluded) {
             coursesOnDay.push(cd);
             hasCourse = true;
+            // ✅ FIX: Aggiungi info corso all'array (codice + tipologia)
+            var corsoCodice = cd.corsi_catalogo?.codice_corso || '';
+            var corsoTipologia = cd.corsi_catalogo?.tipologia || 'Corso';
+            if (corsoCodice) {
+              corsiInfo.push({ codice: corsoCodice, tipologia: corsoTipologia });
+            }
           }
         }
         
         if (!hasCourse) {
-          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '', tipologia: '' };
+          return { vsdIndiretto: 0, nIscritti: 0, hasCourse: false, codiceCorso: '', nomeCorso: '', dataCorso: '', tipologia: '', corsiInfo: [] };
         }
         
         // Per ogni corso del giorno, calcola VSD e iscritti filtrati per consulente
@@ -2803,10 +2811,11 @@ function viewCalendar(){
           vsdIndiretto: Math.round(vsdIndiretto),
           nIscritti: nIscritti,
           hasCourse: hasCourse,
-          codiceCorso: codiceCorso,
+          codiceCorso: codiceCorso, // Mantenuto per retrocompatibilità
           nomeCorso: nomeCorso,
           dataCorso: dataCorso,
-          tipologia: tipologia || 'Corso'
+          tipologia: tipologia || 'Corso', // Mantenuto per retrocompatibilità
+          corsiInfo: corsiInfo // ✅ FIX: Array con tutti i corsi del giorno
         };
       }
       
@@ -3041,18 +3050,27 @@ function viewCalendar(){
             // Calcola dati corsi per questo giorno
             var corsiDay = calculateCorsiDataForDay(key, consultant, corsiDate, iscrizioniData);
             var hasCourseToday = corsiDay.hasCourse;
-            // Determina classe CSS in base alla tipologia
-            var tipologiaClass = '';
-            if (corsiDay.tipologia) {
-              if (corsiDay.tipologia === 'Evento' || corsiDay.tipologia === 'Workshop') {
-                tipologiaClass = ' badge-tipo-evento';
-              } else if (corsiDay.tipologia === 'Academy Interna') {
-                tipologiaClass = ' badge-tipo-academy';
-              } else {
-                tipologiaClass = ' badge-tipo-corso'; // Default: Corso (azzurro)
+            // ✅ FIX: Genera badge per TUTTI i corsi del giorno (affiancati)
+            var corsoBadge = '';
+            if (hasCourseToday && corsiDay.corsiInfo && corsiDay.corsiInfo.length > 0) {
+              // Genera badge per ogni corso (max 3 per evitare sovraffollamento)
+              var maxBadges = Math.min(corsiDay.corsiInfo.length, 3);
+              for (var b = 0; b < maxBadges; b++) {
+                var corsoInfo = corsiDay.corsiInfo[b];
+                var tipologiaClass = '';
+                if (corsoInfo.tipologia === 'Evento' || corsoInfo.tipologia === 'Workshop') {
+                  tipologiaClass = ' badge-tipo-evento';
+                } else if (corsoInfo.tipologia === 'Academy Interna') {
+                  tipologiaClass = ' badge-tipo-academy';
+                } else {
+                  tipologiaClass = ' badge-tipo-corso'; // Default: Corso (azzurro)
+                }
+                // ✅ FIX: Posiziona badge affiancati: primo a right:4px, secondo a right:30px, terzo a right:56px
+                // Calcolo: 4px (margine) + (b * 26px) dove 26px = 24px (larghezza badge) + 2px (gap)
+                var rightOffset = 4 + (b * 26); // 26px di spazio tra badge (24px badge + 2px gap)
+                corsoBadge += '<span class="corso-badge-main'+tipologiaClass+'" style="right:'+rightOffset+'px; top:4px;">'+corsoInfo.codice+'</span>';
               }
             }
-            var corsoBadge = hasCourseToday && corsiDay.codiceCorso ? '<span class="corso-badge-main'+tipologiaClass+'">'+corsiDay.codiceCorso+'</span>' : '';
             
             // ✅ FIX: Controlla se è oggi (solo se è nel mese corretto) - usa ymd() per confronto sicuro YYYY-MM-DD
             // IMPORTANTE: Crea un nuovo oggetto Date per "oggi" ad ogni iterazione per evitare problemi con fuso orario
