@@ -2745,11 +2745,12 @@ function viewCalendar(){
           if (dayIncluded) {
             coursesOnDay.push(cd);
             hasCourse = true;
-            // ✅ FIX: Aggiungi info corso all'array (codice + tipologia)
+            // ✅ FIX: Aggiungi info corso all'array (codice + tipologia + nome)
             var corsoCodice = cd.corsi_catalogo?.codice_corso || '';
             var corsoTipologia = cd.corsi_catalogo?.tipologia || 'Corso';
+            var corsoNome = cd.corsi_catalogo?.nome_corso || corsoCodice;
             if (corsoCodice) {
-              corsiInfo.push({ codice: corsoCodice, tipologia: corsoTipologia });
+              corsiInfo.push({ codice: corsoCodice, tipologia: corsoTipologia, nome: corsoNome });
             }
           }
         }
@@ -3164,14 +3165,21 @@ function viewCalendar(){
           var box = document.getElementById('cal_day_box');
           var h='<b>Appuntamenti del '+dateStr.split('-').reverse().join('/')+'</b>';
           
-          // Controlla se questo giorno ha un corso (per mostrare bottone iscrizione)
+          // ✅ FIX: Controlla se questo giorno ha corsi (per mostrare bottoni iscrizione affiancati)
           var corsiDay = calculateCorsiDataForDay(dateStr, consultant, corsiDate, iscrizioniData);
-          if (corsiDay.hasCourse && corsiDay.nomeCorso) {
-            h += '<div style="margin-top:8px;margin-bottom:8px">'+
-                 '<button id="cal_add_iscrizione_btn" class="button" data-nome-corso="'+htmlEscape(corsiDay.nomeCorso)+'" style="background: var(--accent); color: white; font-weight: 600;">'+
-                 '📝 Aggiungi iscrizione a "'+htmlEscape(corsiDay.nomeCorso)+'"'+
-                 '</button>'+
-                 '</div>';
+          if (corsiDay.hasCourse && corsiDay.corsiInfo && corsiDay.corsiInfo.length > 0) {
+            // ✅ FIX: Genera pulsanti per TUTTI i corsi del giorno, affiancati
+            h += '<div style="margin-top:8px;margin-bottom:8px; display:flex; flex-wrap:wrap; gap:8px;">';
+            for (var ci = 0; ci < corsiDay.corsiInfo.length; ci++) {
+              var corsoInfo = corsiDay.corsiInfo[ci];
+              var nomeCorsoCompleto = corsoInfo.nome || corsoInfo.codice;
+              
+              // ✅ FIX: Usa classe invece di ID per permettere più pulsanti
+              h += '<button class="button cal-add-iscrizione-btn" data-nome-corso="'+htmlEscape(nomeCorsoCompleto)+'" style="background: var(--accent); color: white; font-weight: 600; flex: 0 0 auto;">'+
+                   '📝 Aggiungi iscrizione a "'+htmlEscape(nomeCorsoCompleto)+'"'+
+                   '</button>';
+            }
+            h += '</div>';
           }
           
           // Bottone aggiungi appuntamento inline
@@ -3254,16 +3262,16 @@ function viewCalendar(){
             });
           });
           
-          // Handler bottone aggiungi iscrizione corso
-          var addIscrizioneBtn = box.querySelector('#cal_add_iscrizione_btn');
-          if(addIscrizioneBtn){
+          // ✅ FIX: Handler bottoni aggiungi iscrizione corso (gestisce tutti i pulsanti)
+          var addIscrizioneBtns = box.querySelectorAll('.cal-add-iscrizione-btn');
+          addIscrizioneBtns.forEach(function(addIscrizioneBtn){
             addIscrizioneBtn.addEventListener('click', function(ev){
               ev.stopPropagation();
               // Reindirizza alla pagina Corsi Interaziendali con tab Iscrizioni
               corsiActiveTab = 'iscrizioni';
               viewCorsiInteraziendali();
             });
-          }
+          });
           
           // Handler bottone aggiungi appuntamento inline
           var addBtn = box.querySelector('#cal_add_appt_btn');
