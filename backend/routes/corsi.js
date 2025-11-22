@@ -532,6 +532,7 @@ module.exports = function(app) {
           corso_data_id,
           cliente_id: cliente.cliente_id,
           cliente_nome: cliente.cliente_nome,
+          partecipante_nome: cliente.partecipante_nome || null,
           consulente_id: cliente.consulente_id,
           consulente_nome: cliente.consulente_nome,
           costo_personalizzato: Number(cliente.costo_personalizzato),
@@ -562,7 +563,7 @@ module.exports = function(app) {
   app.put("/api/corsi-iscrizioni/:id", auth, async (req, res) => {
     try {
       const { id } = req.params;
-      const { cliente_id, cliente_nome, consulente_id, consulente_nome, costo_personalizzato } = req.body;
+      const { cliente_id, cliente_nome, partecipante_nome, consulente_id, consulente_nome, costo_personalizzato } = req.body;
 
       if (!id) {
         return res.status(400).json({ error: 'ID iscrizione obbligatorio' });
@@ -593,6 +594,7 @@ module.exports = function(app) {
 
       if (cliente_id !== undefined) updateData.cliente_id = cliente_id;
       if (cliente_nome !== undefined) updateData.cliente_nome = cliente_nome;
+      if (partecipante_nome !== undefined) updateData.partecipante_nome = partecipante_nome || null;
       if (consulente_id !== undefined) updateData.consulente_id = consulente_id;
       if (consulente_nome !== undefined) updateData.consulente_nome = consulente_nome;
       if (costo_personalizzato !== undefined) updateData.costo_personalizzato = Number(costo_personalizzato);

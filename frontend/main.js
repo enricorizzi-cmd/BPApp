@@ -13816,6 +13816,10 @@ function viewCorsiInteraziendali(){
                   </div>
                 </div>
                 <div class="form-group">
+                  <label for="partecipante-1">Nome e Cognome</label>
+                  <input type="text" id="partecipante-1" placeholder="Inserisci nome e cognome del partecipante">
+                </div>
+                <div class="form-group">
                   <label for="consulente-1">Consulente</label>
                   <select id="consulente-1">
                     <option value="">Seleziona consulente...</option>
@@ -14197,6 +14201,10 @@ function viewCorsiInteraziendali(){
           </div>
         </div>
         <div class="form-group">
+          <label for="partecipante-${clienteCount}">Nome e Cognome</label>
+          <input type="text" id="partecipante-${clienteCount}" placeholder="Inserisci nome e cognome del partecipante">
+        </div>
+        <div class="form-group">
           <label for="consulente-${clienteCount}">Consulente</label>
           <select id="consulente-${clienteCount}">
             <option value="">Seleziona consulente...</option>
@@ -14277,6 +14285,10 @@ function viewCorsiInteraziendali(){
                     <select id="edit-cliente-${index}" required onchange="loadClienteInfoEdit(${index})">
                       <option value="">Seleziona cliente...</option>
                     </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Nome e Cognome</label>
+                    <input type="text" id="edit-partecipante-${index}" placeholder="Inserisci nome e cognome del partecipante" value="${iscrizione.partecipante_nome || ''}">
                   </div>
                   <div class="form-group">
                     <label>Consulente</label>
@@ -14433,6 +14445,7 @@ function viewCorsiInteraziendali(){
         const index = Array.from(gruppi).indexOf(gruppo);
         
         const clienteSelect = document.getElementById(`edit-cliente-${index}`);
+        const partecipanteInput = document.getElementById(`edit-partecipante-${index}`);
         const consulenteSelect = document.getElementById(`edit-consulente-${index}`);
         const costoInput = document.getElementById(`edit-costo-${index}`);
         
@@ -14453,6 +14466,7 @@ function viewCorsiInteraziendali(){
           id: iscrizioneId,
           cliente_id: clienteSelect.value,
           cliente_nome: clienteOption.textContent,
+          partecipante_nome: partecipanteInput ? partecipanteInput.value.trim() : '',
           consulente_id: consulenteSelect.value,
           consulente_nome: consulenteOption.textContent,
           costo_personalizzato: Number(costoInput.value) || 0
@@ -14466,6 +14480,7 @@ function viewCorsiInteraziendali(){
         const body = {
           cliente_id: update.cliente_id,
           cliente_nome: update.cliente_nome,
+          partecipante_nome: update.partecipante_nome,
           consulente_id: update.consulente_id,
           consulente_nome: update.consulente_nome,
           costo_personalizzato: update.costo_personalizzato
@@ -14543,6 +14558,7 @@ function viewCorsiInteraziendali(){
       for (const group of clienteGroups) {
         const clienteHidden = group.querySelector('input[id^="cliente-select-"]');
         const clienteDisplay = group.querySelector('span[id^="cliente-display-"]');
+        const partecipanteInput = group.querySelector('input[id^="partecipante-"]');
         const consulenteSelect = group.querySelector('select[id^="consulente-"]');
         const costoInput = group.querySelector('input[id^="costo-"]');
         
@@ -14551,6 +14567,7 @@ function viewCorsiInteraziendali(){
           clienti.push({
             cliente_id: clienteHidden.value,
             cliente_nome: clienteDisplay ? clienteDisplay.textContent : '',
+            partecipante_nome: partecipanteInput ? partecipanteInput.value.trim() : '',
             consulente_id: consulenteSelect.value,
             consulente_nome: consulenteOption ? consulenteOption.textContent : '',
             costo_personalizzato: Number(costoInput.value)
